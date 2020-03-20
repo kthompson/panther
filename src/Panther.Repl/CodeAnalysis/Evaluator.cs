@@ -49,6 +49,19 @@ namespace Panther.CodeAnalysis
                 return EvaluateExpression(group.Expression);
             }
 
+            if (node is UnaryExpressionSyntax unary)
+            {
+                if (unary.OperatorToken.Kind == SyntaxKind.MinusToken)
+                {
+                    return -EvaluateExpression(unary.Operand);
+                }
+                if (unary.OperatorToken.Kind == SyntaxKind.PlusToken)
+                {
+                    return EvaluateExpression(unary.Operand);
+                }
+                throw new Exception($"Unexpected unary operator {unary.OperatorToken.Text}");
+            }
+
             throw new Exception($"Unexpected expression {node.Kind}");
         }
     }

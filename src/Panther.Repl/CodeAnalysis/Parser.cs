@@ -61,37 +61,36 @@ namespace Panther.CodeAnalysis
             return new SyntaxTree(_lexer.Diagnostics.Concat(_diagnostics), expression, endToken);
         }
 
-        private ExpressionSyntax ParseTerm()
+        private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
         {
-            var left = ParseFactor();
+            ExpressionSyntax left;
+            var unaryOperatorPrecedence = _currentToken.Kind.GetUnaryOperatorPrecedence();
 
-            while (_currentToken.Kind == SyntaxKind.PlusToken || _currentToken.Kind == SyntaxKind.MinusToken)
+            if (unaryOperatorPrecedence != 0 && unaryOperatorPrecedence >= parentPrecedence)
             {
                 var operatorToken = Accept();
+                var operand = ParseExpression(unaryOperatorPrecedence);
 
-                var right = ParseFactor();
+                left = new UnaryExpressionSyntax(operatorToken, operand);
+            }
+            else
+            {
+                left = ParsePrimaryExpression();
+            }
+
+            while (true)
+            {
+                var precedence = _currentToken.Kind.GetBinaryOperatorPrecedence();
+                if (precedence == 0 || precedence <= parentPrecedence)
+                    break;
+
+                var operatorToken = Accept();
+                var right = ParseExpression(precedence);
                 left = new BinaryExpressionSyntax(left, operatorToken, right);
             }
 
             return left;
         }
-
-        private ExpressionSyntax ParseFactor()
-        {
-            var left = ParsePrimaryExpression();
-
-            while (_currentToken.Kind == SyntaxKind.StarToken || _currentToken.Kind == SyntaxKind.SlashToken)
-            {
-                var operatorToken = Accept();
-
-                var right = ParsePrimaryExpression();
-                left = new BinaryExpressionSyntax(left, operatorToken, right);
-            }
-
-            return left;
-        }
-
-        private ExpressionSyntax ParseExpression() => ParseTerm();
 
         private ExpressionSyntax ParsePrimaryExpression()
         {

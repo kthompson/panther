@@ -23,6 +23,7 @@
         LiteralExpression,
 
         BinaryExpression,
-        GroupExpression
+        GroupExpression,
+        UnaryExpression
     }
 }
