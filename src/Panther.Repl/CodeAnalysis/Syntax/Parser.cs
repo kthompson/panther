@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Panther.CodeAnalysis
+namespace Panther.CodeAnalysis.Syntax
 {
     internal class Parser
     {
@@ -94,17 +94,27 @@ namespace Panther.CodeAnalysis
 
         private ExpressionSyntax ParsePrimaryExpression()
         {
-            if (_currentToken.Kind == SyntaxKind.OpenParenToken)
+            switch (_currentToken.Kind)
             {
-                var open = Accept();
-                var expr = ParseExpression();
-                var close = Accept(SyntaxKind.CloseParenToken);
+                case SyntaxKind.OpenParenToken:
+                    {
+                        var open = Accept();
+                        var expr = ParseExpression();
+                        var close = Accept(SyntaxKind.CloseParenToken);
 
-                return new GroupExpressionSyntax(open, expr, close);
+                        return new GroupExpressionSyntax(open, expr, close);
+                    }
+                case SyntaxKind.TrueKeyword:
+                case SyntaxKind.FalseKeyword:
+
+                    var value = _currentToken.Kind == SyntaxKind.TrueKeyword;
+
+                    return new LiteralExpressionSyntax(Accept(), value);
+
+                default:
+                    var numberToken = Accept(SyntaxKind.NumberToken);
+                    return new LiteralExpressionSyntax(numberToken);
             }
-
-            var numberToken = Accept(SyntaxKind.NumberToken);
-            return new LiteralExpressionSyntax(numberToken);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Panther.CodeAnalysis
+namespace Panther.CodeAnalysis.Syntax
 {
     internal class GroupExpressionSyntax : ExpressionSyntax
     {

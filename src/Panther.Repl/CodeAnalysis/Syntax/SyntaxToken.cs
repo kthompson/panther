@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Panther.CodeAnalysis
+namespace Panther.CodeAnalysis.Syntax
 {
     public class SyntaxToken : SyntaxNode
     {

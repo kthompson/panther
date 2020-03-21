@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Panther.CodeAnalysis
+namespace Panther.CodeAnalysis.Syntax
 {
     internal class Lexer
     {
@@ -16,7 +16,10 @@ namespace Panther.CodeAnalysis
 
         public IEnumerable<string> Diagnostics => _diagnostics;
 
-        private char Current => _position >= _text.Length ? '\0' : _text[_position];
+        private char Current => Peek(_position);
+        private char Lookahead => Peek(_position + 1);
+
+        private char Peek(int position) => position >= _text.Length ? '\0' : _text[position];
 
         private void Next()
         {
@@ -58,6 +61,22 @@ namespace Panther.CodeAnalysis
                 return new SyntaxToken(SyntaxKind.WhitespaceToken, start, span, null);
             }
 
+            if (char.IsLetter(Current))
+            {
+                var start = _position;
+
+                while (char.IsLetter(Current))
+                {
+                    Next();
+                }
+
+                var span = _text[start.._position];
+
+                var kind = SyntaxFacts.GetKeywordKind(span);
+
+                return new SyntaxToken(kind, start, span, null);
+            }
+
             switch (Current)
             {
                 case '+':
@@ -78,10 +97,26 @@ namespace Panther.CodeAnalysis
                 case ')':
                     return ReturnKindOneChar(SyntaxKind.CloseParenToken);
 
+                case '!':
+                    return ReturnKindOneChar(SyntaxKind.BangToken);
+
+                case '&' when Lookahead == '&':
+                    return ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken);
+
+                case '|' when Lookahead == '|':
+                    return ReturnKindTwoChar(SyntaxKind.PipePipeToken);
+
                 default:
                     _diagnostics.Add($"Error: Invalid character in input: {Current}");
                     return ReturnKindOneChar(SyntaxKind.InvalidToken);
             }
+        }
+
+        private SyntaxToken ReturnKindTwoChar(SyntaxKind kind)
+        {
+            var token = new SyntaxToken(kind, _position, _text[_position..(_position + 2)], null);
+            _position += 2;
+            return token;
         }
 
         private SyntaxToken ReturnKindOneChar(SyntaxKind kind)

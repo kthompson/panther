@@ -1,65 +1,78 @@
 ﻿using System;
 using System.Text;
+using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis
 {
     internal class Evaluator
     {
-        private readonly ExpressionSyntax _root;
+        private readonly BoundExpression _root;
 
-        public Evaluator(ExpressionSyntax root)
+        public Evaluator(BoundExpression root)
         {
             _root = root;
         }
 
-        public int Evaluate()
+        public object Evaluate()
         {
             return EvaluateExpression(_root);
         }
 
-        private int EvaluateExpression(ExpressionSyntax node)
+        private object EvaluateExpression(BoundExpression node)
         {
-            if (node is LiteralExpressionSyntax n)
+            if (node is BoundLiteralExpression n)
             {
-                return (int)n.LiteralToken.Value;
+                return n.Value;
             }
 
-            if (node is BinaryExpressionSyntax binaryExpression)
+            if (node is BoundBinaryExpression binaryExpression)
             {
                 var left = EvaluateExpression(binaryExpression.Left);
                 var right = EvaluateExpression(binaryExpression.Right);
 
-                if (binaryExpression.OperationToken.Kind == SyntaxKind.PlusToken)
-                    return left + right;
+                switch (binaryExpression.OperatorKind)
+                {
+                    case BoundBinaryOperatorKind.Addition:
+                        return (int)left + (int)right;
 
-                if (binaryExpression.OperationToken.Kind == SyntaxKind.MinusToken)
-                    return left - right;
+                    case BoundBinaryOperatorKind.Subtraction:
+                        return (int)left - (int)right;
 
-                if (binaryExpression.OperationToken.Kind == SyntaxKind.StarToken)
-                    return left * right;
+                    case BoundBinaryOperatorKind.Multiplication:
+                        return (int)left * (int)right;
 
-                if (binaryExpression.OperationToken.Kind == SyntaxKind.SlashToken)
-                    return left / right;
+                    case BoundBinaryOperatorKind.Division:
+                        return (int)left / (int)right;
 
-                throw new Exception($"Unexpected binary operator {binaryExpression.OperationToken.Text}");
+                    case BoundBinaryOperatorKind.LogicalAnd:
+                        return (bool)left && (bool)right;
+
+                    case BoundBinaryOperatorKind.LogicalOr:
+                        return (bool)left || (bool)right;
+
+                    default:
+                        throw new Exception($"Unexpected binary operator {binaryExpression.OperatorKind}");
+                }
             }
 
-            if (node is GroupExpressionSyntax group)
+            if (node is BoundUnaryExpression unary)
             {
-                return EvaluateExpression(group.Expression);
-            }
+                var operand = EvaluateExpression(unary.Operand);
+                switch (unary.OperatorKind)
+                {
+                    case BoundUnaryOperatorKind.Negation:
+                        return -(int)operand;
 
-            if (node is UnaryExpressionSyntax unary)
-            {
-                if (unary.OperatorToken.Kind == SyntaxKind.MinusToken)
-                {
-                    return -EvaluateExpression(unary.Operand);
+                    case BoundUnaryOperatorKind.Identity:
+                        return (int)operand;
+
+                    case BoundUnaryOperatorKind.LogicalNegation:
+                        return !(bool)operand;
+
+                    default:
+                        throw new Exception($"Unexpected unary operator {unary.OperatorKind}");
                 }
-                if (unary.OperatorToken.Kind == SyntaxKind.PlusToken)
-                {
-                    return EvaluateExpression(unary.Operand);
-                }
-                throw new Exception($"Unexpected unary operator {unary.OperatorToken.Text}");
             }
 
             throw new Exception($"Unexpected expression {node.Kind}");

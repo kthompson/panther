@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Panther.CodeAnalysis;
+using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther
 {
@@ -33,6 +35,9 @@ namespace Panther
                 }
 
                 var syntaxTree = SyntaxTree.Parse(line);
+                var binder = new Binder();
+                var boundExpression = binder.BindExpression(syntaxTree.Root);
+                var diags = syntaxTree.Diagnostics.Concat(binder.Diagnostics).ToArray();
 
                 if (showTree)
                 {
@@ -40,7 +45,6 @@ namespace Panther
                     PrettyPrint(syntaxTree.Root);
                 }
 
-                var diags = syntaxTree.Diagnostics;
                 if (diags.Any())
                 {
                     Console.ForegroundColor = ConsoleColor.DarkRed;
@@ -54,7 +58,7 @@ namespace Panther
                 {
                     Console.ForegroundColor = color;
 
-                    var eval = new Evaluator(syntaxTree.Root);
+                    var eval = new Evaluator(boundExpression);
                     var result = eval.Evaluate();
                     Console.WriteLine(result);
                 }
