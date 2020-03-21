@@ -4,13 +4,13 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundUnaryExpression : BoundExpression
     {
-        public BoundUnaryExpression(BoundUnaryOperatorKind operatorKind, BoundExpression operand)
+        public BoundUnaryExpression(BoundUnaryOperator @operator, BoundExpression operand)
         {
-            OperatorKind = operatorKind;
+            Operator = @operator;
             Operand = operand;
         }
 
-        public BoundUnaryOperatorKind OperatorKind { get; }
+        public BoundUnaryOperator Operator { get; }
 
         public BoundExpression Operand { get; }
 

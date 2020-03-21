@@ -4,16 +4,16 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundBinaryExpression : BoundExpression
     {
-        public BoundBinaryExpression(BoundExpression left, BoundBinaryOperatorKind operatorKind, BoundExpression right)
+        public BoundBinaryExpression(BoundExpression left, BoundBinaryOperator @operator, BoundExpression right)
         {
-            OperatorKind = operatorKind;
+            Operator = @operator;
             Left = left;
             Right = right;
         }
 
         public BoundExpression Left { get; }
 
-        public BoundBinaryOperatorKind OperatorKind { get; }
+        public BoundBinaryOperator Operator { get; }
 
         public BoundExpression Right { get; }
 

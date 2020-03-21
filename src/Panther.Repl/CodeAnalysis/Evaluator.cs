@@ -31,7 +31,7 @@ namespace Panther.CodeAnalysis
                 var left = EvaluateExpression(binaryExpression.Left);
                 var right = EvaluateExpression(binaryExpression.Right);
 
-                switch (binaryExpression.OperatorKind)
+                switch (binaryExpression.Operator.Kind)
                 {
                     case BoundBinaryOperatorKind.Addition:
                         return (int)left + (int)right;
@@ -52,14 +52,14 @@ namespace Panther.CodeAnalysis
                         return (bool)left || (bool)right;
 
                     default:
-                        throw new Exception($"Unexpected binary operator {binaryExpression.OperatorKind}");
+                        throw new Exception($"Unexpected binary operator {binaryExpression.Operator}");
                 }
             }
 
             if (node is BoundUnaryExpression unary)
             {
                 var operand = EvaluateExpression(unary.Operand);
-                switch (unary.OperatorKind)
+                switch (unary.Operator.Kind)
                 {
                     case BoundUnaryOperatorKind.Negation:
                         return -(int)operand;
@@ -71,7 +71,7 @@ namespace Panther.CodeAnalysis
                         return !(bool)operand;
 
                     default:
-                        throw new Exception($"Unexpected unary operator {unary.OperatorKind}");
+                        throw new Exception($"Unexpected unary operator {unary.Operator}");
                 }
             }
 
