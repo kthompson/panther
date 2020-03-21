@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
 using Panther.CodeAnalysis.Binding;
-using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis
 {

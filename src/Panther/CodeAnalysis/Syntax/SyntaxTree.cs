@@ -5,11 +5,11 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public class SyntaxTree
     {
-        public IReadOnlyList<string> Diagnostics { get; }
+        public IReadOnlyList<Diagnostic> Diagnostics { get; }
         public ExpressionSyntax Root { get; }
         public SyntaxToken EndOfInputToken { get; }
 
-        public SyntaxTree(IEnumerable<string> diagnostics, ExpressionSyntax root, SyntaxToken endOfInputToken)
+        public SyntaxTree(IEnumerable<Diagnostic> diagnostics, ExpressionSyntax root, SyntaxToken endOfInputToken)
         {
             Diagnostics = diagnostics.ToArray();
             Root = root;

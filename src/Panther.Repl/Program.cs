@@ -35,9 +35,9 @@ namespace Panther
                 }
 
                 var syntaxTree = SyntaxTree.Parse(line);
-                var binder = new Binder();
-                var boundExpression = binder.BindExpression(syntaxTree.Root);
-                var diags = syntaxTree.Diagnostics.Concat(binder.Diagnostics).ToArray();
+                var compilation = new Compilation(syntaxTree);
+                var result = compilation.Evaluate();
+                var diags = result.Diagnostics;
 
                 if (showTree)
                 {
@@ -47,20 +47,31 @@ namespace Panther
 
                 if (diags.Any())
                 {
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-
                     foreach (var diag in diags)
                     {
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.WriteLine(diag);
+                        Console.ResetColor();
+
+                        var prefix = line.Substring(0, diag.Span.Start);
+                        var error = line.Substring(diag.Span.Start, diag.Span.Length);
+                        var suffix = line.Substring(diag.Span.End);
+
+                        Console.Write("    ");
+                        Console.Write(prefix);
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.Write(error);
+                        Console.ResetColor();
+                        Console.Write(suffix);
+                        Console.WriteLine();
                     }
                 }
                 else
                 {
                     Console.ForegroundColor = color;
 
-                    var eval = new Evaluator(boundExpression);
-                    var result = eval.Evaluate();
-                    Console.WriteLine(result);
+                    Console.WriteLine(result.Value);
                 }
             }
         }

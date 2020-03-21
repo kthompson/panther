@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Syntax
     {
         private readonly Lexer _lexer;
         private SyntaxToken _currentToken;
-        private readonly List<string> _diagnostics = new List<string>();
+        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
 
         public Parser(string text)
             : this(new Lexer(text))
@@ -47,7 +47,7 @@ namespace Panther.CodeAnalysis.Syntax
             if (_currentToken.Kind == kind)
                 return Accept();
 
-            _diagnostics.Add($"Error: Unexpected token {_currentToken.Kind}, expected {kind}");
+            _diagnostics.ReportUnexpectedToken(_currentToken.Span, _currentToken.Kind, kind);
 
             return new SyntaxToken(kind, _currentToken.Position, Span<char>.Empty, null);
         }

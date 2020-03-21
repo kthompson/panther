@@ -6,7 +6,7 @@ namespace Panther.CodeAnalysis.Syntax
     internal class Lexer
     {
         private readonly char[] _text;
-        private readonly List<string> _diagnostics = new List<string>();
+        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
         private int _position;
 
         public Lexer(string text)
@@ -14,7 +14,7 @@ namespace Panther.CodeAnalysis.Syntax
             _text = text.ToCharArray();
         }
 
-        public IEnumerable<string> Diagnostics => _diagnostics;
+        public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
         private char Current => Peek(_position);
         private char Lookahead => Peek(_position + 1);
@@ -42,7 +42,8 @@ namespace Panther.CodeAnalysis.Syntax
 
                 var span = _text[start.._position];
                 if (!int.TryParse(span, out var value))
-                    _diagnostics.Add($"The number {span.AsSpan().ToString()} cannot be represented by an Int32");
+                    _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
+                        typeof(int));
 
                 return new SyntaxToken(SyntaxKind.NumberToken, start, span, value);
             }
@@ -104,7 +105,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                 case '&' when Lookahead == '&':
                     return ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken);
-                
+
                 case '|' when Lookahead == '|':
                     return ReturnKindTwoChar(SyntaxKind.PipePipeToken);
 
@@ -112,7 +113,7 @@ namespace Panther.CodeAnalysis.Syntax
                     return ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken);
 
                 default:
-                    _diagnostics.Add($"Error: Invalid character in input: {Current}");
+                    _diagnostics.ReportBadCharacter(_position, Current);
                     return ReturnKindOneChar(SyntaxKind.InvalidToken);
             }
         }

@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3A9F57E8-52F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.Repl", "src\Panther.Repl\Panther.Repl.csproj", "{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther", "src\Panther\Panther.csproj", "{7122216E-DCED-4E69-87A6-7AD3388E6552}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,12 +27,17 @@ Global
 		{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF} = {3A9F57E8-52F8-4A65-93B7-910383111244}
+		{7122216E-DCED-4E69-87A6-7AD3388E6552} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685AA9B0-62DB-4F96-984D-2922750366A4}
