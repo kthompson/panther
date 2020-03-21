@@ -24,6 +24,8 @@
         BangToken,
         AmpersandAmpersandToken,
         PipePipeToken,
+        BangEqualsToken,
+        EqualsEqualsToken,
 
         // grouping tokens
         CloseParenToken,

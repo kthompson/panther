@@ -15,6 +15,6 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression Operand { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
-        public override Type Type => Operand.Type;
+        public override Type Type => Operator.Type;
     }
 }

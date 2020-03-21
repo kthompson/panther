@@ -98,13 +98,18 @@ namespace Panther.CodeAnalysis.Syntax
                     return ReturnKindOneChar(SyntaxKind.CloseParenToken);
 
                 case '!':
-                    return ReturnKindOneChar(SyntaxKind.BangToken);
+                    return Lookahead == '='
+                        ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)
+                        : ReturnKindOneChar(SyntaxKind.BangToken);
 
                 case '&' when Lookahead == '&':
                     return ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken);
-
+                
                 case '|' when Lookahead == '|':
                     return ReturnKindTwoChar(SyntaxKind.PipePipeToken);
+
+                case '=' when Lookahead == '=':
+                    return ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken);
 
                 default:
                     _diagnostics.Add($"Error: Invalid character in input: {Current}");
