@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Syntax;
 
@@ -13,11 +14,11 @@ namespace Panther.CodeAnalysis
             Syntax = syntax;
         }
 
-        public EvaluationResult Evaluate()
+        public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
         {
-            var binder = new Binder();
+            var binder = new Binder(variables);
             var boundExpression = binder.BindExpression(Syntax.Root);
-            var evaluator = new Evaluator(boundExpression);
+            var evaluator = new Evaluator(boundExpression, variables);
             var value = evaluator.Evaluate();
 
             var diagnostics = Syntax.Diagnostics.Concat(binder.Diagnostics).ToArray();

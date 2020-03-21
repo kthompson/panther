@@ -109,8 +109,10 @@ namespace Panther.CodeAnalysis.Syntax
                 case '|' when Lookahead == '|':
                     return ReturnKindTwoChar(SyntaxKind.PipePipeToken);
 
-                case '=' when Lookahead == '=':
-                    return ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken);
+                case '=':
+                    return Lookahead == '='
+                        ? ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken)
+                        : ReturnKindOneChar(SyntaxKind.EqualsToken);
 
                 default:
                     _diagnostics.ReportBadCharacter(_position, Current);

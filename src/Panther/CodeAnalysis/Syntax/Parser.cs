@@ -111,6 +111,20 @@ namespace Panther.CodeAnalysis.Syntax
 
                     return new LiteralExpressionSyntax(Accept(), value);
 
+                case SyntaxKind.IdentifierToken:
+                    var token = Accept();
+
+                    return new NameExpressionSyntax(token);
+
+                case SyntaxKind.ValKeyword:
+                    {
+                        var valToken = Accept();
+                        var identToken = Accept(SyntaxKind.IdentifierToken);
+                        var equalsToken = Accept(SyntaxKind.EqualsToken);
+                        var expr = ParseExpression();
+
+                        return new AssignmentExpressionSyntax(valToken, identToken, equalsToken, expr);
+                    }
                 default:
                     var numberToken = Accept(SyntaxKind.NumberToken);
                     return new LiteralExpressionSyntax(numberToken);

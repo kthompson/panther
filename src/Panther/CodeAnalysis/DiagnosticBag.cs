@@ -33,5 +33,10 @@ namespace Panther.CodeAnalysis
 
         public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, Type leftType, Type rightType) =>
             Report(span, $"Binary operator '{operatorText}' is not defined for types {leftType} and {rightType}");
+
+        public void ReportUndefinedName(TextSpan span, string name)
+        {
+            Report(span, $"Variable '{name}' does not exist");
+        }
     }
 }

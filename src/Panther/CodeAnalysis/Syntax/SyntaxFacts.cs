@@ -55,6 +55,9 @@ namespace Panther.CodeAnalysis.Syntax
                 case "false":
                     return SyntaxKind.FalseKeyword;
 
+                case "val":
+                    return SyntaxKind.ValKeyword;
+
                 default:
                     return SyntaxKind.IdentifierToken;
             }

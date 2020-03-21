@@ -14,6 +14,7 @@
         TrueKeyword,
 
         FalseKeyword,
+        ValKeyword,
 
         // Operators
         PlusToken,
@@ -25,6 +26,7 @@
         AmpersandAmpersandToken,
         PipePipeToken,
         BangEqualsToken,
+        EqualsToken,
         EqualsEqualsToken,
 
         // grouping tokens
@@ -37,6 +39,8 @@
 
         BinaryExpression,
         GroupExpression,
-        UnaryExpression
+        UnaryExpression,
+        NameExpression,
+        AssignmentExpression
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
@@ -12,6 +13,7 @@ namespace Panther
         {
             var showTree = false;
             var color = Console.ForegroundColor;
+            var variables = new Dictionary<VariableSymbol, object>();
 
             while (true)
             {
@@ -36,7 +38,7 @@ namespace Panther
 
                 var syntaxTree = SyntaxTree.Parse(line);
                 var compilation = new Compilation(syntaxTree);
-                var result = compilation.Evaluate();
+                var result = compilation.Evaluate(variables);
                 var diags = result.Diagnostics;
 
                 if (showTree)
