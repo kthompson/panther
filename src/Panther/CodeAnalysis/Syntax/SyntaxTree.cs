@@ -22,5 +22,18 @@ namespace Panther.CodeAnalysis.Syntax
             var parser = new Parser(lexer);
             return parser.Parse();
         }
+
+        public static IEnumerable<SyntaxToken> ParseTokens(string source)
+        {
+            var lexer = new Lexer(source);
+            while (true)
+            {
+                var token = lexer.NextToken();
+                if (token.Kind == SyntaxKind.EndOfInputToken)
+                    break;
+
+                yield return token;
+            }
+        }
     }
 }
