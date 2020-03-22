@@ -15,7 +15,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3A9F57E8-52F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.Repl", "src\Panther.Repl\Panther.Repl.csproj", "{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther", "src\Panther\Panther.csproj", "{7122216E-DCED-4E69-87A6-7AD3388E6552}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther", "src\Panther\Panther.csproj", "{7122216E-DCED-4E69-87A6-7AD3388E6552}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Tests", "tests\Panther.Tests\Panther.Tests.csproj", "{BCA3FE64-88D0-475D-943D-B62D07EA288E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E2DD9A29-36B1-4ABC-9F21-BD9B64B51BBF}"
+	ProjectSection(SolutionItems) = preProject
+		azure-pipelines.yml = azure-pipelines.yml
+		build.cmd = build.cmd
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +39,10 @@ Global
 		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7122216E-DCED-4E69-87A6-7AD3388E6552}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCA3FE64-88D0-475D-943D-B62D07EA288E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCA3FE64-88D0-475D-943D-B62D07EA288E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCA3FE64-88D0-475D-943D-B62D07EA288E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCA3FE64-88D0-475D-943D-B62D07EA288E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -38,6 +50,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 		{7122216E-DCED-4E69-87A6-7AD3388E6552} = {3A9F57E8-52F8-4A65-93B7-910383111244}
+		{BCA3FE64-88D0-475D-943D-B62D07EA288E} = {DE9991AB-E783-4C47-B224-BFE5493F2A9B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685AA9B0-62DB-4F96-984D-2922750366A4}
