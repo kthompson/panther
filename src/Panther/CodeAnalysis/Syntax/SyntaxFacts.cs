@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    internal static class SyntaxFacts
+    public static class SyntaxFacts
     {
         public static int GetUnaryOperatorPrecedence(this SyntaxKind kind)
         {
@@ -55,5 +57,34 @@ namespace Panther.CodeAnalysis.Syntax
                 _ => SyntaxKind.IdentifierToken
             };
         }
+
+        public static string GetText(SyntaxKind kind) =>
+            kind switch
+            {
+                SyntaxKind.TrueKeyword => "true",
+                SyntaxKind.FalseKeyword => "false",
+                SyntaxKind.ValKeyword => "val",
+                SyntaxKind.PlusToken => "+",
+                SyntaxKind.MinusToken => "-",
+                SyntaxKind.SlashToken => "/",
+                SyntaxKind.StarToken => "*",
+                SyntaxKind.BangToken => "!",
+                SyntaxKind.AmpersandAmpersandToken => "&&",
+                SyntaxKind.PipePipeToken => "||",
+                SyntaxKind.BangEqualsToken => "!=",
+                SyntaxKind.EqualsToken => "=",
+                SyntaxKind.EqualsEqualsToken => "==",
+                SyntaxKind.CloseParenToken => ")",
+                SyntaxKind.OpenParenToken => "(",
+                _ => null
+            };
+
+        public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() =>
+            Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
+                .Where(kind => GetUnaryOperatorPrecedence(kind) > 0);
+
+        public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
+            Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
+                .Where(kind => GetBinaryOperatorPrecedence(kind) > 0);
     }
 }
