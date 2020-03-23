@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis
 {

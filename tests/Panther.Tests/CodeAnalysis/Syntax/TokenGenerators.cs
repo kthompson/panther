@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using FsCheck;
 using Panther.CodeAnalysis.Syntax;
@@ -25,26 +26,17 @@ namespace Panther.Tests.CodeAnalysis.Syntax
 
         public static Arbitrary<NonSeparatorTokenTestData> NonSeparatorTokenTestData() =>
             Gen.Elements(
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "a"),
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc"),
-                new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
-                new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
-                new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
-                new NonSeparatorTokenTestData(SyntaxKind.TrueKeyword, "true"),
-                new NonSeparatorTokenTestData(SyntaxKind.FalseKeyword, "false"),
-                new NonSeparatorTokenTestData(SyntaxKind.ValKeyword, "val"),
-                new NonSeparatorTokenTestData(SyntaxKind.PlusToken, "+"),
-                new NonSeparatorTokenTestData(SyntaxKind.MinusToken, "-"),
-                new NonSeparatorTokenTestData(SyntaxKind.SlashToken, "/"),
-                new NonSeparatorTokenTestData(SyntaxKind.StarToken, "*"),
-                new NonSeparatorTokenTestData(SyntaxKind.BangToken, "!"),
-                new NonSeparatorTokenTestData(SyntaxKind.AmpersandAmpersandToken, "&&"),
-                new NonSeparatorTokenTestData(SyntaxKind.PipePipeToken, "||"),
-                new NonSeparatorTokenTestData(SyntaxKind.BangEqualsToken, "!="),
-                new NonSeparatorTokenTestData(SyntaxKind.EqualsToken, "="),
-                new NonSeparatorTokenTestData(SyntaxKind.EqualsEqualsToken, "=="),
-                new NonSeparatorTokenTestData(SyntaxKind.CloseParenToken, ")"),
-                new NonSeparatorTokenTestData(SyntaxKind.OpenParenToken, "(")
+                new[]
+                {
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "a"),
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
+                }.Concat(
+                    Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
+                        .Select(k => new NonSeparatorTokenTestData(k, SyntaxFacts.GetText(k)))
+                        .Where(td => td.Text != null))
             ).ToArbitrary();
 
         public static Arbitrary<TokenPairTestData> TokenPairTestData()

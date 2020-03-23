@@ -18,10 +18,5 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken LiteralToken { get; }
         public object Value { get; }
         public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
-
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return LiteralToken;
-        }
     }
 }

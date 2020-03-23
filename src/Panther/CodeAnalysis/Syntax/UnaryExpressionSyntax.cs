@@ -13,11 +13,5 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken OperatorToken { get; }
         public ExpressionSyntax Operand { get; }
         public override SyntaxKind Kind => SyntaxKind.UnaryExpression;
-
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return OperatorToken;
-            yield return Operand;
-        }
     }
 }

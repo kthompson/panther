@@ -17,13 +17,5 @@ namespace Panther.CodeAnalysis.Syntax
             EqualsToken = equalsToken;
             Expression = expression;
         }
-
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return ValToken;
-            yield return IdentifierToken;
-            yield return EqualsToken;
-            yield return Expression;
-        }
     }
 }

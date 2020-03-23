@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
@@ -15,9 +16,6 @@ namespace Panther.CodeAnalysis.Syntax
         }
 
         public override SyntaxKind Kind { get; }
-
-        public override IEnumerable<SyntaxNode> GetChildren() => Enumerable.Empty<SyntaxNode>();
-
         public int Position { get; }
         public string Text { get; }
         public object Value { get; }

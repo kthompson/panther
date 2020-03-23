@@ -11,10 +11,5 @@ namespace Panther.CodeAnalysis.Syntax
         {
             IdentifierToken = identifierToken;
         }
-
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return IdentifierToken;
-        }
     }
 }

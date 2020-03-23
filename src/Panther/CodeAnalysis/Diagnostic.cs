@@ -1,4 +1,6 @@
-﻿namespace Panther.CodeAnalysis
+﻿using Panther.CodeAnalysis.Text;
+
+namespace Panther.CodeAnalysis
 {
     public sealed class Diagnostic
     {

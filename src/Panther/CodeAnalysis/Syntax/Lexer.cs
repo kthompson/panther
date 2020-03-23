@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
@@ -7,6 +8,7 @@ namespace Panther.CodeAnalysis.Syntax
     {
         private readonly char[] _text;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
+
         private int _position;
 
         public Lexer(string text)
@@ -26,21 +28,27 @@ namespace Panther.CodeAnalysis.Syntax
             _position++;
         }
 
+        private bool IfWhile(Func<char, bool> predicate)
+        {
+            if (!predicate(Current))
+                return false;
+
+            while (predicate(Current))
+            {
+                Next();
+            }
+
+            return true;
+        }
+
         public SyntaxToken NextToken()
         {
-            if (_position >= _text.Length)
-                return new SyntaxToken(SyntaxKind.EndOfInputToken, _position, Span<char>.Empty, null);
+            var start = _position;
 
-            if (char.IsDigit(Current))
+            if (IfWhile(char.IsDigit))
             {
-                var start = _position;
-
-                while (char.IsDigit(Current))
-                {
-                    Next();
-                }
-
                 var span = _text[start.._position];
+
                 if (!int.TryParse(span, out var value))
                     _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
                         typeof(int));
@@ -48,29 +56,15 @@ namespace Panther.CodeAnalysis.Syntax
                 return new SyntaxToken(SyntaxKind.NumberToken, start, span, value);
             }
 
-            if (char.IsWhiteSpace(Current))
+            if (IfWhile(char.IsWhiteSpace))
             {
-                var start = _position;
-
-                while (char.IsWhiteSpace(Current))
-                {
-                    Next();
-                }
-
                 var span = _text[start.._position];
 
                 return new SyntaxToken(SyntaxKind.WhitespaceToken, start, span, null);
             }
 
-            if (char.IsLetter(Current))
+            if (IfWhile(char.IsLetter))
             {
-                var start = _position;
-
-                while (char.IsLetter(Current))
-                {
-                    Next();
-                }
-
                 var span = _text[start.._position];
 
                 var kind = SyntaxFacts.GetKeywordKind(span);
@@ -80,6 +74,9 @@ namespace Panther.CodeAnalysis.Syntax
 
             switch (Current)
             {
+                case '\0':
+                    return new SyntaxToken(SyntaxKind.EndOfInputToken, _position, Span<char>.Empty, null);
+
                 case '+':
                     return ReturnKindOneChar(SyntaxKind.PlusToken);
 
