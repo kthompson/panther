@@ -7,11 +7,11 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public class SyntaxToken : SyntaxNode
     {
-        public SyntaxToken(SyntaxKind kind, int position, Span<char> text, object value)
+        public SyntaxToken(SyntaxKind kind, int position, string text, object value)
         {
             Kind = kind;
             Position = position;
-            Text = text.ToString();
+            Text = text;
             Value = value;
         }
 
@@ -19,6 +19,6 @@ namespace Panther.CodeAnalysis.Syntax
         public int Position { get; }
         public string Text { get; }
         public object Value { get; }
-        public TextSpan Span => new TextSpan(Position, Text.Length);
+        public TextSpan Span => new TextSpan(Position, Text?.Length ?? 0);
     }
 }

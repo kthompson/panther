@@ -51,8 +51,12 @@ namespace Panther
                 {
                     foreach (var diag in diags)
                     {
+                        var lineIndex = syntaxTree.Text.GetLineIndex(diag.Span.Start);
+                        var lineNumber = lineIndex + 1;
+                        var character = diag.Span.Start - syntaxTree.Text.Lines[lineIndex].Start + 1;
                         Console.WriteLine();
                         Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.Write($"({lineNumber}, {character}) ");
                         Console.WriteLine(diag);
                         Console.ResetColor();
 

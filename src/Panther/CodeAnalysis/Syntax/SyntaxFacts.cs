@@ -47,9 +47,9 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        public static SyntaxKind GetKeywordKind(Span<char> span)
+        public static SyntaxKind GetKeywordKind(string span)
         {
-            return span.ToString() switch
+            return span switch
             {
                 "true" => SyntaxKind.TrueKeyword,
                 "false" => SyntaxKind.FalseKeyword,

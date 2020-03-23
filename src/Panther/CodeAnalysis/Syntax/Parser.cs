@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
@@ -10,7 +11,7 @@ namespace Panther.CodeAnalysis.Syntax
         private SyntaxToken _currentToken;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
 
-        public Parser(string text)
+        public Parser(SourceText text)
             : this(new Lexer(text))
         {
         }
@@ -49,7 +50,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             _diagnostics.ReportUnexpectedToken(_currentToken.Span, _currentToken.Kind, kind);
 
-            return new SyntaxToken(kind, _currentToken.Position, Span<char>.Empty, null);
+            return new SyntaxToken(kind, _currentToken.Position, string.Empty, null);
         }
 
         public SyntaxTree Parse()
@@ -58,7 +59,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new SyntaxTree(_lexer.Diagnostics.Concat(_diagnostics), expression, endToken);
+            return new SyntaxTree(_lexer.Text, _lexer.Diagnostics.Concat(_diagnostics), expression, endToken);
         }
 
         private ExpressionSyntax ParseExpression(int parentPrecedence = 0)

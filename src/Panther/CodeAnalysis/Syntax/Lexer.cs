@@ -6,22 +6,22 @@ namespace Panther.CodeAnalysis.Syntax
 {
     internal class Lexer
     {
-        private readonly char[] _text;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
-
         private int _position;
 
-        public Lexer(string text)
+        public Lexer(SourceText text)
         {
-            _text = text.ToCharArray();
+            Text = text;
         }
+
+        public SourceText Text { get; }
 
         public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
         private char Current => Peek(_position);
         private char Lookahead => Peek(_position + 1);
 
-        private char Peek(int position) => position >= _text.Length ? '\0' : _text[position];
+        private char Peek(int position) => position >= Text.Length ? '\0' : Text[position];
 
         private void Next()
         {
@@ -47,7 +47,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             if (IfWhile(char.IsDigit))
             {
-                var span = _text[start.._position];
+                var span = Text[start.._position];
 
                 if (!int.TryParse(span, out var value))
                     _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
@@ -58,14 +58,14 @@ namespace Panther.CodeAnalysis.Syntax
 
             if (IfWhile(char.IsWhiteSpace))
             {
-                var span = _text[start.._position];
+                var span = Text[start.._position];
 
                 return new SyntaxToken(SyntaxKind.WhitespaceToken, start, span, null);
             }
 
             if (IfWhile(char.IsLetter))
             {
-                var span = _text[start.._position];
+                var span = Text[start.._position];
 
                 var kind = SyntaxFacts.GetKeywordKind(span);
 
@@ -75,7 +75,7 @@ namespace Panther.CodeAnalysis.Syntax
             switch (Current)
             {
                 case '\0':
-                    return new SyntaxToken(SyntaxKind.EndOfInputToken, _position, Span<char>.Empty, null);
+                    return new SyntaxToken(SyntaxKind.EndOfInputToken, _position, string.Empty, null);
 
                 case '+':
                     return ReturnKindOneChar(SyntaxKind.PlusToken);
@@ -119,14 +119,14 @@ namespace Panther.CodeAnalysis.Syntax
 
         private SyntaxToken ReturnKindTwoChar(SyntaxKind kind)
         {
-            var token = new SyntaxToken(kind, _position, _text[_position..(_position + 2)], null);
+            var token = new SyntaxToken(kind, _position, Text[_position..(_position + 2)], null);
             _position += 2;
             return token;
         }
 
         private SyntaxToken ReturnKindOneChar(SyntaxKind kind)
         {
-            var token = new SyntaxToken(kind, _position, _text[_position..(_position + 1)], null);
+            var token = new SyntaxToken(kind, _position, Text[_position..(_position + 1)], null);
             _position++;
             return token;
         }
