@@ -11,6 +11,11 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 .Select(x => new BinaryOperatorSyntaxKind(x))
                 .ToArbitrary();
 
+        public static Arbitrary<UnaryOperatorSyntaxKind> UnaryOperatorSyntaxKind() =>
+            Gen.Elements(SyntaxFacts.GetUnaryOperatorKinds())
+                .Select(x => new UnaryOperatorSyntaxKind(x))
+                .ToArbitrary();
+
         public static Arbitrary<TokenTestData> TokenTestData() => Gen
             .OneOf(
                 Arb.Generate<NonSeparatorTokenTestData>().Select(x => (TokenTestData)x),

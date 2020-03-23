@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using FsCheck.Xunit;
+﻿using FsCheck.Xunit;
 using Panther.CodeAnalysis.Syntax;
+using Xunit;
 
 namespace Panther.Tests.CodeAnalysis.Syntax
 {
@@ -8,7 +8,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
     public class ParserTests
     {
         [Property]
-        public void Parser_BinaryExpressionHonorsPrecedences(BinaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
+        public void BinaryExpressionHonorsPrecedences(BinaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
         {
             var op1Precedence = op1.Kind.GetBinaryOperatorPrecedence();
             var op2Precedence = op2.Kind.GetBinaryOperatorPrecedence();
@@ -68,6 +68,41 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
             }
+        }
+
+        [Property]
+        public void UnaryExpressionHonorsPrecedences(UnaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
+        {
+            var unaryOperatorPrecedence = op1.Kind.GetUnaryOperatorPrecedence();
+            var binaryOperatorPrecedence = op2.Kind.GetBinaryOperatorPrecedence();
+
+            var unaryText = SyntaxFacts.GetText(op1.Kind);
+            var binaryText = SyntaxFacts.GetText(op2.Kind);
+
+            var text = $"{unaryText} a {binaryText} b";
+            var expression = SyntaxTree.Parse(text).Root;
+
+            Assert.True(unaryOperatorPrecedence >= binaryOperatorPrecedence);
+
+            using var e = new AssertingEnumerator(expression);
+
+            // └──BinaryExpression
+            //     ├──UnaryExpression
+            //     │   ├──MinusToken
+            //     │   └──NameExpression
+            //     │       └──IdentifierToken
+            //     ├──PlusToken
+            //     └──NameExpression
+            //         └──IdentifierToken
+
+            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.UnaryExpression);
+            e.AssertToken(op1.Kind, unaryText);
+            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertToken(SyntaxKind.IdentifierToken, "a");
+            e.AssertToken(op2.Kind, binaryText);
+            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertToken(SyntaxKind.IdentifierToken, "b");
         }
     }
 }
