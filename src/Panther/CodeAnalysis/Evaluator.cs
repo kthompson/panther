@@ -45,54 +45,30 @@ namespace Panther.CodeAnalysis
                 var left = EvaluateExpression(binaryExpression.Left);
                 var right = EvaluateExpression(binaryExpression.Right);
 
-                switch (binaryExpression.Operator.Kind)
+                return binaryExpression.Operator.Kind switch
                 {
-                    case BoundBinaryOperatorKind.Addition:
-                        return (int)left + (int)right;
-
-                    case BoundBinaryOperatorKind.Subtraction:
-                        return (int)left - (int)right;
-
-                    case BoundBinaryOperatorKind.Multiplication:
-                        return (int)left * (int)right;
-
-                    case BoundBinaryOperatorKind.Division:
-                        return (int)left / (int)right;
-
-                    case BoundBinaryOperatorKind.LogicalAnd:
-                        return (bool)left && (bool)right;
-
-                    case BoundBinaryOperatorKind.LogicalOr:
-                        return (bool)left || (bool)right;
-
-                    case BoundBinaryOperatorKind.Equal:
-                        return Equals(left, right);
-
-                    case BoundBinaryOperatorKind.NotEqual:
-                        return !Equals(left, right);
-
-                    default:
-                        throw new Exception($"Unexpected binary operator {binaryExpression.Operator}");
-                }
+                    BoundBinaryOperatorKind.Addition => (object)((int)left + (int)right),
+                    BoundBinaryOperatorKind.Subtraction => ((int)left - (int)right),
+                    BoundBinaryOperatorKind.Multiplication => ((int)left * (int)right),
+                    BoundBinaryOperatorKind.Division => ((int)left / (int)right),
+                    BoundBinaryOperatorKind.LogicalAnd => ((bool)left && (bool)right),
+                    BoundBinaryOperatorKind.LogicalOr => ((bool)left || (bool)right),
+                    BoundBinaryOperatorKind.Equal => Equals(left, right),
+                    BoundBinaryOperatorKind.NotEqual => !Equals(left, right),
+                    _ => throw new Exception($"Unexpected binary operator {binaryExpression.Operator}")
+                };
             }
 
             if (node is BoundUnaryExpression unary)
             {
                 var operand = EvaluateExpression(unary.Operand);
-                switch (unary.Operator.Kind)
+                return unary.Operator.Kind switch
                 {
-                    case BoundUnaryOperatorKind.Negation:
-                        return -(int)operand;
-
-                    case BoundUnaryOperatorKind.Identity:
-                        return (int)operand;
-
-                    case BoundUnaryOperatorKind.LogicalNegation:
-                        return !(bool)operand;
-
-                    default:
-                        throw new Exception($"Unexpected unary operator {unary.Operator}");
-                }
+                    BoundUnaryOperatorKind.Negation => (object)-(int)operand,
+                    BoundUnaryOperatorKind.Identity => (int)operand,
+                    BoundUnaryOperatorKind.LogicalNegation => !(bool)operand,
+                    _ => throw new Exception($"Unexpected unary operator {unary.Operator}")
+                };
             }
 
             throw new Exception($"Unexpected expression {node.Kind}");

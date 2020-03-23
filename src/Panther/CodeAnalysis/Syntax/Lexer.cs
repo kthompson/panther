@@ -133,14 +133,5 @@ namespace Panther.CodeAnalysis.Syntax
             _position++;
             return token;
         }
-
-        private int PeekChar()
-        {
-            var sourceIndex = this._position + 1;
-            if (sourceIndex >= this._text.Length)
-                return -1;
-
-            return this._text[sourceIndex];
-        }
     }
 }

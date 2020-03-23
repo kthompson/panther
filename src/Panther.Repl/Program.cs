@@ -9,7 +9,7 @@ namespace Panther
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static void Main()
         {
             var showTree = false;
             var color = Console.ForegroundColor;

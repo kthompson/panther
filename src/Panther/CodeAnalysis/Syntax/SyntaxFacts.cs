@@ -47,20 +47,13 @@ namespace Panther.CodeAnalysis.Syntax
 
         public static SyntaxKind GetKeywordKind(Span<char> span)
         {
-            switch (span.ToString())
+            return span.ToString() switch
             {
-                case "true":
-                    return SyntaxKind.TrueKeyword;
-
-                case "false":
-                    return SyntaxKind.FalseKeyword;
-
-                case "val":
-                    return SyntaxKind.ValKeyword;
-
-                default:
-                    return SyntaxKind.IdentifierToken;
-            }
+                "true" => SyntaxKind.TrueKeyword,
+                "false" => SyntaxKind.FalseKeyword,
+                "val" => SyntaxKind.ValKeyword,
+                _ => SyntaxKind.IdentifierToken
+            };
         }
     }
 }
