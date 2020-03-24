@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther
 {
@@ -14,29 +16,44 @@ namespace Panther
             var showTree = false;
             var color = Console.ForegroundColor;
             var variables = new Dictionary<VariableSymbol, object>();
+            var code = new StringBuilder();
 
             while (true)
             {
                 Console.ForegroundColor = color;
-                Console.Write("> ");
-                var line = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(line))
-                    return;
+                Console.Write(code.Length == 0 ? "> " : "| ");
 
-                if (line == "#showTree")
+                var input = Console.ReadLine();
+                var isBlank = string.IsNullOrWhiteSpace(input);
+
+                if (code.Length == 0)
                 {
-                    showTree = !showTree;
-                    Console.WriteLine(showTree ? "Showing parse tree" : "Not showing parse tree");
+                    if (isBlank)
+                        return;
+
+                    if (input == "#showTree")
+                    {
+                        showTree = !showTree;
+                        Console.WriteLine(showTree ? "Showing parse tree" : "Not showing parse tree");
+                        continue;
+                    }
+
+                    if (input == "#cls")
+                    {
+                        Console.Clear();
+                        continue;
+                    }
+                }
+
+                code.AppendLine(input);
+
+                var syntaxTree = SyntaxTree.Parse(code.ToString());
+
+                if (!isBlank && syntaxTree.Diagnostics.Any())
+                {
                     continue;
                 }
 
-                if (line == "#cls")
-                {
-                    Console.Clear();
-                    continue;
-                }
-
-                var syntaxTree = SyntaxTree.Parse(line);
                 var compilation = new Compilation(syntaxTree);
                 var result = compilation.Evaluate(variables);
                 var diags = result.Diagnostics;
@@ -49,20 +66,26 @@ namespace Panther
 
                 if (diags.Any())
                 {
+                    var text = syntaxTree.Text;
                     foreach (var diag in diags)
                     {
-                        var lineIndex = syntaxTree.Text.GetLineIndex(diag.Span.Start);
+                        var lineIndex = text.GetLineIndex(diag.Span.Start);
                         var lineNumber = lineIndex + 1;
-                        var character = diag.Span.Start - syntaxTree.Text.Lines[lineIndex].Start + 1;
+                        var line = text.Lines[lineIndex];
+                        var character = diag.Span.Start - line.Start + 1;
+
                         Console.WriteLine();
                         Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.Write($"({lineNumber}, {character}) ");
                         Console.WriteLine(diag);
                         Console.ResetColor();
 
-                        var prefix = line.Substring(0, diag.Span.Start);
-                        var error = line.Substring(diag.Span.Start, diag.Span.Length);
-                        var suffix = line.Substring(diag.Span.End);
+                        var prefixSpan = TextSpan.FromBounds(line.Start, diag.Span.Start);
+                        var suffixSpan = TextSpan.FromBounds(diag.Span.End, line.End);
+
+                        var prefix = text.ToString(prefixSpan);
+                        var error = text.ToString(diag.Span);
+                        var suffix = text.ToString(suffixSpan);
 
                         Console.Write("    ");
                         Console.Write(prefix);
@@ -79,6 +102,8 @@ namespace Panther
 
                     Console.WriteLine(result.Value);
                 }
+
+                code.Clear();
             }
         }
     }
