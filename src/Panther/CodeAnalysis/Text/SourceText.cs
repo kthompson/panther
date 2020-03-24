@@ -64,11 +64,11 @@ namespace Panther.CodeAnalysis.Text
                     AddLine(list, sourceText, position, lineStart, lineBreakWidth);
 
                     position += lineBreakWidth;
-                    lineBreakWidth = position;
+                    lineStart = position;
                 }
             }
 
-            if (position > lineStart)
+            if (position >= lineStart)
             {
                 AddLine(list, sourceText, position, lineStart, 0);
             }
