@@ -43,5 +43,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportUndefinedName(TextSpan span, string name) =>
             Report(span, $"Variable '{name}' does not exist");
+
+        public void ReportVariableAlreadyDefined(TextSpan span, string name) =>
+            Report(span, $"Variable '{name}' is already defined");
     }
 }

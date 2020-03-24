@@ -14,9 +14,9 @@ namespace Panther
         private static void Main()
         {
             var showTree = false;
-            var color = Console.ForegroundColor;
             var variables = new Dictionary<VariableSymbol, object>();
             var code = new StringBuilder();
+            Compilation previous = null;
 
             while (true)
             {
@@ -44,6 +44,12 @@ namespace Panther
                         Console.Clear();
                         continue;
                     }
+
+                    if (input == "#reload")
+                    {
+                        previous = null;
+                        continue;
+                    }
                 }
 
                 code.AppendLine(input);
@@ -55,7 +61,7 @@ namespace Panther
                     continue;
                 }
 
-                var compilation = new Compilation(syntaxTree);
+                var compilation = previous == null ? new Compilation(syntaxTree) : previous.ContinueWith(syntaxTree);
                 var result = compilation.Evaluate(variables);
                 var diags = result.Diagnostics;
 
@@ -99,6 +105,8 @@ namespace Panther
                 }
                 else
                 {
+                    previous = compilation;
+
                     Console.ForegroundColor = ConsoleColor.Magenta;
 
                     Console.WriteLine(result.Value);
