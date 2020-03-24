@@ -11,6 +11,8 @@ namespace Panther.CodeAnalysis.Syntax
         private SyntaxToken _currentToken;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
 
+        public DiagnosticBag Diagnostics => new DiagnosticBag().AddRange(_lexer.Diagnostics).AddRange(_diagnostics);
+
         public Parser(SourceText text)
             : this(new Lexer(text))
         {
@@ -53,13 +55,13 @@ namespace Panther.CodeAnalysis.Syntax
             return new SyntaxToken(kind, _currentToken.Position, string.Empty, null);
         }
 
-        public SyntaxTree Parse()
+        public CompilationUnitSyntax ParseCompilationUnit()
         {
             var expression = ParseExpression();
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new SyntaxTree(_lexer.Text, _lexer.Diagnostics.Concat(_diagnostics), expression, endToken);
+            return new CompilationUnitSyntax(expression, endToken);
         }
 
         private ExpressionSyntax ParseExpression(int parentPrecedence = 0)

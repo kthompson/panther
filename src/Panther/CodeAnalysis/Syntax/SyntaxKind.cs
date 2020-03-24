@@ -41,6 +41,9 @@
         GroupExpression,
         UnaryExpression,
         NameExpression,
-        AssignmentExpression
+        AssignmentExpression,
+
+        //  Other
+        CompilationUnit
     }
 }

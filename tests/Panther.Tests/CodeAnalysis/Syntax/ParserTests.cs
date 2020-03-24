@@ -17,7 +17,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var op2Text = SyntaxFacts.GetText(op2.Kind);
 
             var text = $"a {op1Text} b {op2Text} c";
-            var expression = SyntaxTree.Parse(text).Root;
+            var expression = SyntaxTree.Parse(text).Root.Expression;
 
             if (op1Precedence >= op2Precedence)
             {
@@ -80,7 +80,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var binaryText = SyntaxFacts.GetText(op2.Kind);
 
             var text = $"{unaryText} a {binaryText} b";
-            var expression = SyntaxTree.Parse(text).Root;
+            var expression = SyntaxTree.Parse(text).Root.Expression;
 
             Assert.True(unaryOperatorPrecedence >= binaryOperatorPrecedence);
 

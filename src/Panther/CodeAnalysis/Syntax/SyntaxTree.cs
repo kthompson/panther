@@ -8,25 +8,20 @@ namespace Panther.CodeAnalysis.Syntax
     {
         public IReadOnlyList<Diagnostic> Diagnostics { get; }
         public SourceText Text { get; }
-        public ExpressionSyntax Root { get; }
-        public SyntaxToken EndOfInputToken { get; }
+        public CompilationUnitSyntax Root { get; }
 
-        public SyntaxTree(SourceText text, IEnumerable<Diagnostic> diagnostics, ExpressionSyntax root, SyntaxToken endOfInputToken)
+        private SyntaxTree(SourceText text)
         {
-            Diagnostics = diagnostics.ToArray();
+            var parser = new Parser(text);
+
+            Root = parser.ParseCompilationUnit();
+            Diagnostics = parser.Diagnostics.ToArray();
             Text = text;
-            Root = root;
-            EndOfInputToken = endOfInputToken;
         }
 
         public static SyntaxTree Parse(string source) => Parse(SourceText.From(source));
 
-        public static SyntaxTree Parse(SourceText source)
-        {
-            var lexer = new Lexer(source);
-            var parser = new Parser(lexer);
-            return parser.Parse();
-        }
+        public static SyntaxTree Parse(SourceText source) => new SyntaxTree(source);
 
         public static IEnumerable<SyntaxToken> ParseTokens(string source) => ParseTokens(SourceText.From(source));
 

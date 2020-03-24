@@ -17,7 +17,7 @@ namespace Panther.CodeAnalysis
         public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
         {
             var binder = new Binder(variables);
-            var boundExpression = binder.BindExpression(Syntax.Root);
+            var boundExpression = binder.BindExpression(Syntax.Root.Expression);
             var evaluator = new Evaluator(boundExpression, variables);
             var value = evaluator.Evaluate();
 

@@ -16,6 +16,12 @@ namespace Panther.CodeAnalysis
             _diagnostics.Add(diagnostic);
         }
 
+        public DiagnosticBag AddRange(IEnumerable<Diagnostic> diagnostics)
+        {
+            this._diagnostics.AddRange(diagnostics);
+            return this;
+        }
+
         public IEnumerator<Diagnostic> GetEnumerator() => _diagnostics.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -35,9 +41,7 @@ namespace Panther.CodeAnalysis
         public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, Type leftType, Type rightType) =>
             Report(span, $"Binary operator '{operatorText}' is not defined for types {leftType} and {rightType}");
 
-        public void ReportUndefinedName(TextSpan span, string name)
-        {
+        public void ReportUndefinedName(TextSpan span, string name) =>
             Report(span, $"Variable '{name}' does not exist");
-        }
     }
 }
