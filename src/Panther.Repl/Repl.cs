@@ -9,7 +9,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther
 {
-    internal class Program
+    internal class Repl
     {
         private static void Main()
         {
@@ -20,8 +20,9 @@ namespace Panther
 
             while (true)
             {
-                Console.ForegroundColor = color;
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.Write(code.Length == 0 ? "> " : "| ");
+                Console.ResetColor();
 
                 var input = Console.ReadLine();
                 var isBlank = string.IsNullOrWhiteSpace(input);
@@ -98,7 +99,7 @@ namespace Panther
                 }
                 else
                 {
-                    Console.ForegroundColor = color;
+                    Console.ForegroundColor = ConsoleColor.Magenta;
 
                     Console.WriteLine(result.Value);
                 }
