@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Panther.CodeAnalysis.Binding;
@@ -42,7 +43,7 @@ namespace Panther.CodeAnalysis
         public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
         {
             var globalScope = GlobalScope;
-            var diagnostics = SyntaxTree.Diagnostics.Concat(globalScope.Diagnostics).ToArray();
+            var diagnostics = SyntaxTree.Diagnostics.Concat(globalScope.Diagnostics).ToImmutableArray();
 
             if (diagnostics.Any())
             {
@@ -52,7 +53,7 @@ namespace Panther.CodeAnalysis
             var evaluator = new Evaluator(globalScope.Statement, variables);
             var value = evaluator.Evaluate();
 
-            return new EvaluationResult(Enumerable.Empty<Diagnostic>(), value);
+            return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
         }
     }
 }

@@ -43,6 +43,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertToken(op2.Kind, op2Text);
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
+                e.AssertToken(SyntaxKind.EndOfInputToken, "");
             }
             else
             {
@@ -69,13 +70,13 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertToken(op2.Kind, op2Text);
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
+                e.AssertToken(SyntaxKind.EndOfInputToken, "");
             }
         }
 
         [Property]
         public void UnaryExpressionHonorsPrecedences(UnaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
         {
-            var unaryOperatorPrecedence = op1.Kind.GetUnaryOperatorPrecedence();
             var binaryOperatorPrecedence = op2.Kind.GetBinaryOperatorPrecedence();
 
             var unaryText = SyntaxFacts.GetText(op1.Kind);
@@ -83,8 +84,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
 
             var text = $"{unaryText} a {binaryText} b";
             var expression = SyntaxTree.Parse(text).Root.Statement;
-
-            Assert.True(unaryOperatorPrecedence >= binaryOperatorPrecedence);
 
             using var e = new AssertingEnumerator(expression);
 
@@ -106,6 +105,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(op2.Kind, binaryText);
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "b");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
     }
 }

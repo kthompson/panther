@@ -8,5 +8,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             : base(kind, text)
         {
         }
+
+        public override string ToString() => $"{Kind} - '{Text}'";
     }
 }

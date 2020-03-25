@@ -69,7 +69,10 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         public void Dispose()
         {
             if (!_hasErrors)
-                Assert.False(_enumerator.MoveNext());
+            {
+                var moveNextResult = _enumerator.MoveNext();
+                Assert.False(moveNextResult, $"additional tokens remain: {_enumerator.Current}");
+            }
 
             _enumerator?.Dispose();
         }

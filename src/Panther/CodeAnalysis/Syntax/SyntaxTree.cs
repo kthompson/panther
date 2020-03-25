@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Panther.CodeAnalysis.Text;
 
@@ -6,7 +7,7 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public class SyntaxTree
     {
-        public IReadOnlyList<Diagnostic> Diagnostics { get; }
+        public ImmutableArray<Diagnostic> Diagnostics { get; }
         public SourceText Text { get; }
         public CompilationUnitSyntax Root { get; }
 
@@ -15,7 +16,7 @@ namespace Panther.CodeAnalysis.Syntax
             var parser = new Parser(text);
 
             Root = parser.ParseCompilationUnit();
-            Diagnostics = parser.Diagnostics.ToArray();
+            Diagnostics = parser.Diagnostics.ToImmutableArray();
             Text = text;
         }
 

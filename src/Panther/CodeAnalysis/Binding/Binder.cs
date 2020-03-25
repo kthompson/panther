@@ -131,7 +131,6 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax, BoundScope scope)
         {
-            //var value = syntax.Operand
             var boundOperand = BindExpression(syntax.Operand, scope);
             var boundOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, boundOperand.Type);
 

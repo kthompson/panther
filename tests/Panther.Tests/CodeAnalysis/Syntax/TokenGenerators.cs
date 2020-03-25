@@ -53,10 +53,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         {
             return Gen.Elements(
                 new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, " "),
-                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, "\t"),
-                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, "\n"),
-                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, "\r"),
-                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, "\r\n")
+                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, "\t")
             ).ToArbitrary();
         }
 

@@ -13,7 +13,7 @@ namespace Panther
     {
         private static void Main()
         {
-            var showTree = false;
+            var showTree = true;
             var variables = new Dictionary<VariableSymbol, object>();
             var code = new StringBuilder();
             Compilation previous = null;

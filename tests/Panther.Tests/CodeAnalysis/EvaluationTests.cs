@@ -6,7 +6,7 @@ using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 
-namespace Panther.Tests.CodeAnalysis.Syntax
+namespace Panther.Tests.CodeAnalysis
 {
     public class EvaluationTests
     {
@@ -140,6 +140,104 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out _);
 
             AssertEvaluation($"a", n, dictionary, compilation);
+        }
+
+        [Property]
+        public void ReportUndefinedBinaryOperatorForMixedTypes(int left, bool right)
+        {
+            var text = $@"
+                {{
+                    val x = {left}
+                    val y = {b(right)}
+
+                    x [+] y
+                }}
+            ";
+
+            var diagnostic = @"
+                Binary operator '+' is not defined for types System.Int32 and System.Boolean
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Property]
+        public void ReportUndefinedUnaryOperatorForIntType(int left)
+        {
+            var text = $@"
+                {{
+                    val x = {left}
+
+                    [!]x
+                }}
+            ";
+
+            var diagnostic = @"
+                Unary operator '!' is not defined for type System.Int32
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Property]
+        public void ReportUndefinedUnaryOperatorForBoolType(bool value)
+        {
+            var text = $@"
+                {{
+                    val x = {b(value)}
+
+                    [-]x
+                    [+]x
+                }}
+            ";
+
+            var diagnostic = @"
+                Unary operator '-' is not defined for type System.Boolean
+                Unary operator '+' is not defined for type System.Boolean
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportUndefinedNames()
+        {
+            var text = @"[x] + [y]";
+
+            var diagnostic = @"
+                Variable 'x' does not exist
+                Variable 'y' does not exist
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        private string b(bool value) => value ? "true" : "false";
+
+        private void AssertHasDiagnostics(string text, string diagnosticText)
+        {
+            var annotatedText = AnnotatedText.Parse(text);
+            var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
+            var compilation = new Compilation(syntaxTree);
+            var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+            var diagnostics = AnnotatedText.UnindentLines(diagnosticText);
+
+            Assert.True(annotatedText.Spans.Length == diagnostics.Length, "Test invalid, must have equal number of diagnostics as text spans");
+
+            for (var i = 0; i < diagnostics.Length; i++)
+            {
+                Assert.True(result.Diagnostics.Length > i);
+
+                var expectedMessage = diagnostics[i];
+                var actualMessage = result.Diagnostics[i].Message;
+                Assert.Equal(expectedMessage, actualMessage);
+
+                var expectedSpan = annotatedText.Spans[i];
+                var actualSpan = result.Diagnostics[i].Span;
+                Assert.Equal(expectedSpan, actualSpan);
+            }
+
+            Assert.Equal(diagnostics.Length, result.Diagnostics.Length);
         }
 
         private static void AssertEvaluation(string code, object value,

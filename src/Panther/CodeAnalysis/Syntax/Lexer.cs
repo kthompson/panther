@@ -45,33 +45,6 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var start = _position;
 
-            if (IfWhile(char.IsDigit))
-            {
-                var span = Text[start.._position];
-
-                if (!int.TryParse(span, out var value))
-                    _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
-                        typeof(int));
-
-                return new SyntaxToken(SyntaxKind.NumberToken, start, span, value);
-            }
-
-            if (IfWhile(char.IsWhiteSpace))
-            {
-                var span = Text[start.._position];
-
-                return new SyntaxToken(SyntaxKind.WhitespaceToken, start, span, null);
-            }
-
-            if (IfWhile(char.IsLetter))
-            {
-                var span = Text[start.._position];
-
-                var kind = SyntaxFacts.GetKeywordKind(span);
-
-                return new SyntaxToken(kind, start, span, null);
-            }
-
             switch (Current)
             {
                 case '\0':
@@ -118,6 +91,44 @@ namespace Panther.CodeAnalysis.Syntax
                         : ReturnKindOneChar(SyntaxKind.EqualsToken);
 
                 default:
+
+                    bool IsNonNewLineWhiteSpace(char c1) => c1 != '\n' && c1 != '\r' && char.IsWhiteSpace(c1);
+
+                    bool IsNewLine(char c) => c == '\n' || c == '\r';
+
+                    if (IfWhile(IsNewLine))
+                    {
+                        var span = Text[start.._position];
+
+                        return new SyntaxToken(SyntaxKind.NewLineToken, start, span, null);
+                    }
+                    if (IfWhile(char.IsDigit))
+                    {
+                        var span = Text[start.._position];
+
+                        if (!int.TryParse(span, out var value))
+                            _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
+                                typeof(int));
+
+                        return new SyntaxToken(SyntaxKind.NumberToken, start, span, value);
+                    }
+
+                    if (IfWhile(IsNonNewLineWhiteSpace))
+                    {
+                        var span = Text[start.._position];
+
+                        return new SyntaxToken(SyntaxKind.WhitespaceToken, start, span, null);
+                    }
+
+                    if (IfWhile(char.IsLetter))
+                    {
+                        var span = Text[start.._position];
+
+                        var kind = SyntaxFacts.GetKeywordKind(span);
+
+                        return new SyntaxToken(kind, start, span, null);
+                    }
+
                     _diagnostics.ReportBadCharacter(_position, Current);
                     return ReturnKindOneChar(SyntaxKind.InvalidToken);
             }

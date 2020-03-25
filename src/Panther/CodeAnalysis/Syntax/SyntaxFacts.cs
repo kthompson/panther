@@ -6,44 +6,44 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public static class SyntaxFacts
     {
-        public static int GetUnaryOperatorPrecedence(this SyntaxKind kind)
-        {
-            switch (kind)
-            {
-                case SyntaxKind.PlusToken:
-                case SyntaxKind.MinusToken:
-                case SyntaxKind.BangToken:
-                    return 6;
+        //public static int GetUnaryOperatorPrecedence(this SyntaxKind kind)
+        //{
+        //    switch (kind)
+        //    {
+        //        case SyntaxKind.PlusToken:
+        //        case SyntaxKind.MinusToken:
+        //        case SyntaxKind.BangToken:
+        //            return 6;
 
-                default:
-                    return 0;
-            }
-        }
+        //        default:
+        //            return 0;
+        //    }
+        //}
 
-        public static int GetBinaryOperatorPrecedence(this SyntaxKind kind)
+        public static OperatorPrecedence? GetBinaryOperatorPrecedence(this SyntaxKind kind)
         {
             switch (kind)
             {
                 case SyntaxKind.StarToken:
                 case SyntaxKind.SlashToken:
-                    return 5;
+                    return (OperatorPrecedence)5;
 
                 case SyntaxKind.PlusToken:
                 case SyntaxKind.MinusToken:
-                    return 4;
+                    return (OperatorPrecedence)4;
 
                 case SyntaxKind.EqualsEqualsToken:
                 case SyntaxKind.BangEqualsToken:
-                    return 3;
+                    return (OperatorPrecedence)3;
 
                 case SyntaxKind.AmpersandAmpersandToken:
-                    return 2;
+                    return (OperatorPrecedence)2;
 
                 case SyntaxKind.PipePipeToken:
-                    return 1;
+                    return (OperatorPrecedence)1;
 
                 default:
-                    return 0;
+                    return null;
             }
         }
 
@@ -82,9 +82,12 @@ namespace Panther.CodeAnalysis.Syntax
                 _ => null
             };
 
-        public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() =>
-            Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
-                .Where(kind => GetUnaryOperatorPrecedence(kind) > 0);
+        public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() => new[]
+        {
+            SyntaxKind.PlusToken,
+            SyntaxKind.MinusToken,
+            SyntaxKind.BangToken,
+        };
 
         public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
             Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()

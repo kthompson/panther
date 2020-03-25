@@ -6,6 +6,7 @@
         InvalidToken,
 
         EndOfInputToken,
+        NewLineToken,
         WhitespaceToken,
         NumberToken,
         IdentifierToken,

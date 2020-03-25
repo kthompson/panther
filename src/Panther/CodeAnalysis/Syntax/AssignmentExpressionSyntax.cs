@@ -8,14 +8,16 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken IdentifierToken { get; }
         public SyntaxToken EqualsToken { get; }
         public ExpressionSyntax Expression { get; }
+        public SyntaxToken NewLineToken { get; }
         public override SyntaxKind Kind => SyntaxKind.AssignmentStatement;
 
-        public AssignmentStatementSyntax(SyntaxToken valOrVarToken, SyntaxToken identifierToken, SyntaxToken equalsToken, ExpressionSyntax expression)
+        public AssignmentStatementSyntax(SyntaxToken valOrVarToken, SyntaxToken identifierToken, SyntaxToken equalsToken, ExpressionSyntax expression, SyntaxToken newLineToken)
         {
             ValOrVarToken = valOrVarToken;
             IdentifierToken = identifierToken;
             EqualsToken = equalsToken;
             Expression = expression;
+            NewLineToken = newLineToken;
         }
     }
 }
