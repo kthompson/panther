@@ -95,6 +95,12 @@ namespace Panther.CodeAnalysis.Syntax
                 case ')':
                     return ReturnKindOneChar(SyntaxKind.CloseParenToken);
 
+                case '{':
+                    return ReturnKindOneChar(SyntaxKind.OpenBraceToken);
+
+                case '}':
+                    return ReturnKindOneChar(SyntaxKind.CloseBraceToken);
+
                 case '!':
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)

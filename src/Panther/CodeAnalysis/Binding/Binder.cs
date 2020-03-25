@@ -20,7 +20,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var parentScope = CreateParentScope(previous);
             var binder = new Binder(parentScope);
-            var expression = binder.BindExpression(syntax.Expression);
+            var statement = binder.BindStatement(syntax.Statement);
             var variables = binder._scope.GetDeclaredVariables();
             var diagnostics = binder.Diagnostics.ToImmutableArray();
 
@@ -29,10 +29,39 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
-            return new BoundGlobalScope(previous, diagnostics, variables, expression);
+            return new BoundGlobalScope(previous, diagnostics, variables, statement);
         }
 
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
+
+        public BoundStatement BindStatement(StatementSyntax syntax)
+        {
+            return syntax.Kind switch
+            {
+                SyntaxKind.AssignmentStatement => BindAssignmentStatement((AssignmentStatementSyntax)syntax),
+                SyntaxKind.ExpressionStatement => BindExpressionStatement((ExpressionStatementSyntax)syntax),
+                _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
+            };
+        }
+
+        private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax)
+        {
+            var name = syntax.IdentifierToken.Text;
+            var boundExpression = BindExpression(syntax.Expression);
+
+            var variable = new VariableSymbol(name, boundExpression.Type);
+
+            _scope.TryDeclare(variable);
+
+            return new BoundAssignmentStatement(variable, boundExpression);
+        }
+
+        private BoundStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
+        {
+            var expression = BindExpression(syntax.Expression);
+
+            return new BoundExpressionStatement(expression);
+        }
 
         public BoundExpression BindExpression(ExpressionSyntax syntax)
         {
@@ -43,12 +72,20 @@ namespace Panther.CodeAnalysis.Binding
                 SyntaxKind.UnaryExpression => BindUnaryExpression((UnaryExpressionSyntax)syntax),
                 SyntaxKind.GroupExpression => BindGroupExpression(((GroupExpressionSyntax)syntax)),
                 SyntaxKind.NameExpression => BindNameExpression((NameExpressionSyntax)syntax),
-                SyntaxKind.AssignmentExpression => BindAssignmentExpression((AssignmentExpressionSyntax)syntax),
+                SyntaxKind.BlockStatement => BindBlockExpression((BlockExpressionSyntax)syntax),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
         }
 
-        private static BoundScope CreateParentScope(BoundGlobalScope previous)
+        private BoundExpression BindBlockExpression(BlockExpressionSyntax syntax)
+        {
+            var stmts = syntax.Statements.Select(BindStatement).ToImmutableArray();
+            var expr = BindExpression(syntax.Expression);
+
+            return new BoundBlockExpression(stmts, expr);
+        }
+
+        private static BoundScope CreateParentScope(BoundGlobalScope? previous)
         {
             var stack = new Stack<BoundGlobalScope>();
 
@@ -82,21 +119,6 @@ namespace Panther.CodeAnalysis.Binding
 
             Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);
             return new BoundLiteralExpression(0);
-        }
-
-        private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
-        {
-            var name = syntax.IdentifierToken.Text;
-            var boundExpression = BindExpression(syntax.Expression);
-
-            var variable = new VariableSymbol(name, boundExpression.Type);
-
-            if (!_scope.TryDeclare(variable))
-            {
-                Diagnostics.ReportVariableAlreadyDefined(syntax.IdentifierToken.Span, name);
-            }
-
-            return new BoundAssignmentExpression(variable, boundExpression);
         }
 
         private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax)

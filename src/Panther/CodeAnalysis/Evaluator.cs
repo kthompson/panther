@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Panther.CodeAnalysis.Binding;
 
@@ -7,10 +8,11 @@ namespace Panther.CodeAnalysis
 {
     internal class Evaluator
     {
-        private readonly BoundExpression _root;
+        private readonly BoundStatement _root;
         private readonly Dictionary<VariableSymbol, object> _variables;
+        private object _lastValue;
 
-        public Evaluator(BoundExpression root, Dictionary<VariableSymbol, object> variables)
+        public Evaluator(BoundStatement root, Dictionary<VariableSymbol, object> variables)
         {
             _root = root;
             _variables = variables;
@@ -18,7 +20,27 @@ namespace Panther.CodeAnalysis
 
         public object Evaluate()
         {
-            return EvaluateExpression(_root);
+            EvaluateStatement(_root);
+
+            return _lastValue;
+        }
+
+        private void EvaluateStatement(BoundStatement node)
+        {
+            if (node is BoundAssignmentStatement a)
+            {
+                var value = EvaluateExpression(a.Expression);
+                _variables[a.Variable] = value;
+                return;
+            }
+
+            if (node is BoundExpressionStatement expressionStatement)
+            {
+                _lastValue = EvaluateExpression(expressionStatement.Expression);
+                return;
+            }
+
+            throw new Exception($"Unexpected statement {node.Kind}");
         }
 
         private object EvaluateExpression(BoundExpression node)
@@ -33,11 +55,14 @@ namespace Panther.CodeAnalysis
                 return _variables[v.Variable];
             }
 
-            if (node is BoundAssignmentExpression a)
+            if (node is BoundBlockExpression block)
             {
-                var value = EvaluateExpression(a.Expression);
-                _variables[a.Variable] = value;
-                return value;
+                foreach (var statement in block.Statements)
+                {
+                    EvaluateStatement(statement);
+                }
+
+                return EvaluateExpression(block.Expression);
             }
 
             if (node is BoundBinaryExpression binaryExpression)

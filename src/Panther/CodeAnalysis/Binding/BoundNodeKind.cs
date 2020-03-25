@@ -8,6 +8,8 @@ namespace Panther.CodeAnalysis.Binding
         LiteralExpression,
         BinaryExpression,
         VariableExpression,
-        AssignmentExpression
+        AssignmentExpression,
+        BlockExpression,
+        ExpressionStatement
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Panther.CodeAnalysis.Text;
 
@@ -57,11 +58,11 @@ namespace Panther.CodeAnalysis.Syntax
 
         public CompilationUnitSyntax ParseCompilationUnit()
         {
-            var expression = ParseExpression();
+            var statement = ParseStatement();
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new CompilationUnitSyntax(expression, endToken);
+            return new CompilationUnitSyntax(statement, endToken);
         }
 
         private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
@@ -107,6 +108,13 @@ namespace Panther.CodeAnalysis.Syntax
 
                         return new GroupExpressionSyntax(open, expr, close);
                     }
+
+                case SyntaxKind.OpenBraceToken:
+
+                    {
+                        return ParseBlockExpression();
+                    }
+
                 case SyntaxKind.TrueKeyword:
                 case SyntaxKind.FalseKeyword:
 
@@ -119,19 +127,53 @@ namespace Panther.CodeAnalysis.Syntax
 
                     return new NameExpressionSyntax(token);
 
-                case SyntaxKind.ValKeyword:
-                    {
-                        var valToken = Accept();
-                        var identToken = Accept(SyntaxKind.IdentifierToken);
-                        var equalsToken = Accept(SyntaxKind.EqualsToken);
-                        var expr = ParseExpression();
-
-                        return new AssignmentExpressionSyntax(valToken, identToken, equalsToken, expr);
-                    }
                 default:
                     var numberToken = Accept(SyntaxKind.NumberToken);
                     return new LiteralExpressionSyntax(numberToken);
             }
+        }
+
+        private ExpressionSyntax ParseBlockExpression()
+        {
+            var statements = new List<StatementSyntax>();
+
+            var openBraceToken = Accept(SyntaxKind.OpenBraceToken);
+
+            while (_currentToken.Kind != SyntaxKind.EndOfInputToken && _currentToken.Kind != SyntaxKind.CloseBraceToken)
+            {
+                statements.Add(ParseStatement());
+            }
+
+            var closeBraceToken = Accept(SyntaxKind.CloseBraceToken);
+
+            var expr = (statements.LastOrDefault() as ExpressionStatementSyntax)?.Expression;
+
+            var stmts = expr != null ? statements.Take(statements.Count - 1) : statements;
+
+            return new BlockExpressionSyntax(openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
+        }
+
+        private StatementSyntax ParseStatement() =>
+            _currentToken.Kind switch
+            {
+                SyntaxKind.ValKeyword => ParseAssignmentStatement(),
+                _ => ParseExpressionStatement(),
+            };
+
+        private StatementSyntax ParseExpressionStatement()
+        {
+            var expr = ParseExpression();
+            return new ExpressionStatementSyntax(expr);
+        }
+
+        private StatementSyntax ParseAssignmentStatement()
+        {
+            var valToken = Accept();
+            var identToken = Accept(SyntaxKind.IdentifierToken);
+            var equalsToken = Accept(SyntaxKind.EqualsToken);
+            var expr = ParseExpression();
+
+            return new AssignmentStatementSyntax(valToken, identToken, equalsToken, expr);
         }
     }
 }

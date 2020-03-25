@@ -17,7 +17,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var op2Text = SyntaxFacts.GetText(op2.Kind);
 
             var text = $"a {op1Text} b {op2Text} c";
-            var expression = SyntaxTree.Parse(text).Root.Expression;
+            var expression = SyntaxTree.Parse(text).Root.Statement;
 
             if (op1Precedence >= op2Precedence)
             {
@@ -32,6 +32,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 //    ├──PlusToken
                 //    └──NameExpression
                 //        └──IdentifierToken
+                e.AssertNode(SyntaxKind.ExpressionStatement);
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.NameExpression);
@@ -57,6 +58,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 //       └──NameExpression
                 //          └──IdentifierToken
 
+                e.AssertNode(SyntaxKind.ExpressionStatement);
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "a");
@@ -80,7 +82,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var binaryText = SyntaxFacts.GetText(op2.Kind);
 
             var text = $"{unaryText} a {binaryText} b";
-            var expression = SyntaxTree.Parse(text).Root.Expression;
+            var expression = SyntaxTree.Parse(text).Root.Statement;
 
             Assert.True(unaryOperatorPrecedence >= binaryOperatorPrecedence);
 
@@ -95,6 +97,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             //     └──NameExpression
             //         └──IdentifierToken
 
+            e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BinaryExpression);
             e.AssertNode(SyntaxKind.UnaryExpression);
             e.AssertToken(op1.Kind, unaryText);

@@ -49,7 +49,7 @@ namespace Panther.CodeAnalysis
                 return new EvaluationResult(diagnostics, null);
             }
 
-            var evaluator = new Evaluator(globalScope.Expression, variables);
+            var evaluator = new Evaluator(globalScope.Statement, variables);
             var value = evaluator.Evaluate();
 
             return new EvaluationResult(Enumerable.Empty<Diagnostic>(), value);

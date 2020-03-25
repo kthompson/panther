@@ -15,6 +15,7 @@
 
         FalseKeyword,
         ValKeyword,
+        VarKeyword,
 
         // Operators
         PlusToken,
@@ -33,6 +34,8 @@
         CloseParenToken,
 
         OpenParenToken,
+        OpenBraceToken,
+        CloseBraceToken,
 
         // Expressions
         LiteralExpression,
@@ -41,7 +44,11 @@
         GroupExpression,
         UnaryExpression,
         NameExpression,
-        AssignmentExpression,
+        AssignmentStatement,
+        // Statements
+
+        BlockStatement,
+        ExpressionStatement,
 
         //  Other
         CompilationUnit

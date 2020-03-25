@@ -97,9 +97,9 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Property]
         public void EvaluatesValIntCreation(int n)
         {
-            var code = $"val a = {n}";
+            Dictionary<VariableSymbol, object> dictionary = null;
 
-            var (dictionary, _) = AssertEvaluation(code, n);
+            Compile($"val a = {n}", ref dictionary, null, out _);
 
             Assert.Collection(dictionary, pair =>
             {
@@ -112,9 +112,9 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Property]
         public void EvaluatesValBoolCreation(bool n)
         {
-            var code = $"val a = {n.ToString().ToLower()}";
+            Dictionary<VariableSymbol, object> dictionary = null;
 
-            var (dictionary, _) = AssertEvaluation(code, n);
+            Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out _);
 
             Assert.Collection(dictionary, pair =>
             {
@@ -127,7 +127,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Property]
         public void EvaluatesBoundInt(int n)
         {
-            var (dictionary, compilation) = AssertEvaluation($"val a = {n}", n);
+            Dictionary<VariableSymbol, object> dictionary = null;
+            var compilation = Compile($"val a = {n}", ref dictionary, null, out _);
 
             AssertEvaluation($"a", n, dictionary, compilation);
         }
@@ -135,23 +136,31 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Property]
         public void EvaluatesBoundBool(bool n)
         {
-            var (dictionary, compilation) = AssertEvaluation($"val a = {n.ToString().ToLower()}", n);
+            Dictionary<VariableSymbol, object> dictionary = null;
+            var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out var result);
 
             AssertEvaluation($"a", n, dictionary, compilation);
         }
 
-        private static (Dictionary<VariableSymbol, object> variables, Compilation compilation) AssertEvaluation(string code, object value, Dictionary<VariableSymbol, object> dictionary = null, Compilation previous = null)
+        private static void AssertEvaluation(string code, object value,
+            Dictionary<VariableSymbol, object> dictionary = null, Compilation previous = null)
+        {
+            var compilation = Compile(code, ref dictionary, previous, out var result);
+            Assert.Equal(value, result.Value);
+        }
+
+        private static Compilation Compile(string code, ref Dictionary<VariableSymbol, object> dictionary, Compilation previous,
+            out EvaluationResult result)
         {
             dictionary ??= new Dictionary<VariableSymbol, object>();
             var tree = SyntaxTree.Parse(code);
             var compilation = previous == null ? new Compilation(tree) : previous.ContinueWith(tree);
 
-            var result = compilation.Evaluate(dictionary);
+            result = compilation.Evaluate(dictionary);
 
             Assert.NotNull(result);
             Assert.Empty(result.Diagnostics);
-            Assert.Equal(value, result.Value);
-            return (dictionary, compilation);
+            return compilation;
         }
     }
 }

@@ -54,6 +54,7 @@ namespace Panther.CodeAnalysis.Syntax
                 "true" => SyntaxKind.TrueKeyword,
                 "false" => SyntaxKind.FalseKeyword,
                 "val" => SyntaxKind.ValKeyword,
+                "var" => SyntaxKind.VarKeyword,
                 _ => SyntaxKind.IdentifierToken
             };
         }
@@ -76,6 +77,8 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.EqualsEqualsToken => "==",
                 SyntaxKind.CloseParenToken => ")",
                 SyntaxKind.OpenParenToken => "(",
+                SyntaxKind.CloseBraceToken => "}",
+                SyntaxKind.OpenBraceToken => "{",
                 _ => null
             };
 
