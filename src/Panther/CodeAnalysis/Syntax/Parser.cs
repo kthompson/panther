@@ -23,7 +23,7 @@ namespace Panther.CodeAnalysis.Syntax
         {
             _lexer = lexer;
             // init first token
-            Accept();
+            _currentToken = NextToken();
         }
 
         private SyntaxToken NextToken()
@@ -103,10 +103,19 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.OpenParenToken:
                     {
                         var open = Accept();
-                        var expr = ParseExpression();
-                        var close = Accept(SyntaxKind.CloseParenToken);
+                        if (_currentToken.Kind == SyntaxKind.CloseParenToken)
+                        {
+                            // unit expression
+                            var close = Accept(SyntaxKind.CloseParenToken);
+                            return new UnitExpressionSyntax(open, close);
+                        }
+                        else
+                        {
+                            var expr = ParseExpression();
+                            var close = Accept(SyntaxKind.CloseParenToken);
 
-                        return new GroupExpressionSyntax(open, expr, close);
+                            return new GroupExpressionSyntax(open, expr, close);
+                        }
                     }
 
                 case SyntaxKind.OpenBraceToken:
@@ -127,9 +136,14 @@ namespace Panther.CodeAnalysis.Syntax
 
                     return new NameExpressionSyntax(token);
 
-                default:
-                    var numberToken = Accept(SyntaxKind.NumberToken);
+                case SyntaxKind.NumberToken:
+                    var numberToken = Accept();
                     return new LiteralExpressionSyntax(numberToken);
+
+                default:
+                    // TODO: add diagnostic here?
+                    var unknownToken = Accept();
+                    return new LiteralExpressionSyntax(unknownToken);
             }
         }
 
@@ -146,9 +160,8 @@ namespace Panther.CodeAnalysis.Syntax
 
             var closeBraceToken = Accept(SyntaxKind.CloseBraceToken);
 
-            var expr = (statements.LastOrDefault() as ExpressionStatementSyntax)?.Expression;
-
-            var stmts = expr != null ? statements.Take(statements.Count - 1) : statements;
+            var expr = (statements.LastOrDefault() as ExpressionStatementSyntax)?.Expression ?? new UnitExpressionSyntax(closeBraceToken, closeBraceToken);
+            var stmts = statements.Take(statements.Count - 1);
 
             return new BlockExpressionSyntax(openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
         }
@@ -157,6 +170,7 @@ namespace Panther.CodeAnalysis.Syntax
             _currentToken.Kind switch
             {
                 SyntaxKind.ValKeyword => ParseAssignmentStatement(),
+                SyntaxKind.VarKeyword => ParseAssignmentStatement(),
                 _ => ParseExpressionStatement(),
             };
 

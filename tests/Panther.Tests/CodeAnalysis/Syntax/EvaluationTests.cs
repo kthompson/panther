@@ -137,7 +137,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         public void EvaluatesBoundBool(bool n)
         {
             Dictionary<VariableSymbol, object> dictionary = null;
-            var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out var result);
+            var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out _);
 
             AssertEvaluation($"a", n, dictionary, compilation);
         }
@@ -145,7 +145,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         private static void AssertEvaluation(string code, object value,
             Dictionary<VariableSymbol, object> dictionary = null, Compilation previous = null)
         {
-            var compilation = Compile(code, ref dictionary, previous, out var result);
+            Compile(code, ref dictionary, previous, out var result);
             Assert.Equal(value, result.Value);
         }
 

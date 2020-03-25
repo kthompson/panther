@@ -46,7 +46,7 @@ namespace Panther.CodeAnalysis.Binding
             new BoundBinaryOperator(SyntaxKind.BangEqualsToken, BoundBinaryOperatorKind.NotEqual, typeof(bool)),
         };
 
-        public static BoundBinaryOperator Bind(SyntaxKind kind, Type leftType, Type rightType) =>
+        public static BoundBinaryOperator? Bind(SyntaxKind kind, Type leftType, Type rightType) =>
             _operators.FirstOrDefault(op => op.SyntaxKind == kind && op.LeftType == leftType && op.RightType == rightType);
     }
 }

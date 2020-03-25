@@ -8,9 +8,9 @@ namespace Panther.CodeAnalysis
 {
     public class Compilation
     {
-        public Compilation Previous { get; }
+        public Compilation? Previous { get; }
         public SyntaxTree SyntaxTree { get; }
-        private BoundGlobalScope _globalScope;
+        private BoundGlobalScope? _globalScope;
 
         internal BoundGlobalScope GlobalScope
         {
@@ -31,7 +31,7 @@ namespace Panther.CodeAnalysis
         {
         }
 
-        private Compilation(Compilation previous, SyntaxTree syntaxTree)
+        private Compilation(Compilation? previous, SyntaxTree syntaxTree)
         {
             Previous = previous;
             SyntaxTree = syntaxTree;

@@ -9,14 +9,14 @@ namespace Panther.CodeAnalysis.Syntax
         {
         }
 
-        public LiteralExpressionSyntax(SyntaxToken literalToken, object value)
+        public LiteralExpressionSyntax(SyntaxToken literalToken, object? value)
         {
             LiteralToken = literalToken;
             Value = value;
         }
 
         public SyntaxToken LiteralToken { get; }
-        public object Value { get; }
+        public object? Value { get; }
         public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
     }
 }

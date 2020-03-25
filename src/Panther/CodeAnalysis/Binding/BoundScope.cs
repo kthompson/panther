@@ -9,9 +9,9 @@ namespace Panther.CodeAnalysis.Binding
     {
         private readonly Dictionary<string, VariableSymbol> _variables = new Dictionary<string, VariableSymbol>();
 
-        public BoundScope Parent { get; }
+        public BoundScope? Parent { get; }
 
-        public BoundScope(BoundScope parent)
+        public BoundScope(BoundScope? parent)
         {
             Parent = parent;
         }

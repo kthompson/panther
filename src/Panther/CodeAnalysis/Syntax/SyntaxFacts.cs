@@ -59,7 +59,7 @@ namespace Panther.CodeAnalysis.Syntax
             };
         }
 
-        public static string GetText(SyntaxKind kind) =>
+        public static string? GetText(SyntaxKind kind) =>
             kind switch
             {
                 SyntaxKind.TrueKeyword => "true",

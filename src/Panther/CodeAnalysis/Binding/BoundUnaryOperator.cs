@@ -31,7 +31,7 @@ namespace Panther.CodeAnalysis.Binding
             new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, typeof(int)),
         };
 
-        public static BoundUnaryOperator Bind(SyntaxKind kind, Type operandType) =>
+        public static BoundUnaryOperator? Bind(SyntaxKind kind, Type operandType) =>
             _operators.FirstOrDefault(op => op.SyntaxKind == kind && op.OperandType == operandType);
     }
 }

@@ -6,11 +6,25 @@ using Panther.CodeAnalysis.Binding;
 
 namespace Panther.CodeAnalysis
 {
+    public class Unit
+    {
+        private Unit()
+        {
+        }
+
+        public static readonly Unit Default = new Unit();
+
+        public override string ToString()
+        {
+            return "unit";
+        }
+    }
+
     internal class Evaluator
     {
         private readonly BoundStatement _root;
         private readonly Dictionary<VariableSymbol, object> _variables;
-        private object _lastValue;
+        private object? _lastValue;
 
         public Evaluator(BoundStatement root, Dictionary<VariableSymbol, object> variables)
         {
@@ -18,7 +32,7 @@ namespace Panther.CodeAnalysis
             _variables = variables;
         }
 
-        public object Evaluate()
+        public object? Evaluate()
         {
             EvaluateStatement(_root);
 
@@ -31,6 +45,7 @@ namespace Panther.CodeAnalysis
             {
                 var value = EvaluateExpression(a.Expression);
                 _variables[a.Variable] = value;
+                _lastValue = value;
                 return;
             }
 
@@ -48,6 +63,11 @@ namespace Panther.CodeAnalysis
             if (node is BoundLiteralExpression n)
             {
                 return n.Value;
+            }
+
+            if (node is BoundUnitExpression)
+            {
+                return Unit.Default;
             }
 
             if (node is BoundVariableExpression v)

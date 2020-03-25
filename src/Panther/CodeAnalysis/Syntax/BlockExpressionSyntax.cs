@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Syntax
         public ImmutableArray<StatementSyntax> Statements { get; }
         public ExpressionSyntax Expression { get; }
         public SyntaxToken CloseBraceToken { get; }
-        public override SyntaxKind Kind => SyntaxKind.BlockStatement;
+        public override SyntaxKind Kind => SyntaxKind.BlockExpression;
 
         public BlockExpressionSyntax(SyntaxToken openBraceToken, ImmutableArray<StatementSyntax> statements, ExpressionSyntax expression, SyntaxToken closeBraceToken)
         {
