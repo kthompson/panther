@@ -65,7 +65,7 @@ namespace Panther.CodeAnalysis.Syntax
             PrefixParseFunctions[SyntaxKind.MinusToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupExpression;
-            //PrefixParseFunctions[SyntaxKind.If] = ParseIfExpression;
+            PrefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
             //PrefixParseFunctions[SyntaxKind.Function] = ParseFunctionLiteral;
             //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
             //PrefixParseFunctions[SyntaxKind.LeftBracket] = ParseArrayLiteral;
@@ -100,9 +100,7 @@ namespace Panther.CodeAnalysis.Syntax
 
         private SyntaxToken CurrentToken(bool skipNewLines)
         {
-            var pos = _tokenPosition;
-
-            return TokenFromPosition(skipNewLines, ref pos);
+            return TokenFromPosition(skipNewLines, ref _tokenPosition);
         }
 
         private SyntaxToken TokenFromPosition(bool skipNewLines, ref int pos)
@@ -165,7 +163,7 @@ namespace Panther.CodeAnalysis.Syntax
 
         private SyntaxToken Accept(SyntaxKind kind, bool skipNewLines = false)
         {
-            var currentToken = CurrentToken(skipNewLines);
+            var currentToken = TokenFromPosition(skipNewLines, ref _tokenPosition);
             if (currentToken.Kind == kind)
                 return Accept(skipNewLines);
 
@@ -197,8 +195,8 @@ namespace Panther.CodeAnalysis.Syntax
             if (prefixFunction == null)
             {
                 // no prefix function
-                throw new Exception($"missing prefix function for {currentToken.Kind}");
-                return null;
+                Diagnostics.ReportUnsupportedPrefixToken(currentToken);
+                return new LiteralExpressionSyntax(currentToken);
             }
 
             skipNewLines = currentToken.Kind != SyntaxKind.OpenBraceToken && skipNewLines;
@@ -241,6 +239,18 @@ namespace Panther.CodeAnalysis.Syntax
             var right = ParseExpression(precedence, skipNewLines);
 
             return new BinaryExpressionSyntax(left, binaryOperatorToken, right);
+        }
+
+        private ExpressionSyntax ParseIfExpression(bool skipnewlines)
+        {
+            var ifKeyword = Accept(false);
+            var condition = ParseExpression(OperatorPrecedence.Lowest, false);
+            var thenKeyword = Accept(SyntaxKind.ThenKeyword, true);
+            var thenExpr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var elseKeyword = Accept(SyntaxKind.ElseKeyword, true);
+            var elseExpr = ParseExpression(OperatorPrecedence.Lowest, false);
+
+            return new IfExpressionSyntax(ifKeyword, condition, thenKeyword, thenExpr, elseKeyword, elseExpr);
         }
 
         private ExpressionSyntax ParseGroupExpression(bool skipNewLines)

@@ -128,6 +128,12 @@ namespace Panther.CodeAnalysis
                 };
             }
 
+            if (node is BoundIfExpression ifExpression)
+            {
+                var cond = (bool)EvaluateExpression(ifExpression.Condition);
+                return EvaluateExpression(cond ? ifExpression.Then : ifExpression.Else);
+            }
+
             throw new Exception($"Unexpected expression {node.Kind}");
         }
     }

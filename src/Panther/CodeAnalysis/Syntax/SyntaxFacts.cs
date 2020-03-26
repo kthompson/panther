@@ -74,6 +74,8 @@ namespace Panther.CodeAnalysis.Syntax
             return span switch
             {
                 "if" => SyntaxKind.IfKeyword,
+                "then" => SyntaxKind.ThenKeyword,
+                "else" => SyntaxKind.ElseKeyword,
                 "while" => SyntaxKind.WhileKeyword,
                 "true" => SyntaxKind.TrueKeyword,
                 "false" => SyntaxKind.FalseKeyword,
@@ -89,6 +91,11 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.TrueKeyword => "true",
                 SyntaxKind.FalseKeyword => "false",
                 SyntaxKind.ValKeyword => "val",
+                SyntaxKind.VarKeyword => "var",
+                SyntaxKind.ThenKeyword => "then",
+                SyntaxKind.ElseKeyword => "else",
+                SyntaxKind.IfKeyword => "if",
+                SyntaxKind.WhileKeyword => "while",
                 SyntaxKind.PlusToken => "+",
                 SyntaxKind.MinusToken => "-",
                 SyntaxKind.SlashToken => "/",

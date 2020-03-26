@@ -92,6 +92,54 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
+        public void ReportInvalidCondition()
+        {
+            var text = @"{
+                    if [5]
+                    then 7
+                    else 3
+                }";
+
+            var diagnostic = @"
+                Type mismatch. Required 'System.Boolean', found 'System.Int32'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportMismatchedBranches()
+        {
+            var text = @"{
+                    if true
+                    then true
+                    else [3]
+                }";
+
+            var diagnostic = @"
+                Type mismatch. Required 'System.Boolean', found 'System.Int32'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportMismatchedBranches2()
+        {
+            var text = @"{
+                    if true
+                    then 1
+                    else [true]
+                }";
+
+            var diagnostic = @"
+                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
         public void ReportAlreadyDefinedVariable2()
         {
             var text = @"{

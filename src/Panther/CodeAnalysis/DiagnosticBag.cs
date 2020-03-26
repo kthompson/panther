@@ -52,5 +52,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportTypeMismatch(TextSpan span, Type expectedType, Type foundType) =>
             Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
+
+        public void ReportUnsupportedPrefixToken(SyntaxToken token) =>
+            Report(token.Span, $"Unsupported prefix operator for {token.Kind}");
     }
 }

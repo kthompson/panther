@@ -18,6 +18,8 @@
         ValKeyword,
         VarKeyword,
         IfKeyword,
+        ThenKeyword,
+        ElseKeyword,
         WhileKeyword,
 
         // Operators
@@ -53,6 +55,7 @@
         NameExpression,
         UnitExpression,
         BlockExpression,
+        IfExpression,
 
         // Statements
 
@@ -61,6 +64,6 @@
         AssignmentStatement,
 
         //  Other
-        CompilationUnit
+        CompilationUnit,
     }
 }

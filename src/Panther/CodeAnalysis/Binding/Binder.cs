@@ -96,8 +96,28 @@ namespace Panther.CodeAnalysis.Binding
                 SyntaxKind.GroupExpression => BindGroupExpression((GroupExpressionSyntax)syntax, scope),
                 SyntaxKind.NameExpression => BindNameExpression((NameExpressionSyntax)syntax, scope),
                 SyntaxKind.BlockExpression => BindBlockExpression((BlockExpressionSyntax)syntax, scope),
+                SyntaxKind.IfExpression => BindIfExpression((IfExpressionSyntax)syntax, scope),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
+        }
+
+        private BoundExpression BindIfExpression(IfExpressionSyntax syntax, BoundScope scope)
+        {
+            var condition = BindExpression(syntax.ConditionExpression, scope);
+            var then = BindExpression(syntax.ThenExpression, scope);
+            var elseExpr = BindExpression(syntax.ElseExpression, scope);
+
+            if (then.Type != elseExpr.Type)
+            {
+                Diagnostics.ReportTypeMismatch(syntax.ElseExpression.Span, then.Type, elseExpr.Type);
+            }
+
+            if (condition.Type != typeof(bool))
+            {
+                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Span, typeof(bool), condition.Type);
+            }
+
+            return new BoundIfExpression(condition, then, elseExpr);
         }
 
         private BoundExpression BindUnitExpression() => new BoundUnitExpression();

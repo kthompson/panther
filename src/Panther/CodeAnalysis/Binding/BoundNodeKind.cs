@@ -10,6 +10,7 @@ namespace Panther.CodeAnalysis.Binding
         VariableExpression,
         BlockExpression,
         UnitExpression,
+        IfExpression,
 
         ExpressionStatement,
         VariableDeclarationStatement,

@@ -60,6 +60,20 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
+        public void EvaluatesIf(bool condition, int number, int number2)
+        {
+            AssertEvaluation($"if {b(condition)} then {number} else {number2}", condition ? number : number2);
+        }
+
+        [Property]
+        public void EvaluatesMultiLineIf(bool condition, int number, int number2)
+        {
+            AssertEvaluation($@"if {b(condition)}
+                                then {number}
+                                else {number2}", condition ? number : number2);
+        }
+
+        [Property]
         public void EvaluatesDivision(int number, NonZeroInt number2)
         {
             AssertEvaluation($"{number} / {number2}", number / number2.Item);
