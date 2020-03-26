@@ -19,28 +19,50 @@ namespace Panther.CodeAnalysis.Syntax
         //            return 0;
         //    }
         //}
-
+        /// <summary>
+        ///
+        /// From lowest to highest:
+        /// (all letters)
+        /// |
+        /// ^
+        /// &
+        /// = !
+        /// < >
+        /// :
+        /// + -
+        /// * / %
+        /// (all other special characters)
+        ///
+        /// </summary>
+        /// <param name="kind"></param>
+        /// <returns></returns>
         public static OperatorPrecedence? GetBinaryOperatorPrecedence(this SyntaxKind kind)
         {
             switch (kind)
             {
-                case SyntaxKind.StarToken:
-                case SyntaxKind.SlashToken:
-                    return (OperatorPrecedence)5;
+                case SyntaxKind.PipePipeToken:
+                    return (OperatorPrecedence)1;
 
-                case SyntaxKind.PlusToken:
-                case SyntaxKind.MinusToken:
-                    return (OperatorPrecedence)4;
+                case SyntaxKind.AmpersandAmpersandToken:
+                    return (OperatorPrecedence)2;
 
                 case SyntaxKind.EqualsEqualsToken:
                 case SyntaxKind.BangEqualsToken:
                     return (OperatorPrecedence)3;
 
-                case SyntaxKind.AmpersandAmpersandToken:
-                    return (OperatorPrecedence)2;
+                case SyntaxKind.LessThanToken:
+                case SyntaxKind.LessThanEqualsToken:
+                case SyntaxKind.GreaterThanToken:
+                case SyntaxKind.GreaterThanEqualsToken:
+                    return (OperatorPrecedence)4;
 
-                case SyntaxKind.PipePipeToken:
-                    return (OperatorPrecedence)1;
+                case SyntaxKind.PlusToken:
+                case SyntaxKind.MinusToken:
+                    return (OperatorPrecedence)5;
+
+                case SyntaxKind.StarToken:
+                case SyntaxKind.SlashToken:
+                    return (OperatorPrecedence)6;
 
                 default:
                     return null;
@@ -51,6 +73,8 @@ namespace Panther.CodeAnalysis.Syntax
         {
             return span switch
             {
+                "if" => SyntaxKind.IfKeyword,
+                "while" => SyntaxKind.WhileKeyword,
                 "true" => SyntaxKind.TrueKeyword,
                 "false" => SyntaxKind.FalseKeyword,
                 "val" => SyntaxKind.ValKeyword,
@@ -71,6 +95,10 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.StarToken => "*",
                 SyntaxKind.BangToken => "!",
                 SyntaxKind.AmpersandAmpersandToken => "&&",
+                SyntaxKind.LessThanToken => "<",
+                SyntaxKind.LessThanEqualsToken => "<=",
+                SyntaxKind.GreaterThanToken => ">",
+                SyntaxKind.GreaterThanEqualsToken => ">=",
                 SyntaxKind.PipePipeToken => "||",
                 SyntaxKind.BangEqualsToken => "!=",
                 SyntaxKind.EqualsToken => "=",

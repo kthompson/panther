@@ -108,6 +108,10 @@ namespace Panther.CodeAnalysis
                     BoundBinaryOperatorKind.LogicalOr => ((bool)left || (bool)right),
                     BoundBinaryOperatorKind.Equal => Equals(left, right),
                     BoundBinaryOperatorKind.NotEqual => !Equals(left, right),
+                    BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
+                    BoundBinaryOperatorKind.LessThanOrEqual => (int)left <= (int)right,
+                    BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
+                    BoundBinaryOperatorKind.GreaterThanOrEqual => (int)left >= (int)right,
                     _ => throw new Exception($"Unexpected binary operator {binaryExpression.Operator}")
                 };
             }

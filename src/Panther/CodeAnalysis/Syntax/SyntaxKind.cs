@@ -17,6 +17,8 @@
         FalseKeyword,
         ValKeyword,
         VarKeyword,
+        IfKeyword,
+        WhileKeyword,
 
         // Operators
         PlusToken,
@@ -30,6 +32,10 @@
         BangEqualsToken,
         EqualsToken,
         EqualsEqualsToken,
+        LessThanToken,
+        LessThanEqualsToken,
+        GreaterThanToken,
+        GreaterThanEqualsToken,
 
         // grouping tokens
         CloseParenToken,

@@ -12,5 +12,10 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             Kind = kind;
             Text = text;
         }
+
+        public override string ToString()
+        {
+            return $"{Kind}: {Text}";
+        }
     }
 }

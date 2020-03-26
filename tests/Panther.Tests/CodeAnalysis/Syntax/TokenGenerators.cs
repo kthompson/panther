@@ -88,6 +88,14 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             if (kind1 == SyntaxKind.EqualsToken && kind2 == SyntaxKind.EqualsEqualsToken)
                 return true;
 
+            // '<' + '=' => '<='
+            if (kind1 == SyntaxKind.LessThanToken && kind2 == SyntaxKind.EqualsToken)
+                return true;
+
+            // '>' + '=' => '>='
+            if (kind1 == SyntaxKind.GreaterThanToken && kind2 == SyntaxKind.EqualsToken)
+                return true;
+
             return false;
         }
     }

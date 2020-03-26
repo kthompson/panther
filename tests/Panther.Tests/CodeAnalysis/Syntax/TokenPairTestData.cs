@@ -10,5 +10,10 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             Token1 = token1;
             Token2 = token2;
         }
+
+        public override string ToString()
+        {
+            return $"{Token1}, {Token2}";
+        }
     }
 }

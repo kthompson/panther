@@ -74,6 +74,16 @@ namespace Panther.CodeAnalysis.Syntax
                 case '}':
                     return ReturnKindOneChar(SyntaxKind.CloseBraceToken);
 
+                case '>':
+                    return Lookahead == '='
+                        ? ReturnKindTwoChar(SyntaxKind.GreaterThanEqualsToken)
+                        : ReturnKindOneChar(SyntaxKind.GreaterThanToken);
+
+                case '<':
+                    return Lookahead == '='
+                        ? ReturnKindTwoChar(SyntaxKind.LessThanEqualsToken)
+                        : ReturnKindOneChar(SyntaxKind.LessThanToken);
+
                 case '!':
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)

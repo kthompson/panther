@@ -76,8 +76,10 @@ namespace Panther.CodeAnalysis.Syntax
             InfixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.EqualsEqualsToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.BangEqualsToken] = ParseInfixExpression;
-            //InfixParseFunctions[SyntaxKind.LessThan] = ParseInfixExpression;
-            //InfixParseFunctions[SyntaxKind.GreaterThan] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.GreaterThanToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.LessThanEqualsToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.GreaterThanEqualsToken] = ParseInfixExpression;
 
             InfixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.MinusToken] = ParseInfixExpression;

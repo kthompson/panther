@@ -5,6 +5,7 @@ using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
+using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis
 {
@@ -32,6 +33,30 @@ namespace Panther.Tests.CodeAnalysis
         public void EvaluatesMultiplication(int number, int number2)
         {
             AssertEvaluation($"{number} * {number2}", number * number2);
+        }
+
+        [Property]
+        public void EvaluatesLessThan(int number, int number2)
+        {
+            AssertEvaluation($"{number} < {number2}", number < number2);
+        }
+
+        [Property]
+        public void EvaluatesGreaterThan(int number, int number2)
+        {
+            AssertEvaluation($"{number} > {number2}", number > number2);
+        }
+
+        [Property]
+        public void EvaluatesLessThanOrEqual(int number, int number2)
+        {
+            AssertEvaluation($"{number} <= {number2}", number <= number2);
+        }
+
+        [Property]
+        public void EvaluatesGreaterThanOrEqual(int number, int number2)
+        {
+            AssertEvaluation($"{number} >= {number2}", number >= number2);
         }
 
         [Property]
@@ -140,27 +165,6 @@ namespace Panther.Tests.CodeAnalysis
             var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out _);
 
             AssertEvaluation($"a", n, dictionary, compilation);
-        }
-
-        private static void AssertEvaluation(string code, object value,
-            Dictionary<VariableSymbol, object> dictionary = null, Compilation previous = null)
-        {
-            Compile(code, ref dictionary, previous, out var result);
-            Assert.Equal(value, result.Value);
-        }
-
-        private static Compilation Compile(string code, ref Dictionary<VariableSymbol, object> dictionary, Compilation previous,
-            out EvaluationResult result)
-        {
-            dictionary ??= new Dictionary<VariableSymbol, object>();
-            var tree = SyntaxTree.Parse(code);
-            var compilation = previous == null ? new Compilation(tree) : previous.ContinueWith(tree);
-
-            result = compilation.Evaluate(dictionary);
-
-            Assert.NotNull(result);
-            Assert.Empty(result.Diagnostics);
-            return compilation;
         }
     }
 }

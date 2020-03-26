@@ -35,5 +35,26 @@ namespace Panther.Tests.CodeAnalysis
 
             Assert.Equal(diagnostics.Length, result.Diagnostics.Length);
         }
+
+        public static void AssertEvaluation(string code, object value,
+            Dictionary<VariableSymbol, object> dictionary = null, Compilation previous = null)
+        {
+            Compile(code, ref dictionary, previous, out var result);
+            Assert.Equal(value, result.Value);
+        }
+
+        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object> dictionary, Compilation previous,
+            out EvaluationResult result)
+        {
+            dictionary ??= new Dictionary<VariableSymbol, object>();
+            var tree = SyntaxTree.Parse(code);
+            var compilation = previous == null ? new Compilation(tree) : previous.ContinueWith(tree);
+
+            result = compilation.Evaluate(dictionary);
+
+            Assert.NotNull(result);
+            Assert.Empty(result.Diagnostics);
+            return compilation;
+        }
     }
 }
