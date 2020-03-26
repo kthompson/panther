@@ -77,8 +77,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Property]
         public void UnaryExpressionHonorsPrecedences(UnaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
         {
-            var binaryOperatorPrecedence = op2.Kind.GetBinaryOperatorPrecedence();
-
             var unaryText = SyntaxFacts.GetText(op1.Kind);
             var binaryText = SyntaxFacts.GetText(op2.Kind);
 
@@ -105,6 +103,84 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(op2.Kind, binaryText);
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "b");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
+        [Fact]
+        public void ParseNestedBlockExpression()
+        {
+            var text = "{{}}";
+            var expression = SyntaxTree.Parse(text).Root.Statement;
+
+            using var e = new AssertingEnumerator(expression);
+
+            //└──ExpressionStatement
+            //    ├──BlockExpression
+            //    │   ├──OpenBraceToken
+            //    │   ├──BlockExpression
+            //    │   │   ├──OpenBraceToken
+            //    │   │   ├──UnitExpression
+            //    │   │   │   ├──CloseBraceToken
+            //    │   │   │   └──CloseBraceToken
+            //    │   │   └──CloseBraceToken
+            //    │   └──CloseBraceToken
+            //    └──NewLineToken
+
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertNode(SyntaxKind.UnitExpression);
+            e.AssertToken(SyntaxKind.OpenParenToken, "(");
+            e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
+        [Fact]
+        public void ParseNestedNonUnitBlockExpression()
+        {
+            var text = @"{{
+                            val x = 5
+                            5
+                         }}";
+            var tree = SyntaxTree.Parse(text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root.Statement;
+
+            using var e = new AssertingEnumerator(expression);
+
+            //└──ExpressionStatement
+            //    ├──BlockExpression
+            //    │   ├──OpenBraceToken
+            //    │   ├──BlockExpression
+            //    │   │   ├──OpenBraceToken
+            //    │   │   ├──UnitExpression
+            //    │   │   │   ├──CloseBraceToken
+            //    │   │   │   └──CloseBraceToken
+            //    │   │   └──CloseBraceToken
+            //    │   └──CloseBraceToken
+            //    └──NewLineToken
+
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertNode(SyntaxKind.VariableDeclarationStatement);
+            e.AssertToken(SyntaxKind.ValKeyword, "val");
+            e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertToken(SyntaxKind.EqualsToken, "=");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.NumberToken, "5");
+            e.AssertToken(SyntaxKind.NewLineToken, "\r\n");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.NumberToken, "5");
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
     }

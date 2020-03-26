@@ -41,7 +41,7 @@ namespace Panther.CodeAnalysis
 
         private void EvaluateStatement(BoundStatement node)
         {
-            if (node is BoundAssignmentStatement a)
+            if (node is BoundVariableDeclarationStatement a)
             {
                 var value = EvaluateExpression(a.Expression);
                 _variables[a.Variable] = value;
@@ -52,6 +52,14 @@ namespace Panther.CodeAnalysis
             if (node is BoundExpressionStatement expressionStatement)
             {
                 _lastValue = EvaluateExpression(expressionStatement.Expression);
+                return;
+            }
+
+            if (node is BoundAssignmentStatement assignmentStatement)
+            {
+                var value = EvaluateExpression(assignmentStatement.Expression);
+                _variables[assignmentStatement.Variable] = value;
+                _lastValue = value;
                 return;
             }
 

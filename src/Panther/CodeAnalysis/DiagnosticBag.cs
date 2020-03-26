@@ -43,5 +43,14 @@ namespace Panther.CodeAnalysis
 
         public void ReportUndefinedName(TextSpan span, string name) =>
             Report(span, $"Variable '{name}' does not exist");
+
+        public void ReportVariableAlreadyDefined(TextSpan span, string name) =>
+            Report(span, $"Variable '{name}' is already defined in the current scope");
+
+        public void ReportReassignmentToVal(TextSpan span, string name) =>
+            Report(span, $"Reassignment to val '{name}'");
+
+        public void ReportTypeMismatch(TextSpan span, Type expectedType, Type foundType) =>
+            Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
     }
 }

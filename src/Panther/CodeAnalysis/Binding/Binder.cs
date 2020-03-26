@@ -31,13 +31,38 @@ namespace Panther.CodeAnalysis.Binding
         {
             return syntax.Kind switch
             {
-                SyntaxKind.AssignmentStatement => BindAssignmentStatement((AssignmentStatementSyntax)syntax, scope),
+                SyntaxKind.VariableDeclarationStatement => BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax, scope),
                 SyntaxKind.ExpressionStatement => BindExpressionStatement((ExpressionStatementSyntax)syntax, scope),
+                SyntaxKind.AssignmentStatement => BindAssignmentStatement((AssignmentStatementSyntax)syntax, scope),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
         }
 
         private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax, BoundScope scope)
+        {
+            var boundExpression = BindExpression(syntax.Expression, scope);
+
+            if (!scope.TryLookup(syntax.IdentifierToken.Text, out var variable))
+            {
+                Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
+
+                return new BoundExpressionStatement(new BoundLiteralExpression(0));
+            }
+
+            if (variable.IsReadOnly)
+            {
+                Diagnostics.ReportReassignmentToVal(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
+            }
+
+            if (variable.Type != boundExpression.Type)
+            {
+                Diagnostics.ReportTypeMismatch(syntax.Expression.Span, variable.Type, boundExpression.Type);
+            }
+
+            return new BoundAssignmentStatement(variable, boundExpression);
+        }
+
+        private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
         {
             var name = syntax.IdentifierToken.Text;
             var isReadOnly = syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword;
@@ -45,13 +70,12 @@ namespace Panther.CodeAnalysis.Binding
 
             var variable = new VariableSymbol(name, isReadOnly, boundExpression.Type);
 
-            scope.TryDeclare(variable);
-            //if (!_scope.TryDeclare(variable))
-            //{
-            //    Diagnostics.ReportVariableAlreadyDefined(syntax.IdentifierToken.Span, name);
-            //}
+            if (!scope.TryDeclare(variable))
+            {
+                Diagnostics.ReportVariableAlreadyDefined(syntax.IdentifierToken.Span, name);
+            }
 
-            return new BoundAssignmentStatement(variable, boundExpression);
+            return new BoundVariableDeclarationStatement(variable, boundExpression);
         }
 
         private BoundStatement BindExpressionStatement(ExpressionStatementSyntax syntax, BoundScope scope)

@@ -12,6 +12,7 @@ namespace Panther.CodeAnalysis.Binding
         UnitExpression,
 
         ExpressionStatement,
-        AssignmentStatement,
+        VariableDeclarationStatement,
+        AssignmentStatement
     }
 }

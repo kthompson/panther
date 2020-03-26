@@ -24,17 +24,15 @@ namespace Panther.CodeAnalysis.Syntax
 
     internal class Parser
     {
-        private readonly Lexer _lexer;
-        private SyntaxToken _previousToken;
-        private SyntaxToken _currentToken;
-        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
-
-        public ImmutableArray<Diagnostic> Diagnostics => new DiagnosticBag().AddRange(_lexer.Diagnostics).AddRange(_diagnostics).ToImmutableArray();
+        public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
 
         private readonly Dictionary<SyntaxKind, PrefixParseFunction> PrefixParseFunctions = new Dictionary<SyntaxKind, PrefixParseFunction>();
 
         private readonly Dictionary<SyntaxKind, InfixParseFunction> InfixParseFunctions =
             new Dictionary<SyntaxKind, InfixParseFunction>();
+
+        private ImmutableArray<SyntaxToken> _tokens;
+        private int _tokenPosition = 0;
 
         public Parser(SourceText text)
             : this(new Lexer(text))
@@ -43,7 +41,21 @@ namespace Panther.CodeAnalysis.Syntax
 
         public Parser(Lexer lexer)
         {
-            _lexer = lexer;
+            var tokens = new List<SyntaxToken>();
+            while (true)
+            {
+                var token = lexer.NextToken();
+                tokens.Add(token);
+                if (token.Kind == SyntaxKind.EndOfInputToken)
+                {
+                    break;
+                }
+            }
+
+            _tokens = tokens.ToImmutableArray();
+
+            this.Diagnostics.AddRange(lexer.Diagnostics);
+
             // -a
             PrefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierExpression;
             PrefixParseFunctions[SyntaxKind.NumberToken] = ParseIntegerLiteralExpression;
@@ -73,61 +85,98 @@ namespace Panther.CodeAnalysis.Syntax
             InfixParseFunctions[SyntaxKind.StarToken] = ParseInfixExpression;
             //InfixParseFunctions[SyntaxKind.OpenParenToken] = ParseCallExpression;
             //InfixParseFunctions[SyntaxKind.LeftBracket] = ParseIndexExpression;
-
-            // init first token
-            _currentToken = NextToken(false);
         }
 
-        private SyntaxToken NextToken(bool skipNewLines)
+        private SyntaxToken PeekToken(bool skipNewLines)
+        {
+            var pos = _tokenPosition;
+
+            TokenFromPosition(skipNewLines, ref pos);
+            pos++;
+            return TokenFromPosition(skipNewLines, ref pos);
+        }
+
+        private SyntaxToken CurrentToken(bool skipNewLines)
+        {
+            var pos = _tokenPosition;
+
+            return TokenFromPosition(skipNewLines, ref pos);
+        }
+
+        private SyntaxToken TokenFromPosition(bool skipNewLines, ref int pos)
         {
             while (true)
             {
-                var token = _lexer.NextToken();
+                if (pos > _tokens.Length - 1)
+                    return _tokens[^1];
+
+                var token = _tokens[pos];
 
                 if (token.Kind == SyntaxKind.WhitespaceToken || token.Kind == SyntaxKind.InvalidToken)
+                {
+                    pos++;
                     continue;
+                }
 
                 if (skipNewLines && token.Kind == SyntaxKind.NewLineToken)
+                {
+                    pos++;
                     continue;
+                }
 
                 return token;
             }
         }
 
+        private void NextToken(bool skipNewLines)
+        {
+            _tokenPosition++;
+            TokenFromPosition(skipNewLines, ref _tokenPosition);
+        }
+
         private SyntaxToken Accept(bool skipNewLines)
         {
-            var token = _currentToken;
-            _currentToken = NextToken(skipNewLines);
-            _previousToken = token;
+            var token = CurrentToken(skipNewLines);
+            NextToken(skipNewLines);
             return token;
         }
 
         private SyntaxToken AcceptStatementTerminator(bool skipNewLines = false)
         {
-            if (_currentToken.Kind == SyntaxKind.NewLineToken)
+            var currentToken = CurrentToken(skipNewLines);
+            switch (currentToken.Kind)
             {
-                return Accept(skipNewLines);
+                case SyntaxKind.NewLineToken:
+                    return Accept(skipNewLines);
+
+                case SyntaxKind.EndOfInputToken:
+                case SyntaxKind.CloseBraceToken:
+                    // return end of file token but do not consume it
+                    return currentToken;
+
+                default:
+                    Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, SyntaxKind.NewLineToken);
+
+                    return new SyntaxToken(SyntaxKind.NewLineToken, currentToken.Position, string.Empty, null);
             }
-
-            if (_currentToken.Kind == SyntaxKind.EndOfInputToken)
-            {
-                // return end of file token but do not consume it
-                return _currentToken;
-            }
-
-            _diagnostics.ReportUnexpectedToken(_currentToken.Span, _currentToken.Kind, SyntaxKind.NewLineToken);
-
-            return new SyntaxToken(SyntaxKind.NewLineToken, _currentToken.Position, string.Empty, null);
         }
 
         private SyntaxToken Accept(SyntaxKind kind, bool skipNewLines = false)
         {
-            if (_currentToken.Kind == kind)
+            var currentToken = CurrentToken(skipNewLines);
+            if (currentToken.Kind == kind)
                 return Accept(skipNewLines);
 
-            _diagnostics.ReportUnexpectedToken(_currentToken.Span, _currentToken.Kind, kind);
+            Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, kind);
 
-            return new SyntaxToken(kind, _currentToken.Position, string.Empty, null);
+            return new SyntaxToken(kind, currentToken.Position, string.Empty, null);
+        }
+
+        private SyntaxToken Create(SyntaxKind kind, string text, bool skipNewLines = false)
+        {
+            var currentToken = CurrentToken(skipNewLines);
+
+            return new SyntaxToken(kind, currentToken.Position, text, null);
         }
 
         public CompilationUnitSyntax ParseCompilationUnit()
@@ -141,21 +190,22 @@ namespace Panther.CodeAnalysis.Syntax
 
         private ExpressionSyntax ParseExpression(OperatorPrecedence precedence, bool skipNewLines)
         {
-            var prefixFunction = PrefixParseFunctions.GetValueOrDefault(_currentToken.Kind);
+            var currentToken = CurrentToken(skipNewLines);
+            var prefixFunction = PrefixParseFunctions.GetValueOrDefault(currentToken.Kind);
             if (prefixFunction == null)
             {
                 // no prefix function
-                throw new Exception($"missing prefix function for {_currentToken.Kind}");
+                throw new Exception($"missing prefix function for {currentToken.Kind}");
                 return null;
             }
 
-            skipNewLines = _currentToken.Kind != SyntaxKind.OpenBraceToken && skipNewLines;
+            skipNewLines = currentToken.Kind != SyntaxKind.OpenBraceToken && skipNewLines;
 
             var left = prefixFunction(skipNewLines);
 
             while (precedence < CurrentPrecedence())
             {
-                var infix = InfixParseFunctions.GetValueOrDefault(_currentToken.Kind);
+                var infix = InfixParseFunctions.GetValueOrDefault(CurrentToken(skipNewLines).Kind);
                 if (infix == null)
                     return left;
 
@@ -178,7 +228,7 @@ namespace Panther.CodeAnalysis.Syntax
         }
 
         private OperatorPrecedence CurrentPrecedence() =>
-            _currentToken.Kind.GetBinaryOperatorPrecedence() ?? OperatorPrecedence.Lowest;
+            CurrentToken(false).Kind.GetBinaryOperatorPrecedence() ?? OperatorPrecedence.Lowest;
 
         private ExpressionSyntax ParseInfixExpression(ExpressionSyntax left, bool skipNewLines)
         {
@@ -194,7 +244,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ExpressionSyntax ParseGroupExpression(bool skipNewLines)
         {
             var open = Accept(false);
-            if (_currentToken.Kind == SyntaxKind.CloseParenToken)
+            if (CurrentToken(skipNewLines).Kind == SyntaxKind.CloseParenToken)
             {
                 // unit expression
                 var close = Accept(SyntaxKind.CloseParenToken, false);
@@ -224,7 +274,7 @@ namespace Panther.CodeAnalysis.Syntax
 
         private LiteralExpressionSyntax ParseBooleanLiteral(bool skipNewLines)
         {
-            var value = _currentToken.Kind == SyntaxKind.TrueKeyword;
+            var value = CurrentToken(skipNewLines).Kind == SyntaxKind.TrueKeyword;
             return new LiteralExpressionSyntax(Accept(false), value);
         }
 
@@ -234,26 +284,51 @@ namespace Panther.CodeAnalysis.Syntax
 
             var openBraceToken = Accept(SyntaxKind.OpenBraceToken, true);
 
-            while (_currentToken.Kind != SyntaxKind.EndOfInputToken && _currentToken.Kind != SyntaxKind.CloseBraceToken)
+            while (CurrentToken(skipNewLines).Kind != SyntaxKind.EndOfInputToken && CurrentToken(skipNewLines).Kind != SyntaxKind.CloseBraceToken)
             {
                 statements.Add(ParseStatement());
             }
 
-            var closeBraceToken = Accept(SyntaxKind.CloseBraceToken, false);
+            var expr = (statements.LastOrDefault() as ExpressionStatementSyntax)?.Expression;
+            var stmts = expr == null ? statements : statements.Take(statements.Count - 1);
 
-            var expr = (statements.LastOrDefault() as ExpressionStatementSyntax)?.Expression ?? new UnitExpressionSyntax(closeBraceToken, closeBraceToken);
-            var stmts = statements.Take(statements.Count - 1);
+            if (expr == null)
+            {
+                var openParenToken = Create(SyntaxKind.OpenParenToken, "(", false);
+                var closeParenToken = Create(SyntaxKind.CloseParenToken, ")", false);
+                expr = new UnitExpressionSyntax(openParenToken, closeParenToken);
+            }
+
+            var closeBraceToken = Accept(SyntaxKind.CloseBraceToken, false);
 
             return new BlockExpressionSyntax(openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
         }
 
-        private StatementSyntax ParseStatement() =>
-            _currentToken.Kind switch
+        private StatementSyntax ParseStatement()
+        {
+            switch (CurrentToken(false).Kind)
             {
-                SyntaxKind.ValKeyword => ParseAssignmentStatement(),
-                SyntaxKind.VarKeyword => ParseAssignmentStatement(),
-                _ => ParseExpressionStatement(),
-            };
+                case SyntaxKind.ValKeyword:
+                case SyntaxKind.VarKeyword:
+                    return ParseVariableDeclarationStatement();
+
+                case SyntaxKind.IdentifierToken when PeekToken(false).Kind == SyntaxKind.EqualsToken:
+                    return ParseAssignmentStatement();
+
+                default:
+                    return ParseExpressionStatement();
+            }
+        }
+
+        private StatementSyntax ParseAssignmentStatement()
+        {
+            var identToken = Accept(SyntaxKind.IdentifierToken, false);
+            var equalsToken = Accept(SyntaxKind.EqualsToken, false);
+            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var newLineToken = AcceptStatementTerminator();
+
+            return new AssignmentStatementSyntax(identToken, equalsToken, expr, newLineToken);
+        }
 
         private StatementSyntax ParseExpressionStatement()
         {
@@ -262,7 +337,7 @@ namespace Panther.CodeAnalysis.Syntax
             return new ExpressionStatementSyntax(expr, newLineToken);
         }
 
-        private StatementSyntax ParseAssignmentStatement()
+        private StatementSyntax ParseVariableDeclarationStatement()
         {
             var valToken = Accept(false);
             var identToken = Accept(SyntaxKind.IdentifierToken, false);
@@ -270,7 +345,7 @@ namespace Panther.CodeAnalysis.Syntax
             var expr = ParseExpression(OperatorPrecedence.Lowest, false);
             var newLineToken = AcceptStatementTerminator();
 
-            return new AssignmentStatementSyntax(valToken, identToken, equalsToken, expr, newLineToken);
+            return new VariableDeclarationStatementSyntax(valToken, identToken, equalsToken, expr, newLineToken);
         }
     }
 }

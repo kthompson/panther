@@ -50,8 +50,9 @@
 
         // Statements
 
-        AssignmentStatement,
+        VariableDeclarationStatement,
         ExpressionStatement,
+        AssignmentStatement,
 
         //  Other
         CompilationUnit

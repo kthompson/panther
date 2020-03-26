@@ -13,5 +13,10 @@
         }
 
         public static TextSpan FromBounds(in int start, in int end) => new TextSpan(start, end - start);
+
+        public override string ToString()
+        {
+            return $"{Start}..{End}";
+        }
     }
 }
