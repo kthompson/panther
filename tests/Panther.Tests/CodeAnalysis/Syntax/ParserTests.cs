@@ -1,4 +1,5 @@
-﻿using FsCheck.Xunit;
+﻿using System;
+using FsCheck.Xunit;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 
@@ -176,7 +177,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.EqualsToken, "=");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
-            e.AssertToken(SyntaxKind.NewLineToken, "\r\n");
+            e.AssertToken(SyntaxKind.NewLineToken, Environment.NewLine);
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
             e.AssertToken(SyntaxKind.CloseBraceToken, "}");
