@@ -92,13 +92,25 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
-        public void ReportInvalidCondition()
+        public void ReportInvalidIfCondition()
         {
             var text = @"{
                     if ([5])
                     7
                     else 3
                 }";
+
+            var diagnostic = @"
+                Type mismatch. Required 'System.Boolean', found 'System.Int32'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportInvalidWhileCondition()
+        {
+            var text = @"while ([5 + 1]) 7";
 
             var diagnostic = @"
                 Type mismatch. Required 'System.Boolean', found 'System.Int32'

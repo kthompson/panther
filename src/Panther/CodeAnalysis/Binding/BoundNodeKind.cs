@@ -14,6 +14,7 @@ namespace Panther.CodeAnalysis.Binding
 
         ExpressionStatement,
         VariableDeclarationStatement,
-        AssignmentStatement
+        AssignmentStatement,
+        WhileExpression
     }
 }

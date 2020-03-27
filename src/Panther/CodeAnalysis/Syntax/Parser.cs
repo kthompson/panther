@@ -66,6 +66,7 @@ namespace Panther.CodeAnalysis.Syntax
             PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
             PrefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
+            PrefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
             //PrefixParseFunctions[SyntaxKind.Function] = ParseFunctionLiteral;
             //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
             //PrefixParseFunctions[SyntaxKind.LeftBracket] = ParseArrayLiteral;
@@ -239,6 +240,17 @@ namespace Panther.CodeAnalysis.Syntax
             var right = ParseExpression(precedence, skipNewLines);
 
             return new BinaryExpressionSyntax(left, binaryOperatorToken, right);
+        }
+
+        private ExpressionSyntax ParseWhileExpression(bool skipNewLines)
+        {
+            var whileKeyword = Accept(false);
+            var openParenToken = Accept(SyntaxKind.OpenParenToken, true);
+            var condition = ParseExpression(OperatorPrecedence.Lowest, false);
+            var closeParenToken = Accept(SyntaxKind.CloseParenToken, true);
+            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
+
+            return new WhileExpressionSyntax(whileKeyword, openParenToken, condition, closeParenToken, expr);
         }
 
         private ExpressionSyntax ParseIfExpression(bool skipnewlines)

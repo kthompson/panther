@@ -184,5 +184,33 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.CloseBraceToken, "}");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
+
+        [Fact]
+        public void ParseWhileExpression()
+        {
+            var text = @"{
+                            while ( true ) 1
+                         }";
+            var tree = SyntaxTree.Parse(text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root.Statement;
+
+            using var e = new AssertingEnumerator(expression);
+
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertNode(SyntaxKind.WhileExpression);
+            e.AssertToken(SyntaxKind.WhileKeyword, "while");
+            e.AssertToken(SyntaxKind.OpenParenToken, "(");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.TrueKeyword, "true");
+            e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.NumberToken, "1");
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
     }
 }

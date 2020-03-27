@@ -97,8 +97,22 @@ namespace Panther.CodeAnalysis.Binding
                 SyntaxKind.NameExpression => BindNameExpression((NameExpressionSyntax)syntax, scope),
                 SyntaxKind.BlockExpression => BindBlockExpression((BlockExpressionSyntax)syntax, scope),
                 SyntaxKind.IfExpression => BindIfExpression((IfExpressionSyntax)syntax, scope),
+                SyntaxKind.WhileExpression => BindWhileExpression((WhileExpressionSyntax)syntax, scope),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
+        }
+
+        private BoundExpression BindWhileExpression(WhileExpressionSyntax syntax, BoundScope scope)
+        {
+            var condition = BindExpression(syntax.ConditionExpression, scope);
+            var expr = BindExpression(syntax.Expression, scope);
+
+            if (condition.Type != typeof(bool))
+            {
+                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Span, typeof(bool), condition.Type);
+            }
+
+            return new BoundWhileExpression(condition, expr);
         }
 
         private BoundExpression BindIfExpression(IfExpressionSyntax syntax, BoundScope scope)

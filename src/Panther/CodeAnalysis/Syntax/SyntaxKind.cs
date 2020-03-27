@@ -55,6 +55,7 @@
         UnitExpression,
         BlockExpression,
         IfExpression,
+        WhileExpression,
 
         // Statements
 
@@ -63,6 +64,6 @@
         AssignmentStatement,
 
         //  Other
-        CompilationUnit,
+        CompilationUnit
     }
 }

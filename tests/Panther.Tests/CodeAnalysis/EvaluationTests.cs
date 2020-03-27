@@ -104,6 +104,20 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
+        public void EvaluatesWhile(PositiveInt number)
+        {
+            AssertEvaluation($@"{{
+                                    var times = {number.Item}
+                                    var count = 0
+                                    while (times > 0) {{
+                                       count = count + 1
+                                       times = times - 1
+                                    }}
+                                    count
+                                }}", number.Item);
+        }
+
+        [Property]
         public void EvaluatesAnd(bool left, bool right)
         {
             AssertEvaluation($"{left.ToString().ToLower()} && {right.ToString().ToLower()}", left && right);

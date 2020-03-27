@@ -134,6 +134,20 @@ namespace Panther.CodeAnalysis
                 return EvaluateExpression(cond ? ifExpression.Then : ifExpression.Else);
             }
 
+            if (node is BoundWhileExpression whileExpression)
+            {
+                while (true)
+                {
+                    var cond = (bool)EvaluateExpression(whileExpression.Condition);
+                    if (!cond)
+                        break;
+
+                    EvaluateExpression(whileExpression.Expression);
+                }
+
+                return Unit.Default;
+            }
+
             throw new Exception($"Unexpected expression {node.Kind}");
         }
     }
