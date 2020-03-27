@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    internal class GroupExpressionSyntax : ExpressionSyntax
+    public class GroupExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken OpenParenToken { get; }
         public ExpressionSyntax Expression { get; }

@@ -18,7 +18,6 @@
         ValKeyword,
         VarKeyword,
         IfKeyword,
-        ThenKeyword,
         ElseKeyword,
         WhileKeyword,
 

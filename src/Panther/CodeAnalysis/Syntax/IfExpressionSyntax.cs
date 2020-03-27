@@ -3,17 +3,19 @@
     public class IfExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken IfKeyword { get; }
+        public SyntaxToken OpenParenToken { get; }
         public ExpressionSyntax ConditionExpression { get; }
-        public SyntaxToken ThenKeyword { get; }
+        public SyntaxToken CloseParenToken { get; }
         public ExpressionSyntax ThenExpression { get; }
         public SyntaxToken ElseKeyword { get; }
         public ExpressionSyntax ElseExpression { get; }
 
-        public IfExpressionSyntax(SyntaxToken ifKeyword, ExpressionSyntax conditionExpression, SyntaxToken thenKeyword, ExpressionSyntax thenExpression, SyntaxToken elseKeyword, ExpressionSyntax elseExpression)
+        public IfExpressionSyntax(SyntaxToken ifKeyword, SyntaxToken openParenToken, ExpressionSyntax conditionExpression, SyntaxToken closeParenToken, ExpressionSyntax thenExpression, SyntaxToken elseKeyword, ExpressionSyntax elseExpression)
         {
             IfKeyword = ifKeyword;
+            OpenParenToken = openParenToken;
             ConditionExpression = conditionExpression;
-            ThenKeyword = thenKeyword;
+            CloseParenToken = closeParenToken;
             ThenExpression = thenExpression;
             ElseKeyword = elseKeyword;
             ElseExpression = elseExpression;

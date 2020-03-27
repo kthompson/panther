@@ -64,7 +64,7 @@ namespace Panther.CodeAnalysis.Syntax
             PrefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.MinusToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
-            PrefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupExpression;
+            PrefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
             PrefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
             //PrefixParseFunctions[SyntaxKind.Function] = ParseFunctionLiteral;
             //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
@@ -244,16 +244,17 @@ namespace Panther.CodeAnalysis.Syntax
         private ExpressionSyntax ParseIfExpression(bool skipnewlines)
         {
             var ifKeyword = Accept(false);
+            var openParenToken = Accept(SyntaxKind.OpenParenToken, true);
             var condition = ParseExpression(OperatorPrecedence.Lowest, false);
-            var thenKeyword = Accept(SyntaxKind.ThenKeyword, true);
+            var closeParenToken = Accept(SyntaxKind.CloseParenToken, true);
             var thenExpr = ParseExpression(OperatorPrecedence.Lowest, false);
             var elseKeyword = Accept(SyntaxKind.ElseKeyword, true);
             var elseExpr = ParseExpression(OperatorPrecedence.Lowest, false);
 
-            return new IfExpressionSyntax(ifKeyword, condition, thenKeyword, thenExpr, elseKeyword, elseExpr);
+            return new IfExpressionSyntax(ifKeyword, openParenToken, condition, closeParenToken, thenExpr, elseKeyword, elseExpr);
         }
 
-        private ExpressionSyntax ParseGroupExpression(bool skipNewLines)
+        private ExpressionSyntax ParseGroupOrUnitExpression(bool skipNewLines)
         {
             var open = Accept(false);
             if (CurrentToken(skipNewLines).Kind == SyntaxKind.CloseParenToken)

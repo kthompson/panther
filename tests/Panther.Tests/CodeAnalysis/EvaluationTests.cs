@@ -62,15 +62,39 @@ namespace Panther.Tests.CodeAnalysis
         [Property]
         public void EvaluatesIf(bool condition, int number, int number2)
         {
-            AssertEvaluation($"if {b(condition)} then {number} else {number2}", condition ? number : number2);
+            AssertEvaluation($"if ({b(condition)}) {number} else {number2}", condition ? number : number2);
         }
 
         [Property]
         public void EvaluatesMultiLineIf(bool condition, int number, int number2)
         {
-            AssertEvaluation($@"if {b(condition)}
-                                then {number}
+            AssertEvaluation($@"if ({b(condition)})
+                                {number}
                                 else {number2}", condition ? number : number2);
+        }
+
+        [Property]
+        public void EvaluatesNestedIf(bool condition, int number)
+        {
+            AssertEvaluation($@"if ({b(condition)})
+                                {number}
+                                else if (true) 5 else 1", condition ? number : 5);
+        }
+
+        [Property]
+        public void EvaluatesNestedIfBinding(bool conditionA, bool conditionB)
+        {
+            AssertEvaluation($@"if ({b(conditionA)})
+                                if ({b(conditionB)}) 1 else 2
+                                else 5", conditionA ? (conditionB ? 1 : 2) : 5);
+        }
+
+        [Property]
+        public void EvaluatesNestedIfBinding2(bool conditionA, bool conditionB)
+        {
+            AssertEvaluation($@"if ({b(conditionA)})
+                                2
+                                else if ({b(conditionB)}) 1 else 5", conditionA ? 2 : (conditionB ? 1 : 5));
         }
 
         [Property]

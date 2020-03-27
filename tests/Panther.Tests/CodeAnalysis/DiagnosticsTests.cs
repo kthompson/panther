@@ -95,8 +95,8 @@ namespace Panther.Tests.CodeAnalysis
         public void ReportInvalidCondition()
         {
             var text = @"{
-                    if [5]
-                    then 7
+                    if ([5])
+                    7
                     else 3
                 }";
 
@@ -111,8 +111,8 @@ namespace Panther.Tests.CodeAnalysis
         public void ReportMismatchedBranches()
         {
             var text = @"{
-                    if true
-                    then true
+                    if (true)
+                    true
                     else [3]
                 }";
 
@@ -127,8 +127,8 @@ namespace Panther.Tests.CodeAnalysis
         public void ReportMismatchedBranches2()
         {
             var text = @"{
-                    if true
-                    then 1
+                    if (true)
+                    1
                     else [true]
                 }";
 
