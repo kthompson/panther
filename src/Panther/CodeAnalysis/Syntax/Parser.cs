@@ -306,12 +306,19 @@ namespace Panther.CodeAnalysis.Syntax
         private ExpressionSyntax ParseBlockExpression(bool skipNewLines)
         {
             var statements = new List<StatementSyntax>();
-
             var openBraceToken = Accept(SyntaxKind.OpenBraceToken, true);
 
-            while (CurrentToken(skipNewLines).Kind != SyntaxKind.EndOfInputToken && CurrentToken(skipNewLines).Kind != SyntaxKind.CloseBraceToken)
+            while (true)
             {
+                var currentToken = CurrentToken(skipNewLines);
+                if (currentToken.Kind == SyntaxKind.EndOfInputToken || currentToken.Kind == SyntaxKind.CloseBraceToken)
+                    break;
+
                 statements.Add(ParseStatement());
+                
+                // prevent getting stuck in a loop as ParseStatement() does not always consume tokens
+                if(currentToken == CurrentToken(skipNewLines))
+                    NextToken(skipNewLines);
             }
 
             var expr = (statements.LastOrDefault() as ExpressionStatementSyntax)?.Expression;
