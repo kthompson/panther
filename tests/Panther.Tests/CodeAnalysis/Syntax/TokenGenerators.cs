@@ -98,6 +98,11 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             if (kind1 == SyntaxKind.GreaterThanToken && (kind2 == SyntaxKind.EqualsToken || kind2 == SyntaxKind.EqualsEqualsToken))
                 return true;
 
+            // '|' + '|' => '||'
+            // '|' + '||' => '||' + '|'
+            if (kind1 == SyntaxKind.PipeToken && (kind2 == SyntaxKind.PipeToken || kind2 == SyntaxKind.PipePipeToken))
+                return true;
+            
             return false;
         }
     }

@@ -58,6 +58,24 @@ namespace Panther.Tests.CodeAnalysis
         {
             AssertEvaluation($"{number} >= {number2}", number >= number2);
         }
+        
+        [Property]
+        public void EvaluatesBitwiseAnd(int number, int number2)
+        {
+            AssertEvaluation($"{number} & {number2}", number & number2);
+        }
+        
+        [Property]
+        public void EvaluatesBitwiseOr(int number, int number2)
+        {
+            AssertEvaluation($"{number} | {number2}", number | number2);
+        }
+        
+        [Property(Replay = "1125213375,296723366")]
+        public void EvaluatesBitwiseXor(int number, int number2)
+        {
+            AssertEvaluation($"{number} ^ {number2}", number ^ number2);
+        }
 
         [Property]
         public void EvaluatesIf(bool condition, int number, int number2)

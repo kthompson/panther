@@ -73,6 +73,9 @@ namespace Panther.CodeAnalysis.Syntax
 
                 case '}':
                     return ReturnKindOneChar(SyntaxKind.CloseBraceToken);
+                
+                case '^':
+                    return ReturnKindOneChar(SyntaxKind.CaretToken);
 
                 case '>':
                     return Lookahead == '='
@@ -89,11 +92,15 @@ namespace Panther.CodeAnalysis.Syntax
                         ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)
                         : ReturnKindOneChar(SyntaxKind.BangToken);
 
-                case '&' when Lookahead == '&':
-                    return ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken);
+                case '&' :
+                    return Lookahead == '&'
+                        ? ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken)
+                        : ReturnKindOneChar(SyntaxKind.AmpersandToken);
 
-                case '|' when Lookahead == '|':
-                    return ReturnKindTwoChar(SyntaxKind.PipePipeToken);
+                case '|':
+                    return Lookahead == '|'
+                        ? ReturnKindTwoChar(SyntaxKind.PipePipeToken)
+                        : ReturnKindOneChar(SyntaxKind.PipeToken);
 
                 case '=':
                     return Lookahead == '='

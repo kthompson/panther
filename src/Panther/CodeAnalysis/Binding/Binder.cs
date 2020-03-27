@@ -182,10 +182,8 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundLiteralExpression(0);
         }
 
-        private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax, BoundScope scope)
-        {
-            return BindExpression(syntax.Expression, scope);
-        }
+        private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax, BoundScope scope) => 
+            BindExpression(syntax.Expression, scope);
 
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax, BoundScope scope)
         {

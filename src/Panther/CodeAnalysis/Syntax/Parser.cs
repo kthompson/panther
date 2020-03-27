@@ -74,16 +74,18 @@ namespace Panther.CodeAnalysis.Syntax
 
             // a + b
             InfixParseFunctions[SyntaxKind.AmpersandAmpersandToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.EqualsEqualsToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.AmpersandToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.BangEqualsToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.CaretToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.EqualsEqualsToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.GreaterThanEqualsToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.GreaterThanToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.LessThanEqualsToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.GreaterThanEqualsToken] = ParseInfixExpression;
-
-            InfixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.MinusToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.PipeToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.SlashToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.StarToken] = ParseInfixExpression;
             //InfixParseFunctions[SyntaxKind.OpenParenToken] = ParseCallExpression;

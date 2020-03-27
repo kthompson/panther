@@ -98,22 +98,41 @@ namespace Panther.CodeAnalysis
                 var left = EvaluateExpression(binaryExpression.Left);
                 var right = EvaluateExpression(binaryExpression.Right);
 
-                return binaryExpression.Operator.Kind switch
+                switch (binaryExpression.Operator.Kind)
                 {
-                    BoundBinaryOperatorKind.Addition => (object)((int)left + (int)right),
-                    BoundBinaryOperatorKind.Subtraction => ((int)left - (int)right),
-                    BoundBinaryOperatorKind.Multiplication => ((int)left * (int)right),
-                    BoundBinaryOperatorKind.Division => ((int)left / (int)right),
-                    BoundBinaryOperatorKind.LogicalAnd => ((bool)left && (bool)right),
-                    BoundBinaryOperatorKind.LogicalOr => ((bool)left || (bool)right),
-                    BoundBinaryOperatorKind.Equal => Equals(left, right),
-                    BoundBinaryOperatorKind.NotEqual => !Equals(left, right),
-                    BoundBinaryOperatorKind.LessThan => (int)left < (int)right,
-                    BoundBinaryOperatorKind.LessThanOrEqual => (int)left <= (int)right,
-                    BoundBinaryOperatorKind.GreaterThan => (int)left > (int)right,
-                    BoundBinaryOperatorKind.GreaterThanOrEqual => (int)left >= (int)right,
-                    _ => throw new Exception($"Unexpected binary operator {binaryExpression.Operator}")
-                };
+                    case BoundBinaryOperatorKind.Addition:
+                        return (object) ((int) left + (int) right);
+                    case BoundBinaryOperatorKind.Subtraction:
+                        return ((int) left - (int) right);
+                    case BoundBinaryOperatorKind.Multiplication:
+                        return ((int) left * (int) right);
+                    case BoundBinaryOperatorKind.Division:
+                        return ((int) left / (int) right);
+                    case BoundBinaryOperatorKind.BitwiseAnd:
+                        return ((int) left & (int) right);
+                    case BoundBinaryOperatorKind.BitwiseOr:
+                        return ((int) left | (int) right);
+                    case BoundBinaryOperatorKind.BitwiseXor:
+                        return ((int) left ^ (int) right);
+                    case BoundBinaryOperatorKind.LogicalAnd:
+                        return ((bool) left && (bool) right);
+                    case BoundBinaryOperatorKind.LogicalOr:
+                        return ((bool) left || (bool) right);
+                    case BoundBinaryOperatorKind.Equal:
+                        return Equals(left, right);
+                    case BoundBinaryOperatorKind.NotEqual:
+                        return !Equals(left, right);
+                    case BoundBinaryOperatorKind.LessThan:
+                        return (int) left < (int) right;
+                    case BoundBinaryOperatorKind.LessThanOrEqual:
+                        return (int) left <= (int) right;
+                    case BoundBinaryOperatorKind.GreaterThan:
+                        return (int) left > (int) right;
+                    case BoundBinaryOperatorKind.GreaterThanOrEqual:
+                        return (int) left >= (int) right;
+                    default:
+                        throw new Exception($"Unexpected binary operator {binaryExpression.Operator}");
+                }
             }
 
             if (node is BoundUnaryExpression unary)

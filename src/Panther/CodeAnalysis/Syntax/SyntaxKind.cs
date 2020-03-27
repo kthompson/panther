@@ -28,8 +28,10 @@
         SlashToken,
         StarToken,
         BangToken,
+        AmpersandToken,
         AmpersandAmpersandToken,
         PipePipeToken,
+        PipeToken,
         BangEqualsToken,
         EqualsToken,
         EqualsEqualsToken,
@@ -37,6 +39,7 @@
         LessThanEqualsToken,
         GreaterThanToken,
         GreaterThanEqualsToken,
+        CaretToken,
 
         // grouping tokens
         CloseParenToken,

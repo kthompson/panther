@@ -40,29 +40,34 @@ namespace Panther.CodeAnalysis.Syntax
         {
             switch (kind)
             {
+                case SyntaxKind.PipeToken:
                 case SyntaxKind.PipePipeToken:
                     return (OperatorPrecedence)1;
+                
+                case SyntaxKind.CaretToken:
+                    return (OperatorPrecedence)1;
 
+                case SyntaxKind.AmpersandToken:
                 case SyntaxKind.AmpersandAmpersandToken:
-                    return (OperatorPrecedence)2;
+                    return (OperatorPrecedence)3;
 
                 case SyntaxKind.EqualsEqualsToken:
                 case SyntaxKind.BangEqualsToken:
-                    return (OperatorPrecedence)3;
+                    return (OperatorPrecedence)4;
 
                 case SyntaxKind.LessThanToken:
                 case SyntaxKind.LessThanEqualsToken:
                 case SyntaxKind.GreaterThanToken:
                 case SyntaxKind.GreaterThanEqualsToken:
-                    return (OperatorPrecedence)4;
+                    return (OperatorPrecedence)5;
 
                 case SyntaxKind.PlusToken:
                 case SyntaxKind.MinusToken:
-                    return (OperatorPrecedence)5;
+                    return (OperatorPrecedence)6;
 
                 case SyntaxKind.StarToken:
                 case SyntaxKind.SlashToken:
-                    return (OperatorPrecedence)6;
+                    return (OperatorPrecedence)7;
 
                 default:
                     return null;
@@ -99,11 +104,14 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.SlashToken => "/",
                 SyntaxKind.StarToken => "*",
                 SyntaxKind.BangToken => "!",
+                SyntaxKind.CaretToken => "^",
+                SyntaxKind.AmpersandToken => "&",
                 SyntaxKind.AmpersandAmpersandToken => "&&",
                 SyntaxKind.LessThanToken => "<",
                 SyntaxKind.LessThanEqualsToken => "<=",
                 SyntaxKind.GreaterThanToken => ">",
                 SyntaxKind.GreaterThanEqualsToken => ">=",
+                SyntaxKind.PipeToken => "|",
                 SyntaxKind.PipePipeToken => "||",
                 SyntaxKind.BangEqualsToken => "!=",
                 SyntaxKind.EqualsToken => "=",
