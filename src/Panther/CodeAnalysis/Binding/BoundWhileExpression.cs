@@ -5,15 +5,15 @@ namespace Panther.CodeAnalysis.Binding
     internal class BoundWhileExpression : BoundExpression
     {
         public BoundExpression Condition { get; }
-        public BoundExpression Expression { get; }
+        public BoundExpression Body { get; }
 
-        public BoundWhileExpression(BoundExpression condition, BoundExpression expression)
+        public BoundWhileExpression(BoundExpression condition, BoundExpression body)
         {
             Condition = condition;
-            Expression = expression;
+            Body = body;
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.WhileExpression;
-        public override Type Type => Expression.Type;
+        public override Type Type => Body.Type;
     }
 }

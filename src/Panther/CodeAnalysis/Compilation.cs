@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis
@@ -51,7 +52,8 @@ namespace Panther.CodeAnalysis
                 return new EvaluationResult(diagnostics, null);
             }
 
-            var evaluator = new Evaluator(globalScope.Statement, variables);
+            var statement = GetStatement();
+            var evaluator = new Evaluator(statement, variables);
             var value = evaluator.Evaluate();
 
             return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
@@ -59,7 +61,10 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(TextWriter @out)
         {
-            GlobalScope.Statement.WriteTo(@out);
+            var statement = GetStatement();
+            statement.WriteTo(@out);
         }
+
+        private BoundStatement GetStatement() => Lowerer.Lower(GlobalScope.Statement);
     }
 }
