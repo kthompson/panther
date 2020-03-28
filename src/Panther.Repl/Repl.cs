@@ -70,9 +70,6 @@ namespace Panther
                 }
 
                 var compilation = previous == null ? new Compilation(syntaxTree) : previous.ContinueWith(syntaxTree);
-                var result = compilation.Evaluate(variables);
-                var diags = result.Diagnostics;
-
                 if (showTree)
                 {
                     Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -85,6 +82,10 @@ namespace Panther
                     compilation.EmitTree(Console.Out);
                 }
 
+                var result = compilation.Evaluate(variables);
+                var diags = result.Diagnostics;
+
+               
                 if (diags.Any())
                 {
                     var text = syntaxTree.Text;

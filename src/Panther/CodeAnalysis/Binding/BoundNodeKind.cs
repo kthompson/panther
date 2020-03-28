@@ -4,18 +4,21 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal enum BoundNodeKind
     {
-        UnaryExpression,
-        LiteralExpression,
+        AssignmentExpression,
         BinaryExpression,
-        VariableExpression,
         BlockExpression,
-        UnitExpression,
-        IfExpression,
-        WhileExpression,
         ForExpression,
+        IfExpression,
+        LiteralExpression,
+        UnaryExpression,
+        UnitExpression,
+        VariableExpression,
+        WhileExpression,
 
+        ConditionalGotoStatement,
         ExpressionStatement,
+        GotoStatement,
+        LabelStatement,
         VariableDeclarationStatement,
-        AssignmentExpression
     }
 }

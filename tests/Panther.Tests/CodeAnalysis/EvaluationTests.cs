@@ -122,11 +122,11 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
-        public void EvaluatesNestedIf(bool condition, int number)
+        public void EvaluatesNestedIf(bool condition, bool condition2, int number)
         {
             AssertEvaluation($@"if ({b(condition)})
                                 {number}
-                                else if (true) 5 else 1", condition ? number : 5);
+                                else if ({b(condition2)}) 5 else 1", condition ? number : condition2 ? 5 : 1);
         }
 
         [Property]

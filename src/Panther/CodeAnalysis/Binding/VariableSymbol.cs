@@ -14,5 +14,11 @@ namespace Panther.CodeAnalysis.Binding
             IsReadOnly = isReadOnly;
             Type = type;
         }
+
+        public override string ToString()
+        {
+            var valOrVar = IsReadOnly ? "val" : "var";
+            return $"{valOrVar} {Name}";
+        }
     }
 }

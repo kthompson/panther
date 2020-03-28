@@ -65,6 +65,6 @@ namespace Panther.CodeAnalysis
             statement.WriteTo(@out);
         }
 
-        private BoundStatement GetStatement() => Lowerer.Lower(GlobalScope.Statement);
+        private BoundBlockExpression GetStatement() => Lowerer.Lower(GlobalScope.Statement);
     }
 }

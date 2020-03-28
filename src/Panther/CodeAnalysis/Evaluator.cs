@@ -22,40 +22,73 @@ namespace Panther.CodeAnalysis
 
     internal class Evaluator
     {
-        private readonly BoundStatement _root;
+        private readonly BoundBlockExpression _root;
         private readonly Dictionary<VariableSymbol, object> _variables;
         private object? _lastValue;
+        private readonly Dictionary<LabelSymbol, int> _labels = new Dictionary<LabelSymbol, int>();
 
-        public Evaluator(BoundStatement root, Dictionary<VariableSymbol, object> variables)
+        public Evaluator(BoundBlockExpression root, Dictionary<VariableSymbol, object> variables)
         {
             _root = root;
             _variables = variables;
         }
 
+        private void InitializeLabelLookup()
+        {
+            for (int i = 0; i < _root.Statements.Length; i++)
+            {
+                if (_root.Statements[i] is BoundLabelStatement labelStatement)
+                {
+                    _labels[labelStatement.Label] = i + 1; // skip label
+                }
+            }
+        }        
+        
         public object? Evaluate()
         {
-            EvaluateStatement(_root);
+            InitializeLabelLookup();
 
+            var position = 0;
+            while (position < _root.Statements.Length)
+            {
+                switch (_root.Statements[position])
+                {
+                    case BoundGotoStatement boundGotoStatement:
+                        position = _labels[boundGotoStatement.Label];
+                        continue;
+                    
+                    case BoundLabelStatement _:
+                        // noop
+                        break;
+                    
+                    case BoundConditionalGotoStatement conditionalGotoStatement:
+                        var cond = (bool)EvaluateExpression(conditionalGotoStatement.Condition);
+                        if (conditionalGotoStatement.JumpIfFalse != cond)
+                        {
+                            position = _labels[conditionalGotoStatement.Label];
+                            continue;
+                        }
+                        break;
+                    case BoundVariableDeclarationStatement a:
+                    {
+                        var value = EvaluateExpression(a.Expression);
+                        _variables[a.Variable] = value;
+                        _lastValue = value;
+                        break;
+                    }
+                    case BoundExpressionStatement expressionStatement:
+                        _lastValue = EvaluateExpression(expressionStatement.Expression);
+                        break;
+                    default:
+                        throw new Exception($"Unexpected statement {_root.Statements[position].Kind}");
+                }
+
+                position++;
+            }
+
+            _lastValue = EvaluateExpression(_root.Expression);
+            
             return _lastValue;
-        }
-
-        private void EvaluateStatement(BoundStatement node)
-        {
-            if (node is BoundVariableDeclarationStatement a)
-            {
-                var value = EvaluateExpression(a.Expression);
-                _variables[a.Variable] = value;
-                _lastValue = value;
-                return;
-            }
-
-            if (node is BoundExpressionStatement expressionStatement)
-            {
-                _lastValue = EvaluateExpression(expressionStatement.Expression);
-                return;
-            }
-
-            throw new Exception($"Unexpected statement {node.Kind}");
         }
 
         private object EvaluateExpression(BoundExpression node)
@@ -70,20 +103,10 @@ namespace Panther.CodeAnalysis
                 {
                     var value = EvaluateExpression(assignmentStatement.Expression);
                     _variables[assignmentStatement.Variable] = value;
-                    _lastValue = Unit.Default;
                     return Unit.Default;
                 }
                 case BoundVariableExpression v:
                     return _variables[v.Variable];
-                case BoundBlockExpression block:
-                {
-                    foreach (var statement in block.Statements)
-                    {
-                        EvaluateStatement(statement);
-                    }
-
-                    return EvaluateExpression(block.Expression);
-                }
                 case BoundBinaryExpression binaryExpression:
                 {
                     var left = EvaluateExpression(binaryExpression.Left);
@@ -108,8 +131,6 @@ namespace Panther.CodeAnalysis
                         BoundBinaryOperatorKind.GreaterThanOrEqual => ((int) left >= (int) right),
                         _ => throw new Exception($"Unexpected binary operator {binaryExpression.Operator}")
                     };
-
-                    break;
                 }
                 case BoundUnaryExpression unary:
                 {
@@ -122,24 +143,6 @@ namespace Panther.CodeAnalysis
                         BoundUnaryOperatorKind.BitwiseNegation => ~(int)operand,
                         _ => throw new Exception($"Unexpected unary operator {unary.Operator}")
                     };
-                }
-                case BoundIfExpression ifExpression:
-                {
-                    var cond = (bool)EvaluateExpression(ifExpression.Condition);
-                    return EvaluateExpression(cond ? ifExpression.Then : ifExpression.Else);
-                }
-                case BoundWhileExpression whileExpression:
-                {
-                    while (true)
-                    {
-                        var cond = (bool)EvaluateExpression(whileExpression.Condition);
-                        if (!cond)
-                            break;
-
-                        EvaluateExpression(whileExpression.Body);
-                    }
-
-                    return Unit.Default;
                 }
                 default:
                     throw new Exception($"Unexpected expression {node.Kind}");

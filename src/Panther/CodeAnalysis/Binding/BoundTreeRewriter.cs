@@ -130,13 +130,22 @@ namespace Panther.CodeAnalysis.Binding
         protected virtual BoundStatement RewriteStatement(BoundStatement node) =>
             node switch
             {
-                BoundExpressionStatement boundExpressionStatement => RewriteExpressionStatement(
-                    boundExpressionStatement),
-                BoundVariableDeclarationStatement boundVariableDeclarationStatement =>
-                RewriteVariableDeclarationStatement(boundVariableDeclarationStatement),
+                BoundExpressionStatement expressionStatement => RewriteExpressionStatement(expressionStatement),
+                BoundVariableDeclarationStatement variableDeclarationStatement => RewriteVariableDeclarationStatement(variableDeclarationStatement),
+                BoundLabelStatement labelStatement => RewriteBoundLabelStatement(labelStatement),
+                BoundGotoStatement gotoStatement => RewriteBoundGotoStatement(gotoStatement),
+                BoundConditionalGotoStatement conditionalGotoStatement => RewriteBoundConditionalGotoStatement(conditionalGotoStatement),
                 _ => throw new ArgumentOutOfRangeException(nameof(node))
             };
 
+        protected virtual BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
+        {
+            var cond = RewriteExpression(node.Condition);
+            if (node.Condition == cond)
+                return node;
+
+            return new BoundConditionalGotoStatement(node.Label, node.Condition, node.JumpIfFalse);
+        }
 
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
         {
@@ -147,6 +156,19 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundExpressionStatement(expr);
         }
 
+        protected virtual BoundStatement RewriteVariableDeclarationStatement(BoundVariableDeclarationStatement node)
+        {
+            var expr = RewriteExpression(node.Expression);
+            if (expr == node.Expression)
+                return node;
+            
+            return new BoundVariableDeclarationStatement(node.Variable, expr);
+        }
+
+        protected virtual BoundStatement RewriteBoundGotoStatement(BoundGotoStatement node) => node;
+
+        protected virtual BoundStatement RewriteBoundLabelStatement(BoundLabelStatement node) => node;
+
         protected virtual BoundUnaryOperator RewriteUnaryOperator(BoundUnaryOperator node) => node;
 
         protected virtual BoundExpression RewriteVariableExpression(BoundVariableExpression node) => node;
@@ -154,8 +176,7 @@ namespace Panther.CodeAnalysis.Binding
         protected virtual BoundExpression RewriteUnitExpression(BoundUnitExpression node) => node;
 
         protected virtual BoundExpression RewriteLiteralExpression(BoundLiteralExpression node) => node;
-        protected virtual BoundBinaryOperator RewriteBinaryOperator(BoundBinaryOperator node) => node;
 
-        protected virtual BoundStatement RewriteVariableDeclarationStatement(BoundVariableDeclarationStatement node) => node;
+        protected virtual BoundBinaryOperator RewriteBinaryOperator(BoundBinaryOperator node) => node;
     }
 }
