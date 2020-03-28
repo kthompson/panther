@@ -200,7 +200,9 @@ namespace Panther.CodeAnalysis.Syntax
             if (prefixFunction == null)
             {
                 // no prefix function
-                Diagnostics.ReportUnsupportedPrefixToken(currentToken);
+                // this results in an error from another location
+                // so I don't think we need this here?
+                // Diagnostics.ReportUnsupportedPrefixToken(currentToken);
                 return new LiteralExpressionSyntax(currentToken);
             }
 
@@ -241,7 +243,7 @@ namespace Panther.CodeAnalysis.Syntax
             // left + right
             var precedence = CurrentPrecedence();
             var binaryOperatorToken = Accept(false);
-            var right = ParseExpression(precedence, skipNewLines);
+            var right = ParseExpression(precedence, true);
 
             return new BinaryExpressionSyntax(left, binaryOperatorToken, right);
         }

@@ -77,6 +77,31 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
+        public void ReportIncompleteBlock()
+        {
+            var text = @"{
+                            []";
+
+            var diagnostic = @"
+                Unexpected token EndOfInputToken, expected CloseBraceToken
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportIncompleteGroup()
+        {
+            var text = @"([]";
+
+            var diagnostic = @"
+                Unexpected token EndOfInputToken, expected CloseParenToken
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
         public void ReportAlreadyDefinedVariable()
         {
             var text = @"{
