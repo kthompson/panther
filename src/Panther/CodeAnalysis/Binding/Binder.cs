@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
@@ -110,17 +111,17 @@ namespace Panther.CodeAnalysis.Binding
             var lowerBound = BindExpression(syntax.FromExpression, scope);
             var upperBound = BindExpression(syntax.ToExpression, scope);
 
-            if (lowerBound.Type != typeof(int))
+            if (lowerBound.Type != TypeSymbol.Int)
             {
-                Diagnostics.ReportTypeMismatch(syntax.FromExpression.Span, typeof(int), lowerBound.Type);
+                Diagnostics.ReportTypeMismatch(syntax.FromExpression.Span, TypeSymbol.Int, lowerBound.Type);
             }
 
-            if (upperBound.Type != typeof(int))
+            if (upperBound.Type != TypeSymbol.Int)
             {
-                Diagnostics.ReportTypeMismatch(syntax.ToExpression.Span, typeof(int), upperBound.Type);
+                Diagnostics.ReportTypeMismatch(syntax.ToExpression.Span, TypeSymbol.Int, upperBound.Type);
             }
 
-            var variable = new VariableSymbol(name, true, typeof(int));
+            var variable = new VariableSymbol(name, true, TypeSymbol.Int);
             var newScope = new BoundScope(scope);
             if (!newScope.TryDeclare(variable))
                 Diagnostics.ReportVariableAlreadyDefined(syntax.VariableExpression.Span, name);
@@ -135,9 +136,9 @@ namespace Panther.CodeAnalysis.Binding
             var condition = BindExpression(syntax.ConditionExpression, scope);
             var expr = BindExpression(syntax.Expression, scope);
 
-            if (condition.Type != typeof(bool))
+            if (condition.Type != TypeSymbol.Bool)
             {
-                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Span, typeof(bool), condition.Type);
+                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Span, TypeSymbol.Bool, condition.Type);
             }
 
             return new BoundWhileExpression(condition, expr);
@@ -154,9 +155,9 @@ namespace Panther.CodeAnalysis.Binding
                 Diagnostics.ReportTypeMismatch(syntax.ElseExpression.Span, then.Type, elseExpr.Type);
             }
 
-            if (condition.Type != typeof(bool))
+            if (condition.Type != TypeSymbol.Bool)
             {
-                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Span, typeof(bool), condition.Type);
+                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Span, TypeSymbol.Bool, condition.Type);
             }
 
             return new BoundIfExpression(condition, then, elseExpr);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
@@ -130,7 +131,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                         if (!int.TryParse(span, out var value))
                             _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
-                                typeof(int));
+                                TypeSymbol.Int);
 
                         return new SyntaxToken(SyntaxKind.NumberToken, start, span, value);
                     }

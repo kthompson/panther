@@ -19,7 +19,7 @@ namespace Panther.Tests.CodeAnalysis
             ";
 
             var diagnostic = @"
-                Binary operator '+' is not defined for types System.Int32 and System.Boolean
+                Binary operator '+' is not defined for types 'int' and 'bool'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -37,7 +37,7 @@ namespace Panther.Tests.CodeAnalysis
             ";
 
             var diagnostic = @"
-                Unary operator '!' is not defined for type System.Int32
+                Unary operator '!' is not defined for type 'int'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -56,8 +56,20 @@ namespace Panther.Tests.CodeAnalysis
             ";
 
             var diagnostic = @"
-                Unary operator '-' is not defined for type System.Boolean
-                Unary operator '+' is not defined for type System.Boolean
+                Unary operator '-' is not defined for type 'bool'
+                Unary operator '+' is not defined for type 'bool'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact(Skip = "Not currently working")]
+        public void DontReportCascadingErrors()
+        {
+            var text = @"(true [*] 1) + 7";
+
+            var diagnostic = @"
+                Binary operator '*' is not defined for types 'bool' and 'int'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -92,9 +104,10 @@ namespace Panther.Tests.CodeAnalysis
         [Fact]
         public void ReportIncompleteGroup()
         {
-            var text = @"([]";
+            var text = @"([][]";
 
             var diagnostic = @"
+                Unexpected token EndOfInputToken, expected Expression
                 Unexpected token EndOfInputToken, expected CloseParenToken
             ";
 
@@ -126,7 +139,7 @@ namespace Panther.Tests.CodeAnalysis
                 }";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Boolean', found 'System.Int32'
+                Type mismatch. Required 'bool', found 'int'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -138,7 +151,7 @@ namespace Panther.Tests.CodeAnalysis
             var text = @"while ([5 + 1]) 7";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Boolean', found 'System.Int32'
+                Type mismatch. Required 'bool', found 'int'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -150,7 +163,7 @@ namespace Panther.Tests.CodeAnalysis
             var text = $@"for (x <- [{b(lower)}] to 12) 7";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+                Type mismatch. Required 'int', found 'bool'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -162,7 +175,7 @@ namespace Panther.Tests.CodeAnalysis
             var text = $@"for (x <- 7 to [{b(upper)}]) 7";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+                Type mismatch. Required 'int', found 'bool'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -178,7 +191,7 @@ namespace Panther.Tests.CodeAnalysis
                 }";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Boolean', found 'System.Int32'
+                Type mismatch. Required 'bool', found 'int'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -194,7 +207,7 @@ namespace Panther.Tests.CodeAnalysis
                 }";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+                Type mismatch. Required 'int', found 'bool'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
@@ -281,7 +294,7 @@ namespace Panther.Tests.CodeAnalysis
                 }";
 
             var diagnostic = @"
-                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+                Type mismatch. Required 'int', found 'bool'
             ";
 
             AssertHasDiagnostics(text, diagnostic);

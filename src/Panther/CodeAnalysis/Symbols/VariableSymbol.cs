@@ -1,16 +1,14 @@
 ﻿using System;
 
-namespace Panther.CodeAnalysis.Binding
+namespace Panther.CodeAnalysis.Symbols
 {
-    public sealed class VariableSymbol
+    public sealed class VariableSymbol : Symbol
     {
-        public string Name { get; }
         public bool IsReadOnly { get; }
-        public Type Type { get; }
+        public TypeSymbol Type { get; }
 
-        internal VariableSymbol(string name, bool isReadOnly, Type type)
+        internal VariableSymbol(string name, bool isReadOnly, TypeSymbol type): base(name)
         {
-            Name = name;
             IsReadOnly = isReadOnly;
             Type = type;
         }
@@ -20,5 +18,7 @@ namespace Panther.CodeAnalysis.Binding
             var valOrVar = IsReadOnly ? "val" : "var";
             return $"{valOrVar} {Name}";
         }
+
+        public override SymbolKind Kind => SymbolKind.Variable;
     }
 }

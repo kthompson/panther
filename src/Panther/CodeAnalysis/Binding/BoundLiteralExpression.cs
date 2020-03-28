@@ -1,4 +1,5 @@
 ﻿using System;
+using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -7,11 +8,17 @@ namespace Panther.CodeAnalysis.Binding
         public BoundLiteralExpression(object value)
         {
             Value = value;
+            Type = value switch
+            {
+                int _ => TypeSymbol.Int,
+                bool _ => TypeSymbol.Bool,
+                _ => throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}"),
+            };
         }
 
         public object Value { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
-        public override Type Type => Value.GetType();
+        public override TypeSymbol Type { get; }
     }
 }

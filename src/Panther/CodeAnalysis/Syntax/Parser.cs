@@ -206,7 +206,6 @@ namespace Panther.CodeAnalysis.Syntax
                 // Diagnostics.ReportUnsupportedPrefixToken(currentToken);
                 Diagnostics.ReportExpectedExpression(currentToken.Span, currentToken.Kind);
                 return ParseIntegerLiteralExpression(false);
-                return new LiteralExpressionSyntax(currentToken);
             }
 
             skipNewLines = currentToken.Kind != SyntaxKind.OpenBraceToken && skipNewLines;

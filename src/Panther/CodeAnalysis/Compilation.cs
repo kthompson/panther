@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Lowering;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis

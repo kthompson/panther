@@ -3,6 +3,7 @@ using FsCheck;
 using FsCheck.Xunit;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
@@ -264,7 +265,7 @@ namespace Panther.Tests.CodeAnalysis
             Assert.Collection(dictionary, pair =>
             {
                 Assert.Equal("a", pair.Key.Name);
-                Assert.Equal(typeof(int), pair.Key.Type);
+                Assert.Equal(TypeSymbol.Int, pair.Key.Type);
                 Assert.Equal(n, pair.Value);
             });
         }
@@ -279,7 +280,7 @@ namespace Panther.Tests.CodeAnalysis
             Assert.Collection(dictionary, pair =>
             {
                 Assert.Equal("a", pair.Key.Name);
-                Assert.Equal(typeof(bool), pair.Key.Type);
+                Assert.Equal(TypeSymbol.Bool, pair.Key.Type);
                 Assert.Equal(n, pair.Value);
             });
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -14,6 +15,6 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.WhileExpression;
-        public override Type Type => Body.Type;
+        public override TypeSymbol Type => Body.Type;
     }
 }

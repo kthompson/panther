@@ -1,4 +1,5 @@
 ﻿using System;
+using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -18,6 +19,6 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression Right { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.BinaryExpression;
-        public override Type Type => Operator.Type;
+        public override TypeSymbol Type => Operator.Type;
     }
 }

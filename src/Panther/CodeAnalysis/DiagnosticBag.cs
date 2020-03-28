@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
 
@@ -26,8 +27,8 @@ namespace Panther.CodeAnalysis
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public void ReportInvalidNumber(TextSpan textSpan, string text, Type type) =>
-            Report(textSpan, $"The number {text} isn't a valid {type}");
+        public void ReportInvalidNumber(TextSpan textSpan, string text, TypeSymbol type) =>
+            Report(textSpan, $"The number {text} isn't a valid '{type}'");
 
         public void ReportBadCharacter(int position, in char character) =>
             Report(new TextSpan(position, 1), $"Invalid character in input: {character}");
@@ -35,11 +36,11 @@ namespace Panther.CodeAnalysis
         public void ReportUnexpectedToken(TextSpan span, SyntaxKind currentKind, SyntaxKind expectedKind) =>
             Report(span, $"Unexpected token {currentKind}, expected {expectedKind}");
 
-        public void ReportUndefinedUnaryOperator(TextSpan span, string operatorText, Type operandType) =>
-            Report(span, $"Unary operator '{operatorText}' is not defined for type {operandType}");
+        public void ReportUndefinedUnaryOperator(TextSpan span, string operatorText, TypeSymbol operandType) =>
+            Report(span, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");
 
-        public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, Type leftType, Type rightType) =>
-            Report(span, $"Binary operator '{operatorText}' is not defined for types {leftType} and {rightType}");
+        public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, TypeSymbol leftType, TypeSymbol rightType) =>
+            Report(span, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'");
 
         public void ReportUndefinedName(TextSpan span, string name) =>
             Report(span, $"Variable '{name}' does not exist");
@@ -50,7 +51,7 @@ namespace Panther.CodeAnalysis
         public void ReportReassignmentToVal(TextSpan span, string name) =>
             Report(span, $"Reassignment to val '{name}'");
 
-        public void ReportTypeMismatch(TextSpan span, Type expectedType, Type foundType) =>
+        public void ReportTypeMismatch(TextSpan span, TypeSymbol expectedType, TypeSymbol foundType) =>
             Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
 
         public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) => 

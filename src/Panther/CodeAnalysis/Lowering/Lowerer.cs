@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Lowering
@@ -37,7 +38,7 @@ namespace Panther.CodeAnalysis.Lowering
             return new LabelSymbol($"{tag}Label{(int) token}");
         }
 
-        private VariableSymbol GenerateVariable(Type type)
+        private VariableSymbol GenerateVariable(TypeSymbol type)
         {
             _variableCount++;
             return new VariableSymbol($"variable${_variableCount}", false, type);
@@ -195,7 +196,7 @@ namespace Panther.CodeAnalysis.Lowering
 
             var condition = new BoundBinaryExpression(
                 new BoundVariableExpression(node.Variable),
-                BoundBinaryOperator.Bind(SyntaxKind.LessThanToken, typeof(int), typeof(int)),
+                BoundBinaryOperator.Bind(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
                 upperBound
             );
 
@@ -204,7 +205,7 @@ namespace Panther.CodeAnalysis.Lowering
                     node.Variable,
                     new BoundBinaryExpression(
                         new BoundVariableExpression(node.Variable),
-                        BoundBinaryOperator.Bind(SyntaxKind.PlusToken, typeof(int), typeof(int)),
+                        BoundBinaryOperator.Bind(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
                         new BoundLiteralExpression(1)
                     )
                 ));

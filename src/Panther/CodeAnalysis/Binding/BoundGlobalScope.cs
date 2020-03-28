@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
