@@ -33,12 +33,11 @@ namespace Panther.CodeAnalysis.Binding
             {
                 SyntaxKind.VariableDeclarationStatement => BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax, scope),
                 SyntaxKind.ExpressionStatement => BindExpressionStatement((ExpressionStatementSyntax)syntax, scope),
-                SyntaxKind.AssignmentStatement => BindAssignmentStatement((AssignmentStatementSyntax)syntax, scope),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
         }
 
-        private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax, BoundScope scope)
+        private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope)
         {
             var boundExpression = BindExpression(syntax.Expression, scope);
 
@@ -46,7 +45,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
 
-                return new BoundExpressionStatement(new BoundLiteralExpression(0));
+                return new BoundLiteralExpression(0);
             }
 
             if (variable.IsReadOnly)
@@ -59,7 +58,7 @@ namespace Panther.CodeAnalysis.Binding
                 Diagnostics.ReportTypeMismatch(syntax.Expression.Span, variable.Type, boundExpression.Type);
             }
 
-            return new BoundAssignmentStatement(variable, boundExpression);
+            return new BoundAssignmentExpression(variable, boundExpression);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
@@ -91,6 +90,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 SyntaxKind.LiteralExpression => BindLiteralExpression((LiteralExpressionSyntax)syntax),
                 SyntaxKind.UnitExpression => BindUnitExpression(),
+                SyntaxKind.AssignmentExpression => BindAssignmentExpression((AssignmentExpressionSyntax)syntax, scope),
                 SyntaxKind.BinaryExpression => BindBinaryExpression((BinaryExpressionSyntax)syntax, scope),
                 SyntaxKind.UnaryExpression => BindUnaryExpression((UnaryExpressionSyntax)syntax, scope),
                 SyntaxKind.GroupExpression => BindGroupExpression((GroupExpressionSyntax)syntax, scope),
@@ -98,8 +98,36 @@ namespace Panther.CodeAnalysis.Binding
                 SyntaxKind.BlockExpression => BindBlockExpression((BlockExpressionSyntax)syntax, scope),
                 SyntaxKind.IfExpression => BindIfExpression((IfExpressionSyntax)syntax, scope),
                 SyntaxKind.WhileExpression => BindWhileExpression((WhileExpressionSyntax)syntax, scope),
+                SyntaxKind.ForExpression => BindForExpression((ForExpressionSyntax)syntax, scope),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
+        }
+
+        private BoundExpression BindForExpression(ForExpressionSyntax syntax, BoundScope scope)
+        {
+            var name = syntax.VariableExpression.IdentifierToken.Text;
+
+            var lowerBound = BindExpression(syntax.FromExpression, scope);
+            var upperBound = BindExpression(syntax.ToExpression, scope);
+
+            if (lowerBound.Type != typeof(int))
+            {
+                Diagnostics.ReportTypeMismatch(syntax.FromExpression.Span, typeof(int), lowerBound.Type);
+            }
+
+            if (upperBound.Type != typeof(int))
+            {
+                Diagnostics.ReportTypeMismatch(syntax.ToExpression.Span, typeof(int), upperBound.Type);
+            }
+
+            var variable = new VariableSymbol(name, true, typeof(int));
+            var newScope = new BoundScope(scope);
+            if (!newScope.TryDeclare(variable))
+                Diagnostics.ReportVariableAlreadyDefined(syntax.VariableExpression.Span, name);
+
+            var body = BindExpression(syntax.Body, newScope);
+
+            return new BoundForExpression(variable, lowerBound, upperBound, body);
         }
 
         private BoundExpression BindWhileExpression(WhileExpressionSyntax syntax, BoundScope scope)
@@ -182,7 +210,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundLiteralExpression(0);
         }
 
-        private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax, BoundScope scope) => 
+        private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax, BoundScope scope) =>
             BindExpression(syntax.Expression, scope);
 
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax, BoundScope scope)

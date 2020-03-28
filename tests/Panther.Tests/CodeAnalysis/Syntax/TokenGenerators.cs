@@ -89,8 +89,9 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 return true;
 
             // '<' + '=' => '<='
+            // '<' + '-' => '<-'
             // '<' + '==' => '<=' + '='
-            if (kind1 == SyntaxKind.LessThanToken && (kind2 == SyntaxKind.EqualsToken || kind2 == SyntaxKind.EqualsEqualsToken))
+            if (kind1 == SyntaxKind.LessThanToken && (kind2 == SyntaxKind.EqualsToken || kind2 == SyntaxKind.EqualsEqualsToken || kind2 == SyntaxKind.DashToken))
                 return true;
 
             // '>' + '=' => '>='
@@ -102,7 +103,12 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             // '|' + '||' => '||' + '|'
             if (kind1 == SyntaxKind.PipeToken && (kind2 == SyntaxKind.PipeToken || kind2 == SyntaxKind.PipePipeToken))
                 return true;
-            
+
+            // '&' + '&' => '&&'
+            // '&' + '&&' => '&&' + '&'
+            if (kind1 == SyntaxKind.AmpersandToken && (kind2 == SyntaxKind.AmpersandToken || kind2 == SyntaxKind.AmpersandAmpersandToken))
+                return true;
+
             return false;
         }
     }

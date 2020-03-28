@@ -58,19 +58,19 @@ namespace Panther.Tests.CodeAnalysis
         {
             AssertEvaluation($"{number} >= {number2}", number >= number2);
         }
-        
-        [Property]
+
+        [Property(Replay = "1536824861,296723711")]
         public void EvaluatesBitwiseAnd(int number, int number2)
         {
             AssertEvaluation($"{number} & {number2}", number & number2);
         }
-        
+
         [Property]
         public void EvaluatesBitwiseOr(int number, int number2)
         {
             AssertEvaluation($"{number} | {number2}", number | number2);
         }
-        
+
         [Property(Replay = "1125213375,296723366")]
         public void EvaluatesBitwiseXor(int number, int number2)
         {
@@ -122,6 +122,25 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
+        public void EvaluatesAssignment(int number)
+        {
+            AssertEvaluation($@"{{
+                                    var x = {number}
+                                    x = 1
+                                }}", Unit.Default);
+        }
+
+        [Property]
+        public void EvaluatesNestedAssignment(int number)
+        {
+            AssertEvaluation($@"{{
+                                    var x = 0
+                                    val y = x = {number}
+                                    x
+                                }}", number);
+        }
+
+        [Property]
         public void EvaluatesWhile(PositiveInt number)
         {
             AssertEvaluation($@"{{
@@ -133,6 +152,22 @@ namespace Panther.Tests.CodeAnalysis
                                     }}
                                     count
                                 }}", number.Item);
+        }
+
+        [Property]
+        public void EvaluatesFor(int from, int to)
+        {
+            var result = 0;
+            for (var i = from; i < to; i++)
+            {
+                result += i;
+            }
+
+            AssertEvaluation($@"{{
+                                    var count = 0
+                                    for (x <- {from} to {to}) count = count + x
+                                    count
+                                }}", result);
         }
 
         [Property]

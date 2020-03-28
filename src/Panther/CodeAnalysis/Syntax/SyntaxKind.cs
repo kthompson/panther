@@ -20,11 +20,13 @@
         IfKeyword,
         ElseKeyword,
         WhileKeyword,
+        ForKeyword,
+        ToKeyword,
 
         // Operators
         PlusToken,
 
-        MinusToken,
+        DashToken,
         SlashToken,
         StarToken,
         BangToken,
@@ -40,6 +42,7 @@
         GreaterThanToken,
         GreaterThanEqualsToken,
         CaretToken,
+        LessThanDashToken,
 
         // grouping tokens
         CloseParenToken,
@@ -59,12 +62,13 @@
         BlockExpression,
         IfExpression,
         WhileExpression,
+        ForExpression,
 
         // Statements
 
         VariableDeclarationStatement,
         ExpressionStatement,
-        AssignmentStatement,
+        AssignmentExpression,
 
         //  Other
         CompilationUnit

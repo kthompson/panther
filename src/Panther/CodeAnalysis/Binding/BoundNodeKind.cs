@@ -11,10 +11,11 @@ namespace Panther.CodeAnalysis.Binding
         BlockExpression,
         UnitExpression,
         IfExpression,
+        WhileExpression,
+        ForExpression,
 
         ExpressionStatement,
         VariableDeclarationStatement,
-        AssignmentStatement,
-        WhileExpression
+        AssignmentExpression
     }
 }

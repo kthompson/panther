@@ -186,6 +186,54 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         }
 
         [Fact]
+        public void ParseForExpression()
+        {
+            var text = @"for (x <- 0 to 5) x";
+            var tree = SyntaxTree.Parse(text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root.Statement;
+
+            using var e = new AssertingEnumerator(expression);
+
+            //└──CompilationUnit
+            //    ├──ExpressionStatement
+            //    │   ├──ForExpression
+            //    │   │   ├──ForKeyword
+            //    │   │   ├──OpenParenToken
+            //    │   │   ├──NameExpression
+            //    │   │   │   └──IdentifierToken
+            //    │   │   ├──LessThanDashToken
+            //    │   │   ├──LiteralExpression
+            //    │   │   │   └──NumberToken 0
+            //    │   │   ├──ToKeyword
+            //    │   │   ├──LiteralExpression
+            //    │   │   │   └──NumberToken 5
+            //    │   │   ├──CloseParenToken
+            //    │   │   └──NameExpression
+            //    │   │       └──IdentifierToken
+            //    │   └──NewLineToken
+            //    └──EndOfInputToken
+
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.ForExpression);
+            e.AssertToken(SyntaxKind.ForKeyword, "for");
+            e.AssertToken(SyntaxKind.OpenParenToken, "(");
+            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertToken(SyntaxKind.LessThanDashToken, "<-");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.NumberToken, "0");
+            e.AssertToken(SyntaxKind.ToKeyword, "to");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.NumberToken, "5");
+            e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
+        [Fact]
         public void ParseWhileExpression()
         {
             var text = @"{

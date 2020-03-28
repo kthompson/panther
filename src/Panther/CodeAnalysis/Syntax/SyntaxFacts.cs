@@ -43,7 +43,7 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.PipeToken:
                 case SyntaxKind.PipePipeToken:
                     return (OperatorPrecedence)1;
-                
+
                 case SyntaxKind.CaretToken:
                     return (OperatorPrecedence)1;
 
@@ -62,7 +62,7 @@ namespace Panther.CodeAnalysis.Syntax
                     return (OperatorPrecedence)5;
 
                 case SyntaxKind.PlusToken:
-                case SyntaxKind.MinusToken:
+                case SyntaxKind.DashToken:
                     return (OperatorPrecedence)6;
 
                 case SyntaxKind.StarToken:
@@ -85,6 +85,8 @@ namespace Panther.CodeAnalysis.Syntax
                 "false" => SyntaxKind.FalseKeyword,
                 "val" => SyntaxKind.ValKeyword,
                 "var" => SyntaxKind.VarKeyword,
+                "for" => SyntaxKind.ForKeyword,
+                "to" => SyntaxKind.ToKeyword,
                 _ => SyntaxKind.IdentifierToken
             };
         }
@@ -99,8 +101,10 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.ElseKeyword => "else",
                 SyntaxKind.IfKeyword => "if",
                 SyntaxKind.WhileKeyword => "while",
+                SyntaxKind.ForKeyword => "for",
+                SyntaxKind.ToKeyword => "to",
                 SyntaxKind.PlusToken => "+",
-                SyntaxKind.MinusToken => "-",
+                SyntaxKind.DashToken => "-",
                 SyntaxKind.SlashToken => "/",
                 SyntaxKind.StarToken => "*",
                 SyntaxKind.BangToken => "!",
@@ -126,7 +130,7 @@ namespace Panther.CodeAnalysis.Syntax
         public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() => new[]
         {
             SyntaxKind.PlusToken,
-            SyntaxKind.MinusToken,
+            SyntaxKind.DashToken,
             SyntaxKind.BangToken,
         };
 

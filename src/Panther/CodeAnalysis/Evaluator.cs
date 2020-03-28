@@ -55,14 +55,6 @@ namespace Panther.CodeAnalysis
                 return;
             }
 
-            if (node is BoundAssignmentStatement assignmentStatement)
-            {
-                var value = EvaluateExpression(assignmentStatement.Expression);
-                _variables[assignmentStatement.Variable] = value;
-                _lastValue = value;
-                return;
-            }
-
             throw new Exception($"Unexpected statement {node.Kind}");
         }
 
@@ -75,6 +67,14 @@ namespace Panther.CodeAnalysis
 
             if (node is BoundUnitExpression)
             {
+                return Unit.Default;
+            }
+
+            if (node is BoundAssignmentExpression assignmentStatement)
+            {
+                var value = EvaluateExpression(assignmentStatement.Expression);
+                _variables[assignmentStatement.Variable] = value;
+                _lastValue = Unit.Default;
                 return Unit.Default;
             }
 
@@ -101,35 +101,50 @@ namespace Panther.CodeAnalysis
                 switch (binaryExpression.Operator.Kind)
                 {
                     case BoundBinaryOperatorKind.Addition:
-                        return (object) ((int) left + (int) right);
+                        return (object)((int)left + (int)right);
+
                     case BoundBinaryOperatorKind.Subtraction:
-                        return ((int) left - (int) right);
+                        return ((int)left - (int)right);
+
                     case BoundBinaryOperatorKind.Multiplication:
-                        return ((int) left * (int) right);
+                        return ((int)left * (int)right);
+
                     case BoundBinaryOperatorKind.Division:
-                        return ((int) left / (int) right);
+                        return ((int)left / (int)right);
+
                     case BoundBinaryOperatorKind.BitwiseAnd:
-                        return ((int) left & (int) right);
+                        return ((int)left & (int)right);
+
                     case BoundBinaryOperatorKind.BitwiseOr:
-                        return ((int) left | (int) right);
+                        return ((int)left | (int)right);
+
                     case BoundBinaryOperatorKind.BitwiseXor:
-                        return ((int) left ^ (int) right);
+                        return ((int)left ^ (int)right);
+
                     case BoundBinaryOperatorKind.LogicalAnd:
-                        return ((bool) left && (bool) right);
+                        return ((bool)left && (bool)right);
+
                     case BoundBinaryOperatorKind.LogicalOr:
-                        return ((bool) left || (bool) right);
+                        return ((bool)left || (bool)right);
+
                     case BoundBinaryOperatorKind.Equal:
                         return Equals(left, right);
+
                     case BoundBinaryOperatorKind.NotEqual:
                         return !Equals(left, right);
+
                     case BoundBinaryOperatorKind.LessThan:
-                        return (int) left < (int) right;
+                        return (int)left < (int)right;
+
                     case BoundBinaryOperatorKind.LessThanOrEqual:
-                        return (int) left <= (int) right;
+                        return (int)left <= (int)right;
+
                     case BoundBinaryOperatorKind.GreaterThan:
-                        return (int) left > (int) right;
+                        return (int)left > (int)right;
+
                     case BoundBinaryOperatorKind.GreaterThanOrEqual:
-                        return (int) left >= (int) right;
+                        return (int)left >= (int)right;
+
                     default:
                         throw new Exception($"Unexpected binary operator {binaryExpression.Operator}");
                 }
@@ -162,6 +177,19 @@ namespace Panther.CodeAnalysis
                         break;
 
                     EvaluateExpression(whileExpression.Expression);
+                }
+
+                return Unit.Default;
+            }
+
+            if (node is BoundForExpression forExpression)
+            {
+                var lower = (int)EvaluateExpression(forExpression.LowerBound);
+                var upper = (int)EvaluateExpression(forExpression.UpperBound);
+                for (int i = lower; i < upper; i++)
+                {
+                    _variables[forExpression.Variable] = i;
+                    EvaluateExpression(forExpression.Body);
                 }
 
                 return Unit.Default;

@@ -57,16 +57,18 @@ namespace Panther.CodeAnalysis.Syntax
             this.Diagnostics.AddRange(lexer.Diagnostics);
 
             // -a
-            PrefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierExpression;
+            PrefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
+            PrefixParseFunctions[SyntaxKind.DashToken] = ParsePrefixExpression;
+            PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
+
+            PrefixParseFunctions[SyntaxKind.IdentifierToken] = ParseNameOrAssignmentExpression;
             PrefixParseFunctions[SyntaxKind.NumberToken] = ParseIntegerLiteralExpression;
             PrefixParseFunctions[SyntaxKind.TrueKeyword] = ParseBooleanLiteral;
             PrefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
-            PrefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
-            PrefixParseFunctions[SyntaxKind.MinusToken] = ParsePrefixExpression;
-            PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
             PrefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
             PrefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
+            PrefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
             //PrefixParseFunctions[SyntaxKind.Function] = ParseFunctionLiteral;
             //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
             //PrefixParseFunctions[SyntaxKind.LeftBracket] = ParseArrayLiteral;
@@ -82,7 +84,7 @@ namespace Panther.CodeAnalysis.Syntax
             InfixParseFunctions[SyntaxKind.GreaterThanToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.LessThanEqualsToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.MinusToken] = ParseInfixExpression;
+            InfixParseFunctions[SyntaxKind.DashToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.PipeToken] = ParseInfixExpression;
             InfixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
@@ -255,6 +257,23 @@ namespace Panther.CodeAnalysis.Syntax
             return new WhileExpressionSyntax(whileKeyword, openParenToken, condition, closeParenToken, expr);
         }
 
+        private ExpressionSyntax ParseForExpression(bool skipnewlines)
+        {
+            var forKeyword = Accept(false);
+            var openParenToken = Accept(SyntaxKind.OpenParenToken, true);
+            var variable = ParseNameExpression(true);
+            var leftArrow = Accept(SyntaxKind.LessThanDashToken, false);
+
+            var fromExpression = ParseExpression(OperatorPrecedence.Lowest, false);
+            var toKeyword = Accept(SyntaxKind.ToKeyword, true);
+            var toExpression = ParseExpression(OperatorPrecedence.Lowest, false);
+            var closeParenToken = Accept(SyntaxKind.CloseParenToken, true);
+
+            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
+
+            return new ForExpressionSyntax(forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
+        }
+
         private ExpressionSyntax ParseIfExpression(bool skipnewlines)
         {
             var ifKeyword = Accept(false);
@@ -292,9 +311,17 @@ namespace Panther.CodeAnalysis.Syntax
             return new LiteralExpressionSyntax(numberToken);
         }
 
-        private NameExpressionSyntax ParseIdentifierExpression(bool skipNewLines)
+        private ExpressionSyntax ParseNameOrAssignmentExpression(bool skipNewLines)
         {
-            var token = Accept(false);
+            if (PeekToken(false).Kind == SyntaxKind.EqualsToken)
+                return ParseAssignmentExpression();
+
+            return ParseNameExpression(false);
+        }
+
+        private NameExpressionSyntax ParseNameExpression(bool skipNewLines)
+        {
+            var token = Accept(skipNewLines);
 
             return new NameExpressionSyntax(token);
         }
@@ -317,9 +344,9 @@ namespace Panther.CodeAnalysis.Syntax
                     break;
 
                 statements.Add(ParseStatement());
-                
+
                 // prevent getting stuck in a loop as ParseStatement() does not always consume tokens
-                if(currentToken == CurrentToken(skipNewLines))
+                if (currentToken == CurrentToken(skipNewLines))
                     NextToken(skipNewLines);
             }
 
@@ -346,22 +373,18 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.VarKeyword:
                     return ParseVariableDeclarationStatement();
 
-                case SyntaxKind.IdentifierToken when PeekToken(false).Kind == SyntaxKind.EqualsToken:
-                    return ParseAssignmentStatement();
-
                 default:
                     return ParseExpressionStatement();
             }
         }
 
-        private StatementSyntax ParseAssignmentStatement()
+        private ExpressionSyntax ParseAssignmentExpression()
         {
             var identToken = Accept(SyntaxKind.IdentifierToken, false);
             var equalsToken = Accept(SyntaxKind.EqualsToken, false);
-            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
-            var newLineToken = AcceptStatementTerminator();
+            var expr = ParseExpression(OperatorPrecedence.Lowest, true);
 
-            return new AssignmentStatementSyntax(identToken, equalsToken, expr, newLineToken);
+            return new AssignmentExpressionSyntax(identToken, equalsToken, expr);
         }
 
         private StatementSyntax ParseExpressionStatement()

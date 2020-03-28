@@ -119,6 +119,30 @@ namespace Panther.Tests.CodeAnalysis
             AssertHasDiagnostics(text, diagnostic);
         }
 
+        [Property]
+        public void ReportInvalidForLowerBound(bool lower)
+        {
+            var text = $@"for (x <- [{b(lower)}] to 12) 7";
+
+            var diagnostic = @"
+                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Property]
+        public void ReportInvalidForUpperBound(bool upper)
+        {
+            var text = $@"for (x <- 7 to [{b(upper)}]) 7";
+
+            var diagnostic = @"
+                Type mismatch. Required 'System.Int32', found 'System.Boolean'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
         [Fact]
         public void ReportMismatchedBranches()
         {

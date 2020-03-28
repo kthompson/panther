@@ -48,6 +48,7 @@ namespace Panther.Tests.CodeAnalysis
         {
             dictionary ??= new Dictionary<VariableSymbol, object>();
             var tree = SyntaxTree.Parse(code);
+            Assert.Empty(tree.Diagnostics);
             var compilation = previous == null ? new Compilation(tree) : previous.ContinueWith(tree);
 
             result = compilation.Evaluate(dictionary);

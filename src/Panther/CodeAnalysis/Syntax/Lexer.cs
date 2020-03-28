@@ -54,7 +54,7 @@ namespace Panther.CodeAnalysis.Syntax
                     return ReturnKindOneChar(SyntaxKind.PlusToken);
 
                 case '-':
-                    return ReturnKindOneChar(SyntaxKind.MinusToken);
+                    return ReturnKindOneChar(SyntaxKind.DashToken);
 
                 case '/':
                     return ReturnKindOneChar(SyntaxKind.SlashToken);
@@ -73,7 +73,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                 case '}':
                     return ReturnKindOneChar(SyntaxKind.CloseBraceToken);
-                
+
                 case '^':
                     return ReturnKindOneChar(SyntaxKind.CaretToken);
 
@@ -85,14 +85,16 @@ namespace Panther.CodeAnalysis.Syntax
                 case '<':
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.LessThanEqualsToken)
-                        : ReturnKindOneChar(SyntaxKind.LessThanToken);
+                        : Lookahead == '-'
+                            ? ReturnKindTwoChar(SyntaxKind.LessThanDashToken)
+                            : ReturnKindOneChar(SyntaxKind.LessThanToken);
 
                 case '!':
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)
                         : ReturnKindOneChar(SyntaxKind.BangToken);
 
-                case '&' :
+                case '&':
                     return Lookahead == '&'
                         ? ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken)
                         : ReturnKindOneChar(SyntaxKind.AmpersandToken);

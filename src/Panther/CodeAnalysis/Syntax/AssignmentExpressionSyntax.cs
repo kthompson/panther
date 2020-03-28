@@ -1,23 +1,17 @@
-﻿using System.Collections.Generic;
-
-namespace Panther.CodeAnalysis.Syntax
+﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class VariableDeclarationStatementSyntax : StatementSyntax
+    public sealed class AssignmentExpressionSyntax : ExpressionSyntax
     {
-        public SyntaxToken ValOrVarToken { get; }
         public SyntaxToken IdentifierToken { get; }
         public SyntaxToken EqualsToken { get; }
         public ExpressionSyntax Expression { get; }
-        public SyntaxToken NewLineToken { get; }
-        public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
+        public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;
 
-        public VariableDeclarationStatementSyntax(SyntaxToken valOrVarToken, SyntaxToken identifierToken, SyntaxToken equalsToken, ExpressionSyntax expression, SyntaxToken newLineToken)
+        public AssignmentExpressionSyntax(SyntaxToken identifierToken, SyntaxToken equalsToken, ExpressionSyntax expression)
         {
-            ValOrVarToken = valOrVarToken;
             IdentifierToken = identifierToken;
             EqualsToken = equalsToken;
             Expression = expression;
-            NewLineToken = newLineToken;
         }
     }
 }
