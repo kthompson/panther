@@ -13,7 +13,8 @@ namespace Panther
     {
         private static void Main()
         {
-            var showTree = true;
+            var showTree = false;
+            var showTypes = true;
             var variables = new Dictionary<VariableSymbol, object>();
             var code = new StringBuilder();
             Compilation previous = null;
@@ -36,6 +37,13 @@ namespace Panther
                     {
                         showTree = !showTree;
                         Console.WriteLine(showTree ? "Showing parse tree" : "Not showing parse tree");
+                        continue;
+                    }
+
+                    if (input == "#showTypes")
+                    {
+                        showTypes = !showTypes;
+                        Console.WriteLine(showTypes ? "Showing type tree" : "Not showing type tree");
                         continue;
                     }
 
@@ -69,6 +77,12 @@ namespace Panther
                 {
                     Console.ForegroundColor = ConsoleColor.DarkGray;
                     syntaxTree.Root.WriteTo(Console.Out);
+                }
+
+                if (showTypes)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkGray;
+                    compilation.EmitTree(Console.Out);
                 }
 
                 if (diags.Any())

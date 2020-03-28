@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Panther.CodeAnalysis.Binding;
@@ -54,6 +55,11 @@ namespace Panther.CodeAnalysis
             var value = evaluator.Evaluate();
 
             return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
+        }
+
+        public void EmitTree(TextWriter @out)
+        {
+            GlobalScope.Statement.WriteTo(@out);
         }
     }
 }
