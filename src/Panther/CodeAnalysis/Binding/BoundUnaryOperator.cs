@@ -29,6 +29,7 @@ namespace Panther.CodeAnalysis.Binding
             new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, typeof(bool)),
             new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, typeof(int)),
             new BoundUnaryOperator(SyntaxKind.DashToken, BoundUnaryOperatorKind.Negation, typeof(int)),
+            new BoundUnaryOperator(SyntaxKind.TildeToken, BoundUnaryOperatorKind.BitwiseNegation, typeof(int)),
         };
 
         public static BoundUnaryOperator? Bind(SyntaxKind kind, Type operandType) =>

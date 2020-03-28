@@ -77,6 +77,9 @@ namespace Panther.CodeAnalysis.Syntax
                 case '^':
                     return ReturnKindOneChar(SyntaxKind.CaretToken);
 
+                case '~':
+                    return ReturnKindOneChar(SyntaxKind.TildeToken);
+
                 case '>':
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.GreaterThanEqualsToken)

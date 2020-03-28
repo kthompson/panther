@@ -42,6 +42,7 @@
         GreaterThanToken,
         GreaterThanEqualsToken,
         CaretToken,
+        TildeToken,
         LessThanDashToken,
 
         // grouping tokens

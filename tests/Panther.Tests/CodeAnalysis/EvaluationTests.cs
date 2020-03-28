@@ -17,6 +17,12 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(number.ToString(), number);
         }
 
+        [Fact]
+        public void EvaluatesPrefixExpressionWithLineBreak()
+        {
+            AssertEvaluation("7 +\n4", 11);
+        }
+
         [Property]
         public void EvaluatesAddition(int number, int number2)
         {
@@ -59,7 +65,31 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation($"{number} >= {number2}", number >= number2);
         }
 
-        [Property(Replay = "1536824861,296723711")]
+        [Property]
+        public void EvaluatesNegation(int number)
+        {
+            AssertEvaluation($"-{number}", -number);
+        }
+
+        [Property]
+        public void EvaluatesPlus(int number)
+        {
+            AssertEvaluation($"+{number}", number);
+        }
+
+        [Property]
+        public void EvaluatesBitwiseNegation(int number)
+        {
+            AssertEvaluation($"~{number}", ~number);
+        }
+
+        [Property]
+        public void EvaluatesNegate(bool value)
+        {
+            AssertEvaluation($"!{b(value)}", !value);
+        }
+
+        [Property]
         public void EvaluatesBitwiseAnd(int number, int number2)
         {
             AssertEvaluation($"{number} & {number2}", number & number2);
@@ -71,7 +101,7 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation($"{number} | {number2}", number | number2);
         }
 
-        [Property(Replay = "1125213375,296723366")]
+        [Property]
         public void EvaluatesBitwiseXor(int number, int number2)
         {
             AssertEvaluation($"{number} ^ {number2}", number ^ number2);

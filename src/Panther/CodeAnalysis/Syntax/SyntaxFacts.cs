@@ -6,19 +6,6 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public static class SyntaxFacts
     {
-        //public static int GetUnaryOperatorPrecedence(this SyntaxKind kind)
-        //{
-        //    switch (kind)
-        //    {
-        //        case SyntaxKind.PlusToken:
-        //        case SyntaxKind.MinusToken:
-        //        case SyntaxKind.BangToken:
-        //            return 6;
-
-        //        default:
-        //            return 0;
-        //    }
-        //}
         /// <summary>
         ///
         /// From lowest to highest:
@@ -108,6 +95,7 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.SlashToken => "/",
                 SyntaxKind.StarToken => "*",
                 SyntaxKind.BangToken => "!",
+                SyntaxKind.TildeToken => "~",
                 SyntaxKind.CaretToken => "^",
                 SyntaxKind.AmpersandToken => "&",
                 SyntaxKind.AmpersandAmpersandToken => "&&",
@@ -129,6 +117,7 @@ namespace Panther.CodeAnalysis.Syntax
 
         public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() => new[]
         {
+            SyntaxKind.TildeToken,
             SyntaxKind.PlusToken,
             SyntaxKind.DashToken,
             SyntaxKind.BangToken,

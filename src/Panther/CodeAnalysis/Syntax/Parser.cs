@@ -60,6 +60,7 @@ namespace Panther.CodeAnalysis.Syntax
             PrefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.DashToken] = ParsePrefixExpression;
             PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
+            PrefixParseFunctions[SyntaxKind.TildeToken] = ParsePrefixExpression;
 
             PrefixParseFunctions[SyntaxKind.IdentifierToken] = ParseNameOrAssignmentExpression;
             PrefixParseFunctions[SyntaxKind.NumberToken] = ParseIntegerLiteralExpression;

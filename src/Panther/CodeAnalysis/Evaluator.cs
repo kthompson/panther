@@ -158,6 +158,7 @@ namespace Panther.CodeAnalysis
                     BoundUnaryOperatorKind.Negation => (object)-(int)operand,
                     BoundUnaryOperatorKind.Identity => (int)operand,
                     BoundUnaryOperatorKind.LogicalNegation => !(bool)operand,
+                    BoundUnaryOperatorKind.BitwiseNegation => ~(int)operand,
                     _ => throw new Exception($"Unexpected unary operator {unary.Operator}")
                 };
             }

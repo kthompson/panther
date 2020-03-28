@@ -3,7 +3,8 @@
     internal enum BoundUnaryOperatorKind
     {
         Identity,
-        Negation,
-        LogicalNegation
+        Negation,        // -
+        LogicalNegation, // !
+        BitwiseNegation, // ~
     }
 }
