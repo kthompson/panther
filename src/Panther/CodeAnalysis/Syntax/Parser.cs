@@ -26,9 +26,9 @@ namespace Panther.CodeAnalysis.Syntax
     {
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
 
-        private readonly Dictionary<SyntaxKind, PrefixParseFunction> PrefixParseFunctions = new Dictionary<SyntaxKind, PrefixParseFunction>();
+        private readonly Dictionary<SyntaxKind, PrefixParseFunction> _prefixParseFunctions = new Dictionary<SyntaxKind, PrefixParseFunction>();
 
-        private readonly Dictionary<SyntaxKind, InfixParseFunction> InfixParseFunctions =
+        private readonly Dictionary<SyntaxKind, InfixParseFunction> _infixParseFunctions =
             new Dictionary<SyntaxKind, InfixParseFunction>();
 
         private ImmutableArray<SyntaxToken> _tokens;
@@ -57,40 +57,40 @@ namespace Panther.CodeAnalysis.Syntax
             this.Diagnostics.AddRange(lexer.Diagnostics);
 
             // -a
-            PrefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
-            PrefixParseFunctions[SyntaxKind.DashToken] = ParsePrefixExpression;
-            PrefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
-            PrefixParseFunctions[SyntaxKind.TildeToken] = ParsePrefixExpression;
+            _prefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
+            _prefixParseFunctions[SyntaxKind.DashToken] = ParsePrefixExpression;
+            _prefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
+            _prefixParseFunctions[SyntaxKind.TildeToken] = ParsePrefixExpression;
 
-            PrefixParseFunctions[SyntaxKind.IdentifierToken] = ParseNameOrAssignmentExpression;
-            PrefixParseFunctions[SyntaxKind.NumberToken] = ParseIntegerLiteralExpression;
-            PrefixParseFunctions[SyntaxKind.TrueKeyword] = ParseBooleanLiteral;
-            PrefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
-            PrefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
-            PrefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
-            PrefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
-            PrefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
+            _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseNameOrAssignmentExpression;
+            _prefixParseFunctions[SyntaxKind.NumberToken] = ParseIntegerLiteralExpression;
+            _prefixParseFunctions[SyntaxKind.TrueKeyword] = ParseBooleanLiteral;
+            _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
+            _prefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
+            _prefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
+            _prefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
+            _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
             //PrefixParseFunctions[SyntaxKind.Function] = ParseFunctionLiteral;
             //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
             //PrefixParseFunctions[SyntaxKind.LeftBracket] = ParseArrayLiteral;
-            PrefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
+            _prefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
 
             // a + b
-            InfixParseFunctions[SyntaxKind.AmpersandAmpersandToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.AmpersandToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.BangEqualsToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.CaretToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.EqualsEqualsToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.GreaterThanEqualsToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.GreaterThanToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.LessThanEqualsToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.DashToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.PipeToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.SlashToken] = ParseInfixExpression;
-            InfixParseFunctions[SyntaxKind.StarToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.AmpersandAmpersandToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.AmpersandToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.BangEqualsToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.CaretToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.EqualsEqualsToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.GreaterThanEqualsToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.GreaterThanToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.LessThanEqualsToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.DashToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.PipeToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.SlashToken] = ParseInfixExpression;
+            _infixParseFunctions[SyntaxKind.StarToken] = ParseInfixExpression;
             //InfixParseFunctions[SyntaxKind.OpenParenToken] = ParseCallExpression;
             //InfixParseFunctions[SyntaxKind.LeftBracket] = ParseIndexExpression;
         }
@@ -197,13 +197,15 @@ namespace Panther.CodeAnalysis.Syntax
         private ExpressionSyntax ParseExpression(OperatorPrecedence precedence, bool skipNewLines)
         {
             var currentToken = CurrentToken(skipNewLines);
-            var prefixFunction = PrefixParseFunctions.GetValueOrDefault(currentToken.Kind);
+            var prefixFunction = _prefixParseFunctions.GetValueOrDefault(currentToken.Kind);
             if (prefixFunction == null)
             {
                 // no prefix function
                 // this results in an error from another location
                 // so I don't think we need this here?
                 // Diagnostics.ReportUnsupportedPrefixToken(currentToken);
+                Diagnostics.ReportExpectedExpression(currentToken.Span, currentToken.Kind);
+                return ParseIntegerLiteralExpression(false);
                 return new LiteralExpressionSyntax(currentToken);
             }
 
@@ -213,7 +215,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             while (precedence < CurrentPrecedence())
             {
-                var infix = InfixParseFunctions.GetValueOrDefault(CurrentToken(skipNewLines).Kind);
+                var infix = _infixParseFunctions.GetValueOrDefault(CurrentToken(skipNewLines).Kind);
                 if (infix == null)
                     return left;
 

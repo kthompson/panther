@@ -71,7 +71,7 @@ namespace Panther.CodeAnalysis.Binding
 
         protected virtual BoundExpression RewriteBlockExpression(BoundBlockExpression node)
         {
-            List<BoundStatement> statements = null;
+            List<BoundStatement>? statements = null;
 
             for (var i = 0; i < node.Statements.Length; i++)
             {
