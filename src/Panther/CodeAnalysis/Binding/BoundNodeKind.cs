@@ -14,11 +14,12 @@ namespace Panther.CodeAnalysis.Binding
         UnitExpression,
         VariableExpression,
         WhileExpression,
+        ErrorExpression,
 
         ConditionalGotoStatement,
         ExpressionStatement,
         GotoStatement,
         LabelStatement,
-        VariableDeclarationStatement,
+        VariableDeclarationStatement
     }
 }

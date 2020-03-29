@@ -63,7 +63,7 @@ namespace Panther.Tests.CodeAnalysis
             AssertHasDiagnostics(text, diagnostic);
         }
 
-        [Fact(Skip = "Not currently working")]
+        [Fact]
         public void DontReportCascadingErrors()
         {
             var text = @"(true [*] 1) + 7";

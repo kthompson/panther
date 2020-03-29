@@ -33,10 +33,8 @@ namespace Panther.CodeAnalysis.Lowering
             return GenerateLabel(tag, token);
         }
 
-        private LabelSymbol GenerateLabel(string tag, LabelToken token)
-        {
-            return new LabelSymbol($"{tag}Label{(int) token}");
-        }
+        private LabelSymbol GenerateLabel(string tag, LabelToken token) => 
+            new LabelSymbol($"{tag}Label{(int) token}");
 
         private VariableSymbol GenerateVariable(TypeSymbol type)
         {
@@ -94,7 +92,7 @@ namespace Panther.CodeAnalysis.Lowering
             var expr = (statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
             var stmts = expr == null ? statements : statements.Take(statements.Count - 1);
 
-            expr ??= new BoundUnitExpression();
+            expr ??= BoundUnitExpression.Default;
 
             return new BoundBlockExpression(stmts.ToImmutableArray(), expr);
         }
@@ -126,7 +124,7 @@ namespace Panther.CodeAnalysis.Lowering
                         new BoundGotoStatement(whileLabel),
                         new BoundLabelStatement(endLabel)
                     ),
-                    new BoundUnitExpression()
+                    BoundUnitExpression.Default
                 )
             );
         }
@@ -213,7 +211,8 @@ namespace Panther.CodeAnalysis.Lowering
                 ImmutableArray.Create<BoundStatement>(
                     new BoundExpressionStatement(body),
                     incrementX
-                ), new BoundUnitExpression());
+                ), BoundUnitExpression.Default
+            );
 
             var newBlock = new BoundBlockExpression(
                 ImmutableArray.Create<BoundStatement>(declareX),
