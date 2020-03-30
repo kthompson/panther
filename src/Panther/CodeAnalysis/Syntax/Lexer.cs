@@ -81,6 +81,9 @@ namespace Panther.CodeAnalysis.Syntax
 
                 case '~':
                     return ReturnKindOneChar(SyntaxKind.TildeToken);
+                
+                case ',':
+                    return ReturnKindOneChar(SyntaxKind.CommaToken);
 
                 case '>':
                     return Lookahead == '='
@@ -239,7 +242,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        private string ParseUtfEscapeSequence(int digits, int escapeStart)
+        private string? ParseUtfEscapeSequence(int digits, int escapeStart)
         {
             var value = 0;
             for (var i = 0; i < digits; i++)

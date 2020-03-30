@@ -10,6 +10,8 @@ namespace Panther.CodeAnalysis.Binding
         protected virtual BoundExpression RewriteExpression(BoundExpression node) =>
             node switch
             {
+                BoundCallExpression callExpression => RewriteCallExpression(callExpression),
+                BoundErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
                 BoundAssignmentExpression boundAssignmentExpression => RewriteAssignmentExpression(boundAssignmentExpression),
                 BoundBinaryExpression boundBinaryExpression => RewriteBinaryExpression(boundBinaryExpression),
                 BoundBlockExpression boundBlockExpression => RewriteBlockExpression(boundBlockExpression),
@@ -22,6 +24,38 @@ namespace Panther.CodeAnalysis.Binding
                 BoundWhileExpression boundWhileExpression => RewriteWhileExpression(boundWhileExpression),
                 _ => throw new ArgumentOutOfRangeException(nameof(node))
             };
+
+        protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
+        {
+            List<BoundExpression>? newArguments = null;
+
+            for (var i = 0; i < node.Arguments.Length; i++)
+            {
+                var argument = node.Arguments[i];
+                var newArgument = RewriteExpression(argument);
+
+                if (newArgument != argument)
+                {
+                    if (newArguments == null)
+                    {
+                        // initialize the list with all the statements up to `i`
+                        newArguments = new List<BoundExpression>();
+
+                        for (var j = 0; j < i; j++)
+                        {
+                            newArguments.Add(node.Arguments[j]);
+                        }
+                    }
+                }
+
+                newArguments?.Add(newArgument);
+            }
+
+            if (newArguments == null)
+                return node;
+
+            return new BoundCallExpression(node.Function, newArguments.ToImmutableArray());
+        }
 
         protected virtual BoundExpression RewriteWhileExpression(BoundWhileExpression node)
         {
@@ -43,7 +77,6 @@ namespace Panther.CodeAnalysis.Binding
 
             return new BoundUnaryExpression(@operator, operand);
         }
-
 
         protected virtual BoundExpression RewriteIfExpression(BoundIfExpression node)
         {
@@ -161,9 +194,11 @@ namespace Panther.CodeAnalysis.Binding
             var expr = RewriteExpression(node.Expression);
             if (expr == node.Expression)
                 return node;
-            
+
             return new BoundVariableDeclarationStatement(node.Variable, expr);
         }
+
+        protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node) => node;
 
         protected virtual BoundStatement RewriteBoundGotoStatement(BoundGotoStatement node) => node;
 

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using FsCheck;
 using FsCheck.Xunit;
+using Moq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Symbols;
 using Xunit;
@@ -23,6 +24,23 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation("7 +\n4", 11);
         }
 
+        [Fact]
+        public void EvaluatesHelloWorld()
+        {
+            var builtins = new Mock<IBuiltins>(MockBehavior.Strict);
+            builtins.Setup(x => x.Read()).Returns("Kevin");
+            builtins.Setup(x => x.Print("What is your name?"));
+            builtins.Setup(x => x.Print("Hello, Kevin"));
+
+            AssertEvaluation(@"{
+                                   print(""What is your name?"")
+                                   val name = read()
+                                   val message = ""Hello, "" + name
+                                   print(message)
+                                   message
+                               }", "Hello, Kevin", builtins: builtins.Object);
+        }
+
         [Property]
         public void EvaluatesAddition(int number, int number2)
         {
@@ -38,6 +56,18 @@ namespace Panther.Tests.CodeAnalysis
         public void EvaluatesEscapeSequences(string code, string expected)
         {
             AssertEvaluation(code, expected);
+        }
+
+        [Property(Skip = "no conversions yet")]
+        public void EvaluatesIntToStringConversion(int number)
+        {
+            AssertEvaluation($"string({number})", number.ToString());
+        }
+
+        [Property(Skip = "no conversions yet")]
+        public void EvaluatesBoolToStringConversion(bool value)
+        {
+            AssertEvaluation($"string({b(value)})", b(value));
         }
 
         [Property]
@@ -334,7 +364,7 @@ namespace Panther.Tests.CodeAnalysis
         {
             Dictionary<VariableSymbol, object> dictionary = null;
 
-            Compile($"val a = {n}", ref dictionary, null, out _);
+            Compile($"val a = {n}", ref dictionary);
 
             Assert.Collection(dictionary, pair =>
             {
@@ -349,7 +379,7 @@ namespace Panther.Tests.CodeAnalysis
         {
             Dictionary<VariableSymbol, object> dictionary = null;
 
-            Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out _);
+            Compile($"val a = {n.ToString().ToLower()}", ref dictionary);
 
             Assert.Collection(dictionary, pair =>
             {
@@ -363,7 +393,7 @@ namespace Panther.Tests.CodeAnalysis
         public void EvaluatesBoundInt(int n)
         {
             Dictionary<VariableSymbol, object> dictionary = null;
-            var compilation = Compile($"val a = {n}", ref dictionary, null, out _);
+            var compilation = Compile($"val a = {n}", ref dictionary);
 
             AssertEvaluation($"a", n, dictionary, compilation);
         }
@@ -372,7 +402,7 @@ namespace Panther.Tests.CodeAnalysis
         public void EvaluatesBoundBool(bool n)
         {
             Dictionary<VariableSymbol, object> dictionary = null;
-            var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary, null, out _);
+            var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary);
 
             AssertEvaluation($"a", n, dictionary, compilation);
         }

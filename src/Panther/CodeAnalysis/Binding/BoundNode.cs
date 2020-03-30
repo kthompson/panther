@@ -122,11 +122,6 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private static void WriteProperties(TextWriter writer, BoundNode node)
-        {
-            throw new NotImplementedException();
-        }
-
         private static string GetText(BoundNode node)
         {
             if (node is BoundBinaryExpression binary)

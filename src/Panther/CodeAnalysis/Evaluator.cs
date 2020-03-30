@@ -25,13 +25,15 @@ namespace Panther.CodeAnalysis
     {
         private readonly BoundBlockExpression _root;
         private readonly Dictionary<VariableSymbol, object> _variables;
+        private readonly IBuiltins _builtins;
         private object? _lastValue;
         private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
 
-        public Evaluator(BoundBlockExpression root, Dictionary<VariableSymbol, object> variables)
+        public Evaluator(BoundBlockExpression root, Dictionary<VariableSymbol, object> variables, IBuiltins builtins)
         {
             _root = root;
             _variables = variables;
+            _builtins = builtins;
         }
 
         private void InitializeLabelLookup()
@@ -94,66 +96,87 @@ namespace Panther.CodeAnalysis
             return _lastValue;
         }
 
-        private object EvaluateExpression(BoundExpression node)
-        {
-            switch (node)
+        private object EvaluateExpression(BoundExpression node) =>
+            node switch
             {
-                case BoundLiteralExpression n:
-                    return n.Value;
+                BoundLiteralExpression n => n.Value,
+                BoundUnitExpression _ => Unit.Default,
+                BoundCallExpression callExpression => EvaluateCallExpressions(callExpression),
+                BoundAssignmentExpression assignmentStatement => EvaluateAssignmentExpression(assignmentStatement),
+                BoundVariableExpression v => EvaluateVariableExpression(v),
+                BoundBinaryExpression binaryExpression => EvaluateBinaryExpression(binaryExpression),
+                BoundUnaryExpression unary => EvaluateUnaryExpression(unary),
+                _ => throw new Exception($"Unexpected expression {node.Kind}")
+            };
 
-                case BoundUnitExpression _:
-                    return Unit.Default;
+        private object EvaluateAssignmentExpression(BoundAssignmentExpression assignmentStatement)
+        {
+            var value = EvaluateExpression(assignmentStatement.Expression);
+            _variables[assignmentStatement.Variable] = value;
+            return Unit.Default;
+        }
 
-                case BoundAssignmentExpression assignmentStatement:
-                    {
-                        var value = EvaluateExpression(assignmentStatement.Expression);
-                        _variables[assignmentStatement.Variable] = value;
-                        return Unit.Default;
-                    }
-                case BoundVariableExpression v:
-                    return _variables[v.Variable];
+        private object EvaluateVariableExpression(BoundVariableExpression v)
+        {
+            return _variables[v.Variable];
+        }
 
-                case BoundBinaryExpression binaryExpression:
-                    {
-                        var left = EvaluateExpression(binaryExpression.Left);
-                        var right = EvaluateExpression(binaryExpression.Right);
+        private object EvaluateBinaryExpression(BoundBinaryExpression binaryExpression)
+        {
+            var left = EvaluateExpression(binaryExpression.Left);
+            var right = EvaluateExpression(binaryExpression.Right);
 
-                        return binaryExpression.Operator.Kind switch
-                        {
-                            BoundBinaryOperatorKind.Addition => binaryExpression.Type == TypeSymbol.Int ? (object)((int)left + (int)right) :
-                                (object)((string)left + (string)right),
-                            BoundBinaryOperatorKind.Subtraction => ((int)left - (int)right),
-                            BoundBinaryOperatorKind.Multiplication => ((int)left * (int)right),
-                            BoundBinaryOperatorKind.Division => ((int)left / (int)right),
-                            BoundBinaryOperatorKind.BitwiseAnd => ((int)left & (int)right),
-                            BoundBinaryOperatorKind.BitwiseOr => ((int)left | (int)right),
-                            BoundBinaryOperatorKind.BitwiseXor => ((int)left ^ (int)right),
-                            BoundBinaryOperatorKind.LogicalAnd => ((bool)left && (bool)right),
-                            BoundBinaryOperatorKind.LogicalOr => ((bool)left || (bool)right),
-                            BoundBinaryOperatorKind.Equal => Equals(left, right),
-                            BoundBinaryOperatorKind.NotEqual => !Equals(left, right),
-                            BoundBinaryOperatorKind.LessThan => ((int)left < (int)right),
-                            BoundBinaryOperatorKind.LessThanOrEqual => ((int)left <= (int)right),
-                            BoundBinaryOperatorKind.GreaterThan => ((int)left > (int)right),
-                            BoundBinaryOperatorKind.GreaterThanOrEqual => ((int)left >= (int)right),
-                            _ => throw new Exception($"Unexpected binary operator {binaryExpression.Operator}")
-                        };
-                    }
-                case BoundUnaryExpression unary:
-                    {
-                        var operand = EvaluateExpression(unary.Operand);
-                        return unary.Operator.Kind switch
-                        {
-                            BoundUnaryOperatorKind.Negation => (object)-(int)operand,
-                            BoundUnaryOperatorKind.Identity => (int)operand,
-                            BoundUnaryOperatorKind.LogicalNegation => !(bool)operand,
-                            BoundUnaryOperatorKind.BitwiseNegation => ~(int)operand,
-                            _ => throw new Exception($"Unexpected unary operator {unary.Operator}")
-                        };
-                    }
-                default:
-                    throw new Exception($"Unexpected expression {node.Kind}");
+            return binaryExpression.Operator.Kind switch
+            {
+                BoundBinaryOperatorKind.Addition => binaryExpression.Type == TypeSymbol.Int
+                    ? (object)((int)left + (int)right)
+                    : (object)((string)left + (string)right),
+                BoundBinaryOperatorKind.Subtraction => ((int)left - (int)right),
+                BoundBinaryOperatorKind.Multiplication => ((int)left * (int)right),
+                BoundBinaryOperatorKind.Division => ((int)left / (int)right),
+                BoundBinaryOperatorKind.BitwiseAnd => ((int)left & (int)right),
+                BoundBinaryOperatorKind.BitwiseOr => ((int)left | (int)right),
+                BoundBinaryOperatorKind.BitwiseXor => ((int)left ^ (int)right),
+                BoundBinaryOperatorKind.LogicalAnd => ((bool)left && (bool)right),
+                BoundBinaryOperatorKind.LogicalOr => ((bool)left || (bool)right),
+                BoundBinaryOperatorKind.Equal => Equals(left, right),
+                BoundBinaryOperatorKind.NotEqual => !Equals(left, right),
+                BoundBinaryOperatorKind.LessThan => ((int)left < (int)right),
+                BoundBinaryOperatorKind.LessThanOrEqual => ((int)left <= (int)right),
+                BoundBinaryOperatorKind.GreaterThan => ((int)left > (int)right),
+                BoundBinaryOperatorKind.GreaterThanOrEqual => ((int)left >= (int)right),
+                _ => throw new Exception($"Unexpected binary operator {binaryExpression.Operator}")
+            };
+        }
+
+        private object EvaluateUnaryExpression(BoundUnaryExpression unary)
+        {
+            var operand = EvaluateExpression(unary.Operand);
+            return unary.Operator.Kind switch
+            {
+                BoundUnaryOperatorKind.Negation => (object)-(int)operand,
+                BoundUnaryOperatorKind.Identity => (int)operand,
+                BoundUnaryOperatorKind.LogicalNegation => !(bool)operand,
+                BoundUnaryOperatorKind.BitwiseNegation => ~(int)operand,
+                _ => throw new Exception($"Unexpected unary operator {unary.Operator}")
+            };
+        }
+
+        private object EvaluateCallExpressions(BoundCallExpression callExpression)
+        {
+            if (callExpression.Function == BuiltinFunctions.Print)
+            {
+                var message = (string)EvaluateExpression(callExpression.Arguments[0]);
+                _builtins.Print(message);
+                return Unit.Default;
             }
+
+            if (callExpression.Function == BuiltinFunctions.Read)
+            {
+                return _builtins.Read();
+            }
+
+            throw new Exception($"Unexpected function {callExpression.Function}");
         }
     }
 }

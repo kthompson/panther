@@ -58,8 +58,8 @@ namespace Panther.CodeAnalysis
         public void ReportTypeMismatch(TextSpan span, TypeSymbol expectedType, TypeSymbol foundType) =>
             Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
 
-        public void ReportArgumentTypeMismatch(TextSpan span, int number, TypeSymbol expectedType, TypeSymbol foundType) =>
-            Report(span, $"Argument {number}, type mismatch. Required '{expectedType}', found '{foundType}'");
+        public void ReportArgumentTypeMismatch(TextSpan span, string argName, TypeSymbol expectedType, TypeSymbol foundType) =>
+            Report(span, $"Argument {argName}, type mismatch. Required '{expectedType}', found '{foundType}'");
 
         public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) =>
             Report(span, $"Unexpected token {kind}, expected Expression");
@@ -73,9 +73,7 @@ namespace Panther.CodeAnalysis
         public void ReportIncorrectNumberOfArgumentsForFunction(TextSpan span, string name, int expected, int found) =>
             Report(span, $"Incorrect number of arguments for '{name}', expected {expected}, found {found}");
 
-        public void ReportUnterminatedString(TextSpan span)
-        {
+        public void ReportUnterminatedString(TextSpan span) =>
             Report(span, "Unterminated string literal");
-        }
     }
 }

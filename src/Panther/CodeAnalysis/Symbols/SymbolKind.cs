@@ -2,7 +2,9 @@
 {
     public enum SymbolKind
     {
+        Function,
+        Parameter,
+        Type,
         Variable,    
-        Type,    
     }
 }

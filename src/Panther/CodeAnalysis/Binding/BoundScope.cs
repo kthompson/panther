@@ -9,6 +9,7 @@ namespace Panther.CodeAnalysis.Binding
     internal sealed class BoundScope
     {
         private readonly Dictionary<string, VariableSymbol> _variables = new Dictionary<string, VariableSymbol>();
+        private readonly List<FunctionSymbol> _functions = new List<FunctionSymbol>();
 
         public BoundScope? Parent { get; }
 

@@ -8,7 +8,7 @@ namespace Panther
 {
     internal abstract class Repl
     {
-        private List<string> _submissionHistory = new List<string>();
+        private readonly List<string> _submissionHistory = new List<string>();
         private int _submissionHistoryIndex;
 
         private bool _done;
@@ -145,7 +145,7 @@ namespace Panther
             view.CurrentCharacter = document[view.CurrentLine].Length;
             Console.WriteLine();
 
-            return string.Join(Environment.NewLine, document);       
+            return string.Join(Environment.NewLine, document);
         }
 
         private void HandleKey(ConsoleKeyInfo key, ObservableCollection<string> document, SubmissionView view)
@@ -157,39 +157,51 @@ namespace Panther
                     case ConsoleKey.Escape:
                         HandleEscape(document, view);
                         break;
+
                     case ConsoleKey.Enter:
                         HandleEnter(document, view);
                         break;
+
                     case ConsoleKey.LeftArrow:
                         HandleLeftArrow(document, view);
                         break;
+
                     case ConsoleKey.RightArrow:
                         HandleRightArrow(document, view);
                         break;
+
                     case ConsoleKey.UpArrow:
                         HandleUpArrow(document, view);
                         break;
+
                     case ConsoleKey.DownArrow:
                         HandleDownArrow(document, view);
                         break;
+
                     case ConsoleKey.Backspace:
                         HandleBackspace(document, view);
                         break;
+
                     case ConsoleKey.Delete:
                         HandleDelete(document, view);
                         break;
+
                     case ConsoleKey.Home:
                         HandleHome(document, view);
                         break;
+
                     case ConsoleKey.End:
                         HandleEnd(document, view);
                         break;
+
                     case ConsoleKey.Tab:
                         HandleTab(document, view);
                         break;
+
                     case ConsoleKey.PageUp:
                         HandlePageUp(document, view);
                         break;
+
                     case ConsoleKey.PageDown:
                         HandlePageDown(document, view);
                         break;
@@ -289,7 +301,7 @@ namespace Panther
                 var lineIndex = view.CurrentLine;
                 var line = document[lineIndex];
                 var before = line.Substring(0, start - 1);
-                var after = line.Substring(start);            
+                var after = line.Substring(start);
                 document[lineIndex] = before + after;
                 view.CurrentCharacter--;
             }
@@ -304,7 +316,7 @@ namespace Panther
                 return;
 
             var before = line.Substring(0, start);
-            var after = line.Substring(start + 1);            
+            var after = line.Substring(start + 1);
             document[lineIndex] = before + after;
         }
 
@@ -330,24 +342,20 @@ namespace Panther
 
         private void HandlePageUp(ObservableCollection<string> document, SubmissionView view)
         {
-            _submissionHistoryIndex--;
-            if (_submissionHistoryIndex < 0)
-                _submissionHistoryIndex = _submissionHistory.Count - 1;
+            _submissionHistoryIndex = Math.Max(_submissionHistoryIndex - 1, 0);
             UpdateDocumentFromHistory(document, view);
         }
 
         private void HandlePageDown(ObservableCollection<string> document, SubmissionView view)
         {
-            _submissionHistoryIndex++;
-            if (_submissionHistoryIndex > _submissionHistory.Count -1)
-                _submissionHistoryIndex = 0;
+            _submissionHistoryIndex = Math.Min(_submissionHistoryIndex + 1, _submissionHistory.Count - 1);
             UpdateDocumentFromHistory(document, view);
         }
 
         private void UpdateDocumentFromHistory(ObservableCollection<string> document, SubmissionView view)
         {
             document.Clear();
-            
+
             var historyItem = _submissionHistory[_submissionHistoryIndex];
             var lines = historyItem.Split(Environment.NewLine);
             foreach (var line in lines)
@@ -364,7 +372,7 @@ namespace Panther
             document[lineIndex] = document[lineIndex].Insert(start, text);
             view.CurrentCharacter += text.Length;
         }
-        
+
         protected void ClearHistory()
         {
             _submissionHistory.Clear();

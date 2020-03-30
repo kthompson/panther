@@ -7,7 +7,17 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public class SyntaxToken : SyntaxNode
     {
-        public SyntaxToken(SyntaxKind kind, int position, string text, object? value, bool isInsertedToken = false)
+        public SyntaxToken(SyntaxKind kind, int position, string text, object? value)
+            : this(kind, position, text, value, false)
+        {
+        }
+
+        public SyntaxToken(SyntaxKind kind, int position)
+            : this(kind, position, string.Empty, null, true)
+        {
+        }
+
+        private SyntaxToken(SyntaxKind kind, int position, string text, object? value, bool isInsertedToken)
         {
             Kind = kind;
             Position = position;

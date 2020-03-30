@@ -41,6 +41,12 @@ namespace Panther.CodeAnalysis.Syntax
                     var child = (SyntaxNode)property.GetValue(this);
                     yield return child;
                 }
+                else if (typeof(SeparatedSyntaxList).IsAssignableFrom(property.PropertyType))
+                {
+                    var children = (SeparatedSyntaxList)property.GetValue(this);
+                    foreach (var child in children.GetWithSeparators())
+                        yield return child;
+                }
                 else if (typeof(IEnumerable<SyntaxNode>).IsAssignableFrom(property.PropertyType))
                 {
                     var children = (IEnumerable<SyntaxNode>)property.GetValue(this);
@@ -80,10 +86,19 @@ namespace Panther.CodeAnalysis.Syntax
 
             writer.Write(node.Kind);
 
-            if (node is SyntaxToken t && t.Value != null)
+            if (node is SyntaxToken t)
             {
-                writer.Write(" ");
-                writer.Write(t.Value);
+                if (t.Value != null)
+                {
+                    writer.Write(" ");
+                    writer.Write(t.Value);
+                }
+
+                if (t.IsInsertedToken)
+                {
+                    writer.Write(" ");
+                    writer.Write("(inserted)");
+                }
             }
 
             if (isConsole)

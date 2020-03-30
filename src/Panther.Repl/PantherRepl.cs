@@ -9,11 +9,11 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther
 {
-    internal class PantherRepl : Repl
+    internal class PantherRepl : Repl, IBuiltins
     {
         private Compilation _previous;
-        private bool _showTree;
-        private bool _showProgram;
+        private bool _showTree = true;
+        private bool _showProgram;// = true;
         private readonly Dictionary<VariableSymbol, object> _variables = new Dictionary<VariableSymbol, object>();
 
         protected override void RenderLine(string line)
@@ -33,6 +33,7 @@ namespace Panther
             token.Kind switch
             {
                 SyntaxKind.IdentifierToken => ConsoleColor.DarkYellow,
+                SyntaxKind.StringToken => ConsoleColor.Magenta,
                 SyntaxKind.NumberToken => ConsoleColor.Cyan,
                 SyntaxKind kind when kind.ToString().EndsWith("Keyword") => ConsoleColor.Blue,
                 _ => ConsoleColor.DarkGray
@@ -77,7 +78,7 @@ namespace Panther
             if (lastTwoLinesAreBlank)
                 return true;
 
-            var syntaxTree = SyntaxTree.Parse(text);
+            var syntaxTree = SyntaxTree.Parse(text.TrimEnd('\r', '\n'));
 
             if (syntaxTree.Diagnostics.Any())
                 return false;
@@ -87,10 +88,10 @@ namespace Panther
 
         protected override void EvaluateSubmission(string text)
         {
-            var syntaxTree = SyntaxTree.Parse(text);
+            var syntaxTree = SyntaxTree.Parse(text.TrimEnd('\r', '\n'));
 
             var compilation = _previous == null
-                ? new Compilation(syntaxTree)
+                ? new Compilation(syntaxTree, this)
                 : _previous.ContinueWith(syntaxTree);
 
             if (_showTree)
@@ -103,7 +104,7 @@ namespace Panther
 
             if (!result.Diagnostics.Any())
             {
-                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine(result.Value);
                 Console.ResetColor();
                 _previous = compilation;
@@ -146,5 +147,9 @@ namespace Panther
                 Console.WriteLine();
             }
         }
+
+        string IBuiltins.Read() => Console.ReadLine();
+
+        void IBuiltins.Print(string message) => Console.WriteLine(message);
     }
 }

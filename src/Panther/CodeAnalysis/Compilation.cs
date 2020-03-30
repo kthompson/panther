@@ -12,6 +12,7 @@ namespace Panther.CodeAnalysis
 {
     public class Compilation
     {
+        private readonly IBuiltins _builtins;
         public Compilation? Previous { get; }
         public SyntaxTree SyntaxTree { get; }
         private BoundGlobalScope? _globalScope;
@@ -30,18 +31,19 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public Compilation(SyntaxTree syntaxTree)
-            : this(null, syntaxTree)
+        public Compilation(SyntaxTree syntaxTree, IBuiltins builtins)
+            : this(null, syntaxTree, builtins)
         {
         }
 
-        private Compilation(Compilation? previous, SyntaxTree syntaxTree)
+        private Compilation(Compilation? previous, SyntaxTree syntaxTree, IBuiltins builtins)
         {
+            _builtins = builtins;
             Previous = previous;
             SyntaxTree = syntaxTree;
         }
 
-        public Compilation ContinueWith(SyntaxTree syntaxTree) => new Compilation(this, syntaxTree);
+        public Compilation ContinueWith(SyntaxTree syntaxTree) => new Compilation(this, syntaxTree, this._builtins);
 
         public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
         {
@@ -54,7 +56,7 @@ namespace Panther.CodeAnalysis
             }
 
             var statement = GetStatement();
-            var evaluator = new Evaluator(statement, variables);
+            var evaluator = new Evaluator(statement, variables, _builtins);
             var value = evaluator.Evaluate();
 
             return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
