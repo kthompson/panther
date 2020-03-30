@@ -12,6 +12,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 int _ => TypeSymbol.Int,
                 bool _ => TypeSymbol.Bool,
+                string _ => TypeSymbol.String,
                 _ => throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}"),
             };
         }

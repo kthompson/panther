@@ -3,19 +3,19 @@
     internal enum BoundBinaryOperatorKind
     {
         Addition,
-        Multiplication,
-        Subtraction,
-        Division,
-        LogicalAnd,
-        LogicalOr,
-        Equal,
-        NotEqual,
-        LessThan,
-        LessThanOrEqual,
-        GreaterThan,
-        GreaterThanOrEqual,
         BitwiseAnd,
         BitwiseOr,
-        BitwiseXor
+        BitwiseXor,
+        Division,
+        Equal,
+        GreaterThan,
+        GreaterThanOrEqual,
+        LessThan,
+        LessThanOrEqual,
+        LogicalAnd,
+        LogicalOr,
+        Multiplication,
+        NotEqual,
+        Subtraction,
     }
 }

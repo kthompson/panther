@@ -115,7 +115,8 @@ namespace Panther.CodeAnalysis
 
                     return binaryExpression.Operator.Kind switch
                     {
-                        BoundBinaryOperatorKind.Addition => (object) ((int) left + (int) right),
+                        BoundBinaryOperatorKind.Addition => binaryExpression.Type == TypeSymbol.Int ?  (object) ((int) left + (int) right) : 
+                            (object) ((string) left + (string) right),
                         BoundBinaryOperatorKind.Subtraction => ((int) left - (int) right),
                         BoundBinaryOperatorKind.Multiplication => ((int) left * (int) right),
                         BoundBinaryOperatorKind.Division => ((int) left / (int) right),

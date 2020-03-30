@@ -9,6 +9,7 @@
         NewLineToken,
         WhitespaceToken,
         NumberToken,
+        StringToken,
         IdentifierToken,
 
         // Keywords

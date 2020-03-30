@@ -63,7 +63,8 @@ namespace Panther.CodeAnalysis.Syntax
             _prefixParseFunctions[SyntaxKind.TildeToken] = ParsePrefixExpression;
 
             _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseNameOrAssignmentExpression;
-            _prefixParseFunctions[SyntaxKind.NumberToken] = ParseIntegerLiteralExpression;
+            _prefixParseFunctions[SyntaxKind.StringToken] = ParseLiteralExpression;
+            _prefixParseFunctions[SyntaxKind.NumberToken] = ParseLiteralExpression;
             _prefixParseFunctions[SyntaxKind.TrueKeyword] = ParseBooleanLiteral;
             _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
             _prefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
@@ -205,7 +206,7 @@ namespace Panther.CodeAnalysis.Syntax
                 // so I don't think we need this here?
                 // Diagnostics.ReportUnsupportedPrefixToken(currentToken);
                 Diagnostics.ReportExpectedExpression(currentToken.Span, currentToken.Kind);
-                return ParseIntegerLiteralExpression(false);
+                return ParseLiteralExpression(false);
             }
 
             skipNewLines = currentToken.Kind != SyntaxKind.OpenBraceToken && skipNewLines;
@@ -309,7 +310,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        private LiteralExpressionSyntax ParseIntegerLiteralExpression(bool skipNewLines)
+        private LiteralExpressionSyntax ParseLiteralExpression(bool skipNewLines)
         {
             var numberToken = Accept(false);
             return new LiteralExpressionSyntax(numberToken);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
 
@@ -112,7 +113,9 @@ namespace Panther.CodeAnalysis.Syntax
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken)
                         : ReturnKindOneChar(SyntaxKind.EqualsToken);
-
+                case '"':
+                    return ParseStringToken(start);
+                
                 default:
 
                     bool IsNonNewLineWhiteSpace(char c1) => c1 != '\n' && c1 != '\r' && char.IsWhiteSpace(c1);
@@ -155,6 +158,107 @@ namespace Panther.CodeAnalysis.Syntax
                     _diagnostics.ReportBadCharacter(_position, Current);
                     return ReturnKindOneChar(SyntaxKind.InvalidToken);
             }
+        }
+
+        private SyntaxToken ParseStringToken(int start)
+        {
+            Next(); // start "
+            var sb = new StringBuilder();
+            while (true)
+            {
+                switch (Current)
+                {
+                    case '"':
+                        Next(); // end "
+                        break;
+                    case '\\': // escape sequence
+                        var escapeSequence = ParseEscapeSequence();
+                        if (escapeSequence != null)
+                            sb.Append(escapeSequence);
+
+                        continue;
+                    default:
+                        sb.Append(Current);
+                        Next();
+                        continue;
+                }
+
+                break;
+            }
+            
+            var span = Text[start.._position];
+
+            return new SyntaxToken(SyntaxKind.StringToken, start, span, sb.ToString());
+        }
+
+        private string? ParseEscapeSequence()
+        {
+            var escapeStart = _position;
+            Next(); // accept \
+            switch (Current)
+            {
+                case 'r':
+                    Next();
+                    return "\r";
+                case 'n':
+                    Next();
+                    return "\n";
+                case 't':
+                    Next();
+                    return "\t";
+                case '\\':
+                    Next();
+                    return "\\";
+                case '"':
+                    Next();
+                    return "\"";
+                case 'u':
+                    Next(); //u
+                    return ParseUtfEscapeSequence(4, escapeStart);
+                case 'U':
+                    Next(); //U
+                    return ParseUtfEscapeSequence(8, escapeStart);
+                default:
+                    _diagnostics.ReportInvalidEscapeSequence(escapeStart, _position, Current);
+                    return null;
+            }
+        }
+
+        private string ParseUtfEscapeSequence(int digits, int escapeStart)
+        {
+            var value = 0;
+            for (var i = 0; i < digits; i++)
+            {
+                if (!HexValue(out var hexValue))
+                {
+                    _diagnostics.ReportInvalidEscapeSequence(escapeStart, _position, Current);
+                    return null;
+                }
+
+                value += hexValue << 4 * (digits - 1 - i);
+                Next();
+            }
+            
+            return ((char)value).ToString();
+        }
+
+        private bool HexValue(out int value)
+        {
+            try
+            {
+                value = int.Parse(Current.ToString(), System.Globalization.NumberStyles.HexNumber);
+                return true;
+            }
+            catch
+            {
+                value = 0;
+                return false;
+            }
+        }
+
+        private static bool IsHexDigit(char c)
+        {
+            return char.IsDigit(c) || "abcdefABCDEF".Contains(c);
         }
 
         private SyntaxToken ReturnKindTwoChar(SyntaxKind kind)

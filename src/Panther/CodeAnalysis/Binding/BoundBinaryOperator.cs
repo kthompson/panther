@@ -35,6 +35,7 @@ namespace Panther.CodeAnalysis.Binding
         private static readonly BoundBinaryOperator[] _operators =
         {
             new BoundBinaryOperator(SyntaxKind.PlusToken, BoundBinaryOperatorKind.Addition, TypeSymbol.Int),
+            new BoundBinaryOperator(SyntaxKind.PlusToken, BoundBinaryOperatorKind.Addition, TypeSymbol.String),
             new BoundBinaryOperator(SyntaxKind.DashToken, BoundBinaryOperatorKind.Subtraction, TypeSymbol.Int),
             new BoundBinaryOperator(SyntaxKind.StarToken, BoundBinaryOperatorKind.Multiplication, TypeSymbol.Int),
             new BoundBinaryOperator(SyntaxKind.SlashToken, BoundBinaryOperatorKind.Division, TypeSymbol.Int),

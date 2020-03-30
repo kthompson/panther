@@ -30,6 +30,12 @@ namespace Panther.CodeAnalysis
         public void ReportInvalidNumber(TextSpan textSpan, string text, TypeSymbol type) =>
             Report(textSpan, $"The number {text} isn't a valid '{type}'");
 
+        public void ReportInvalidEscapeSequence(in int escapeStart, in int position, in char current) => 
+            Report(new TextSpan(escapeStart, position), $"Invalid character in escape sequence: {current}" );
+
+        public void ReportInvalidEscapeSequence(in int escapeStart, in int position) =>
+            Report(new TextSpan(escapeStart, position), $"Invalid character in escape sequence");
+            
         public void ReportBadCharacter(int position, in char character) =>
             Report(new TextSpan(position, 1), $"Invalid character in input: {character}");
 
@@ -56,5 +62,6 @@ namespace Panther.CodeAnalysis
 
         public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) => 
             Report(span, $"Unexpected token {kind}, expected Expression");
+
     }
 }
