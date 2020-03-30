@@ -27,14 +27,14 @@ namespace Panther.CodeAnalysis.Lowering
             return (LabelToken) _labelCount;
         }
 
-        private LabelSymbol GenerateLabel(string tag)
+        private BoundLabel GenerateLabel(string tag)
         {
             var token = GenerateLabelToken();
             return GenerateLabel(tag, token);
         }
 
-        private LabelSymbol GenerateLabel(string tag, LabelToken token) => 
-            new LabelSymbol($"{tag}Label{(int) token}");
+        private BoundLabel GenerateLabel(string tag, LabelToken token) => 
+            new BoundLabel($"{tag}Label{(int) token}");
 
         private VariableSymbol GenerateVariable(TypeSymbol type)
         {

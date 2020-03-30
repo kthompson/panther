@@ -113,9 +113,10 @@ namespace Panther.CodeAnalysis.Syntax
                     return Lookahead == '='
                         ? ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken)
                         : ReturnKindOneChar(SyntaxKind.EqualsToken);
+
                 case '"':
                     return ParseStringToken(start);
-                
+
                 default:
 
                     bool IsNonNewLineWhiteSpace(char c1) => c1 != '\n' && c1 != '\r' && char.IsWhiteSpace(c1);
@@ -171,12 +172,19 @@ namespace Panther.CodeAnalysis.Syntax
                     case '"':
                         Next(); // end "
                         break;
+
                     case '\\': // escape sequence
                         var escapeSequence = ParseEscapeSequence();
                         if (escapeSequence != null)
                             sb.Append(escapeSequence);
 
                         continue;
+                    case '\n':
+                    case '\r':
+                    case '\0':
+                        _diagnostics.ReportUnterminatedString(new TextSpan(start, 1));
+                        break;
+
                     default:
                         sb.Append(Current);
                         Next();
@@ -185,7 +193,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                 break;
             }
-            
+
             var span = Text[start.._position];
 
             return new SyntaxToken(SyntaxKind.StringToken, start, span, sb.ToString());
@@ -200,24 +208,31 @@ namespace Panther.CodeAnalysis.Syntax
                 case 'r':
                     Next();
                     return "\r";
+
                 case 'n':
                     Next();
                     return "\n";
+
                 case 't':
                     Next();
                     return "\t";
+
                 case '\\':
                     Next();
                     return "\\";
+
                 case '"':
                     Next();
                     return "\"";
+
                 case 'u':
                     Next(); //u
                     return ParseUtfEscapeSequence(4, escapeStart);
+
                 case 'U':
                     Next(); //U
                     return ParseUtfEscapeSequence(8, escapeStart);
+
                 default:
                     _diagnostics.ReportInvalidEscapeSequence(escapeStart, _position, Current);
                     return null;
@@ -238,7 +253,7 @@ namespace Panther.CodeAnalysis.Syntax
                 value += hexValue << 4 * (digits - 1 - i);
                 Next();
             }
-            
+
             return ((char)value).ToString();
         }
 
@@ -254,11 +269,6 @@ namespace Panther.CodeAnalysis.Syntax
                 value = 0;
                 return false;
             }
-        }
-
-        private static bool IsHexDigit(char c)
-        {
-            return char.IsDigit(c) || "abcdefABCDEF".Contains(c);
         }
 
         private SyntaxToken ReturnKindTwoChar(SyntaxKind kind)

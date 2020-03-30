@@ -1,13 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using FsCheck;
 using FsCheck.Xunit;
 using Panther.CodeAnalysis;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
-using Panther.CodeAnalysis.Syntax;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
 
@@ -35,7 +31,6 @@ namespace Panther.Tests.CodeAnalysis
 
         [Theory]
         [InlineData("\"\"", "")]
-        [InlineData("\"\r\"", "\r")]
         [InlineData("\"\\u1a2d\"", "\u1a2d")]
         [InlineData("\"\\t\"", "\t")]
         [InlineData("\"\\\\\"", "\\")]
@@ -59,26 +54,31 @@ namespace Panther.Tests.CodeAnalysis
                         case '"':
                             sb.Append("\\\"");
                             break;
+
                         case '\n':
                             sb.Append("\\n");
                             break;
+
                         case '\r':
                             sb.Append("\\r");
                             break;
+
                         case '\t':
                             sb.Append("\\t");
                             break;
+
                         case '\\':
                             sb.Append("\\\\");
                             break;
+
                         default:
                             if (char.IsControl(c))
                             {
-                                var value = (int) c;
+                                var value = (int)c;
                                 if ((value & 0xffff0000) > 0)
                                 {
                                     sb.Append("\\U");
-                                    sb.Append(value.ToString("x8"));   
+                                    sb.Append(value.ToString("x8"));
                                 }
                                 else
                                 {
@@ -94,7 +94,7 @@ namespace Panther.Tests.CodeAnalysis
                             break;
                     }
                 }
-                
+
                 sb.Append('"');
                 return sb.ToString();
             }
@@ -103,7 +103,7 @@ namespace Panther.Tests.CodeAnalysis
             var expected = str1.Item + str2.Item;
             AssertEvaluation(code, expected);
         }
-        
+
         [Property]
         public void EvaluatesSubtraction(int number, int number2)
         {

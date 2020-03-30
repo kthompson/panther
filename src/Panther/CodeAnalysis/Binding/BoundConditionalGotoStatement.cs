@@ -2,15 +2,15 @@
 {
     sealed class BoundConditionalGotoStatement : BoundStatement
     {
-        public LabelSymbol Label { get; }
+        public BoundLabel BoundLabel { get; }
         public BoundExpression Condition { get; }
         public bool JumpIfFalse { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.ConditionalGotoStatement;
 
-        public BoundConditionalGotoStatement(LabelSymbol label, BoundExpression condition, bool jumpIfFalse = false)
+        public BoundConditionalGotoStatement(BoundLabel boundLabel, BoundExpression condition, bool jumpIfFalse = false)
         {
-            Label = label;
+            BoundLabel = boundLabel;
             Condition = condition;
             JumpIfFalse = jumpIfFalse;
         }

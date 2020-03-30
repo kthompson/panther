@@ -23,6 +23,14 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
+        public SyntaxToken GetLastToken()
+        {
+            if (this is SyntaxToken token)
+                return token;
+
+            return GetChildren().Last().GetLastToken();
+        }
+
         public IEnumerable<SyntaxNode> GetChildren()
         {
             var properties = GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);

@@ -30,12 +30,9 @@ namespace Panther.CodeAnalysis
         public void ReportInvalidNumber(TextSpan textSpan, string text, TypeSymbol type) =>
             Report(textSpan, $"The number {text} isn't a valid '{type}'");
 
-        public void ReportInvalidEscapeSequence(in int escapeStart, in int position, in char current) => 
-            Report(new TextSpan(escapeStart, position), $"Invalid character in escape sequence: {current}" );
+        public void ReportInvalidEscapeSequence(in int escapeStart, in int position, in char current) =>
+            Report(new TextSpan(escapeStart, position), $"Invalid character in escape sequence: {current}");
 
-        public void ReportInvalidEscapeSequence(in int escapeStart, in int position) =>
-            Report(new TextSpan(escapeStart, position), $"Invalid character in escape sequence");
-            
         public void ReportBadCharacter(int position, in char character) =>
             Report(new TextSpan(position, 1), $"Invalid character in input: {character}");
 
@@ -45,7 +42,8 @@ namespace Panther.CodeAnalysis
         public void ReportUndefinedUnaryOperator(TextSpan span, string operatorText, TypeSymbol operandType) =>
             Report(span, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");
 
-        public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, TypeSymbol leftType, TypeSymbol rightType) =>
+        public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, TypeSymbol leftType,
+            TypeSymbol rightType) =>
             Report(span, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'");
 
         public void ReportUndefinedName(TextSpan span, string name) =>
@@ -60,8 +58,24 @@ namespace Panther.CodeAnalysis
         public void ReportTypeMismatch(TextSpan span, TypeSymbol expectedType, TypeSymbol foundType) =>
             Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
 
-        public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) => 
+        public void ReportArgumentTypeMismatch(TextSpan span, int number, TypeSymbol expectedType, TypeSymbol foundType) =>
+            Report(span, $"Argument {number}, type mismatch. Required '{expectedType}', found '{foundType}'");
+
+        public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) =>
             Report(span, $"Unexpected token {kind}, expected Expression");
 
+        public void ReportUndefinedFunction(TextSpan span, string name) =>
+            Report(span, $"Function name '{name}' does not exist");
+
+        public void ReportNotAFunction(TextSpan span, string name) =>
+            Report(span, $"The variable '{name}' is not a function");
+
+        public void ReportIncorrectNumberOfArgumentsForFunction(TextSpan span, string name, int expected, int found) =>
+            Report(span, $"Incorrect number of arguments for '{name}', expected {expected}, found {found}");
+
+        public void ReportUnterminatedString(TextSpan span)
+        {
+            Report(span, "Unterminated string literal");
+        }
     }
 }

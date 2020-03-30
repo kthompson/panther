@@ -9,7 +9,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther
 {
-    class PantherRepl : Repl
+    internal class PantherRepl : Repl
     {
         private Compilation _previous;
         private bool _showTree;
@@ -46,17 +46,21 @@ namespace Panther
                     _showTree = !_showTree;
                     Console.WriteLine(_showTree ? "Showing parse trees." : "Not showing parse trees.");
                     break;
+
                 case "#showProgram":
                     _showProgram = !_showProgram;
                     Console.WriteLine(_showProgram ? "Showing bound tree." : "Not showing bound tree.");
                     break;
+
                 case "#cls":
                     Console.Clear();
                     break;
+
                 case "#reset":
                     _previous = null;
                     _variables.Clear();
                     break;
+
                 default:
                     base.EvaluateMetaCommand(input);
                     break;
@@ -66,6 +70,11 @@ namespace Panther
         protected override bool IsCompleteSubmission(string text)
         {
             if (string.IsNullOrEmpty(text))
+                return true;
+
+            // go ahead and show errors if the last two lines are blank
+            var lastTwoLinesAreBlank = text.EndsWith(Environment.NewLine + Environment.NewLine);
+            if (lastTwoLinesAreBlank)
                 return true;
 
             var syntaxTree = SyntaxTree.Parse(text);

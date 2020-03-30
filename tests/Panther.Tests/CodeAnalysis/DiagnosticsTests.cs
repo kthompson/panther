@@ -102,6 +102,31 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
+        public void ReportUnterminatedString()
+        {
+            var text = @"[""]
+                         ";
+
+            var diagnostic = @"
+                Unterminated string literal
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportUnterminatedString2()
+        {
+            var text = @"[""]";
+
+            var diagnostic = @"
+                Unterminated string literal
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
         public void ReportIncompleteGroup()
         {
             var text = @"([][]";

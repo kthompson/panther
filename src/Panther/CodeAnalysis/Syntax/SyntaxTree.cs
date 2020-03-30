@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax

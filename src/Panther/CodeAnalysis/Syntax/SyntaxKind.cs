@@ -6,68 +6,70 @@
         InvalidToken,
 
         EndOfInputToken,
+        IdentifierToken,
+        CommaToken,
+        
+        // Whitespace tokens
         NewLineToken,
         WhitespaceToken,
+        
+        
+        // Literal tokens
         NumberToken,
         StringToken,
-        IdentifierToken,
 
         // Keywords
-        TrueKeyword,
-
+        ElseKeyword,
         FalseKeyword,
+        ForKeyword,
+        IfKeyword,
+        ToKeyword,
+        TrueKeyword,
         ValKeyword,
         VarKeyword,
-        IfKeyword,
-        ElseKeyword,
         WhileKeyword,
-        ForKeyword,
-        ToKeyword,
 
         // Operators
-        PlusToken,
-
-        DashToken,
-        SlashToken,
-        StarToken,
-        BangToken,
-        AmpersandToken,
         AmpersandAmpersandToken,
+        AmpersandToken,
+        BangEqualsToken,
+        BangToken,
+        CaretToken,
+        DashToken,
+        EqualsEqualsToken,
+        EqualsToken,
+        GreaterThanEqualsToken,
+        GreaterThanToken,
+        LessThanDashToken,
+        LessThanEqualsToken,
+        LessThanToken,
         PipePipeToken,
         PipeToken,
-        BangEqualsToken,
-        EqualsToken,
-        EqualsEqualsToken,
-        LessThanToken,
-        LessThanEqualsToken,
-        GreaterThanToken,
-        GreaterThanEqualsToken,
-        CaretToken,
+        PlusToken,
+        SlashToken,
+        StarToken,
         TildeToken,
-        LessThanDashToken,
 
         // grouping tokens
         CloseParenToken,
-
         OpenParenToken,
         OpenBraceToken,
         CloseBraceToken,
 
         // Expressions
-        LiteralExpression,
-
         BinaryExpression,
-        GroupExpression,
-        UnaryExpression,
-        NameExpression,
-        UnitExpression,
         BlockExpression,
-        IfExpression,
-        WhileExpression,
+        CallExpression,
         ForExpression,
+        GroupExpression,
+        IfExpression,
+        LiteralExpression,
+        NameExpression,
+        UnaryExpression,
+        UnitExpression,
+        WhileExpression,
 
         // Statements
-
         VariableDeclarationStatement,
         ExpressionStatement,
         AssignmentExpression,

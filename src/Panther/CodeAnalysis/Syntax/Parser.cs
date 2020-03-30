@@ -164,7 +164,7 @@ namespace Panther.CodeAnalysis.Syntax
                 default:
                     Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, SyntaxKind.NewLineToken);
 
-                    return new SyntaxToken(SyntaxKind.NewLineToken, currentToken.Position, string.Empty, null);
+                    return new SyntaxToken(SyntaxKind.NewLineToken, currentToken.Position, string.Empty, null, true);
             }
         }
 
@@ -176,7 +176,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, kind);
 
-            return new SyntaxToken(kind, currentToken.Position, string.Empty, null);
+            return new SyntaxToken(kind, currentToken.Position, string.Empty, null, true);
         }
 
         private SyntaxToken Create(SyntaxKind kind, string text, bool skipNewLines = false)
