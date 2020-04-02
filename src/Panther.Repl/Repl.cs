@@ -27,7 +27,7 @@ namespace Panther
                     EvaluateSubmission(text);
 
                 _submissionHistory.Add(text);
-                _submissionHistoryIndex = 0;
+                _submissionHistoryIndex = _submissionHistory.Count;
             }
         }
 
@@ -348,15 +348,14 @@ namespace Panther
 
         private void HandlePageDown(ObservableCollection<string> document, SubmissionView view)
         {
-            _submissionHistoryIndex = Math.Min(_submissionHistoryIndex + 1, _submissionHistory.Count - 1);
+            _submissionHistoryIndex = Math.Min(_submissionHistoryIndex + 1, _submissionHistory.Count);
             UpdateDocumentFromHistory(document, view);
         }
 
         private void UpdateDocumentFromHistory(ObservableCollection<string> document, SubmissionView view)
         {
             document.Clear();
-
-            var historyItem = _submissionHistory[_submissionHistoryIndex];
+            var historyItem = _submissionHistoryIndex == _submissionHistory.Count ? "" : _submissionHistory[_submissionHistoryIndex];
             var lines = historyItem.Split(Environment.NewLine);
             foreach (var line in lines)
                 document.Add(line);
