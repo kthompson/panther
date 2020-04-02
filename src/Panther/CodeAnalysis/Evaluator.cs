@@ -7,25 +7,12 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis
 {
-    public class Unit
-    {
-        private Unit()
-        {
-        }
-
-        public static readonly Unit Default = new Unit();
-
-        public override string ToString()
-        {
-            return "unit";
-        }
-    }
-
     internal class Evaluator
     {
         private readonly BoundBlockExpression _root;
         private readonly Dictionary<VariableSymbol, object> _variables;
         private readonly IBuiltins _builtins;
+        private readonly Random _random = new Random();
         private object? _lastValue;
         private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
 
@@ -174,6 +161,26 @@ namespace Panther.CodeAnalysis
             if (callExpression.Function == BuiltinFunctions.Read)
             {
                 return _builtins.Read();
+            }
+
+            if (callExpression.Function == BuiltinFunctions.Rnd)
+            {
+                return _random.Next((int)EvaluateExpression(callExpression.Arguments[0]));
+            }
+
+            if (callExpression.Function.Name == TypeSymbol.String.Name)
+            {
+                return Convert.ToString(EvaluateExpression(callExpression.Arguments[0]));
+            }
+
+            if (callExpression.Function.Name == TypeSymbol.Bool.Name)
+            {
+                return Convert.ToBoolean(EvaluateExpression(callExpression.Arguments[0]));
+            }
+
+            if (callExpression.Function.Name == TypeSymbol.Int.Name)
+            {
+                return Convert.ToInt32(EvaluateExpression(callExpression.Arguments[0]));
             }
 
             throw new Exception($"Unexpected function {callExpression.Function}");

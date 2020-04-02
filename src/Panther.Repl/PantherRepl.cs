@@ -12,8 +12,8 @@ namespace Panther
     internal class PantherRepl : Repl, IBuiltins
     {
         private Compilation _previous;
-        private bool _showTree = true;
-        private bool _showProgram;// = true;
+        private bool _showTree;
+        private bool _showProgram;
         private readonly Dictionary<VariableSymbol, object> _variables = new Dictionary<VariableSymbol, object>();
 
         protected override void RenderLine(string line)

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
@@ -58,22 +60,16 @@ namespace Panther.CodeAnalysis
         public void ReportTypeMismatch(TextSpan span, TypeSymbol expectedType, TypeSymbol foundType) =>
             Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
 
-        public void ReportArgumentTypeMismatch(TextSpan span, string argName, TypeSymbol expectedType, TypeSymbol foundType) =>
-            Report(span, $"Argument {argName}, type mismatch. Required '{expectedType}', found '{foundType}'");
-
         public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) =>
             Report(span, $"Unexpected token {kind}, expected Expression");
 
         public void ReportUndefinedFunction(TextSpan span, string name) =>
             Report(span, $"Function name '{name}' does not exist");
 
-        public void ReportNotAFunction(TextSpan span, string name) =>
-            Report(span, $"The variable '{name}' is not a function");
-
-        public void ReportIncorrectNumberOfArgumentsForFunction(TextSpan span, string name, int expected, int found) =>
-            Report(span, $"Incorrect number of arguments for '{name}', expected {expected}, found {found}");
-
         public void ReportUnterminatedString(TextSpan span) =>
             Report(span, "Unterminated string literal");
+
+        public void ReportNoOverloads(TextSpan span, string name, ImmutableArray<string> argumentTypes) =>
+            Report(span, $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
     }
 }

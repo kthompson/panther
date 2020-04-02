@@ -118,48 +118,31 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
         {
-            var function = BuiltinFunctions.GetAll().SingleOrDefault(function => function.Name == syntax.IdentifierToken.Text);
-
-            //if (!scope.TryLookup(syntax.IdentifierToken.Text, out var variable))
-            if (function == null)
+            var argList = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
+            var argTypes = argList.Select(argument => argument.Type).ToImmutableArray();
+            var lookupResult = scope.TryLookupFunction(syntax.IdentifierToken.Text, argTypes);
+            switch (lookupResult)
             {
-                Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
-                return BoundErrorExpression.Default;
+                case BoundScope.FunctionLookupFailure functionLookupFailure:
+                    if (functionLookupFailure.Message == BoundScope.FunctionLookupFailureType.Undefined)
+                    {
+                        Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
+                    }
+                    else if (functionLookupFailure.Message == BoundScope.FunctionLookupFailureType.NoOverloads)
+                    {
+                        Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
+                    }
+
+                    return BoundErrorExpression.Default;
+
+                case BoundScope.FunctionLookupSuccess functionLookupSuccess:
+                    var function = functionLookupSuccess.Function;
+
+                    return new BoundCallExpression(function, argList.ToImmutableArray());
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(lookupResult));
             }
-
-            //if (!(variable.Type is FunctionSymbol functionType))
-            //{
-            //    Diagnostics.ReportNotAFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
-            //    return BoundErrorExpression.Default;
-            //}
-
-            if (syntax.Arguments.Count != function.Parameters.Length)
-            {
-                Diagnostics.ReportIncorrectNumberOfArgumentsForFunction(syntax.IdentifierToken.Span,
-                    syntax.IdentifierToken.Text, function.Parameters.Length, syntax.Arguments.Count);
-                return BoundErrorExpression.Default;
-            }
-
-            var argList = new List<BoundExpression>();
-            for (int i = 0; i < syntax.Arguments.Count; i++)
-            {
-                var argument = syntax.Arguments[i];
-                var parameter = function.Parameters[i];
-
-                var expr = BindExpression(argument, scope);
-                if (expr.Type != parameter.Type)
-                {
-                    Diagnostics.ReportArgumentTypeMismatch(argument.Span, parameter.Name, parameter.Type, expr.Type);
-                    continue;
-                }
-
-                argList.Add(expr);
-            }
-
-            if (argList.Count != function.Parameters.Length)
-                return BoundErrorExpression.Default;
-
-            return new BoundCallExpression(function, argList.ToImmutableArray());
         }
 
         private BoundExpression BindForExpression(ForExpressionSyntax syntax, BoundScope scope)
@@ -250,7 +233,7 @@ namespace Panther.CodeAnalysis.Binding
                 previous = previous.Previous;
             }
 
-            BoundScope? parent = null;
+            var parent = CreateRootScope();
 
             while (stack.Count > 0)
             {
@@ -263,6 +246,17 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             return parent;
+        }
+
+        private static BoundScope CreateRootScope()
+        {
+            var result = new BoundScope(null);
+            foreach (var symbol in BuiltinFunctions.GetAll())
+            {
+                result.TryDeclareFunction(symbol);
+            }
+
+            return result;
         }
 
         private BoundExpression BindNameExpression(NameExpressionSyntax syntax, BoundScope scope)
