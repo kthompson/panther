@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
@@ -148,7 +150,7 @@ namespace Panther.CodeAnalysis.Syntax
             return token;
         }
 
-        private SyntaxToken AcceptStatementTerminator()
+        private SyntaxToken? AcceptStatementTerminator()
         {
             var currentToken = CurrentToken;
             switch (currentToken.Kind)
@@ -159,7 +161,7 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.EndOfInputToken:
                 case SyntaxKind.CloseBraceToken:
                     // return end of file token but do not consume it
-                    return currentToken;
+                    return null;
 
                 default:
                     Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, SyntaxKind.NewLineToken);
@@ -194,14 +196,90 @@ namespace Panther.CodeAnalysis.Syntax
 
         public CompilationUnitSyntax ParseCompilationUnit()
         {
-            var statement = ParseStatement();
+            var members = ParseMembers();
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new CompilationUnitSyntax(statement, endToken);
+            return new CompilationUnitSyntax(members, endToken);
         }
 
-        private ExpressionSyntax ParseExpression(OperatorPrecedence precedence, bool skipNewLines)
+        private ImmutableArray<MemberSyntax> ParseMembers()
+        {
+            var members = ImmutableArray.CreateBuilder<MemberSyntax>();
+
+            while (CurrentToken.Kind != SyntaxKind.EndOfInputToken)
+            {
+                var startToken = CurrentToken;
+
+                var member = ParseMember();
+                members.Add(member);
+
+                if (CurrentToken == startToken)
+                    NextToken();
+            }
+
+            return members.ToImmutable();
+        }
+
+        private MemberSyntax ParseMember()
+        {
+            if (CurrentToken.Kind == SyntaxKind.DefKeyword)
+            {
+                return ParseFunctionDeclaration();
+            }
+
+            return ParseGlobalStatement();
+        }
+
+        private MemberSyntax ParseGlobalStatement()
+        {
+            var statement = ParseStatement();
+            return new GlobalStatementSyntax(statement);
+        }
+
+        private MemberSyntax ParseFunctionDeclaration()
+        {
+            var defKeyword = Accept();
+            var identifier = Accept(SyntaxKind.IdentifierToken);
+
+            var openParenToken = Accept(SyntaxKind.OpenParenToken);
+            var parameters = ParseParameters();
+            var closeParenToken = Accept(SyntaxKind.CloseParenToken);
+            var typeAnnotation = ParseOptionalTypeAnnotation();
+            var equalsToken = Accept(SyntaxKind.EqualsToken);
+            var body = ParseExpression(OperatorPrecedence.Lowest);
+
+            return new FunctionDeclarationSyntax(defKeyword, identifier, openParenToken, parameters, closeParenToken, typeAnnotation, equalsToken, body);
+        }
+
+        private SeparatedSyntaxList<ParameterSyntax> ParseParameters()
+        {
+            var items = ImmutableArray.CreateBuilder<SyntaxNode>();
+
+            while (CurrentToken.Kind != SyntaxKind.EndOfInputToken && CurrentToken.Kind != SyntaxKind.CloseParenToken)
+            {
+                var arg = ParseParameter();
+                items.Add(arg);
+
+                if (CurrentToken.Kind == SyntaxKind.CloseParenToken)
+                    break;
+
+                var comma = Accept(SyntaxKind.CommaToken);
+                items.Add(comma);
+            }
+
+            return new SeparatedSyntaxList<ParameterSyntax>(items.ToImmutable());
+        }
+
+        private ParameterSyntax ParseParameter()
+        {
+            var ident = Accept(SyntaxKind.IdentifierToken);
+            var typeAnnotation = ParseTypeAnnotation();
+
+            return new ParameterSyntax(ident, typeAnnotation);
+        }
+
+        private ExpressionSyntax ParseExpression(OperatorPrecedence precedence)
         {
             // advance until we get to the actual current token
             var currentToken = CurrentToken;
@@ -216,8 +294,6 @@ namespace Panther.CodeAnalysis.Syntax
                 Diagnostics.ReportExpectedExpression(currentToken.Span, currentToken.Kind);
                 return ParseLiteralExpression();
             }
-
-            skipNewLines = currentToken.Kind != SyntaxKind.OpenBraceToken && skipNewLines;
 
             var left = prefixFunction();
 
@@ -240,7 +316,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var unaryOperatorToken = Accept();
 
-            var expression = ParseExpression(OperatorPrecedence.Prefix, false);
+            var expression = ParseExpression(OperatorPrecedence.Prefix);
 
             return new UnaryExpressionSyntax(unaryOperatorToken, expression);
         }
@@ -255,7 +331,7 @@ namespace Panther.CodeAnalysis.Syntax
             var precedence = CurrentPrecedence();
             var binaryOperatorToken = Accept();
             SkipNewLines();
-            var right = ParseExpression(precedence, true);
+            var right = ParseExpression(precedence);
 
             return new BinaryExpressionSyntax(left, binaryOperatorToken, right);
         }
@@ -264,9 +340,9 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var whileKeyword = Accept();
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
-            var condition = ParseExpression(OperatorPrecedence.Lowest, false);
+            var condition = ParseExpression(OperatorPrecedence.Lowest);
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
-            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var expr = ParseExpression(OperatorPrecedence.Lowest);
 
             return new WhileExpressionSyntax(whileKeyword, openParenToken, condition, closeParenToken, expr);
         }
@@ -278,12 +354,12 @@ namespace Panther.CodeAnalysis.Syntax
             var variable = ParseNameExpression(true);
             var leftArrow = Accept(SyntaxKind.LessThanDashToken);
 
-            var fromExpression = ParseExpression(OperatorPrecedence.Lowest, false);
+            var fromExpression = ParseExpression(OperatorPrecedence.Lowest);
             var toKeyword = Accept(SyntaxKind.ToKeyword);
-            var toExpression = ParseExpression(OperatorPrecedence.Lowest, false);
+            var toExpression = ParseExpression(OperatorPrecedence.Lowest);
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
 
-            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var expr = ParseExpression(OperatorPrecedence.Lowest);
 
             return new ForExpressionSyntax(forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
         }
@@ -302,16 +378,15 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var items = new List<SyntaxNode>();
 
+            if (CurrentToken.Kind == SyntaxKind.CloseParenToken)
+                return new SeparatedSyntaxList<ExpressionSyntax>(ImmutableArray<SyntaxNode>.Empty);
+
             while (true)
             {
-                var currentToken = CurrentToken;
-                if (currentToken.Kind == SyntaxKind.CloseParenToken || currentToken.Kind == SyntaxKind.EndOfInputToken)
-                    break;
-
-                var arg = ParseExpression(OperatorPrecedence.Lowest, true);
+                var arg = ParseExpression(OperatorPrecedence.Lowest);
                 items.Add(arg);
 
-                currentToken = CurrentToken;
+                var currentToken = CurrentToken;
                 if (currentToken.Kind == SyntaxKind.CloseParenToken || currentToken.Kind == SyntaxKind.EndOfInputToken)
                     break;
 
@@ -327,15 +402,15 @@ namespace Panther.CodeAnalysis.Syntax
             var ifKeyword = Accept();
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
             SkipNewLines();
-            var condition = ParseExpression(OperatorPrecedence.Lowest, false);
+            var condition = ParseExpression(OperatorPrecedence.Lowest);
             SkipNewLines();
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
             SkipNewLines();
-            var thenExpr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var thenExpr = ParseExpression(OperatorPrecedence.Lowest);
             SkipNewLines();
             var elseKeyword = Accept(SyntaxKind.ElseKeyword);
             SkipNewLines();
-            var elseExpr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var elseExpr = ParseExpression(OperatorPrecedence.Lowest);
 
             return new IfExpressionSyntax(ifKeyword, openParenToken, condition, closeParenToken, thenExpr, elseKeyword, elseExpr);
         }
@@ -351,7 +426,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
             else
             {
-                var expr = ParseExpression(OperatorPrecedence.Lowest, true);
+                var expr = ParseExpression(OperatorPrecedence.Lowest);
                 var close = Accept(SyntaxKind.CloseParenToken);
 
                 return new GroupExpressionSyntax(open, expr, close);
@@ -440,14 +515,14 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var identToken = Accept(SyntaxKind.IdentifierToken);
             var equalsToken = Accept(SyntaxKind.EqualsToken);
-            var expr = ParseExpression(OperatorPrecedence.Lowest, true);
+            var expr = ParseExpression(OperatorPrecedence.Lowest);
 
             return new AssignmentExpressionSyntax(identToken, equalsToken, expr);
         }
 
         private StatementSyntax ParseExpressionStatement()
         {
-            var expr = ParseExpression(OperatorPrecedence.Lowest, false);
+            var expr = ParseExpression(OperatorPrecedence.Lowest);
             var newLineToken = AcceptStatementTerminator();
             return new ExpressionStatementSyntax(expr, newLineToken);
         }
@@ -456,11 +531,24 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var valToken = Accept();
             var identToken = Accept(SyntaxKind.IdentifierToken);
+            var typeAnnotationSyntax = ParseOptionalTypeAnnotation();
+
             var equalsToken = Accept(SyntaxKind.EqualsToken);
-            var expr = ParseExpression(OperatorPrecedence.Lowest, true);
+            var expr = ParseExpression(OperatorPrecedence.Lowest);
             var newLineToken = AcceptStatementTerminator();
 
-            return new VariableDeclarationStatementSyntax(valToken, identToken, equalsToken, expr, newLineToken);
+            return new VariableDeclarationStatementSyntax(valToken, identToken, typeAnnotationSyntax, equalsToken, expr, newLineToken);
+        }
+
+        private TypeAnnotationSyntax? ParseOptionalTypeAnnotation() =>
+            CurrentToken.Kind == SyntaxKind.ColonToken ? ParseTypeAnnotation() : null;
+
+        private TypeAnnotationSyntax ParseTypeAnnotation()
+        {
+            var colonToken = Accept(SyntaxKind.ColonToken);
+            var identToken = Accept(SyntaxKind.IdentifierToken);
+
+            return new TypeAnnotationSyntax(colonToken, identToken);
         }
     }
 }

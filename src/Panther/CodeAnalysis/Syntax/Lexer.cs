@@ -81,9 +81,12 @@ namespace Panther.CodeAnalysis.Syntax
 
                 case '~':
                     return ReturnKindOneChar(SyntaxKind.TildeToken);
-                
+
                 case ',':
                     return ReturnKindOneChar(SyntaxKind.CommaToken);
+
+                case ':':
+                    return ReturnKindOneChar(SyntaxKind.ColonToken);
 
                 case '>':
                     return Lookahead == '='

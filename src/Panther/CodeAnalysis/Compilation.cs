@@ -55,8 +55,11 @@ namespace Panther.CodeAnalysis
                 return new EvaluationResult(diagnostics, null);
             }
 
-            var statement = GetStatement();
-            var evaluator = new Evaluator(statement, variables, _builtins);
+            var program = Binder.BindProgram(GlobalScope);
+            if (program.Diagnostics.Any())
+                return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
+
+            var evaluator = new Evaluator(program, variables, _builtins);
             var value = evaluator.Evaluate();
 
             return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
@@ -64,10 +67,8 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(TextWriter @out)
         {
-            var statement = GetStatement();
-            statement.WriteTo(@out);
+            var program = Binder.BindProgram(GlobalScope);
+            program.Expression.WriteTo(@out);
         }
-
-        private BoundBlockExpression GetStatement() => Lowerer.Lower(GlobalScope.Statement);
     }
 }

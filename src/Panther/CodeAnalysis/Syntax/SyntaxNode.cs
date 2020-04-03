@@ -39,7 +39,8 @@ namespace Panther.CodeAnalysis.Syntax
                 if (typeof(SyntaxNode).IsAssignableFrom(property.PropertyType))
                 {
                     var child = (SyntaxNode)property.GetValue(this);
-                    yield return child;
+                    if (child != null)
+                        yield return child;
                 }
                 else if (typeof(SeparatedSyntaxList).IsAssignableFrom(property.PropertyType))
                 {

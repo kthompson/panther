@@ -9,42 +9,42 @@ namespace Panther.CodeAnalysis
 {
     internal class Evaluator
     {
-        private readonly BoundBlockExpression _root;
-        private readonly Dictionary<VariableSymbol, object> _variables;
+        private readonly BoundProgram _program;
+        private readonly Dictionary<VariableSymbol, object> _globals;
+        private readonly Stack<Dictionary<VariableSymbol, object>> _locals = new Stack<Dictionary<VariableSymbol, object>>();
         private readonly IBuiltins _builtins;
         private readonly Random _random = new Random();
         private object? _lastValue;
-        private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
 
-        public Evaluator(BoundBlockExpression root, Dictionary<VariableSymbol, object> variables, IBuiltins builtins)
+        public Evaluator(BoundProgram program, Dictionary<VariableSymbol, object> globals, IBuiltins builtins)
         {
-            _root = root;
-            _variables = variables;
+            _program = program;
+            _globals = globals;
             _builtins = builtins;
+            _locals.Push(new Dictionary<VariableSymbol, object>());
         }
 
-        private void InitializeLabelLookup()
+        public object? Evaluate() => EvaluateBlockExpression(_program.Expression);
+
+        private object EvaluateBlockExpression(BoundBlockExpression body)
         {
-            for (int i = 0; i < _root.Statements.Length; i++)
+            var labels = new Dictionary<BoundLabel, int>();
+
+            for (int i = 0; i < body.Statements.Length; i++)
             {
-                if (_root.Statements[i] is BoundLabelStatement labelStatement)
+                if (body.Statements[i] is BoundLabelStatement labelStatement)
                 {
-                    _labels[labelStatement.BoundLabel] = i + 1; // skip label
+                    labels[labelStatement.BoundLabel] = i + 1; // skip label
                 }
             }
-        }
-
-        public object? Evaluate()
-        {
-            InitializeLabelLookup();
 
             var position = 0;
-            while (position < _root.Statements.Length)
+            while (position < body.Statements.Length)
             {
-                switch (_root.Statements[position])
+                switch (body.Statements[position])
                 {
                     case BoundGotoStatement boundGotoStatement:
-                        position = _labels[boundGotoStatement.BoundLabel];
+                        position = labels[boundGotoStatement.BoundLabel];
                         continue;
 
                     case BoundLabelStatement _:
@@ -55,16 +55,15 @@ namespace Panther.CodeAnalysis
                         var cond = (bool)EvaluateExpression(conditionalGotoStatement.Condition);
                         if (conditionalGotoStatement.JumpIfFalse != cond)
                         {
-                            position = _labels[conditionalGotoStatement.BoundLabel];
+                            position = labels[conditionalGotoStatement.BoundLabel];
                             continue;
                         }
+
                         break;
 
                     case BoundVariableDeclarationStatement a:
                         {
-                            var value = EvaluateExpression(a.Expression);
-                            _variables[a.Variable] = value;
-                            _lastValue = value;
+                            _lastValue = EvaluateVariableDeclaration(a);
                             break;
                         }
                     case BoundExpressionStatement expressionStatement:
@@ -72,15 +71,35 @@ namespace Panther.CodeAnalysis
                         break;
 
                     default:
-                        throw new Exception($"Unexpected statement {_root.Statements[position].Kind}");
+                        throw new Exception($"Unexpected statement {body.Statements[position].Kind}");
                 }
 
                 position++;
             }
 
-            _lastValue = EvaluateExpression(_root.Expression);
+            _lastValue = EvaluateExpression(body.Expression);
 
             return _lastValue;
+        }
+
+        private object EvaluateVariableDeclaration(BoundVariableDeclarationStatement a)
+        {
+            var value = EvaluateExpression(a.Expression);
+            Assign(a.Variable, value);
+            return value;
+        }
+
+        private void Assign(VariableSymbol variableSymbol, object value)
+        {
+            if (variableSymbol.Kind == SymbolKind.GlobalVariable)
+            {
+                _globals[variableSymbol] = value;
+            }
+            else
+            {
+                var locals = _locals.Peek();
+                locals[variableSymbol] = value;
+            }
         }
 
         private object EvaluateExpression(BoundExpression node) =>
@@ -94,6 +113,7 @@ namespace Panther.CodeAnalysis
                 BoundVariableExpression v => EvaluateVariableExpression(v),
                 BoundBinaryExpression binaryExpression => EvaluateBinaryExpression(binaryExpression),
                 BoundUnaryExpression unary => EvaluateUnaryExpression(unary),
+                BoundBlockExpression block => EvaluateBlockExpression(block),
                 _ => throw new Exception($"Unexpected expression {node.Kind}")
             };
 
@@ -122,13 +142,17 @@ namespace Panther.CodeAnalysis
         private object EvaluateAssignmentExpression(BoundAssignmentExpression assignmentStatement)
         {
             var value = EvaluateExpression(assignmentStatement.Expression);
-            _variables[assignmentStatement.Variable] = value;
+            Assign(assignmentStatement.Variable, value);
             return Unit.Default;
         }
 
         private object EvaluateVariableExpression(BoundVariableExpression v)
         {
-            return _variables[v.Variable];
+            if (v.Variable.Kind == SymbolKind.GlobalVariable)
+                return _globals[v.Variable];
+
+            var locals = _locals.Peek();
+            return locals[v.Variable];
         }
 
         private object EvaluateBinaryExpression(BoundBinaryExpression binaryExpression)
@@ -172,26 +196,41 @@ namespace Panther.CodeAnalysis
             };
         }
 
-        private object EvaluateCallExpressions(BoundCallExpression callExpression)
+        private object EvaluateCallExpressions(BoundCallExpression node)
         {
-            if (callExpression.Function == BuiltinFunctions.Print)
+            if (node.Function == BuiltinFunctions.Print)
             {
-                var message = (string)EvaluateExpression(callExpression.Arguments[0]);
+                var message = (string)EvaluateExpression(node.Arguments[0]);
                 _builtins.Print(message);
                 return Unit.Default;
             }
 
-            if (callExpression.Function == BuiltinFunctions.Read)
+            if (node.Function == BuiltinFunctions.Read)
             {
                 return _builtins.Read();
             }
 
-            if (callExpression.Function == BuiltinFunctions.Rnd)
+            if (node.Function == BuiltinFunctions.Rnd)
             {
-                return _random.Next((int)EvaluateExpression(callExpression.Arguments[0]));
+                return _random.Next((int)EvaluateExpression(node.Arguments[0]));
             }
 
-            throw new Exception($"Unexpected function {callExpression.Function}");
+            var locals = new Dictionary<VariableSymbol, object>();
+            for (int i = 0; i < node.Arguments.Length; i++)
+            {
+                var parameter = node.Function.Parameters[i];
+                var value = EvaluateExpression(node.Arguments[i]);
+                locals.Add(parameter, value);
+            }
+
+            _locals.Push(locals);
+
+            var expression = _program.Functions[node.Function];
+            var result = EvaluateExpression(expression);
+
+            _locals.Pop();
+
+            return result;
         }
     }
 }

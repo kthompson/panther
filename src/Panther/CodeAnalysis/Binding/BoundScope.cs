@@ -8,98 +8,74 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundScope
     {
-        private readonly Dictionary<string, VariableSymbol> _variables = new Dictionary<string, VariableSymbol>();
-        private readonly Dictionary<string, ImmutableArray<FunctionSymbol>> _functions = new Dictionary<string, ImmutableArray<FunctionSymbol>>();
+        private readonly FunctionSymbol? _function;
+        private readonly Dictionary<string, Symbol> _symbols = new Dictionary<string, Symbol>();
 
         public BoundScope? Parent { get; }
 
         public BoundScope(BoundScope? parent)
+            : this(parent, null) // should we pass parent._function here?
         {
-            Parent = parent;
         }
 
-        public bool TryDeclare(VariableSymbol variable)
+        public BoundScope(BoundScope? parent, FunctionSymbol? function)
         {
-            if (_variables.ContainsKey(variable.Name))
+            _function = function;
+            Parent = parent;
+
+            if (function == null)
+                return;
+
+            foreach (var parameter in function.Parameters)
+            {
+                TryDeclareVariable(parameter);
+            }
+        }
+
+        public bool IsGlobalScope => _function == null;
+
+        public bool TryDeclareVariable(VariableSymbol variable) =>
+            TryDeclare(variable);
+
+        public bool TryDeclareFunction(FunctionSymbol function) =>
+            TryDeclare(function);
+
+        private bool TryDeclare(Symbol variable)
+        {
+            if (_symbols.ContainsKey(variable.Name))
                 return false;
 
-            _variables.Add(variable.Name, variable);
+            _symbols.Add(variable.Name, variable);
             return true;
         }
 
-        public bool TryDeclareFunction(FunctionSymbol function)
+        public bool TryLookupVariable(string name, out VariableSymbol variable) =>
+            TryLookup(name, out variable);
+
+        private bool TryLookup<TSymbol>(string name, out TSymbol symbol)
+            where TSymbol : Symbol
         {
-            if (_functions.TryGetValue(function.Name, out var functions))
+            symbol = null;
+
+            if (_symbols.TryGetValue(name, out var existingSymbol))
             {
-                // TODO check if any of the existing methods have identical signatures
-                _functions[function.Name] = functions.Add(function);
-                return true;
-            }
-
-            _functions.Add(function.Name, ImmutableArray.Create(function));
-            return true;
-        }
-
-        public bool TryLookup(string name, out VariableSymbol variable)
-        {
-            if (_variables.TryGetValue(name, out variable))
-                return true;
-
-            return Parent != null && Parent.TryLookup(name, out variable);
-        }
-
-        public FunctionLookupResult TryLookupFunction(string name, ImmutableArray<TypeSymbol> argTypes)
-        {
-            if (_functions.TryGetValue(name, out var functions))
-            {
-                var function = functions.FirstOrDefault(f => f.Parameters.Select(x => x.Type).SequenceEqual(argTypes));
-
-                if (function == null)
+                if (existingSymbol is TSymbol outSymbol)
                 {
-                    return new FunctionLookupFailure(FunctionLookupFailureType.NoOverloads);
+                    symbol = outSymbol;
+                    return true;
                 }
 
-                return new FunctionLookupSuccess(function);
+                return false;
             }
 
-            if (Parent != null)
-            {
-                return Parent.TryLookupFunction(name, argTypes);
-            }
-
-            return new FunctionLookupFailure(FunctionLookupFailureType.Undefined);
+            return Parent != null && Parent.TryLookup(name, out symbol);
         }
 
-        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _variables.Values.ToImmutableArray();
+        public bool TryLookupFunction(string name, out FunctionSymbol function) =>
+            TryLookup(name, out function);
 
-        public abstract class FunctionLookupResult
-        {
-        }
+        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.OfType<VariableSymbol>().ToImmutableArray();
 
-        internal enum FunctionLookupFailureType
-        {
-            Undefined,
-            NoOverloads,
-        }
-
-        public class FunctionLookupFailure : FunctionLookupResult
-        {
-            public FunctionLookupFailureType Message { get; }
-
-            public FunctionLookupFailure(FunctionLookupFailureType message)
-            {
-                Message = message;
-            }
-        }
-
-        public sealed class FunctionLookupSuccess : FunctionLookupResult
-        {
-            public FunctionSymbol Function { get; }
-
-            public FunctionLookupSuccess(FunctionSymbol function)
-            {
-                Function = function;
-            }
-        }
+        public ImmutableArray<FunctionSymbol> GetDeclaredFunctions() => _symbols.Values.OfType<FunctionSymbol>().ToImmutableArray();
     }
 }

@@ -18,7 +18,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var op2Text = SyntaxFacts.GetText(op2.Kind);
 
             var text = $"a {op1Text} b {op2Text} c";
-            var expression = SyntaxTree.Parse(text).Root.Statement;
+            var expression = SyntaxTree.Parse(text).Root;
 
             if (op1Precedence >= op2Precedence)
             {
@@ -33,6 +33,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 //    ├──PlusToken
                 //    └──NameExpression
                 //        └──IdentifierToken
+                e.AssertNode(SyntaxKind.CompilationUnit);
+                e.AssertNode(SyntaxKind.GlobalStatement);
                 e.AssertNode(SyntaxKind.ExpressionStatement);
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.BinaryExpression);
@@ -60,6 +62,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 //       └──NameExpression
                 //          └──IdentifierToken
 
+                e.AssertNode(SyntaxKind.CompilationUnit);
+                e.AssertNode(SyntaxKind.GlobalStatement);
                 e.AssertNode(SyntaxKind.ExpressionStatement);
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.NameExpression);
@@ -82,7 +86,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var binaryText = SyntaxFacts.GetText(op2.Kind);
 
             var text = $"{unaryText} a {binaryText} b";
-            var expression = SyntaxTree.Parse(text).Root.Statement;
+            var expression = SyntaxTree.Parse(text).Root;
 
             using var e = new AssertingEnumerator(expression);
 
@@ -95,6 +99,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             //     └──NameExpression
             //         └──IdentifierToken
 
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BinaryExpression);
             e.AssertNode(SyntaxKind.UnaryExpression);
@@ -111,7 +117,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         public void ParseNestedBlockExpression()
         {
             var text = "{{}}";
-            var expression = SyntaxTree.Parse(text).Root.Statement;
+            var expression = SyntaxTree.Parse(text).Root;
 
             using var e = new AssertingEnumerator(expression);
 
@@ -127,6 +133,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             //    │   └──CloseBraceToken
             //    └──NewLineToken
 
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BlockExpression);
             e.AssertToken(SyntaxKind.OpenBraceToken, "{");
@@ -150,7 +158,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var tree = SyntaxTree.Parse(text);
             Assert.Empty(tree.Diagnostics);
 
-            var expression = tree.Root.Statement;
+            var expression = tree.Root;
 
             using var e = new AssertingEnumerator(expression);
 
@@ -166,6 +174,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             //    │   └──CloseBraceToken
             //    └──NewLineToken
 
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BlockExpression);
             e.AssertToken(SyntaxKind.OpenBraceToken, "{");
@@ -192,7 +202,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var tree = SyntaxTree.Parse(text);
             Assert.Empty(tree.Diagnostics);
 
-            var expression = tree.Root.Statement;
+            var expression = tree.Root;
 
             using var e = new AssertingEnumerator(expression);
 
@@ -214,7 +224,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             //    │   │       └──IdentifierToken
             //    │   └──NewLineToken
             //    └──EndOfInputToken
-
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.ForExpression);
             e.AssertToken(SyntaxKind.ForKeyword, "for");
@@ -242,10 +253,12 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var tree = SyntaxTree.Parse(text);
             Assert.Empty(tree.Diagnostics);
 
-            var expression = tree.Root.Statement;
+            var expression = tree.Root;
 
             using var e = new AssertingEnumerator(expression);
 
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BlockExpression);
             e.AssertToken(SyntaxKind.OpenBraceToken, "{");

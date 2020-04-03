@@ -71,7 +71,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             if (!_hasErrors)
             {
                 var moveNextResult = _enumerator.MoveNext();
-                Assert.False(moveNextResult, $"additional tokens remain: {_enumerator.Current}");
+                Assert.False(moveNextResult, $"additional tokens remain: {_enumerator.Current.Kind}");
             }
 
             _enumerator?.Dispose();

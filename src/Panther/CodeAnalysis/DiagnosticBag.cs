@@ -76,6 +76,18 @@ namespace Panther.CodeAnalysis
             Report(span, $"Cannot convert from '{fromType}' to '{toType}'");
 
         public void ReportCannotConvertImplicitly(TextSpan diagnosticsSpan, TypeSymbol fromType, TypeSymbol toType) =>
-            Report(diagnosticsSpan, $"Cannot implicitly convert from '{fromType}' to '{toType}'");
+            Report(diagnosticsSpan, $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?");
+
+        public void ReportUndefinedType(TextSpan span, string name) =>
+            Report(span, $"Type '{name}' is not defined");
+
+        public void ReportArgumentTypeMismatch(TextSpan span, string parameterName, TypeSymbol expectedType, TypeSymbol actualType) =>
+            Report(span, $"Argument {parameterName}, type mismatch. Expected '{expectedType}', found '{actualType}'");
+
+        public void ReportParameterAlreadyDeclared(TextSpan span, string parameterName) =>
+            Report(span, $"Function parameter '{parameterName}' was already declared");
+
+        public void ReportFunctionAlreadyDeclared(TextSpan span, string functionName) =>
+            Report(span, $"Function '{functionName}' was already declared");
     }
 }

@@ -5,6 +5,8 @@
         Function,
         Parameter,
         Type,
-        Variable,    
+        Variable,
+        GlobalVariable,
+        LocalVariable
     }
 }

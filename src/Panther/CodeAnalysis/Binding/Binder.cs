@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks.Sources;
+using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
@@ -11,13 +12,26 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class Binder
     {
+        public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
+
         public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, CompilationUnitSyntax syntax)
         {
             var parentScope = CreateParentScope(previous);
-            var scope = new BoundScope(parentScope);
+            var scope = new BoundScope(parentScope, function: null);
             var binder = new Binder();
-            var statement = binder.BindStatement(syntax.Statement, scope);
+
+            foreach (var function in syntax.Members.OfType<FunctionDeclarationSyntax>())
+                binder.BindFunctionDeclaration(function, scope);
+
+            var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+            foreach (var globalStatementSyntax in syntax.Members.OfType<GlobalStatementSyntax>())
+            {
+                var boundStatement = binder.BindStatement(globalStatementSyntax.Statement, scope);
+                statements.Add(boundStatement);
+            }
+
             var variables = scope.GetDeclaredVariables();
+            var functions = scope.GetDeclaredFunctions();
             var diagnostics = binder.Diagnostics.ToImmutableArray();
 
             if (previous != null)
@@ -25,10 +39,80 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
-            return new BoundGlobalScope(previous, diagnostics, variables, statement);
+            return new BoundGlobalScope(previous, diagnostics, variables, functions, statements.ToImmutable());
         }
 
-        public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
+        public static BoundProgram BindProgram(BoundGlobalScope globalScope)
+        {
+            var binder = new Binder();
+            var parentScope = CreateParentScope(globalScope);
+
+            var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundExpression>();
+
+            BoundGlobalScope? scope = globalScope;
+
+            while (scope != null)
+            {
+                foreach (var function in scope.Functions)
+                {
+                    var functionScope = new BoundScope(parentScope, function);
+
+                    var body = binder.BindExpression(function.Declaration.Body, functionScope);
+
+                    var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body));
+                    functionBodies.Add(function, loweredBody);
+                }
+
+                scope = scope.Previous;
+            }
+
+            var statement = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
+
+            return new BoundProgram(binder.Diagnostics.ToImmutableArray(), functionBodies.ToImmutable(), statement);
+        }
+
+        private static BoundExpressionStatement BoundStatementFromStatements(IReadOnlyCollection<BoundStatement> statements)
+        {
+            var expr = (statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
+            var stmts = expr == null
+                ? statements.ToImmutableArray()
+                : statements.Take(statements.Count - 1).ToImmutableArray();
+
+            var statement = new BoundExpressionStatement(new BoundBlockExpression(stmts, expr ?? BoundUnitExpression.Default));
+            return statement;
+        }
+
+        private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
+        {
+            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+
+            var seenParamNames = new HashSet<string>();
+
+            foreach (var parameterSyntax in syntax.Parameters)
+            {
+                var parameterName = parameterSyntax.Identifier.Text;
+                var parameterType = BindTypeAnnotation(parameterSyntax.TypeAnnotation);
+
+                if (!seenParamNames.Add(parameterName))
+                {
+                    Diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Span, parameterName);
+                }
+                else
+                {
+                    var parameter = new ParameterSymbol(parameterName, parameterType);
+                    parameters.Add(parameter);
+                }
+            }
+
+            var type = BindTypeAnnotation(syntax.TypeAnnotation) ?? TypeSymbol.Unit;
+
+            var function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+
+            if (!scope.TryDeclareFunction(function))
+            {
+                Diagnostics.ReportFunctionAlreadyDeclared(syntax.Identifier.Span, function.Name);
+            }
+        }
 
         private BoundStatement BindStatement(StatementSyntax syntax, BoundScope scope)
         {
@@ -44,7 +128,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var boundExpression = BindExpression(syntax.Expression, scope);
 
-            if (!scope.TryLookup(syntax.IdentifierToken.Text, out var variable))
+            if (!scope.TryLookupVariable(syntax.IdentifierToken.Text, out var variable))
             {
                 Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
 
@@ -64,12 +148,30 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
         {
+            var isReadOnly = syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword;
             var boundExpression = BindExpression(syntax.Expression, scope);
-            var expressionType = boundExpression.Type;
+            var type = BindTypeAnnotation(syntax.TypeAnnotation);
+            var expressionType = type ?? boundExpression.Type;
 
-            var variable = BindVariable(syntax.IdentifierToken, expressionType, syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword, scope);
+            var converted = BindConversion(syntax.Expression.Span, boundExpression, expressionType);
+            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, scope);
 
-            return new BoundVariableDeclarationStatement(variable, boundExpression);
+            return new BoundVariableDeclarationStatement(variable, converted);
+        }
+
+        private TypeSymbol? BindTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause)
+        {
+            if (syntaxTypeClause == null)
+                return null;
+
+            var type = LookupType(syntaxTypeClause.IdentifierToken.Text);
+
+            if (type == null)
+            {
+                Diagnostics.ReportUndefinedType(syntaxTypeClause.IdentifierToken.Span, syntaxTypeClause.IdentifierToken.Text);
+            }
+
+            return type;
         }
 
         private VariableSymbol BindVariable(SyntaxToken identifier, TypeSymbol expressionType, bool isReadOnly,
@@ -77,9 +179,11 @@ namespace Panther.CodeAnalysis.Binding
         {
             var name = identifier.Text ?? "??";
             var declare = !identifier.IsInsertedToken;
-            var variable = new VariableSymbol(name, isReadOnly, expressionType);
+            var variable = scope.IsGlobalScope
+                ? (VariableSymbol)new GlobalVariableSymbol(name, isReadOnly, expressionType)
+                : new LocalVariableSymbol(name, isReadOnly, expressionType);
 
-            if (declare && !scope.TryDeclare(variable))
+            if (declare && !scope.TryDeclareVariable(variable))
             {
                 Diagnostics.ReportVariableAlreadyDefined(identifier.Span, name);
             }
@@ -150,31 +254,31 @@ namespace Panther.CodeAnalysis.Binding
             if (syntax.Arguments.Count == 1 && LookupType(syntax.IdentifierToken.Text) is { } type)
                 return BindConversion(syntax.Arguments[0], type, scope, allowExplicit: true);
 
-            var argList = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
-            var argTypes = argList.Select(argument => argument.Type).ToImmutableArray();
-            var lookupResult = scope.TryLookupFunction(syntax.IdentifierToken.Text, argTypes);
-            switch (lookupResult)
+            var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
+            var argTypes = boundArguments.Select(argument => argument.Type).ToImmutableArray();
+            if (!scope.TryLookupFunction(syntax.IdentifierToken.Text, out var function))
             {
-                case BoundScope.FunctionLookupFailure functionLookupFailure:
-                    if (functionLookupFailure.Message == BoundScope.FunctionLookupFailureType.Undefined)
-                    {
-                        Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
-                    }
-                    else if (functionLookupFailure.Message == BoundScope.FunctionLookupFailureType.NoOverloads)
-                    {
-                        Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
-                    }
-
-                    return BoundErrorExpression.Default;
-
-                case BoundScope.FunctionLookupSuccess functionLookupSuccess:
-                    var function = functionLookupSuccess.Function;
-
-                    return new BoundCallExpression(function, argList.ToImmutableArray());
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(lookupResult));
+                Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
             }
+
+            if (syntax.Arguments.Count != function.Parameters.Length)
+            {
+                Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
+            }
+
+            for (int i = 0; i < syntax.Arguments.Count; i++)
+            {
+                var argument = boundArguments[i];
+                var parameter = function.Parameters[i];
+
+                if (argument.Type != parameter.Type)
+                {
+                    Diagnostics.ReportArgumentTypeMismatch(syntax.Arguments[i].Span, parameter.Name, parameter.Type, argument.Type);
+                    return BoundErrorExpression.Default;
+                }
+            }
+
+            return new BoundCallExpression(function, boundArguments.ToImmutableArray());
         }
 
         private TypeSymbol? LookupType(string text)
@@ -284,7 +388,10 @@ namespace Panther.CodeAnalysis.Binding
                 previous = stack.Pop();
                 var scope = new BoundScope(parent);
                 foreach (var v in previous.Variables)
-                    scope.TryDeclare(v);
+                    scope.TryDeclareVariable(v);
+
+                foreach (var v in previous.Functions)
+                    scope.TryDeclareFunction(v);
 
                 parent = scope;
             }
@@ -312,7 +419,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var name = syntax.IdentifierToken.Text;
 
-            if (scope.TryLookup(name, out var variable))
+            if (scope.TryLookupVariable(name, out var variable))
                 return new BoundVariableExpression(variable);
 
             Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Span, name);

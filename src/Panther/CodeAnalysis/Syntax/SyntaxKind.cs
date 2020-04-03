@@ -8,17 +8,20 @@
         EndOfInputToken,
         IdentifierToken,
         CommaToken,
-        
+
         // Whitespace tokens
         NewLineToken,
+
         WhitespaceToken,
-        
-        
+
         // Literal tokens
         NumberToken,
+
         StringToken,
 
         // Keywords
+        DefKeyword,
+
         ElseKeyword,
         FalseKeyword,
         ForKeyword,
@@ -31,6 +34,7 @@
 
         // Operators
         AmpersandAmpersandToken,
+
         AmpersandToken,
         BangEqualsToken,
         BangToken,
@@ -49,15 +53,18 @@
         SlashToken,
         StarToken,
         TildeToken,
+        ColonToken,
 
         // grouping tokens
         CloseParenToken,
+
         OpenParenToken,
         OpenBraceToken,
         CloseBraceToken,
 
         // Expressions
         BinaryExpression,
+
         BlockExpression,
         CallExpression,
         ForExpression,
@@ -71,10 +78,19 @@
 
         // Statements
         VariableDeclarationStatement,
+
         ExpressionStatement,
         AssignmentExpression,
 
-        //  Other
-        CompilationUnit
+        //  Nodes
+        TypeClause,
+
+        Parameter,
+        CompilationUnit,
+
+        // Members
+        FunctionDeclaration,
+
+        GlobalStatement
     }
 }

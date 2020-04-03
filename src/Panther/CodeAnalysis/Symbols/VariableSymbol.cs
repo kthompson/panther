@@ -7,7 +7,7 @@ namespace Panther.CodeAnalysis.Symbols
         public bool IsReadOnly { get; }
         public TypeSymbol Type { get; }
 
-        internal VariableSymbol(string name, bool isReadOnly, TypeSymbol type)
+        protected internal VariableSymbol(string name, bool isReadOnly, TypeSymbol type)
             : base(name)
         {
             IsReadOnly = isReadOnly;
