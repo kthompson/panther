@@ -8,6 +8,7 @@ namespace Panther.CodeAnalysis.Binding
         BinaryExpression,
         BlockExpression,
         CallExpression,
+        ConversionExpression,
         ForExpression,
         IfExpression,
         LiteralExpression,

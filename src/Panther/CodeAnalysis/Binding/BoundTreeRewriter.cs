@@ -11,6 +11,7 @@ namespace Panther.CodeAnalysis.Binding
             node switch
             {
                 BoundCallExpression callExpression => RewriteCallExpression(callExpression),
+                BoundConversionExpression conversionExpression => RewriteConversionExpression(conversionExpression),
                 BoundErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
                 BoundAssignmentExpression boundAssignmentExpression => RewriteAssignmentExpression(boundAssignmentExpression),
                 BoundBinaryExpression boundBinaryExpression => RewriteBinaryExpression(boundBinaryExpression),
@@ -24,6 +25,15 @@ namespace Panther.CodeAnalysis.Binding
                 BoundWhileExpression boundWhileExpression => RewriteWhileExpression(boundWhileExpression),
                 _ => throw new ArgumentOutOfRangeException(nameof(node))
             };
+
+        protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
+        {
+            var expr = RewriteExpression(node.Expression);
+            if (expr == node.Expression)
+                return node;
+
+            return new BoundConversionExpression(node.Type, expr);
+        }
 
         protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
         {

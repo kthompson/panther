@@ -71,5 +71,11 @@ namespace Panther.CodeAnalysis
 
         public void ReportNoOverloads(TextSpan span, string name, ImmutableArray<string> argumentTypes) =>
             Report(span, $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
+
+        public void ReportCannotConvert(TextSpan span, TypeSymbol fromType, TypeSymbol toType) =>
+            Report(span, $"Cannot convert from '{fromType}' to '{toType}'");
+
+        public void ReportCannotConvertImplicitly(TextSpan diagnosticsSpan, TypeSymbol fromType, TypeSymbol toType) =>
+            Report(diagnosticsSpan, $"Cannot implicitly convert from '{fromType}' to '{toType}'");
     }
 }

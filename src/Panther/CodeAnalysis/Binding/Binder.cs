@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks.Sources;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -55,13 +57,9 @@ namespace Panther.CodeAnalysis.Binding
                 return BoundErrorExpression.Default;
             }
 
-            if (variable.Type != boundExpression.Type)
-            {
-                Diagnostics.ReportTypeMismatch(syntax.Expression.Span, variable.Type, boundExpression.Type);
-                return BoundErrorExpression.Default;
-            }
+            var convertedExpression = BindConversion(syntax.Expression.Span, boundExpression, variable.Type);
 
-            return new BoundAssignmentExpression(variable, boundExpression);
+            return new BoundAssignmentExpression(variable, convertedExpression);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
@@ -96,7 +94,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundExpressionStatement(expression.Type == TypeSymbol.Error ? BoundErrorExpression.Default : expression);
         }
 
-        public BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope)
+        private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope)
         {
             return syntax.Kind switch
             {
@@ -116,8 +114,42 @@ namespace Panther.CodeAnalysis.Binding
             };
         }
 
+        private BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, BoundScope scope, bool allowExplicit = false)
+        {
+            var expression = BindExpression(syntax, scope);
+            return BindConversion(syntax.Span, expression, type, allowExplicit);
+        }
+
+        private BoundExpression BindConversion(TextSpan diagnosticsSpan, BoundExpression expression, TypeSymbol type, bool allowExplicit = false)
+        {
+            var conversion = Conversion.Classify(expression.Type, type);
+
+            if (!conversion.Exists)
+            {
+                if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
+                {
+                    Diagnostics.ReportCannotConvert(diagnosticsSpan, expression.Type, type);
+                }
+
+                return BoundErrorExpression.Default;
+            }
+
+            if (!allowExplicit && conversion.IsExplicit)
+            {
+                Diagnostics.ReportCannotConvertImplicitly(diagnosticsSpan, expression.Type, type);
+            }
+
+            if (conversion.IsIdentity)
+                return expression;
+
+            return new BoundConversionExpression(type, expression);
+        }
+
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
         {
+            if (syntax.Arguments.Count == 1 && LookupType(syntax.IdentifierToken.Text) is { } type)
+                return BindConversion(syntax.Arguments[0], type, scope, allowExplicit: true);
+
             var argList = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
             var argTypes = argList.Select(argument => argument.Type).ToImmutableArray();
             var lookupResult = scope.TryLookupFunction(syntax.IdentifierToken.Text, argTypes);
@@ -143,6 +175,18 @@ namespace Panther.CodeAnalysis.Binding
                 default:
                     throw new ArgumentOutOfRangeException(nameof(lookupResult));
             }
+        }
+
+        private TypeSymbol? LookupType(string text)
+        {
+            var types = new[]
+            {
+                TypeSymbol.Int,
+                TypeSymbol.Bool,
+                TypeSymbol.String,
+            };
+
+            return types.FirstOrDefault(type => type.Name == text);
         }
 
         private BoundExpression BindForExpression(ForExpressionSyntax syntax, BoundScope scope)

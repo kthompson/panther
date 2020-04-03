@@ -58,16 +58,16 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(code, expected);
         }
 
-        [Property(Skip = "no conversions yet")]
+        [Property]
         public void EvaluatesIntToStringConversion(int number)
         {
             AssertEvaluation($"string({number})", number.ToString());
         }
 
-        [Property(Skip = "no conversions yet")]
+        [Property]
         public void EvaluatesBoolToStringConversion(bool value)
         {
-            AssertEvaluation($"string({b(value)})", b(value));
+            AssertEvaluation($"string({b(value)})", value.ToString());
         }
 
         [Property]

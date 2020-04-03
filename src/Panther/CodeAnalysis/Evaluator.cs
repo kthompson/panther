@@ -88,6 +88,7 @@ namespace Panther.CodeAnalysis
             {
                 BoundLiteralExpression n => n.Value,
                 BoundUnitExpression _ => Unit.Default,
+                BoundConversionExpression conversionExpression => EvaluateConversionExpression(conversionExpression),
                 BoundCallExpression callExpression => EvaluateCallExpressions(callExpression),
                 BoundAssignmentExpression assignmentStatement => EvaluateAssignmentExpression(assignmentStatement),
                 BoundVariableExpression v => EvaluateVariableExpression(v),
@@ -95,6 +96,28 @@ namespace Panther.CodeAnalysis
                 BoundUnaryExpression unary => EvaluateUnaryExpression(unary),
                 _ => throw new Exception($"Unexpected expression {node.Kind}")
             };
+
+        private object EvaluateConversionExpression(BoundConversionExpression conversionExpression)
+        {
+            var value = EvaluateExpression(conversionExpression.Expression);
+
+            if (conversionExpression.Type == TypeSymbol.String)
+            {
+                return Convert.ToString(value);
+            }
+
+            if (conversionExpression.Type == TypeSymbol.Bool)
+            {
+                return Convert.ToBoolean(value);
+            }
+
+            if (conversionExpression.Type == TypeSymbol.Int)
+            {
+                return Convert.ToInt32(value);
+            }
+
+            throw new Exception($"Unexpected type {conversionExpression.Type}");
+        }
 
         private object EvaluateAssignmentExpression(BoundAssignmentExpression assignmentStatement)
         {
@@ -166,21 +189,6 @@ namespace Panther.CodeAnalysis
             if (callExpression.Function == BuiltinFunctions.Rnd)
             {
                 return _random.Next((int)EvaluateExpression(callExpression.Arguments[0]));
-            }
-
-            if (callExpression.Function.Name == TypeSymbol.String.Name)
-            {
-                return Convert.ToString(EvaluateExpression(callExpression.Arguments[0]));
-            }
-
-            if (callExpression.Function.Name == TypeSymbol.Bool.Name)
-            {
-                return Convert.ToBoolean(EvaluateExpression(callExpression.Arguments[0]));
-            }
-
-            if (callExpression.Function.Name == TypeSymbol.Int.Name)
-            {
-                return Convert.ToInt32(EvaluateExpression(callExpression.Arguments[0]));
             }
 
             throw new Exception($"Unexpected function {callExpression.Function}");

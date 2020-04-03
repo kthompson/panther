@@ -319,7 +319,7 @@ namespace Panther.Tests.CodeAnalysis
                 }";
 
             var diagnostic = @"
-                Type mismatch. Required 'int', found 'bool'
+                Cannot convert from 'bool' to 'int'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
