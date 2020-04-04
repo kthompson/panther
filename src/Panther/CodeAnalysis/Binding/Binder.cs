@@ -60,6 +60,12 @@ namespace Panther.CodeAnalysis.Binding
                     var body = binder.BindExpression(function.Declaration.Body, functionScope);
 
                     var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body));
+
+                    if (function.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                    {
+                        binder.Diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Span);
+                    }
+
                     functionBodies.Add(function, loweredBody);
                 }
 

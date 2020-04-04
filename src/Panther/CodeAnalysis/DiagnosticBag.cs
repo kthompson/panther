@@ -92,5 +92,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportInvalidBreakOrContinue(TextSpan span, string keyword) =>
             Report(span, $"{keyword} not valid in this context");
+
+        public void ReportAllPathsMustReturn(TextSpan span) =>
+            Report(span, "All paths must return a value");
     }
 }

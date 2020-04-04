@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -56,6 +57,20 @@ namespace Panther.CodeAnalysis
             }
 
             var program = Binder.BindProgram(GlobalScope);
+
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NCRUNCH")))
+            {
+                var appPath = Environment.GetCommandLineArgs()[0];
+                var appDirectory = Path.GetDirectoryName(appPath);
+                var cfgPath = Path.Combine(appDirectory, "cfg.dot");
+                var cfgExpression = !program.Expression.Statements.Any() && program.Functions.Any()
+                    ? program.Functions.Last().Value
+                    : program.Expression;
+                var cfg = ControlFlowGraph.Create(cfgExpression);
+                using var stream = new StreamWriter(cfgPath);
+                cfg.WriteTo(stream);
+            }
+
             if (program.Diagnostics.Any())
                 return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
 
