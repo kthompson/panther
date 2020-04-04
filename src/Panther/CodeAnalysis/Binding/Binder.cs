@@ -47,7 +47,7 @@ namespace Panther.CodeAnalysis.Binding
             var binder = new Binder();
             var parentScope = CreateParentScope(globalScope);
 
-            var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundExpression>();
+            var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
 
             BoundGlobalScope? scope = globalScope;
 

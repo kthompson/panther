@@ -56,10 +56,6 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.SlashToken:
                     return (OperatorPrecedence)7;
 
-                case SyntaxKind.ContinueKeyword:
-                case SyntaxKind.BreakKeyword:
-                    return OperatorPrecedence.Prefix;
-
                 default:
                     return null;
             }
@@ -92,7 +88,7 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.AmpersandToken => "&",
                 SyntaxKind.BangEqualsToken => "!=",
                 SyntaxKind.BangToken => "!",
-                SyntaxKind.BreakKeyword => "break" ,
+                SyntaxKind.BreakKeyword => "break",
                 SyntaxKind.CaretToken => "^",
                 SyntaxKind.CloseBraceToken => "}",
                 SyntaxKind.CloseParenToken => ")",

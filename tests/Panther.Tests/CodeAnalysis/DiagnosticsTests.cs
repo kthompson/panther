@@ -176,7 +176,7 @@ namespace Panther.Tests.CodeAnalysis
             var text = @"while ([5 + 1]) 7";
 
             var diagnostic = @"
-                Type mismatch. Required 'bool', found 'int'
+                Cannot convert from 'int' to 'bool'
             ";
 
             AssertHasDiagnostics(text, diagnostic);
