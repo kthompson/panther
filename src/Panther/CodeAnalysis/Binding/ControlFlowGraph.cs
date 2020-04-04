@@ -168,22 +168,20 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                blocks.Insert(0, _start);
-                blocks.Add(_end);
                 var scan = true;
                 while (scan)
                 {
                     scan = false;
-                    foreach (var block in blocks)
+                    foreach (var block in blocks.Where(block => !block.Incoming.Any()))
                     {
-                        if (!block.Incoming.Any())
-                        {
-                            RemoveBlock(blocks, block);
-                            scan = true;
-                            break;
-                        }
+                        RemoveBlock(blocks, block);
+                        scan = true;
+                        break;
                     }
                 }
+
+                blocks.Insert(0, _start);
+                blocks.Add(_end);
 
                 return new ControlFlowGraph(_start, _end, blocks, _branches);
             }
