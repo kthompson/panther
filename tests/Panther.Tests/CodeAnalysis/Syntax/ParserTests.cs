@@ -14,8 +14,8 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             var op1Precedence = op1.Kind.GetBinaryOperatorPrecedence();
             var op2Precedence = op2.Kind.GetBinaryOperatorPrecedence();
 
-            var op1Text = SyntaxFacts.GetText(op1.Kind);
-            var op2Text = SyntaxFacts.GetText(op2.Kind);
+            var op1Text = SyntaxFacts.GetText(op1.Kind) ?? throw new Exception("Invalid operator");
+            var op2Text = SyntaxFacts.GetText(op2.Kind) ?? throw new Exception("Invalid operator");
 
             var text = $"a {op1Text} b {op2Text} c";
             var expression = SyntaxTree.Parse(text).Root;

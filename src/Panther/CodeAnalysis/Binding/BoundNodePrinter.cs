@@ -261,7 +261,8 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteUnaryExpression(BoundUnaryExpression node, IndentedTextWriter writer)
         {
-            var op = SyntaxFacts.GetText(node.Operator.SyntaxKind);
+            var op = SyntaxFacts.GetText(node.Operator.SyntaxKind) ??
+                             throw new Exception("Invalid operator");
 
             writer.WritePunctuation(op);
             writer.WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
@@ -269,7 +270,8 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteBinaryExpression(BoundBinaryExpression node, IndentedTextWriter writer)
         {
-            var op = SyntaxFacts.GetText(node.Operator.SyntaxKind);
+            var op = SyntaxFacts.GetText(node.Operator.SyntaxKind) ??
+                             throw new Exception("Invalid operator");
             var precedence = node.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ??
                              throw new Exception("Invalid operator");
 

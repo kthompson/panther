@@ -11,7 +11,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         public void SyntaxFactGetTextRoundtrips(SyntaxKind kind)
         {
             var text = SyntaxFacts.GetText(kind);
-
             if (text == null)
                 return;
 

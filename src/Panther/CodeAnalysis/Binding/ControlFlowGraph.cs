@@ -250,7 +250,9 @@ namespace Panther.CodeAnalysis.Binding
                     return new BoundLiteralExpression(!value);
                 }
 
-                return new BoundUnaryExpression(BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.Bool), condition);
+                var op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.Bool) ?? throw new Exception("invalid operator");
+
+                return new BoundUnaryExpression(op, condition);
             }
 
             private void Connect(BasicBlock @from, BasicBlock to, BoundExpression boundCondition = null)
