@@ -73,61 +73,6 @@ namespace Panther.Tests.CodeAnalysis
         [Property]
         public void EvaluatesStringConcatenation(NonNull<string> str1, NonNull<string> str2)
         {
-            string escapeString(NonNull<string> str)
-            {
-                var sb = new StringBuilder();
-                sb.Append('"');
-                foreach (var c in str.Item)
-                {
-                    switch (c)
-                    {
-                        case '"':
-                            sb.Append("\\\"");
-                            break;
-
-                        case '\n':
-                            sb.Append("\\n");
-                            break;
-
-                        case '\r':
-                            sb.Append("\\r");
-                            break;
-
-                        case '\t':
-                            sb.Append("\\t");
-                            break;
-
-                        case '\\':
-                            sb.Append("\\\\");
-                            break;
-
-                        default:
-                            if (char.IsControl(c))
-                            {
-                                var value = (int)c;
-                                if ((value & 0xffff0000) > 0)
-                                {
-                                    sb.Append("\\U");
-                                    sb.Append(value.ToString("x8"));
-                                }
-                                else
-                                {
-                                    sb.Append("\\u");
-                                    sb.Append(value.ToString("x4"));
-                                }
-                            }
-                            else
-                            {
-                                sb.Append(c);
-                            }
-
-                            break;
-                    }
-                }
-
-                sb.Append('"');
-                return sb.ToString();
-            }
 
             var code = $"{escapeString(str1)} + {escapeString(str2)}";
             var expected = str1.Item + str2.Item;
@@ -330,6 +275,18 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
+        public void EvaluatesStringEquality(NonNull<string> left, NonNull<string> right)
+        {
+            AssertEvaluation($"{escapeString(left)} == {escapeString(right)}", left.Item == right.Item);
+        }
+
+        [Property]
+        public void EvaluatesStringInequality(NonNull<string> left, NonNull<string> right)
+        {
+            AssertEvaluation($"{escapeString(left)} != {escapeString(right)}", left.Item != right.Item);
+        }
+
+        [Property]
         public void EvaluatesBoolInequality(bool left, bool right)
         {
             AssertEvaluation($"{left.ToString().ToLower()} != {right.ToString().ToLower()}", left != right);
@@ -405,6 +362,63 @@ namespace Panther.Tests.CodeAnalysis
             var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary);
 
             AssertEvaluation($"a", n, dictionary, compilation);
+        }
+
+
+        string escapeString(NonNull<string> str)
+        {
+            var sb = new StringBuilder();
+            sb.Append('"');
+            foreach (var c in str.Item)
+            {
+                switch (c)
+                {
+                    case '"':
+                        sb.Append("\\\"");
+                        break;
+
+                    case '\n':
+                        sb.Append("\\n");
+                        break;
+
+                    case '\r':
+                        sb.Append("\\r");
+                        break;
+
+                    case '\t':
+                        sb.Append("\\t");
+                        break;
+
+                    case '\\':
+                        sb.Append("\\\\");
+                        break;
+
+                    default:
+                        if (char.IsControl(c))
+                        {
+                            var value = (int)c;
+                            if ((value & 0xffff0000) > 0)
+                            {
+                                sb.Append("\\U");
+                                sb.Append(value.ToString("x8"));
+                            }
+                            else
+                            {
+                                sb.Append("\\u");
+                                sb.Append(value.ToString("x4"));
+                            }
+                        }
+                        else
+                        {
+                            sb.Append(c);
+                        }
+
+                        break;
+                }
+            }
+
+            sb.Append('"');
+            return sb.ToString();
         }
     }
 }
