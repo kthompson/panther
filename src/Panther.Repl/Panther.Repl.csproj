@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RootNamespace>Panther</RootNamespace>
+    <AssemblyName>pantheri</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
