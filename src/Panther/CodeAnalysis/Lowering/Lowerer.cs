@@ -33,7 +33,7 @@ namespace Panther.CodeAnalysis.Lowering
             return GenerateLabel(tag, token);
         }
 
-        private BoundLabel GenerateLabel(string tag, LabelToken token) => 
+        private BoundLabel GenerateLabel(string tag, LabelToken token) =>
             new BoundLabel($"{tag}Label{(int) token}");
 
         private VariableSymbol GenerateVariable(TypeSymbol type)
@@ -119,7 +119,7 @@ namespace Panther.CodeAnalysis.Lowering
                 new BoundBlockExpression(
                     ImmutableArray.Create<BoundStatement>(
                         new BoundLabelStatement(whileLabel),
-                        new BoundConditionalGotoStatement(endLabel, condition, true),
+                        new BoundConditionalGotoStatement(endLabel, condition),
                         new BoundExpressionStatement(body),
                         new BoundGotoStatement(whileLabel),
                         new BoundLabelStatement(endLabel)
@@ -159,7 +159,7 @@ namespace Panther.CodeAnalysis.Lowering
             var @else = RewriteExpression(node.Else);
             var block = new BoundBlockExpression(
                 ImmutableArray.Create<BoundStatement>(
-                    new BoundConditionalGotoStatement(elseLabel, condition, true),
+                    new BoundConditionalGotoStatement(elseLabel, condition),
                     new BoundVariableDeclarationStatement(variable, then),
                     new BoundGotoStatement(endLabel),
                     new BoundLabelStatement(elseLabel),

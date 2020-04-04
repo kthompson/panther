@@ -53,7 +53,7 @@ namespace Panther.CodeAnalysis
 
                     case BoundConditionalGotoStatement conditionalGotoStatement:
                         var cond = (bool)EvaluateExpression(conditionalGotoStatement.Condition);
-                        if (conditionalGotoStatement.JumpIfFalse != cond)
+                        if (conditionalGotoStatement.JumpIfTrue == cond)
                         {
                             position = labels[conditionalGotoStatement.BoundLabel];
                             continue;
