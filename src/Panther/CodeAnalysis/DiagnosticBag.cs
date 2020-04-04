@@ -95,5 +95,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportAllPathsMustReturn(TextSpan span) =>
             Report(span, "All paths must return a value");
+
+        public void ReportNotAFunction(TextSpan span, string name) =>
+            Report(span, $"Variable '{name}' is not a function");
     }
 }

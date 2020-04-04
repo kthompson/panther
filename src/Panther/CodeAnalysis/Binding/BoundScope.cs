@@ -51,30 +51,31 @@ namespace Panther.CodeAnalysis.Binding
             return true;
         }
 
-        public bool TryLookupVariable(string name, out VariableSymbol variable) =>
-            TryLookup(name, out variable);
-
-        private bool TryLookup<TSymbol>(string name, out TSymbol symbol)
-            where TSymbol : Symbol
+        public bool TryLookupVariable(string name, out VariableSymbol variable)
         {
-            symbol = null;
+            variable = null;
 
             if (_symbols.TryGetValue(name, out var existingSymbol))
             {
-                if (existingSymbol is TSymbol outSymbol)
+                if (existingSymbol is VariableSymbol outSymbol)
                 {
-                    symbol = outSymbol;
+                    variable = outSymbol;
                     return true;
                 }
 
                 return false;
             }
 
-            return Parent != null && Parent.TryLookup(name, out symbol);
+            return Parent != null && Parent.TryLookupVariable(name, out variable);
         }
 
-        public bool TryLookupFunction(string name, out FunctionSymbol function) =>
-            TryLookup(name, out function);
+        public bool TryLookup(string name, out Symbol symbol)
+        {
+            if (_symbols.TryGetValue(name, out symbol))
+                return true;
+
+            return Parent != null && Parent.TryLookup(name, out symbol);
+        }
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.OfType<VariableSymbol>().ToImmutableArray();
 

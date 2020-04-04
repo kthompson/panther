@@ -64,6 +64,22 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
+        public void CannotCallVariables()
+        {
+            var text =
+                @"
+                    val x = 5
+                    [x](1)
+                ";
+
+            var diagnostic = @"
+                Variable 'x' is not a function
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
         public void DontReportCascadingErrors()
         {
             var text = @"(true [*] 1) + 7";

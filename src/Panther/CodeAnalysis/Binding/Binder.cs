@@ -290,9 +290,17 @@ namespace Panther.CodeAnalysis.Binding
 
             var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
             var argTypes = boundArguments.Select(argument => argument.Type).ToImmutableArray();
-            if (!scope.TryLookupFunction(syntax.IdentifierToken.Text, out var function))
+
+            if (!scope.TryLookup(syntax.IdentifierToken.Text, out var symbol))
             {
                 Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
+                return BoundErrorExpression.Default;
+            }
+
+            if (!(symbol is FunctionSymbol function))
+            {
+                Diagnostics.ReportNotAFunction(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text);
+                return BoundErrorExpression.Default;
             }
 
             if (syntax.Arguments.Count != function.Parameters.Length)
