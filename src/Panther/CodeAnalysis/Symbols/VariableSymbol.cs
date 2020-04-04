@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Symbols
 {
-    public class VariableSymbol : Symbol
+    public abstract class VariableSymbol : Symbol
     {
         public bool IsReadOnly { get; }
         public TypeSymbol Type { get; }
@@ -20,7 +20,5 @@ namespace Panther.CodeAnalysis.Symbols
             var name = string.IsNullOrWhiteSpace(Name) ? "?" : Name;
             return $"{valOrVar} {name}";
         }
-
-        public override SymbolKind Kind => SymbolKind.Variable;
     }
 }

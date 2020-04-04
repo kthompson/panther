@@ -65,10 +65,25 @@ namespace Panther.CodeAnalysis
             return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
         }
 
-        public void EmitTree(TextWriter @out)
+        public void EmitTree(TextWriter writer)
         {
             var program = Binder.BindProgram(GlobalScope);
-            program.Expression.WriteTo(@out);
+
+            if (program.Expression.Statements.Any() || program.Expression.Expression != BoundUnitExpression.Default)
+            {
+                program.Expression.WriteTo(writer);
+            }
+            else
+            {
+                foreach (var functionBody in program.Functions)
+                {
+                    if (!GlobalScope.Functions.Contains(functionBody.Key))
+                        continue;
+
+                    functionBody.Key.WriteTo(writer);
+                    functionBody.Value.WriteTo(writer);
+                }
+            }
         }
     }
 }

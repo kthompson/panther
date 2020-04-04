@@ -13,7 +13,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public override string ToString()
         {
-            var writer = new StringWriter();
+            using var writer = new StringWriter();
             this.WriteTo(writer);
             return writer.ToString();
         }

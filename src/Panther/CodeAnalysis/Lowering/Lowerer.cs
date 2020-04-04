@@ -39,7 +39,7 @@ namespace Panther.CodeAnalysis.Lowering
         private VariableSymbol GenerateVariable(TypeSymbol type)
         {
             _variableCount++;
-            return new VariableSymbol($"variable${_variableCount}", false, type);
+            return new LocalVariableSymbol($"variable${_variableCount}", false, type);
         }
 
         public static BoundBlockExpression Lower(BoundStatement statement)
