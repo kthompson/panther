@@ -3,12 +3,14 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal class BoundWhileExpression : BoundExpression
+    internal class BoundWhileExpression : BoundLoopExpression
     {
         public BoundExpression Condition { get; }
         public BoundExpression Body { get; }
 
-        public BoundWhileExpression(BoundExpression condition, BoundExpression body)
+        public BoundWhileExpression(BoundExpression condition, BoundExpression body, BoundLabel breakLabel,
+            BoundLabel continueLabel)
+            : base(breakLabel, continueLabel)
         {
             Condition = condition;
             Body = body;

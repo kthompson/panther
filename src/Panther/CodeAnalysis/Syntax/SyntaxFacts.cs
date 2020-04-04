@@ -56,6 +56,10 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.SlashToken:
                     return (OperatorPrecedence)7;
 
+                case SyntaxKind.ContinueKeyword:
+                case SyntaxKind.BreakKeyword:
+                    return OperatorPrecedence.Prefix;
+
                 default:
                     return null;
             }
@@ -65,16 +69,18 @@ namespace Panther.CodeAnalysis.Syntax
         {
             return span switch
             {
-                "if" => SyntaxKind.IfKeyword,
-                "else" => SyntaxKind.ElseKeyword,
-                "while" => SyntaxKind.WhileKeyword,
-                "true" => SyntaxKind.TrueKeyword,
-                "false" => SyntaxKind.FalseKeyword,
-                "val" => SyntaxKind.ValKeyword,
+                "break" => SyntaxKind.BreakKeyword,
+                "continue" => SyntaxKind.ContinueKeyword,
                 "def" => SyntaxKind.DefKeyword,
-                "var" => SyntaxKind.VarKeyword,
+                "else" => SyntaxKind.ElseKeyword,
+                "false" => SyntaxKind.FalseKeyword,
                 "for" => SyntaxKind.ForKeyword,
+                "if" => SyntaxKind.IfKeyword,
                 "to" => SyntaxKind.ToKeyword,
+                "true" => SyntaxKind.TrueKeyword,
+                "val" => SyntaxKind.ValKeyword,
+                "var" => SyntaxKind.VarKeyword,
+                "while" => SyntaxKind.WhileKeyword,
                 _ => SyntaxKind.IdentifierToken
             };
         }
@@ -82,40 +88,42 @@ namespace Panther.CodeAnalysis.Syntax
         public static string? GetText(SyntaxKind kind) =>
             kind switch
             {
-                SyntaxKind.TrueKeyword => "true",
-                SyntaxKind.FalseKeyword => "false",
-                SyntaxKind.ValKeyword => "val",
-                SyntaxKind.VarKeyword => "var",
-                SyntaxKind.ElseKeyword => "else",
-                SyntaxKind.IfKeyword => "if",
-                SyntaxKind.WhileKeyword => "while",
-                SyntaxKind.ForKeyword => "for",
-                SyntaxKind.DefKeyword => "def",
-                SyntaxKind.ToKeyword => "to",
-                SyntaxKind.PlusToken => "+",
-                SyntaxKind.DashToken => "-",
-                SyntaxKind.SlashToken => "/",
-                SyntaxKind.StarToken => "*",
+                SyntaxKind.AmpersandAmpersandToken => "&&",
+                SyntaxKind.AmpersandToken => "&",
+                SyntaxKind.BangEqualsToken => "!=",
                 SyntaxKind.BangToken => "!",
-                SyntaxKind.TildeToken => "~",
+                SyntaxKind.BreakKeyword => "break" ,
+                SyntaxKind.CaretToken => "^",
+                SyntaxKind.CloseBraceToken => "}",
+                SyntaxKind.CloseParenToken => ")",
                 SyntaxKind.ColonToken => ":",
                 SyntaxKind.CommaToken => ",",
-                SyntaxKind.CaretToken => "^",
-                SyntaxKind.AmpersandToken => "&",
-                SyntaxKind.AmpersandAmpersandToken => "&&",
-                SyntaxKind.LessThanToken => "<",
-                SyntaxKind.LessThanEqualsToken => "<=",
-                SyntaxKind.GreaterThanToken => ">",
-                SyntaxKind.GreaterThanEqualsToken => ">=",
-                SyntaxKind.PipeToken => "|",
-                SyntaxKind.PipePipeToken => "||",
-                SyntaxKind.BangEqualsToken => "!=",
-                SyntaxKind.EqualsToken => "=",
+                SyntaxKind.ContinueKeyword => "continue",
+                SyntaxKind.DashToken => "-",
+                SyntaxKind.DefKeyword => "def",
+                SyntaxKind.ElseKeyword => "else",
                 SyntaxKind.EqualsEqualsToken => "==",
-                SyntaxKind.CloseParenToken => ")",
-                SyntaxKind.OpenParenToken => "(",
-                SyntaxKind.CloseBraceToken => "}",
+                SyntaxKind.EqualsToken => "=",
+                SyntaxKind.FalseKeyword => "false",
+                SyntaxKind.ForKeyword => "for",
+                SyntaxKind.GreaterThanEqualsToken => ">=",
+                SyntaxKind.GreaterThanToken => ">",
+                SyntaxKind.IfKeyword => "if",
+                SyntaxKind.LessThanEqualsToken => "<=",
+                SyntaxKind.LessThanToken => "<",
                 SyntaxKind.OpenBraceToken => "{",
+                SyntaxKind.OpenParenToken => "(",
+                SyntaxKind.PipePipeToken => "||",
+                SyntaxKind.PipeToken => "|",
+                SyntaxKind.PlusToken => "+",
+                SyntaxKind.SlashToken => "/",
+                SyntaxKind.StarToken => "*",
+                SyntaxKind.TildeToken => "~",
+                SyntaxKind.ToKeyword => "to",
+                SyntaxKind.TrueKeyword => "true",
+                SyntaxKind.ValKeyword => "val",
+                SyntaxKind.VarKeyword => "var",
+                SyntaxKind.WhileKeyword => "while",
                 _ => null
             };
 

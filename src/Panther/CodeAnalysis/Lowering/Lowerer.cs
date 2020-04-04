@@ -110,19 +110,16 @@ namespace Panther.CodeAnalysis.Lowering
              * <endLabel>
              */
 
-            var token = GenerateLabelToken();
-            var whileLabel = GenerateLabel("While", token);
-            var endLabel = GenerateLabel("EndWhile", token);
             var body = RewriteExpression(node.Body);
             var condition = RewriteExpression(node.Condition);
             return RewriteExpression(
                 new BoundBlockExpression(
                     ImmutableArray.Create<BoundStatement>(
-                        new BoundLabelStatement(whileLabel),
-                        new BoundConditionalGotoStatement(endLabel, condition),
+                        new BoundLabelStatement(node.ContinueLabel),
+                        new BoundConditionalGotoStatement(node.BreakLabel, condition),
                         new BoundExpressionStatement(body),
-                        new BoundGotoStatement(whileLabel),
-                        new BoundLabelStatement(endLabel)
+                        new BoundGotoStatement(node.ContinueLabel),
+                        new BoundLabelStatement(node.BreakLabel)
                     ),
                     BoundUnitExpression.Default
                 )
@@ -182,6 +179,7 @@ namespace Panther.CodeAnalysis.Lowering
              * var x = l
              * while(x < u) {
              *     expr
+             *     continue:
              *     x = x + 1
              * }
              */
@@ -197,7 +195,7 @@ namespace Panther.CodeAnalysis.Lowering
                 BoundBinaryOperator.Bind(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
                 upperBound
             );
-
+            var continueLabelStatement = new BoundLabelStatement(node.ContinueLabel);
             var incrementX = new BoundExpressionStatement(
                 new BoundAssignmentExpression(
                     node.Variable,
@@ -210,6 +208,7 @@ namespace Panther.CodeAnalysis.Lowering
             var whileBody = new BoundBlockExpression(
                 ImmutableArray.Create<BoundStatement>(
                     new BoundExpressionStatement(body),
+                    continueLabelStatement,
                     incrementX
                 ), BoundUnitExpression.Default
             );
@@ -218,7 +217,9 @@ namespace Panther.CodeAnalysis.Lowering
                 ImmutableArray.Create<BoundStatement>(declareX),
                 new BoundWhileExpression(
                     condition,
-                    whileBody
+                    whileBody,
+                    node.BreakLabel,
+                    new BoundLabel("continue")
                 )
             );
             return RewriteExpression(newBlock);

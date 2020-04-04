@@ -77,6 +77,8 @@ namespace Panther.CodeAnalysis.Syntax
             //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
             //PrefixParseFunctions[SyntaxKind.LeftBracket] = ParseArrayLiteral;
             _prefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
+            _prefixParseFunctions[SyntaxKind.BreakKeyword] = ParseBreakExpression;
+            _prefixParseFunctions[SyntaxKind.ContinueKeyword] = ParseContinueExpression;
 
             // a + b
             _infixParseFunctions[SyntaxKind.AmpersandAmpersandToken] = ParseInfixExpression;
@@ -286,7 +288,6 @@ namespace Panther.CodeAnalysis.Syntax
         {
             // advance until we get to the actual current token
             var currentToken = CurrentToken;
-
             var prefixFunction = _prefixParseFunctions.GetValueOrDefault(currentToken.Kind);
             if (prefixFunction == null)
             {
@@ -299,6 +300,10 @@ namespace Panther.CodeAnalysis.Syntax
             }
 
             var left = prefixFunction();
+
+            // investigate if we can use precedence to break early
+            if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression)
+                return left;
 
             while (precedence < CurrentPrecedence())
             {
@@ -519,13 +524,16 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        private ExpressionSyntax ParseAssignmentExpression()
+        private ExpressionSyntax ParseContinueExpression()
         {
-            var identToken = Accept(SyntaxKind.IdentifierToken);
-            var equalsToken = Accept(SyntaxKind.EqualsToken);
-            var expr = ParseExpression(OperatorPrecedence.Lowest);
+            var keyword = Accept();
+            return new ContinueExpressionSyntax(keyword);
+        }
 
-            return new AssignmentExpressionSyntax(identToken, equalsToken, expr);
+        private ExpressionSyntax ParseBreakExpression()
+        {
+            var keyword = Accept();
+           return new BreakExpressionSyntax(keyword);
         }
 
         private StatementSyntax ParseExpressionStatement()
@@ -546,6 +554,15 @@ namespace Panther.CodeAnalysis.Syntax
             var newLineToken = AcceptStatementTerminator();
 
             return new VariableDeclarationStatementSyntax(valToken, identToken, typeAnnotationSyntax, equalsToken, expr, newLineToken);
+        }
+
+        private ExpressionSyntax ParseAssignmentExpression()
+        {
+            var identToken = Accept(SyntaxKind.IdentifierToken);
+            var equalsToken = Accept(SyntaxKind.EqualsToken);
+            var expr = ParseExpression(OperatorPrecedence.Lowest);
+
+            return new AssignmentExpressionSyntax(identToken, equalsToken, expr);
         }
 
         private TypeAnnotationSyntax? ParseOptionalTypeAnnotation() =>

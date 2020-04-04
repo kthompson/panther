@@ -89,5 +89,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportFunctionAlreadyDeclared(TextSpan span, string functionName) =>
             Report(span, $"Function '{functionName}' was already declared");
+
+        public void ReportInvalidBreakOrContinue(TextSpan span, string keyword) =>
+            Report(span, $"{keyword} not valid in this context");
     }
 }

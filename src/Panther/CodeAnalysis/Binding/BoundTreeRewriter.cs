@@ -75,7 +75,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Condition == cond && node.Body == body)
                 return node;
 
-            return new BoundWhileExpression(cond, body);
+            return new BoundWhileExpression(cond, body, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
@@ -109,7 +109,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.LowerBound == lowerBound && node.UpperBound == upperBound && node.Body == body)
                 return node;
 
-            return new BoundForExpression(node.Variable, lowerBound, upperBound, body);
+            return new BoundForExpression(node.Variable, lowerBound, upperBound, body, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundExpression RewriteBlockExpression(BoundBlockExpression node)

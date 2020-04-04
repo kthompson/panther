@@ -4,24 +4,22 @@
     {
         // Special Tokens
         InvalidToken,
-
         EndOfInputToken,
         IdentifierToken,
         CommaToken,
 
         // Whitespace tokens
         NewLineToken,
-
         WhitespaceToken,
 
         // Literal tokens
         NumberToken,
-
         StringToken,
 
         // Keywords
+        BreakKeyword,
+        ContinueKeyword,
         DefKeyword,
-
         ElseKeyword,
         FalseKeyword,
         ForKeyword,
@@ -34,11 +32,11 @@
 
         // Operators
         AmpersandAmpersandToken,
-
         AmpersandToken,
         BangEqualsToken,
         BangToken,
         CaretToken,
+        ColonToken,
         DashToken,
         EqualsEqualsToken,
         EqualsToken,
@@ -53,20 +51,20 @@
         SlashToken,
         StarToken,
         TildeToken,
-        ColonToken,
 
         // grouping tokens
         CloseParenToken,
-
         OpenParenToken,
         OpenBraceToken,
         CloseBraceToken,
 
         // Expressions
+        AssignmentExpression,
         BinaryExpression,
-
         BlockExpression,
+        BreakExpression,
         CallExpression,
+        ContinueExpression,
         ForExpression,
         GroupExpression,
         IfExpression,
@@ -77,20 +75,16 @@
         WhileExpression,
 
         // Statements
-        VariableDeclarationStatement,
-
         ExpressionStatement,
-        AssignmentExpression,
+        VariableDeclarationStatement,
 
         //  Nodes
         TypeClause,
-
         Parameter,
         CompilationUnit,
 
         // Members
         FunctionDeclaration,
-
         GlobalStatement
     }
 }
