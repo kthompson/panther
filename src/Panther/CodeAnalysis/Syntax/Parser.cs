@@ -345,6 +345,9 @@ namespace Panther.CodeAnalysis.Syntax
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
             var condition = ParseExpression(OperatorPrecedence.Lowest);
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
+
+            SkipNewLines();
+
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
             return new WhileExpressionSyntax(whileKeyword, openParenToken, condition, closeParenToken, expr);
@@ -361,6 +364,8 @@ namespace Panther.CodeAnalysis.Syntax
             var toKeyword = Accept(SyntaxKind.ToKeyword);
             var toExpression = ParseExpression(OperatorPrecedence.Lowest);
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
+
+            SkipNewLines();
 
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
