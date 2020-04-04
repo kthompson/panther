@@ -182,6 +182,31 @@ namespace Panther.Tests.CodeAnalysis
             AssertHasDiagnostics(text, diagnostic);
         }
 
+        [Fact]
+        public void ReportMissingArgument()
+        {
+            var text = @"def function(arg:int, [)] = 0";
+
+            var diagnostic = @"
+                Unexpected token CloseParenToken, expected IdentifierToken
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
+        public void ReportInvalidParameter()
+        {
+            var text = @"[print](""hey"", [=])";
+
+            var diagnostic = @"
+                No overloads matching function name 'print' and argument types 'string', 'err'
+                Unexpected token EqualsToken, expected Expression
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
         [Property]
         public void ReportInvalidForLowerBound(bool lower)
         {

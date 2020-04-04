@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
@@ -29,24 +30,32 @@ namespace Panther.Tests.CodeAnalysis
             var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
             var compilation = new Compilation(syntaxTree, builtins ?? new TestBuiltins());
             var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
-            var diagnostics = AnnotatedText.UnindentLines(diagnosticText);
+            var expectedDiagnosticMessages = AnnotatedText.UnindentLines(diagnosticText);
 
-            Assert.True(annotatedText.Spans.Length == diagnostics.Length, "Test invalid, must have equal number of diagnostics as text spans");
 
-            for (var i = 0; i < diagnostics.Length; i++)
+            Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length, "Test invalid, must have equal number of diagnostics as text spans");
+
+            var expectedDiagnostics = expectedDiagnosticMessages.Zip(annotatedText.Spans)
+                .Select(tuple => new Diagnostic(tuple.Second, tuple.First))
+                .OrderBy(diagnostic => diagnostic.Span.Start)
+                .ToArray();
+
+            var actualDiagnostics = result.Diagnostics.OrderBy(diagnostic => diagnostic.Span.Start).ToArray();
+
+            for (var i = 0; i < expectedDiagnosticMessages.Length; i++)
             {
-                Assert.True(result.Diagnostics.Length > i);
+                Assert.True(expectedDiagnostics.Length > i, $"Expected more diagnostics ({expectedDiagnosticMessages.Length}) than actual {expectedDiagnostics.Length}");
 
-                var expectedMessage = diagnostics[i];
-                var actualMessage = result.Diagnostics[i].Message;
+                var expectedMessage = expectedDiagnostics[i].Message;
+                var actualMessage = actualDiagnostics[i].Message;
                 Assert.Equal(expectedMessage, actualMessage);
 
-                var expectedSpan = annotatedText.Spans[i];
-                var actualSpan = result.Diagnostics[i].Span;
+                var expectedSpan = expectedDiagnostics[i].Span;
+                var actualSpan = actualDiagnostics[i].Span;
                 Assert.Equal(expectedSpan, actualSpan);
             }
 
-            Assert.Equal(diagnostics.Length, result.Diagnostics.Length);
+            Assert.Equal(expectedDiagnosticMessages.Length, expectedDiagnostics.Length);
         }
 
         public static void AssertEvaluation(string code, object value,

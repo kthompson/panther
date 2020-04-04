@@ -264,6 +264,7 @@ namespace Panther.CodeAnalysis.Binding
             if (syntax.Arguments.Count != function.Parameters.Length)
             {
                 Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Span, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
+                return BoundErrorExpression.Default;
             }
 
             for (int i = 0; i < syntax.Arguments.Count; i++)

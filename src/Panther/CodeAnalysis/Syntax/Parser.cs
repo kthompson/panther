@@ -243,7 +243,7 @@ namespace Panther.CodeAnalysis.Syntax
             var identifier = Accept(SyntaxKind.IdentifierToken);
 
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
-            var parameters = ParseParameters();
+            var parameters = ParseParameterList();
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
             var typeAnnotation = ParseOptionalTypeAnnotation();
             var equalsToken = Accept(SyntaxKind.EqualsToken);
@@ -252,11 +252,14 @@ namespace Panther.CodeAnalysis.Syntax
             return new FunctionDeclarationSyntax(defKeyword, identifier, openParenToken, parameters, closeParenToken, typeAnnotation, equalsToken, body);
         }
 
-        private SeparatedSyntaxList<ParameterSyntax> ParseParameters()
+        private SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
         {
+            if (CurrentToken.Kind == SyntaxKind.CloseParenToken)
+                return new SeparatedSyntaxList<ParameterSyntax>(ImmutableArray<SyntaxNode>.Empty);
+
             var items = ImmutableArray.CreateBuilder<SyntaxNode>();
 
-            while (CurrentToken.Kind != SyntaxKind.EndOfInputToken && CurrentToken.Kind != SyntaxKind.CloseParenToken)
+            while (CurrentToken.Kind != SyntaxKind.EndOfInputToken)
             {
                 var arg = ParseParameter();
                 items.Add(arg);
