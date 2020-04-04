@@ -223,8 +223,10 @@ namespace Panther
 
         private void HandleEscape(ObservableCollection<string> document, SubmissionView view)
         {
-            document[view.CurrentLine] = string.Empty;
+            document.Clear();
+            document.Add(string.Empty);
             view.CurrentCharacter = 0;
+            view.CurrentLine = 0;
         }
 
         private void HandleEnter(ObservableCollection<string> document, SubmissionView view)
