@@ -19,32 +19,55 @@ namespace Panther.Compiler
                 return;
             }
 
-            if (args.Length > 1)
+            var paths = GetFilePaths(args).ToArray();
+            var syntaxTrees = new List<SyntaxTree>(args.Length);
+
+            var errors = false;
+            foreach (var path in paths)
             {
-                Console.Error.WriteLine("error: only one source file currently supported");
-                return;
+                if (!File.Exists(path))
+                {
+                    Console.Error.WriteLine($"error: file `{path}` not found");
+                    errors = true;
+                    continue;
+                }
+
+                var syntaxTree = SyntaxTree.LoadFile(path);
+                syntaxTrees.Add(syntaxTree);
             }
 
-            var path = args.Single();
-
-
-            if (!File.Exists(path))
-            {
-                Console.Error.WriteLine($"error: file `{path}` not found");
+            if (errors)
                 return;
-            }
-            var syntaxTree = SyntaxTree.LoadFile(path);
 
-            var compilation = new Compilation(syntaxTree);
+            var compilation = new Compilation(syntaxTrees.ToArray());
             var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
             if (result.Diagnostics.Any())
             {
-                Console.Error.WriteDiagnostics(result.Diagnostics, syntaxTree);
+                Console.Error.WriteDiagnostics(result.Diagnostics);
             }
             else if (result.Value != null)
             {
                 Console.WriteLine(result.Value);
             }
+        }
+
+        private static IEnumerable<string> GetFilePaths(IEnumerable<string> paths)
+        {
+            var results = new SortedSet<string>();
+
+            foreach (var path in paths)
+            {
+                if (Directory.Exists(path))
+                {
+                    results.UnionWith(Directory.EnumerateFiles(path, "*.pn", SearchOption.AllDirectories));
+                }
+                else
+                {
+                    results.Add(path);
+                }
+            }
+
+            return results;
         }
     }
 }

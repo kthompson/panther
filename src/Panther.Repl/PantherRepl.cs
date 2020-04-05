@@ -112,7 +112,7 @@ namespace Panther
             }
             else
             {
-                Console.Error.WriteDiagnostics(result.Diagnostics, syntaxTree);
+                Console.Error.WriteDiagnostics(result.Diagnostics);
                 Console.WriteLine();
             }
         }

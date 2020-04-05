@@ -14,17 +14,27 @@ namespace Panther.CodeAnalysis.Binding
     {
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
 
-        public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, CompilationUnitSyntax syntax)
+        public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees)
         {
             var parentScope = CreateParentScope(previous);
             var scope = new BoundScope(parentScope, function: null);
             var binder = new Binder();
 
-            foreach (var function in syntax.Members.OfType<FunctionDeclarationSyntax>())
+            var functionDeclarations =
+                from tree in syntaxTrees
+                from function in tree.Root.Members.OfType<FunctionDeclarationSyntax>()
+                select function;
+
+            foreach (var function in functionDeclarations)
                 binder.BindFunctionDeclaration(function, scope);
 
+            var globalStatements =
+                from tree in syntaxTrees
+                from function in tree.Root.Members.OfType<GlobalStatementSyntax>()
+                select function;
+
             var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-            foreach (var globalStatementSyntax in syntax.Members.OfType<GlobalStatementSyntax>())
+            foreach (var globalStatementSyntax in globalStatements)
             {
                 var boundStatement = binder.BindStatement(globalStatementSyntax.Statement, scope);
                 statements.Add(boundStatement);

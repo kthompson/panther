@@ -15,7 +15,7 @@ namespace Panther.CodeAnalysis
     {
         private readonly IBuiltins _builtins;
         public Compilation? Previous { get; }
-        public SyntaxTree SyntaxTree { get; }
+        public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
         private BoundGlobalScope? _globalScope;
 
         internal BoundGlobalScope GlobalScope
@@ -24,7 +24,7 @@ namespace Panther.CodeAnalysis
             {
                 if (_globalScope == null)
                 {
-                    var globalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTree.Root);
+                    var globalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTrees);
                     Interlocked.CompareExchange(ref _globalScope, globalScope, null);
                 }
 
@@ -32,24 +32,39 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public Compilation(SyntaxTree syntaxTree, IBuiltins? builtins = null)
-            : this(null, syntaxTree, builtins)
+        public Compilation(params SyntaxTree[] syntaxTree)
+            : this((IBuiltins?) null, syntaxTree)
         {
         }
 
-        private Compilation(Compilation? previous, SyntaxTree syntaxTree, IBuiltins? builtins = null)
+        public Compilation(IBuiltins? builtins, params SyntaxTree[] syntaxTree)
+            : this(null, builtins, syntaxTree)
+        {
+        }
+
+        private Compilation(Compilation? previous, params SyntaxTree[] syntaxTrees)
+            : this(previous, null, syntaxTrees)
+        {
+        }
+
+        private Compilation(Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees)
         {
             _builtins = builtins ?? Builtins.Default;
             Previous = previous;
-            SyntaxTree = syntaxTree;
+            SyntaxTrees = syntaxTrees.ToImmutableArray();
         }
 
-        public Compilation ContinueWith(SyntaxTree syntaxTree) => new Compilation(this, syntaxTree, this._builtins);
+        public Compilation ContinueWith(SyntaxTree syntaxTree) => new Compilation(this, this._builtins, syntaxTree);
 
         public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
         {
             var globalScope = GlobalScope;
-            var diagnostics = SyntaxTree.Diagnostics.Concat(globalScope.Diagnostics).ToImmutableArray();
+            var syntaxDiags =
+                from tree in SyntaxTrees
+                from diag in tree.Diagnostics
+                select diag;
+
+            var diagnostics = syntaxDiags.Concat(globalScope.Diagnostics).ToImmutableArray();
 
             if (diagnostics.Any())
             {

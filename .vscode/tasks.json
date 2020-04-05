@@ -47,7 +47,7 @@
         "--project",
         "${workspaceFolder}/src/Panther.Compiler/Panther.Compiler.csproj",
         "--",
-        "${file}"
+        "${fileDirname}"
       ],
       "presentation": {
         "echo": true,

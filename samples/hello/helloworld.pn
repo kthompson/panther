@@ -1,3 +1,2 @@
-﻿print("What is your name?")
-val name = read()
+﻿val name = getName()
 print("Hello " + name + "!")

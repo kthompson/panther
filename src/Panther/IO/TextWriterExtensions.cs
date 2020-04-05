@@ -62,18 +62,19 @@ namespace Panther.IO
             writer.ResetColor();
         }
 
-        public static void WriteDiagnostics(this TextWriter writer, IEnumerable<Diagnostic> diagnostics, SyntaxTree syntaxTree)
+        public static void WriteDiagnostics(this TextWriter writer, IEnumerable<Diagnostic> diagnostics)
         {
             foreach (var diagnostic in diagnostics.OrderBy(diagnostic => diagnostic.Span))
             {
+                var text = diagnostic.Location.Text;
                 var fileName = diagnostic.Location.Filename;
                 var startLine = diagnostic.Location.StartLine + 1;
                 var startCharacter = diagnostic.Location.StartCharacter + 1;
                 var endLine = diagnostic.Location.EndLine + 1;
                 var endCharacter = diagnostic.Location.EndCharacter + 1;
 
-                var lineIndex = syntaxTree.Text.GetLineIndex(diagnostic.Span.Start);
-                var line = syntaxTree.Text.Lines[lineIndex];
+                var lineIndex = text.GetLineIndex(diagnostic.Span.Start);
+                var line = text.Lines[lineIndex];
 
                 Console.WriteLine();
 
@@ -85,9 +86,9 @@ namespace Panther.IO
                 var prefixSpan = TextSpan.FromBounds(line.Start, diagnostic.Span.Start);
                 var suffixSpan = TextSpan.FromBounds(diagnostic.Span.End, line.End);
 
-                var prefix = syntaxTree.Text.ToString(prefixSpan);
-                var error = syntaxTree.Text.ToString(diagnostic.Span);
-                var suffix = syntaxTree.Text.ToString(suffixSpan);
+                var prefix = text.ToString(prefixSpan);
+                var error = text.ToString(diagnostic.Span);
+                var suffix = text.ToString(suffixSpan);
 
                 writer.Write("    ");
                 writer.Write(prefix);
