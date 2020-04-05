@@ -36,7 +36,7 @@ namespace Panther.Tests.CodeAnalysis
             Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length, "Test invalid, must have equal number of diagnostics as text spans");
 
             var expectedDiagnostics = expectedDiagnosticMessages.Zip(annotatedText.Spans)
-                .Select(tuple => new Diagnostic(tuple.Second, tuple.First))
+                .Select(tuple => new  { Span = tuple.Second, Message = tuple.First})
                 .OrderBy(diagnostic => diagnostic.Span.Start)
                 .ToArray();
 

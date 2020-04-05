@@ -8,7 +8,7 @@
         public SyntaxToken CloseParenToken { get; }
         public override SyntaxKind Kind => SyntaxKind.CallExpression;
 
-        public CallExpressionSyntax(SyntaxToken identifierToken, SyntaxToken openParenToken, SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenToken)
+        public CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken openParenToken, SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenToken) : base(syntaxTree)
         {
             IdentifierToken = identifierToken;
             OpenParenToken = openParenToken;

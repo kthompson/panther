@@ -12,7 +12,9 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken? NewLineToken { get; }
         public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
 
-        public VariableDeclarationStatementSyntax(SyntaxToken valOrVarToken, SyntaxToken identifierToken, TypeAnnotationSyntax? typeAnnotation, SyntaxToken equalsToken, ExpressionSyntax expression, SyntaxToken? newLineToken)
+        public VariableDeclarationStatementSyntax(SyntaxTree syntaxTree, SyntaxToken valOrVarToken,
+            SyntaxToken identifierToken, TypeAnnotationSyntax? typeAnnotation, SyntaxToken equalsToken,
+            ExpressionSyntax expression, SyntaxToken? newLineToken) : base(syntaxTree)
         {
             ValOrVarToken = valOrVarToken;
             IdentifierToken = identifierToken;

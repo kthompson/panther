@@ -6,7 +6,7 @@
         public SyntaxToken? NewLineToken { get; }
         public override SyntaxKind Kind => SyntaxKind.ExpressionStatement;
 
-        public ExpressionStatementSyntax(ExpressionSyntax expression, SyntaxToken? newLineToken)
+        public ExpressionStatementSyntax(SyntaxTree syntaxTree, ExpressionSyntax expression, SyntaxToken? newLineToken) : base(syntaxTree)
         {
             Expression = expression;
             NewLineToken = newLineToken;

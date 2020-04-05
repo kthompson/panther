@@ -10,7 +10,7 @@
         public SyntaxToken ElseKeyword { get; }
         public ExpressionSyntax ElseExpression { get; }
 
-        public IfExpressionSyntax(SyntaxToken ifKeyword, SyntaxToken openParenToken, ExpressionSyntax conditionExpression, SyntaxToken closeParenToken, ExpressionSyntax thenExpression, SyntaxToken elseKeyword, ExpressionSyntax elseExpression)
+        public IfExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken ifKeyword, SyntaxToken openParenToken, ExpressionSyntax conditionExpression, SyntaxToken closeParenToken, ExpressionSyntax thenExpression, SyntaxToken elseKeyword, ExpressionSyntax elseExpression) : base(syntaxTree)
         {
             IfKeyword = ifKeyword;
             OpenParenToken = openParenToken;

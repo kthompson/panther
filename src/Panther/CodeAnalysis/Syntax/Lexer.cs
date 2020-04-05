@@ -8,22 +8,24 @@ namespace Panther.CodeAnalysis.Syntax
 {
     internal class Lexer
     {
+        private readonly SyntaxTree _syntaxTree;
+        private readonly SourceText _text;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
         private int _position;
 
-        public Lexer(SourceText text)
+        public Lexer(SyntaxTree syntaxTree)
         {
-            Text = text;
+            _syntaxTree = syntaxTree;
+            _text = syntaxTree.Text;
         }
 
-        public SourceText Text { get; }
 
         public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
         private char Current => Peek(_position);
         private char Lookahead => Peek(_position + 1);
 
-        private char Peek(int position) => position >= Text.Length ? '\0' : Text[position];
+        private char Peek(int position) => position >= _text.Length ? '\0' : _text[position];
 
         private void Next()
         {
@@ -50,7 +52,7 @@ namespace Panther.CodeAnalysis.Syntax
             switch (Current)
             {
                 case '\0':
-                    return new SyntaxToken(SyntaxKind.EndOfInputToken, _position, string.Empty, null);
+                    return new SyntaxToken(_syntaxTree, SyntaxKind.EndOfInputToken, _position, string.Empty, null);
 
                 case '+':
                     return ReturnKindOneChar(SyntaxKind.PlusToken);
@@ -131,38 +133,41 @@ namespace Panther.CodeAnalysis.Syntax
 
                     if (IfWhile(IsNewLine))
                     {
-                        var span = Text[start.._position];
+                        var span = _text[start.._position];
 
-                        return new SyntaxToken(SyntaxKind.NewLineToken, start, span, null);
+                        return new SyntaxToken(_syntaxTree, SyntaxKind.NewLineToken, start, span, null);
                     }
                     if (IfWhile(char.IsDigit))
                     {
-                        var span = Text[start.._position];
+                        var span = _text[start.._position];
 
                         if (!int.TryParse(span, out var value))
-                            _diagnostics.ReportInvalidNumber(new TextSpan(start, _position - start), span.AsSpan().ToString(),
+                            _diagnostics.ReportInvalidNumber(
+                                new TextLocation(_text, new TextSpan(start, _position - start)),
+                                span.AsSpan().ToString(),
                                 TypeSymbol.Int);
 
-                        return new SyntaxToken(SyntaxKind.NumberToken, start, span, value);
+                        return new SyntaxToken(_syntaxTree, SyntaxKind.NumberToken, start, span, value);
                     }
 
                     if (IfWhile(IsNonNewLineWhiteSpace))
                     {
-                        var span = Text[start.._position];
+                        var span = _text[start.._position];
 
-                        return new SyntaxToken(SyntaxKind.WhitespaceToken, start, span, null);
+                        return new SyntaxToken(_syntaxTree, SyntaxKind.WhitespaceToken, start, span, null);
                     }
 
                     if (IfWhile(char.IsLetter))
                     {
-                        var span = Text[start.._position];
+                        var span = _text[start.._position];
 
                         var kind = SyntaxFacts.GetKeywordKind(span);
 
-                        return new SyntaxToken(kind, start, span, null);
+                        return new SyntaxToken(_syntaxTree, kind, start, span, null);
                     }
 
-                    _diagnostics.ReportBadCharacter(_position, Current);
+                    _diagnostics.ReportBadCharacter(
+                        new TextLocation(_text, new TextSpan(_position, 1)), Current);
                     return ReturnKindOneChar(SyntaxKind.InvalidToken);
             }
         }
@@ -188,7 +193,7 @@ namespace Panther.CodeAnalysis.Syntax
                     case '\n':
                     case '\r':
                     case '\0':
-                        _diagnostics.ReportUnterminatedString(new TextSpan(start, 1));
+                        _diagnostics.ReportUnterminatedString(new TextLocation(_text, new TextSpan(start, 1)));
                         break;
 
                     default:
@@ -200,9 +205,9 @@ namespace Panther.CodeAnalysis.Syntax
                 break;
             }
 
-            var span = Text[start.._position];
+            var span = _text[start.._position];
 
-            return new SyntaxToken(SyntaxKind.StringToken, start, span, sb.ToString());
+            return new SyntaxToken(_syntaxTree, SyntaxKind.StringToken, start, span, sb.ToString());
         }
 
         private string? ParseEscapeSequence()
@@ -240,7 +245,8 @@ namespace Panther.CodeAnalysis.Syntax
                     return ParseUtfEscapeSequence(8, escapeStart);
 
                 default:
-                    _diagnostics.ReportInvalidEscapeSequence(escapeStart, _position, Current);
+                    _diagnostics.ReportInvalidEscapeSequence(
+                        new TextLocation(_text, new TextSpan(escapeStart, _position)), Current);
                     return null;
             }
         }
@@ -252,7 +258,7 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 if (!HexValue(out var hexValue))
                 {
-                    _diagnostics.ReportInvalidEscapeSequence(escapeStart, _position, Current);
+                    _diagnostics.ReportInvalidEscapeSequence(new TextLocation(_text, new TextSpan(escapeStart, _position)), Current);
                     return null;
                 }
 
@@ -279,14 +285,14 @@ namespace Panther.CodeAnalysis.Syntax
 
         private SyntaxToken ReturnKindTwoChar(SyntaxKind kind)
         {
-            var token = new SyntaxToken(kind, _position, Text[_position..(_position + 2)], null);
+            var token = new SyntaxToken(_syntaxTree, kind, _position, _text[_position..(_position + 2)], null);
             _position += 2;
             return token;
         }
 
         private SyntaxToken ReturnKindOneChar(SyntaxKind kind)
         {
-            var token = new SyntaxToken(kind, _position, Text[_position..(_position + 1)], null);
+            var token = new SyntaxToken(_syntaxTree, kind, _position, _text[_position..(_position + 1)], null);
             _position++;
             return token;
         }

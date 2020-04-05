@@ -11,9 +11,9 @@
         public SyntaxToken EqualsToken { get; }
         public ExpressionSyntax Body { get; }
 
-        public FunctionDeclarationSyntax(SyntaxToken defKeyword, SyntaxToken identifier, SyntaxToken openParenToken,
+        public FunctionDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken defKeyword, SyntaxToken identifier, SyntaxToken openParenToken,
             SeparatedSyntaxList<ParameterSyntax> parameters, SyntaxToken closeParenToken,
-            TypeAnnotationSyntax? typeAnnotation, SyntaxToken equalsToken, ExpressionSyntax body)
+            TypeAnnotationSyntax? typeAnnotation, SyntaxToken equalsToken, ExpressionSyntax body) : base(syntaxTree)
         {
             DefKeyword = defKeyword;
             Identifier = identifier;

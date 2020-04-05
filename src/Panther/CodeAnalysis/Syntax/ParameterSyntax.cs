@@ -5,7 +5,7 @@
         public SyntaxToken Identifier { get; }
         public TypeAnnotationSyntax TypeAnnotation { get; }
 
-        public ParameterSyntax(SyntaxToken identifier, TypeAnnotationSyntax typeAnnotation)
+        public ParameterSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, TypeAnnotationSyntax typeAnnotation) : base(syntaxTree)
         {
             Identifier = identifier;
             TypeAnnotation = typeAnnotation;

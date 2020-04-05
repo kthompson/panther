@@ -13,7 +13,7 @@ namespace Panther.CodeAnalysis
     {
         private readonly List<Diagnostic> _diagnostics = new List<Diagnostic>();
 
-        private void Report(TextSpan span, string message)
+        private void Report(TextLocation span, string message)
         {
             var diagnostic = new Diagnostic(span, message);
             _diagnostics.Add(diagnostic);
@@ -29,74 +29,74 @@ namespace Panther.CodeAnalysis
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public void ReportInvalidNumber(TextSpan textSpan, string text, TypeSymbol type) =>
+        public void ReportInvalidNumber(TextLocation textSpan, string text, TypeSymbol type) =>
             Report(textSpan, $"The number {text} isn't a valid '{type}'");
 
-        public void ReportInvalidEscapeSequence(in int escapeStart, in int position, in char current) =>
-            Report(new TextSpan(escapeStart, position), $"Invalid character in escape sequence: {current}");
+        public void ReportInvalidEscapeSequence(TextLocation location, in char current) =>
+            Report(location, $"Invalid character in escape sequence: {current}");
 
-        public void ReportBadCharacter(int position, in char character) =>
-            Report(new TextSpan(position, 1), $"Invalid character in input: {character}");
+        public void ReportBadCharacter(TextLocation location, in char character) =>
+            Report(location, $"Invalid character in input: {character}");
 
-        public void ReportUnexpectedToken(TextSpan span, SyntaxKind currentKind, SyntaxKind expectedKind) =>
-            Report(span, $"Unexpected token {currentKind}, expected {expectedKind}");
+        public void ReportUnexpectedToken(TextLocation location, SyntaxKind currentKind, SyntaxKind expectedKind) =>
+            Report(location, $"Unexpected token {currentKind}, expected {expectedKind}");
 
-        public void ReportUndefinedUnaryOperator(TextSpan span, string operatorText, TypeSymbol operandType) =>
-            Report(span, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");
+        public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol operandType) =>
+            Report(location, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");
 
-        public void ReportUndefinedBinaryOperator(TextSpan span, string operatorText, TypeSymbol leftType,
+        public void ReportUndefinedBinaryOperator(TextLocation location, string operatorText, TypeSymbol leftType,
             TypeSymbol rightType) =>
-            Report(span, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'");
+            Report(location, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'");
 
-        public void ReportUndefinedName(TextSpan span, string name) =>
-            Report(span, $"Variable '{name}' does not exist");
+        public void ReportUndefinedName(TextLocation location, string name) =>
+            Report(location, $"Variable '{name}' does not exist");
 
-        public void ReportVariableAlreadyDefined(TextSpan span, string name) =>
-            Report(span, $"Variable '{name}' is already defined in the current scope");
+        public void ReportVariableAlreadyDefined(TextLocation location, string name) =>
+            Report(location, $"Variable '{name}' is already defined in the current scope");
 
-        public void ReportReassignmentToVal(TextSpan span, string name) =>
-            Report(span, $"Reassignment to val '{name}'");
+        public void ReportReassignmentToVal(TextLocation location, string name) =>
+            Report(location, $"Reassignment to val '{name}'");
 
-        public void ReportTypeMismatch(TextSpan span, TypeSymbol expectedType, TypeSymbol foundType) =>
-            Report(span, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
+        public void ReportTypeMismatch(TextLocation location, TypeSymbol expectedType, TypeSymbol foundType) =>
+            Report(location, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
 
-        public void ReportExpectedExpression(TextSpan span, SyntaxKind kind) =>
-            Report(span, $"Unexpected token {kind}, expected Expression");
+        public void ReportExpectedExpression(TextLocation location, SyntaxKind kind) =>
+            Report(location, $"Unexpected token {kind}, expected Expression");
 
-        public void ReportUndefinedFunction(TextSpan span, string name) =>
-            Report(span, $"Function name '{name}' does not exist");
+        public void ReportUndefinedFunction(TextLocation location, string name) =>
+            Report(location, $"Function name '{name}' does not exist");
 
-        public void ReportUnterminatedString(TextSpan span) =>
-            Report(span, "Unterminated string literal");
+        public void ReportUnterminatedString(TextLocation location) =>
+            Report(location, "Unterminated string literal");
 
-        public void ReportNoOverloads(TextSpan span, string name, ImmutableArray<string> argumentTypes) =>
-            Report(span, $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
+        public void ReportNoOverloads(TextLocation location, string name, ImmutableArray<string> argumentTypes) =>
+            Report(location, $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
 
-        public void ReportCannotConvert(TextSpan span, TypeSymbol fromType, TypeSymbol toType) =>
-            Report(span, $"Cannot convert from '{fromType}' to '{toType}'");
+        public void ReportCannotConvert(TextLocation location, TypeSymbol fromType, TypeSymbol toType) =>
+            Report(location, $"Cannot convert from '{fromType}' to '{toType}'");
 
-        public void ReportCannotConvertImplicitly(TextSpan diagnosticsSpan, TypeSymbol fromType, TypeSymbol toType) =>
-            Report(diagnosticsSpan, $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?");
+        public void ReportCannotConvertImplicitly(TextLocation location, TypeSymbol fromType, TypeSymbol toType) =>
+            Report(location, $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?");
 
-        public void ReportUndefinedType(TextSpan span, string name) =>
-            Report(span, $"Type '{name}' is not defined");
+        public void ReportUndefinedType(TextLocation location, string name) =>
+            Report(location, $"Type '{name}' is not defined");
 
-        public void ReportArgumentTypeMismatch(TextSpan span, string parameterName, TypeSymbol expectedType, TypeSymbol actualType) =>
-            Report(span, $"Argument {parameterName}, type mismatch. Expected '{expectedType}', found '{actualType}'");
+        public void ReportArgumentTypeMismatch(TextLocation location, string parameterName, TypeSymbol expectedType, TypeSymbol actualType) =>
+            Report(location, $"Argument {parameterName}, type mismatch. Expected '{expectedType}', found '{actualType}'");
 
-        public void ReportParameterAlreadyDeclared(TextSpan span, string parameterName) =>
-            Report(span, $"Function parameter '{parameterName}' was already declared");
+        public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName) =>
+            Report(location, $"Function parameter '{parameterName}' was already declared");
 
-        public void ReportFunctionAlreadyDeclared(TextSpan span, string functionName) =>
-            Report(span, $"Function '{functionName}' was already declared");
+        public void ReportFunctionAlreadyDeclared(TextLocation location, string functionName) =>
+            Report(location, $"Function '{functionName}' was already declared");
 
-        public void ReportInvalidBreakOrContinue(TextSpan span, string keyword) =>
-            Report(span, $"{keyword} not valid in this context");
+        public void ReportInvalidBreakOrContinue(TextLocation location, string keyword) =>
+            Report(location, $"{keyword} not valid in this context");
 
-        public void ReportAllPathsMustReturn(TextSpan span) =>
-            Report(span, "All paths must return a value");
+        public void ReportAllPathsMustReturn(TextLocation location) =>
+            Report(location, "All paths must return a value");
 
-        public void ReportNotAFunction(TextSpan span, string name) =>
-            Report(span, $"Variable '{name}' is not a function");
+        public void ReportNotAFunction(TextLocation location, string name) =>
+            Report(location, $"Variable '{name}' is not a function");
     }
 }

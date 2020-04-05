@@ -26,6 +26,7 @@ namespace Panther.CodeAnalysis.Syntax
 
     internal class Parser
     {
+        private readonly SyntaxTree _syntaxTree;
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
 
         private readonly Dictionary<SyntaxKind, PrefixParseFunction> _prefixParseFunctions = new Dictionary<SyntaxKind, PrefixParseFunction>();
@@ -36,13 +37,9 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<SyntaxToken> _tokens;
         private int _tokenPosition = 0;
 
-        public Parser(SourceText text)
-            : this(new Lexer(text))
+        public Parser(SyntaxTree syntaxTree)
         {
-        }
-
-        public Parser(Lexer lexer)
-        {
+            var lexer = new Lexer(syntaxTree);
             var tokens = new List<SyntaxToken>();
             while (true)
             {
@@ -55,6 +52,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
 
             _tokens = tokens.ToImmutableArray();
+            _syntaxTree = syntaxTree;
 
             this.Diagnostics.AddRange(lexer.Diagnostics);
 
@@ -166,9 +164,9 @@ namespace Panther.CodeAnalysis.Syntax
                     return null;
 
                 default:
-                    Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, SyntaxKind.NewLineToken);
+                    Diagnostics.ReportUnexpectedToken(currentToken.Location, currentToken.Kind, SyntaxKind.NewLineToken);
 
-                    return new SyntaxToken(SyntaxKind.NewLineToken, currentToken.Position);
+                    return new SyntaxToken(_syntaxTree, SyntaxKind.NewLineToken, currentToken.Position);
             }
         }
 
@@ -178,9 +176,9 @@ namespace Panther.CodeAnalysis.Syntax
             if (currentToken.Kind == kind)
                 return Accept();
 
-            Diagnostics.ReportUnexpectedToken(currentToken.Span, currentToken.Kind, kind);
+            Diagnostics.ReportUnexpectedToken(currentToken.Location, currentToken.Kind, kind);
 
-            return new SyntaxToken(kind, currentToken.Position);
+            return new SyntaxToken(_syntaxTree, kind, currentToken.Position);
         }
 
         private void SkipNewLines()
@@ -193,7 +191,7 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var currentToken = CurrentToken;
 
-            return new SyntaxToken(kind, currentToken.Position, text, null);
+            return new SyntaxToken(_syntaxTree, kind, currentToken.Position, text, null);
         }
 
         public CompilationUnitSyntax ParseCompilationUnit()
@@ -202,7 +200,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new CompilationUnitSyntax(members, endToken);
+            return new CompilationUnitSyntax(_syntaxTree, members, endToken);
         }
 
         private ImmutableArray<MemberSyntax> ParseMembers()
@@ -236,7 +234,7 @@ namespace Panther.CodeAnalysis.Syntax
         private MemberSyntax ParseGlobalStatement()
         {
             var statement = ParseStatement();
-            return new GlobalStatementSyntax(statement);
+            return new GlobalStatementSyntax(_syntaxTree, statement);
         }
 
         private MemberSyntax ParseFunctionDeclaration()
@@ -251,7 +249,7 @@ namespace Panther.CodeAnalysis.Syntax
             var equalsToken = Accept(SyntaxKind.EqualsToken);
             var body = ParseExpression(OperatorPrecedence.Lowest);
 
-            return new FunctionDeclarationSyntax(defKeyword, identifier, openParenToken, parameters, closeParenToken, typeAnnotation, equalsToken, body);
+            return new FunctionDeclarationSyntax(_syntaxTree, defKeyword, identifier, openParenToken, parameters, closeParenToken, typeAnnotation, equalsToken, body);
         }
 
         private SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
@@ -281,7 +279,7 @@ namespace Panther.CodeAnalysis.Syntax
             var ident = Accept(SyntaxKind.IdentifierToken);
             var typeAnnotation = ParseTypeAnnotation();
 
-            return new ParameterSyntax(ident, typeAnnotation);
+            return new ParameterSyntax(_syntaxTree, ident, typeAnnotation);
         }
 
         private ExpressionSyntax ParseExpression(OperatorPrecedence precedence)
@@ -295,7 +293,7 @@ namespace Panther.CodeAnalysis.Syntax
                 // this results in an error from another location
                 // so I don't think we need this here?
                 // Diagnostics.ReportUnsupportedPrefixToken(currentToken);
-                Diagnostics.ReportExpectedExpression(currentToken.Span, currentToken.Kind);
+                Diagnostics.ReportExpectedExpression(currentToken.Location, currentToken.Kind);
                 return ParseLiteralExpression();
             }
 
@@ -326,7 +324,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var expression = ParseExpression(OperatorPrecedence.Prefix);
 
-            return new UnaryExpressionSyntax(unaryOperatorToken, expression);
+            return new UnaryExpressionSyntax(_syntaxTree, unaryOperatorToken, expression);
         }
 
         private OperatorPrecedence CurrentPrecedence() =>
@@ -341,7 +339,7 @@ namespace Panther.CodeAnalysis.Syntax
             SkipNewLines();
             var right = ParseExpression(precedence);
 
-            return new BinaryExpressionSyntax(left, binaryOperatorToken, right);
+            return new BinaryExpressionSyntax(_syntaxTree, left, binaryOperatorToken, right);
         }
 
         private ExpressionSyntax ParseWhileExpression()
@@ -355,7 +353,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
-            return new WhileExpressionSyntax(whileKeyword, openParenToken, condition, closeParenToken, expr);
+            return new WhileExpressionSyntax(_syntaxTree, whileKeyword, openParenToken, condition, closeParenToken, expr);
         }
 
         private ExpressionSyntax ParseForExpression()
@@ -374,7 +372,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
-            return new ForExpressionSyntax(forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
+            return new ForExpressionSyntax(_syntaxTree, forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
         }
 
         private ExpressionSyntax ParseCallExpression()
@@ -384,7 +382,7 @@ namespace Panther.CodeAnalysis.Syntax
             var arguments = ParseArguments();
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
 
-            return new CallExpressionSyntax(ident, openParenToken, arguments, closeParenToken);
+            return new CallExpressionSyntax(_syntaxTree, ident, openParenToken, arguments, closeParenToken);
         }
 
         private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
@@ -425,7 +423,7 @@ namespace Panther.CodeAnalysis.Syntax
             SkipNewLines();
             var elseExpr = ParseExpression(OperatorPrecedence.Lowest);
 
-            return new IfExpressionSyntax(ifKeyword, openParenToken, condition, closeParenToken, thenExpr, elseKeyword, elseExpr);
+            return new IfExpressionSyntax(_syntaxTree, ifKeyword, openParenToken, condition, closeParenToken, thenExpr, elseKeyword, elseExpr);
         }
 
         private ExpressionSyntax ParseGroupOrUnitExpression()
@@ -435,21 +433,21 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 // unit expression
                 var close = Accept(SyntaxKind.CloseParenToken);
-                return new UnitExpressionSyntax(open, close);
+                return new UnitExpressionSyntax(_syntaxTree, open, close);
             }
             else
             {
                 var expr = ParseExpression(OperatorPrecedence.Lowest);
                 var close = Accept(SyntaxKind.CloseParenToken);
 
-                return new GroupExpressionSyntax(open, expr, close);
+                return new GroupExpressionSyntax(_syntaxTree, open, expr, close);
             }
         }
 
         private LiteralExpressionSyntax ParseLiteralExpression()
         {
             var numberToken = Accept();
-            return new LiteralExpressionSyntax(numberToken);
+            return new LiteralExpressionSyntax(_syntaxTree, numberToken);
         }
 
         private ExpressionSyntax ParseNameOrAssignmentExpression()
@@ -469,13 +467,13 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var token = Accept();
 
-            return new NameExpressionSyntax(token);
+            return new NameExpressionSyntax(_syntaxTree, token);
         }
 
         private LiteralExpressionSyntax ParseBooleanLiteral()
         {
             var value = CurrentToken.Kind == SyntaxKind.TrueKeyword;
-            return new LiteralExpressionSyntax(Accept(), value);
+            return new LiteralExpressionSyntax(_syntaxTree, Accept(), value);
         }
 
         private ExpressionSyntax ParseBlockExpression()
@@ -503,12 +501,12 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 var openParenToken = Create(SyntaxKind.OpenParenToken, "(");
                 var closeParenToken = Create(SyntaxKind.CloseParenToken, ")");
-                expr = new UnitExpressionSyntax(openParenToken, closeParenToken);
+                expr = new UnitExpressionSyntax(_syntaxTree, openParenToken, closeParenToken);
             }
 
             var closeBraceToken = Accept(SyntaxKind.CloseBraceToken);
 
-            return new BlockExpressionSyntax(openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
+            return new BlockExpressionSyntax(_syntaxTree, openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
         }
 
         private StatementSyntax ParseStatement()
@@ -527,20 +525,20 @@ namespace Panther.CodeAnalysis.Syntax
         private ExpressionSyntax ParseContinueExpression()
         {
             var keyword = Accept();
-            return new ContinueExpressionSyntax(keyword);
+            return new ContinueExpressionSyntax(_syntaxTree, keyword);
         }
 
         private ExpressionSyntax ParseBreakExpression()
         {
             var keyword = Accept();
-           return new BreakExpressionSyntax(keyword);
+           return new BreakExpressionSyntax(_syntaxTree, keyword);
         }
 
         private StatementSyntax ParseExpressionStatement()
         {
             var expr = ParseExpression(OperatorPrecedence.Lowest);
             var newLineToken = AcceptStatementTerminator();
-            return new ExpressionStatementSyntax(expr, newLineToken);
+            return new ExpressionStatementSyntax(_syntaxTree, expr, newLineToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement()
@@ -553,7 +551,7 @@ namespace Panther.CodeAnalysis.Syntax
             var expr = ParseExpression(OperatorPrecedence.Lowest);
             var newLineToken = AcceptStatementTerminator();
 
-            return new VariableDeclarationStatementSyntax(valToken, identToken, typeAnnotationSyntax, equalsToken, expr, newLineToken);
+            return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, equalsToken, expr, newLineToken);
         }
 
         private ExpressionSyntax ParseAssignmentExpression()
@@ -562,7 +560,7 @@ namespace Panther.CodeAnalysis.Syntax
             var equalsToken = Accept(SyntaxKind.EqualsToken);
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
-            return new AssignmentExpressionSyntax(identToken, equalsToken, expr);
+            return new AssignmentExpressionSyntax(_syntaxTree, identToken, equalsToken, expr);
         }
 
         private TypeAnnotationSyntax? ParseOptionalTypeAnnotation() =>
@@ -573,7 +571,7 @@ namespace Panther.CodeAnalysis.Syntax
             var colonToken = Accept(SyntaxKind.ColonToken);
             var identToken = Accept(SyntaxKind.IdentifierToken);
 
-            return new TypeAnnotationSyntax(colonToken, identToken);
+            return new TypeAnnotationSyntax(_syntaxTree, colonToken, identToken);
         }
     }
 }

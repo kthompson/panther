@@ -66,15 +66,19 @@ namespace Panther.IO
         {
             foreach (var diagnostic in diagnostics.OrderBy(diagnostic => diagnostic.Span))
             {
+                var fileName = diagnostic.Location.Filename;
+                var startLine = diagnostic.Location.StartLine + 1;
+                var startCharacter = diagnostic.Location.StartCharacter + 1;
+                var endLine = diagnostic.Location.EndLine + 1;
+                var endCharacter = diagnostic.Location.EndCharacter + 1;
+
                 var lineIndex = syntaxTree.Text.GetLineIndex(diagnostic.Span.Start);
                 var line = syntaxTree.Text.Lines[lineIndex];
-                var lineNumber = lineIndex + 1;
-                var character = diagnostic.Span.Start - line.Start + 1;
 
                 Console.WriteLine();
 
                 Console.ForegroundColor = ConsoleColor.DarkRed;
-                writer.Write($"({lineNumber}, {character}): ");
+                writer.Write($"{fileName}({startLine},{startCharacter},{endLine},{endCharacter}): ");
                 writer.WriteLine(diagnostic);
                 writer.ResetColor();
 

@@ -8,7 +8,8 @@
         public SyntaxToken CloseParenToken { get; }
         public ExpressionSyntax Body { get; }
 
-        public WhileExpressionSyntax(SyntaxToken whileKeyword, SyntaxToken openParenToken, ExpressionSyntax conditionExpression, SyntaxToken closeParenToken, ExpressionSyntax body)
+        public WhileExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken whileKeyword, SyntaxToken openParenToken,
+            ExpressionSyntax conditionExpression, SyntaxToken closeParenToken, ExpressionSyntax body) : base(syntaxTree)
         {
             WhileKeyword = whileKeyword;
             OpenParenToken = openParenToken;

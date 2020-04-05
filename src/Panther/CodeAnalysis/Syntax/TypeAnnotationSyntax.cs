@@ -5,7 +5,7 @@
         public SyntaxToken ColonToken { get; }
         public SyntaxToken IdentifierToken { get; }
 
-        public TypeAnnotationSyntax(SyntaxToken colonToken, SyntaxToken identifierToken)
+        public TypeAnnotationSyntax(SyntaxTree syntaxTree, SyntaxToken colonToken, SyntaxToken identifierToken) : base(syntaxTree)
         {
             ColonToken = colonToken;
             IdentifierToken = identifierToken;

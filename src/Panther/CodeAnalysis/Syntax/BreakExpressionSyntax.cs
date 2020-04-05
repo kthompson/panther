@@ -3,7 +3,7 @@
     public sealed class BreakExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken BreakKeyword { get; }
-        public BreakExpressionSyntax(SyntaxToken breakKeyword)
+        public BreakExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken breakKeyword) : base(syntaxTree)
         {
             BreakKeyword = breakKeyword;
         }

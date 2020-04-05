@@ -9,6 +9,13 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public abstract class SyntaxNode
     {
+        public SyntaxTree SyntaxTree { get; }
+
+        protected SyntaxNode(SyntaxTree syntaxTree)
+        {
+            SyntaxTree = syntaxTree;
+        }
+
         public abstract SyntaxKind Kind { get; }
 
         public virtual TextSpan Span
@@ -23,13 +30,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        public SyntaxToken GetLastToken()
-        {
-            if (this is SyntaxToken token)
-                return token;
-
-            return GetChildren().Last().GetLastToken();
-        }
+        public TextLocation Location => new TextLocation(SyntaxTree.Text, Span);
 
         public IEnumerable<SyntaxNode> GetChildren()
         {

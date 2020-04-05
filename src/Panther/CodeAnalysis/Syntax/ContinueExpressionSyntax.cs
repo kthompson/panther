@@ -4,7 +4,7 @@
     {
         public SyntaxToken ContinueKeyword { get; }
 
-        public ContinueExpressionSyntax(SyntaxToken continueKeyword)
+        public ContinueExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken continueKeyword) : base(syntaxTree)
         {
             ContinueKeyword = continueKeyword;
         }

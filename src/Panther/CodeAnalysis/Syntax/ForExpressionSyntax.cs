@@ -12,7 +12,7 @@
         public SyntaxToken CloseParenToken { get; }
         public ExpressionSyntax Body { get; }
 
-        public ForExpressionSyntax(SyntaxToken forKeyword, SyntaxToken openParenToken, NameExpressionSyntax variableExpression, SyntaxToken lessThanDashToken, ExpressionSyntax fromExpression, SyntaxToken toKeyword, ExpressionSyntax toExpression, SyntaxToken closeParenToken, ExpressionSyntax body)
+        public ForExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken forKeyword, SyntaxToken openParenToken, NameExpressionSyntax variableExpression, SyntaxToken lessThanDashToken, ExpressionSyntax fromExpression, SyntaxToken toKeyword, ExpressionSyntax toExpression, SyntaxToken closeParenToken, ExpressionSyntax body) : base(syntaxTree)
         {
             ForKeyword = forKeyword;
             OpenParenToken = openParenToken;

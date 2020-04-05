@@ -26,8 +26,14 @@ namespace Panther.Compiler
             }
 
             var path = args.Single();
-            var text = File.ReadAllText(path);
-            var syntaxTree = SyntaxTree.Parse(text);
+
+
+            if (!File.Exists(path))
+            {
+                Console.Error.WriteLine($"error: file `{path}` not found");
+                return;
+            }
+            var syntaxTree = SyntaxTree.LoadFile(path);
 
             var compilation = new Compilation(syntaxTree);
             var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());

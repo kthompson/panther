@@ -9,7 +9,7 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken CloseParenToken { get; }
         public override SyntaxKind Kind => SyntaxKind.GroupExpression;
 
-        public GroupExpressionSyntax(SyntaxToken openParenToken, ExpressionSyntax expression, SyntaxToken closeParenToken)
+        public GroupExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken openParenToken, ExpressionSyntax expression, SyntaxToken closeParenToken) : base(syntaxTree)
         {
             OpenParenToken = openParenToken;
             Expression = expression;

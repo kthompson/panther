@@ -7,7 +7,7 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken IdentifierToken { get; }
         public override SyntaxKind Kind => SyntaxKind.NameExpression;
 
-        public NameExpressionSyntax(SyntaxToken identifierToken)
+        public NameExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken) : base(syntaxTree)
         {
             IdentifierToken = identifierToken;
         }

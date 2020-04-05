@@ -10,7 +10,7 @@ namespace Panther.CodeAnalysis.Syntax
         public SyntaxToken CloseBraceToken { get; }
         public override SyntaxKind Kind => SyntaxKind.BlockExpression;
 
-        public BlockExpressionSyntax(SyntaxToken openBraceToken, ImmutableArray<StatementSyntax> statements, ExpressionSyntax expression, SyntaxToken closeBraceToken)
+        public BlockExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken openBraceToken, ImmutableArray<StatementSyntax> statements, ExpressionSyntax expression, SyntaxToken closeBraceToken) : base(syntaxTree)
         {
             OpenBraceToken = openBraceToken;
             Statements = statements;

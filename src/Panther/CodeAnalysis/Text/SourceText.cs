@@ -7,11 +7,13 @@ namespace Panther.CodeAnalysis.Text
 {
     public sealed class SourceText
     {
+        public string FileName { get; }
         private readonly string _text;
         public IReadOnlyList<TextLine> Lines { get; }
 
-        private SourceText(string text)
+        private SourceText(string text, string fileName)
         {
+            FileName = fileName;
             _text = text;
             Lines = ParseLines(this, text);
         }
@@ -98,7 +100,7 @@ namespace Panther.CodeAnalysis.Text
             return 0;
         }
 
-        public static SourceText From(string text) => new SourceText(text);
+        public static SourceText From(string text, string fileName = "") => new SourceText(text, fileName);
 
         public override string ToString() => _text;
 
