@@ -1,10 +1,15 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Panther.CodeAnalysis;
+using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
-namespace Panther.CodeAnalysis.IO
+namespace Panther.IO
 {
-    internal static class TextWriterExtensions
+    public static class TextWriterExtensions
     {
         public static bool IsConsoleOut(this TextWriter writer) =>
             writer == Console.Out ||
@@ -55,6 +60,42 @@ namespace Panther.CodeAnalysis.IO
             writer.SetForeground(ConsoleColor.DarkGray);
             writer.Write(text);
             writer.ResetColor();
+        }
+
+        public static void WriteDiagnostics(this TextWriter writer, IEnumerable<Diagnostic> diagnostics, SyntaxTree syntaxTree)
+        {
+            foreach (var diagnostic in diagnostics.OrderBy(diagnostic => diagnostic.Span))
+            {
+                var lineIndex = syntaxTree.Text.GetLineIndex(diagnostic.Span.Start);
+                var line = syntaxTree.Text.Lines[lineIndex];
+                var lineNumber = lineIndex + 1;
+                var character = diagnostic.Span.Start - line.Start + 1;
+
+                Console.WriteLine();
+
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                writer.Write($"({lineNumber}, {character}): ");
+                writer.WriteLine(diagnostic);
+                writer.ResetColor();
+
+                var prefixSpan = TextSpan.FromBounds(line.Start, diagnostic.Span.Start);
+                var suffixSpan = TextSpan.FromBounds(diagnostic.Span.End, line.End);
+
+                var prefix = syntaxTree.Text.ToString(prefixSpan);
+                var error = syntaxTree.Text.ToString(diagnostic.Span);
+                var suffix = syntaxTree.Text.ToString(suffixSpan);
+
+                writer.Write("    ");
+                writer.Write(prefix);
+
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                writer.Write(error);
+                writer.ResetColor();
+
+                writer.Write(suffix);
+
+                writer.WriteLine();
+            }
         }
     }
 }

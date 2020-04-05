@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Panther.CodeAnalysis.IO;
+using Panther.IO;
 
 namespace Panther.CodeAnalysis.Symbols
 {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.IO;
-using Panther.CodeAnalysis.IO;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.IO;
 
 namespace Panther.CodeAnalysis.Binding
 {
