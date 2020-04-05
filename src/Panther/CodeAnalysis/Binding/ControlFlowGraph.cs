@@ -65,9 +65,9 @@ namespace Panther.CodeAnalysis.Binding
         {
             public BasicBlock From { get; }
             public BasicBlock To { get; }
-            public BoundExpression Condition { get; }
+            public BoundExpression? Condition { get; }
 
-            public BasicBlockBranch(BasicBlock from, BasicBlock to, BoundExpression condition)
+            public BasicBlockBranch(BasicBlock from, BasicBlock to, BoundExpression? condition)
             {
                 From = @from;
                 To = to;
@@ -255,7 +255,7 @@ namespace Panther.CodeAnalysis.Binding
                 return new BoundUnaryExpression(op, condition);
             }
 
-            private void Connect(BasicBlock @from, BasicBlock to, BoundExpression boundCondition = null)
+            private void Connect(BasicBlock @from, BasicBlock to, BoundExpression? boundCondition = null)
             {
                 if (boundCondition is BoundLiteralExpression lit)
                 {

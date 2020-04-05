@@ -9,7 +9,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther
 {
-    internal class PantherRepl : Repl, IBuiltins
+    internal class PantherRepl : Repl
     {
         private Compilation _previous;
         private bool _showTree;
@@ -91,7 +91,7 @@ namespace Panther
             var syntaxTree = SyntaxTree.Parse(text.TrimEnd('\r', '\n'));
 
             var compilation = _previous == null
-                ? new Compilation(syntaxTree, this)
+                ? new Compilation(syntaxTree)
                 : _previous.ContinueWith(syntaxTree);
 
             if (_showTree)
@@ -147,9 +147,5 @@ namespace Panther
                 Console.WriteLine();
             }
         }
-
-        string IBuiltins.Read() => Console.ReadLine();
-
-        void IBuiltins.Print(string message) => Console.WriteLine(message);
     }
 }

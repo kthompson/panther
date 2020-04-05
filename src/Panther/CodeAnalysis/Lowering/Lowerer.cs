@@ -192,7 +192,7 @@ namespace Panther.CodeAnalysis.Lowering
 
             var condition = new BoundBinaryExpression(
                 new BoundVariableExpression(node.Variable),
-                BoundBinaryOperator.Bind(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
+                BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
                 upperBound
             );
             var continueLabelStatement = new BoundLabelStatement(node.ContinueLabel);
@@ -201,7 +201,7 @@ namespace Panther.CodeAnalysis.Lowering
                     node.Variable,
                     new BoundBinaryExpression(
                         new BoundVariableExpression(node.Variable),
-                        BoundBinaryOperator.Bind(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
+                        BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
                         new BoundLiteralExpression(1)
                     )
                 ));

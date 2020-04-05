@@ -32,14 +32,14 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public Compilation(SyntaxTree syntaxTree, IBuiltins builtins)
+        public Compilation(SyntaxTree syntaxTree, IBuiltins? builtins = null)
             : this(null, syntaxTree, builtins)
         {
         }
 
-        private Compilation(Compilation? previous, SyntaxTree syntaxTree, IBuiltins builtins)
+        private Compilation(Compilation? previous, SyntaxTree syntaxTree, IBuiltins? builtins = null)
         {
-            _builtins = builtins;
+            _builtins = builtins ?? Builtins.Default;
             Previous = previous;
             SyntaxTree = syntaxTree;
         }

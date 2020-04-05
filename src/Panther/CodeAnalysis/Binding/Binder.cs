@@ -110,7 +110,7 @@ namespace Panther.CodeAnalysis.Binding
                 }
             }
 
-            var type = BindTypeAnnotation(syntax.TypeAnnotation) ?? TypeSymbol.Unit;
+            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation) ?? TypeSymbol.Unit;
 
             var function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
@@ -178,7 +178,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var isReadOnly = syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword;
             var boundExpression = BindExpression(syntax.Expression, scope);
-            var type = BindTypeAnnotation(syntax.TypeAnnotation);
+            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation);
             var expressionType = type ?? boundExpression.Type;
 
             var converted = BindConversion(syntax.Expression.Span, boundExpression, expressionType);
@@ -187,20 +187,20 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundVariableDeclarationStatement(variable, converted);
         }
 
-        private TypeSymbol? BindTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause)
+        private TypeSymbol BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause)
         {
-            if (syntaxTypeClause == null)
-                return null;
-
             var type = LookupType(syntaxTypeClause.IdentifierToken.Text);
-
             if (type == null)
             {
                 Diagnostics.ReportUndefinedType(syntaxTypeClause.IdentifierToken.Span, syntaxTypeClause.IdentifierToken.Text);
+                return TypeSymbol.Error;
             }
 
             return type;
         }
+
+        private TypeSymbol? BindOptionalTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause) =>
+            syntaxTypeClause == null ? null : BindTypeAnnotation(syntaxTypeClause);
 
         private VariableSymbol BindVariable(SyntaxToken identifier, TypeSymbol expressionType, bool isReadOnly,
             BoundScope scope)

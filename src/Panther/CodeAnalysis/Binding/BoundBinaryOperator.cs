@@ -61,5 +61,8 @@ namespace Panther.CodeAnalysis.Binding
 
         public static BoundBinaryOperator? Bind(SyntaxKind kind, TypeSymbol leftType, TypeSymbol rightType) =>
             _operators.FirstOrDefault(op => op.SyntaxKind == kind && op.LeftType == leftType && op.RightType == rightType);
+
+        public static BoundBinaryOperator BindOrThrow(SyntaxKind kind, TypeSymbol leftType, TypeSymbol rightType) =>
+            Bind(kind, leftType, rightType) ?? throw new Exception("Binary operator not found");
     }
 }
