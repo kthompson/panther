@@ -11,19 +11,29 @@ namespace Panther.IO
 {
     public static class TextWriterExtensions
     {
-        public static bool IsConsoleOut(this TextWriter writer) =>
-            writer == Console.Out ||
-            writer is IndentedTextWriter indentedTextWriter && indentedTextWriter.InnerWriter == Console.Out;
+        public static bool IsConsole(this TextWriter writer)
+        {
+            if (writer == Console.Out)
+                return !Console.IsOutputRedirected;
+
+            if (writer == Console.Error)
+                return !Console.IsErrorRedirected && !Console.IsOutputRedirected;
+
+            if (!(writer is IndentedTextWriter indentedTextWriter))
+                return false;
+
+            return indentedTextWriter.InnerWriter.IsConsole();
+        }
 
         public static void SetForeground(this TextWriter writer, ConsoleColor color)
         {
-            if (writer.IsConsoleOut())
+            if (writer.IsConsole())
                 Console.ForegroundColor = color;
         }
 
         public static void ResetColor(this TextWriter writer)
         {
-            if (writer.IsConsoleOut())
+            if (writer.IsConsole())
                 Console.ResetColor();
         }
 
@@ -76,9 +86,9 @@ namespace Panther.IO
                 var lineIndex = text.GetLineIndex(diagnostic.Span.Start);
                 var line = text.Lines[lineIndex];
 
-                Console.WriteLine();
+                writer.WriteLine();
 
-                Console.ForegroundColor = ConsoleColor.DarkRed;
+                writer.SetForeground(ConsoleColor.DarkRed);
                 writer.Write($"{fileName}({startLine},{startCharacter},{endLine},{endCharacter}): ");
                 writer.WriteLine(diagnostic);
                 writer.ResetColor();
@@ -93,7 +103,7 @@ namespace Panther.IO
                 writer.Write("    ");
                 writer.Write(prefix);
 
-                Console.ForegroundColor = ConsoleColor.DarkRed;
+                writer.SetForeground(ConsoleColor.DarkRed);
                 writer.Write(error);
                 writer.ResetColor();
 
