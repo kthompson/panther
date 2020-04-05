@@ -40,33 +40,32 @@ namespace Panther
                 _ => ConsoleColor.DarkGray
             };
 
-        protected override void EvaluateMetaCommand(string input)
+        [MetaCommand("showProgram", "Toggle showing the bound tree")]
+        private void MetaShowProgram()
         {
-            switch (input)
-            {
-                case "#showTree":
-                    _showTree = !_showTree;
-                    Console.WriteLine(_showTree ? "Showing parse trees." : "Not showing parse trees.");
-                    break;
+            _showProgram = !_showProgram;
+            Console.WriteLine(_showProgram ? "Showing bound tree." : "Not showing bound tree.");
+        }
 
-                case "#showProgram":
-                    _showProgram = !_showProgram;
-                    Console.WriteLine(_showProgram ? "Showing bound tree." : "Not showing bound tree.");
-                    break;
+        [MetaCommand("cls", "Clear the console")]
+        private static void MetaClear()
+        {
+            Console.Clear();
+        }
 
-                case "#cls":
-                    Console.Clear();
-                    break;
+        [MetaCommand("reset", "Clear variables and all compilation data")]
+        private void MetaReset()
+        {
+            _previous = null;
+            _variables.Clear();
+        }
 
-                case "#reset":
-                    _previous = null;
-                    _variables.Clear();
-                    break;
-
-                default:
-                    base.EvaluateMetaCommand(input);
-                    break;
-            }
+        [MetaCommand("showTree", "Toggle showing the parse tree")]
+        private void MetaShowTree()
+        {
+            _showTree = !_showTree;
+            Console.WriteLine(_showTree ? "Showing parse trees." : "Not showing parse trees.");
+            return;
         }
 
         protected override bool IsCompleteSubmission(string text)

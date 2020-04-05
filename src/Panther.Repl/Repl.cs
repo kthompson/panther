@@ -2,16 +2,36 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Panther
 {
     internal abstract class Repl
     {
+        private readonly List<MetaCommand> _metaCommands = new List<MetaCommand>();
         private readonly List<string> _submissionHistory = new List<string>();
         private int _submissionHistoryIndex;
 
         private bool _done;
+
+        protected Repl()
+        {
+            InitializeMetaCommands();
+        }
+
+        private void InitializeMetaCommands()
+        {
+            foreach (var method in GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            {
+                var attribute = method.GetCustomAttribute<MetaCommandAttribute>();
+                if (attribute == null)
+                    continue;
+
+                _metaCommands.Add(new MetaCommand(attribute.Name, attribute.Description, method));
+            }
+        }
 
         public void Run()
         {
@@ -384,15 +404,61 @@ namespace Panther
             Console.Write(line);
         }
 
-        protected virtual void EvaluateMetaCommand(string input)
+        private void EvaluateMetaCommand(string input)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Invalid command {input}.");
-            Console.ResetColor();
+            var commandName = input.Substring(1);
+            var command = _metaCommands.SingleOrDefault(mc => mc.Name == commandName);
+            if (command == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Invalid command {input}.");
+                Console.ResetColor();
+                return;
+            }
+
+            command.Method.Invoke(this, null);
         }
 
         protected abstract bool IsCompleteSubmission(string text);
 
         protected abstract void EvaluateSubmission(string text);
+
+        [MetaCommand("help", "Display this help")]
+        protected void MetaHelp()
+        {
+            var maxNameLength = _metaCommands.Max(x => x.Name.Length);
+            foreach (var metaCommand in _metaCommands.OrderBy(cmd => cmd.Name))
+            {
+                var paddedName = metaCommand.Name.PadRight(maxNameLength);
+                Console.WriteLine($"#{paddedName}  {metaCommand.Description}");
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+        protected sealed class MetaCommandAttribute : Attribute
+        {
+            public string Name { get; }
+            public string Description { get; }
+
+            public MetaCommandAttribute(string name, string description)
+            {
+                Name = name;
+                Description = description;
+            }
+        }
+
+        private sealed class MetaCommand
+        {
+            public string Name { get; }
+            public string Description { get; }
+            public MethodInfo Method { get; }
+
+            public MetaCommand(string name, string description, MethodInfo method)
+            {
+                Name = name;
+                Description = description;
+                Method = method;
+            }
+        }
     }
 }

@@ -11,12 +11,12 @@ namespace Panther.Compiler
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             if (args.Length == 0)
             {
                 Console.Error.WriteLine("usage: pantherc <source-paths>");
-                return;
+                return 1;
             }
 
             var paths = GetFilePaths(args).ToArray();
@@ -37,18 +37,20 @@ namespace Panther.Compiler
             }
 
             if (errors)
-                return;
+                return 1;
 
             var compilation = new Compilation(syntaxTrees.ToArray());
             var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
             if (result.Diagnostics.Any())
             {
                 Console.Error.WriteDiagnostics(result.Diagnostics);
+                return 1;
             }
-            else if (result.Value != null)
-            {
+
+            if (result.Value != null)
                 Console.WriteLine(result.Value);
-            }
+
+            return 0;
         }
 
         private static IEnumerable<string> GetFilePaths(IEnumerable<string> paths)
