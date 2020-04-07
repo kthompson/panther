@@ -5,6 +5,11 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Panther.CodeAnalysis;
+using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
+using Panther.IO;
 
 namespace Panther
 {
@@ -406,17 +411,59 @@ namespace Panther
 
         private void EvaluateMetaCommand(string input)
         {
-            var commandName = input.Substring(1);
-            var command = _metaCommands.SingleOrDefault(mc => mc.Name == commandName);
-            if (command == null)
+            var lexer = new ArgumentLexer(input.Substring(1));
+            var args = new List<string>();
+
+            while (true)
+            {
+                var arg = lexer.NextArgument();
+                if (arg == null)
+                    break;
+
+                args.Add(arg);
+            }
+
+            var diags = lexer.Diagnostics.ToArray();
+            if (diags.Any())
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Invalid command {input}.");
+                foreach (var diag in diags)
+                    Console.Error.WriteLine(diag);
+
                 Console.ResetColor();
                 return;
             }
 
-            command.Method.Invoke(this, null);
+            if (args.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine("Invalid command");
+                Console.ResetColor();
+            }
+
+            var commandName = args[0];
+            args.RemoveAt(0);
+            var command = _metaCommands.SingleOrDefault(mc => mc.Name == commandName);
+            if (command == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine($"Invalid command {input}.");
+                Console.ResetColor();
+                return;
+            }
+
+            var metaParams = command.Method.GetParameters();
+            if (metaParams.Length != args.Count)
+            {
+                var paramsString = string.Join(" ", metaParams.Select(p => $"<{p.Name}>"));
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine($"error: invalid number of arguments for command {args[0]}");
+                Console.Error.WriteLine($"usage: #{args[0]} {paramsString}");
+                Console.ResetColor();
+                return;
+            }
+
+            command.Method.Invoke(this, args.Select(x => (object)x).ToArray());
         }
 
         protected abstract bool IsCompleteSubmission(string text);
@@ -430,7 +477,11 @@ namespace Panther
             foreach (var metaCommand in _metaCommands.OrderBy(cmd => cmd.Name))
             {
                 var paddedName = metaCommand.Name.PadRight(maxNameLength);
-                Console.WriteLine($"#{paddedName}  {metaCommand.Description}");
+
+                Console.Out.WritePunctuation("#");
+                Console.Out.WriteIdentifer(paddedName);
+                Console.Out.WritePunctuation($"  {metaCommand.Description}");
+                Console.Out.WriteLine();
             }
         }
 
@@ -458,6 +509,179 @@ namespace Panther
                 Name = name;
                 Description = description;
                 Method = method;
+            }
+        }
+
+        internal class ArgumentLexer
+        {
+            private readonly string _text;
+            private readonly List<string> _diagnostics = new List<string>();
+            private int _position;
+
+            public ArgumentLexer(string text)
+            {
+                _text = text;
+            }
+
+            public IEnumerable<string> Diagnostics => _diagnostics.ToArray();
+
+            private char Current => Peek(_position);
+            private char Lookahead => Peek(_position + 1);
+
+            private char Peek(int position) => position >= _text.Length ? '\0' : _text[position];
+
+            private void Next()
+            {
+                _position++;
+            }
+
+            private bool IfWhile(Func<char, bool> predicate)
+            {
+                if (!predicate(Current))
+                    return false;
+
+                while (predicate(Current))
+                {
+                    Next();
+                }
+
+                return true;
+            }
+
+            public string? NextArgument()
+            {
+                while (true)
+                {
+                    var start = _position;
+
+                    switch (Current)
+                    {
+                        case '\0':
+                            return null;
+
+                        case '"':
+                            return ParseStringToken(start);
+
+                        default:
+                            if (IfWhile(char.IsWhiteSpace))
+                                continue;
+
+                            while (Current != '"' && Current != '\0' && !char.IsWhiteSpace(Current))
+                            {
+                                Next();
+                            }
+
+                            return _text[start.._position];
+                    }
+                }
+            }
+
+            private string? ParseStringToken(int start)
+            {
+                Next(); // start "
+                var sb = new StringBuilder();
+                while (true)
+                {
+                    switch (Current)
+                    {
+                        case '"':
+                            Next(); // end "
+                            break;
+
+                        case '\\': // escape sequence
+                            var escapeSequence = ParseEscapeSequence();
+                            if (escapeSequence != null)
+                                sb.Append(escapeSequence);
+
+                            continue;
+                        case '\n':
+                        case '\r':
+                        case '\0':
+                            _diagnostics.Add($"Unterminated string at {start}");
+                            break;
+
+                        default:
+                            sb.Append(Current);
+                            Next();
+                            continue;
+                    }
+
+                    break;
+                }
+
+                return sb.ToString();
+            }
+
+            private string? ParseEscapeSequence()
+            {
+                var escapeStart = _position;
+                Next(); // accept \
+                switch (Current)
+                {
+                    case 'r':
+                        Next();
+                        return "\r";
+
+                    case 'n':
+                        Next();
+                        return "\n";
+
+                    case 't':
+                        Next();
+                        return "\t";
+
+                    case '\\':
+                        Next();
+                        return "\\";
+
+                    case '"':
+                        Next();
+                        return "\"";
+
+                    case 'u':
+                        Next(); //u
+                        return ParseUtfEscapeSequence(4, escapeStart);
+
+                    case 'U':
+                        Next(); //U
+                        return ParseUtfEscapeSequence(8, escapeStart);
+
+                    default:
+                        _diagnostics.Add($"Invalid escape sequence at {escapeStart}");
+                        return null;
+                }
+            }
+
+            private string? ParseUtfEscapeSequence(int digits, int escapeStart)
+            {
+                var value = 0;
+                for (var i = 0; i < digits; i++)
+                {
+                    if (!HexValue(out var hexValue))
+                    {
+                        _diagnostics.Add($"Invalid escape sequence at {escapeStart}");
+                        return null;
+                    }
+
+                    value += hexValue << 4 * (digits - 1 - i);
+                    Next();
+                }
+
+                return ((char)value).ToString();
+            }
+
+            private bool HexValue(out int value)
+            {
+                try
+                {
+                    value = int.Parse(Current.ToString(), System.Globalization.NumberStyles.HexNumber);
+                    return true;
+                }
+                catch
+                {
+                    value = 0;
+                    return false;
+                }
             }
         }
     }

@@ -19,7 +19,6 @@ namespace Panther.CodeAnalysis.Syntax
             _text = syntaxTree.Text;
         }
 
-
         public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
         private char Current => Peek(_position);
