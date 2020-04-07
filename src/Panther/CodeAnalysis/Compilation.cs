@@ -93,7 +93,8 @@ namespace Panther.CodeAnalysis
 
             var program = Binder.BindProgram(GlobalScope);
 
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NCRUNCH")))
+            // temp hack for CI/NCRUNCH to not break
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NCRUNCH") ?? Environment.GetEnvironmentVariable("BUILD_SERVER")))
             {
                 var appPath = Environment.GetCommandLineArgs()[0];
                 var appDirectory = Path.GetDirectoryName(appPath);
