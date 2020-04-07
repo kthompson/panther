@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
@@ -66,6 +67,19 @@ namespace Panther
             _showTree = !_showTree;
             Console.WriteLine(_showTree ? "Showing parse trees." : "Not showing parse trees.");
             return;
+        }
+
+        [MetaCommand("load", "Load a panther script file")]
+        private void MetaLoad(string path)
+        {
+            if (!File.Exists(path))
+            {
+                WriteError("error: file does not exist");
+                return;
+            }
+
+            var text = File.ReadAllText(path);
+            EvaluateSubmission(text);
         }
 
         protected override bool IsCompleteSubmission(string text)

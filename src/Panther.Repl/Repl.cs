@@ -426,19 +426,15 @@ namespace Panther
             var diags = lexer.Diagnostics.ToArray();
             if (diags.Any())
             {
-                Console.ForegroundColor = ConsoleColor.Red;
                 foreach (var diag in diags)
-                    Console.Error.WriteLine(diag);
+                    WriteError(diag);
 
-                Console.ResetColor();
                 return;
             }
 
             if (args.Count == 0)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("Invalid command");
-                Console.ResetColor();
+                WriteError("Invalid command");
             }
 
             var commandName = args[0];
@@ -446,9 +442,7 @@ namespace Panther
             var command = _metaCommands.SingleOrDefault(mc => mc.Name == commandName);
             if (command == null)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine($"Invalid command {input}.");
-                Console.ResetColor();
+                WriteError($"Invalid command {input}.");
                 return;
             }
 
@@ -456,14 +450,19 @@ namespace Panther
             if (metaParams.Length != args.Count)
             {
                 var paramsString = string.Join(" ", metaParams.Select(p => $"<{p.Name}>"));
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine($"error: invalid number of arguments for command {args[0]}");
-                Console.Error.WriteLine($"usage: #{args[0]} {paramsString}");
-                Console.ResetColor();
+                WriteError($"error: invalid number of arguments for command {args[0]}");
+                WriteError($"usage: #{args[0]} {paramsString}");
                 return;
             }
 
             command.Method.Invoke(this, args.Select(x => (object)x).ToArray());
+        }
+
+        protected void WriteError(string text)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine(text);
+            Console.ResetColor();
         }
 
         protected abstract bool IsCompleteSubmission(string text);
