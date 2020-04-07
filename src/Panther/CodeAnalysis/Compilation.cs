@@ -16,6 +16,9 @@ namespace Panther.CodeAnalysis
         private readonly IBuiltins _builtins;
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+        public ImmutableArray<FunctionSymbol> Functions => GlobalScope.Functions;
+        public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
+
         private BoundGlobalScope? _globalScope;
 
         internal BoundGlobalScope GlobalScope
@@ -33,7 +36,7 @@ namespace Panther.CodeAnalysis
         }
 
         public Compilation(params SyntaxTree[] syntaxTree)
-            : this((IBuiltins?) null, syntaxTree)
+            : this((IBuiltins?)null, syntaxTree)
         {
         }
 
@@ -52,6 +55,23 @@ namespace Panther.CodeAnalysis
             _builtins = builtins ?? Builtins.Default;
             Previous = previous;
             SyntaxTrees = syntaxTrees.ToImmutableArray();
+        }
+
+        public IEnumerable<Symbol> GetSymbols()
+        {
+            Compilation? compilation = this;
+            var symbolNames = new HashSet<string>();
+
+            while (compilation != null)
+            {
+                foreach (var function in compilation.Functions.Where(function => symbolNames.Add(function.Name)))
+                    yield return function;
+
+                foreach (var variable in compilation.Variables.Where(variable => symbolNames.Add(variable.Name)))
+                    yield return variable;
+
+                compilation = compilation.Previous;
+            }
         }
 
         public Compilation ContinueWith(SyntaxTree syntaxTree) => new Compilation(this, this._builtins, syntaxTree);

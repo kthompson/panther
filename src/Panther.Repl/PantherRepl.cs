@@ -82,6 +82,19 @@ namespace Panther
             EvaluateSubmission(text);
         }
 
+        [MetaCommand("dump", "Dump the symbols")]
+        private void MetaDumpSymbols()
+        {
+            if (_previous == null)
+                return;
+
+            foreach (var symbol in _previous.GetSymbols().OrderBy(s => s.Kind).ThenBy(s => s.Name))
+            {
+                symbol.WriteTo(Console.Out);
+                Console.WriteLine();
+            }
+        }
+
         protected override bool IsCompleteSubmission(string text)
         {
             if (string.IsNullOrEmpty(text))
