@@ -341,6 +341,7 @@ namespace Panther.CodeAnalysis.Binding
                 TypeSymbol.Int,
                 TypeSymbol.Bool,
                 TypeSymbol.String,
+                TypeSymbol.Unit,
             };
 
             return types.FirstOrDefault(type => type.Name == text);
