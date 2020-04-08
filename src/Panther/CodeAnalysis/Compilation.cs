@@ -136,5 +136,16 @@ namespace Panther.CodeAnalysis
                 }
             }
         }
+
+        public void EmitTree(FunctionSymbol function, TextWriter writer)
+        {
+            var program = Binder.BindProgram(GlobalScope);
+
+            if (!program.Functions.TryGetValue(function, out var block))
+                return;
+
+            function.WriteTo(writer);
+            block.WriteTo(writer);
+        }
     }
 }

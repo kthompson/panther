@@ -100,6 +100,7 @@ internal class Build : NukeBuild
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetResultsDirectory(TestResultDirectory)
+                .SetEnvironmentVariable("BUILD_SERVER", "true")
                 .When(InvokedTargets.Contains(Coverage) || IsServerBuild, _ => _
                     .EnableCollectCoverage()
                     .SetCoverletOutputFormat(CoverletOutputFormat.cobertura)
