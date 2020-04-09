@@ -83,8 +83,6 @@ namespace Panther.IO
                 var endLine = diagnostic.Location.EndLine + 1;
                 var endCharacter = diagnostic.Location.EndCharacter + 1;
 
-                var lineIndex = text.GetLineIndex(diagnostic.Span.Start);
-                var line = text.Lines[lineIndex];
 
                 writer.WriteLine();
 
@@ -93,23 +91,34 @@ namespace Panther.IO
                 writer.WriteLine(diagnostic);
                 writer.ResetColor();
 
-                var prefixSpan = TextSpan.FromBounds(line.Start, diagnostic.Span.Start);
-                var suffixSpan = TextSpan.FromBounds(diagnostic.Span.End, line.End);
+                for (int currentLine = diagnostic.Location.StartLine; currentLine <= diagnostic.Location.EndLine; currentLine++)
+                {
+                    var line = text.Lines[currentLine];
+                    var startInCurrentLine = text.GetLineIndex(diagnostic.Span.Start) == currentLine;
+                    var endInCurrentLine = text.GetLineIndex(diagnostic.Span.End) == currentLine;
 
-                var prefix = text.ToString(prefixSpan);
-                var error = text.ToString(diagnostic.Span);
-                var suffix = text.ToString(suffixSpan);
+                    var prefixEnd = startInCurrentLine ? diagnostic.Span.Start : line.Start;
+                    var suffixStart = endInCurrentLine ? diagnostic.Span.End : line.End;
 
-                writer.Write("    ");
-                writer.Write(prefix);
+                    var prefixSpan = TextSpan.FromBounds(line.Start, prefixEnd);
+                    var errorSpan = TextSpan.FromBounds(prefixEnd, suffixStart);
+                    var suffixSpan = TextSpan.FromBounds(suffixStart, line.End);
 
-                writer.SetForeground(ConsoleColor.DarkRed);
-                writer.Write(error);
-                writer.ResetColor();
+                    var prefix = text.ToString(prefixSpan);
+                    var error = text.ToString(errorSpan);
+                    var suffix = text.ToString(suffixSpan);
 
-                writer.Write(suffix);
+                    writer.Write("  ");
+                    writer.Write(prefix);
 
-                writer.WriteLine();
+                    writer.SetForeground(ConsoleColor.DarkRed);
+                    writer.Write(error);
+                    writer.ResetColor();
+
+                    writer.Write(suffix);
+
+                    writer.WriteLine();
+                }
             }
         }
     }
