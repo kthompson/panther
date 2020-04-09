@@ -475,7 +475,7 @@ namespace Panther
                 var paddedName = metaCommand.Name.PadRight(maxNameLength);
 
                 Console.Out.WritePunctuation("#");
-                Console.Out.WriteIdentifer(paddedName);
+                Console.Out.WriteIdentifier(paddedName);
                 Console.Out.WritePunctuation($"  {metaCommand.Description}");
                 Console.Out.WriteLine();
             }

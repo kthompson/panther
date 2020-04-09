@@ -96,7 +96,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteAssignmentExpression(BoundAssignmentExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifer(node.Variable.Name);
+            writer.WriteIdentifier(node.Variable.Name);
             writer.WritePunctuation(" = ");
             node.Expression.WriteTo(writer);
         }
@@ -121,14 +121,14 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteVariableExpression(BoundVariableExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifer(node.Variable.Name);
+            writer.WriteIdentifier(node.Variable.Name);
         }
 
         private static void WriteForExpression(BoundForExpression node, IndentedTextWriter writer)
         {
             writer.WriteKeyword("for ");
             writer.WritePunctuation("(");
-            writer.WriteIdentifer(node.Variable.Name);
+            writer.WriteIdentifier(node.Variable.Name);
             writer.WritePunctuation(" <- ");
             node.LowerBound.WriteTo(writer);
             writer.WriteKeyword(" to ");
@@ -157,7 +157,7 @@ namespace Panther.CodeAnalysis.Binding
         private static void WriteVariableDeclarationStatement(BoundVariableDeclarationStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
-            writer.WriteIdentifer(node.Variable.Name);
+            writer.WriteIdentifier(node.Variable.Name);
             writer.WritePunctuation(" = ");
             node.Expression.WriteTo(writer);
             writer.WriteLine();
@@ -165,7 +165,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteCallExpression(BoundCallExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifer(node.Function.Name);
+            writer.WriteIdentifier(node.Function.Name);
             writer.WritePunctuation("(");
             var iterator = node.Arguments.GetEnumerator();
             if (iterator.MoveNext())
@@ -220,14 +220,14 @@ namespace Panther.CodeAnalysis.Binding
         private static void WriteGotoStatement(BoundGotoStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword("goto ");
-            writer.WriteIdentifer(node.BoundLabel.Name);
+            writer.WriteIdentifier(node.BoundLabel.Name);
             writer.WriteLine();
         }
 
         private static void WriteConditionalGotoStatement(BoundConditionalGotoStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword("goto ");
-            writer.WriteIdentifer(node.BoundLabel.Name);
+            writer.WriteIdentifier(node.BoundLabel.Name);
             writer.WriteKeyword(node.JumpIfTrue ? " if " : " unless ");
             node.Condition.WriteTo(writer);
             writer.WriteLine();
@@ -313,7 +313,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteConversionExpression(BoundConversionExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifer(node.Type.Name);
+            writer.WriteIdentifier(node.Type.Name);
             writer.WritePunctuation("(");
             node.Expression.WriteTo(writer);
             writer.WritePunctuation(")");

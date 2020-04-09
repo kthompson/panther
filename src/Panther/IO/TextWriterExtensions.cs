@@ -58,7 +58,7 @@ namespace Panther.IO
             writer.ResetColor();
         }
 
-        public static void WriteIdentifer(this TextWriter writer, string text)
+        public static void WriteIdentifier(this TextWriter writer, string text)
         {
             writer.SetForeground(ConsoleColor.DarkYellow);
             writer.Write(text);

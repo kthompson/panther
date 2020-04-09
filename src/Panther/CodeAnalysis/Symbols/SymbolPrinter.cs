@@ -32,20 +32,20 @@ namespace Panther.CodeAnalysis.Symbols
 
         private static void WriteTypeSymbol(TypeSymbol symbol, TextWriter writer)
         {
-            writer.WriteIdentifer(symbol.Name);
+            writer.WriteIdentifier(symbol.Name);
         }
 
         private static void WriteLocalVariableSymbol(LocalVariableSymbol symbol, TextWriter writer)
         {
             writer.WriteKeyword(symbol.IsReadOnly ? "val " : "var ");
-            writer.WriteIdentifer(symbol.Name);
+            writer.WriteIdentifier(symbol.Name);
             writer.WritePunctuation(": ");
             symbol.Type.WriteTo(writer);
         }
 
         private static void WriteParameterSymbol(ParameterSymbol symbol, TextWriter writer)
         {
-            writer.WriteIdentifer(symbol.Name);
+            writer.WriteIdentifier(symbol.Name);
             writer.WritePunctuation(" : ");
             symbol.Type.WriteTo(writer);
         }
@@ -53,7 +53,7 @@ namespace Panther.CodeAnalysis.Symbols
         private static void WriteGlobalVariableSymbol(GlobalVariableSymbol symbol, TextWriter writer)
         {
             writer.WriteKeyword(symbol.IsReadOnly ? "val " : "var ");
-            writer.WriteIdentifer(symbol.Name);
+            writer.WriteIdentifier(symbol.Name);
             writer.WritePunctuation(": ");
             symbol.Type.WriteTo(writer);
         }
@@ -61,7 +61,7 @@ namespace Panther.CodeAnalysis.Symbols
         private static void WriteFunctionSymbol(FunctionSymbol symbol, TextWriter writer)
         {
             writer.WriteKeyword("def ");
-            writer.WriteIdentifer(symbol.Name);
+            writer.WriteIdentifier(symbol.Name);
             writer.WritePunctuation("(");
 
             var enumerator = symbol.Parameters.GetEnumerator();
