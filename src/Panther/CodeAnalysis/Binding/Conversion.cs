@@ -12,7 +12,7 @@ namespace Panther.CodeAnalysis.Binding
         public bool Exists { get; }
         public bool IsIdentity { get; }
         public bool IsImplicit { get; }
-        public bool IsExplicit => Exists && !IsIdentity;
+        public bool IsExplicit => Exists && !IsImplicit;
 
         private Conversion(bool exists, bool isIdentity, bool isImplicit)
         {
