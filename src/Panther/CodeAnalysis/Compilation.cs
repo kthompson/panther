@@ -8,6 +8,7 @@ using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.IO;
 
 namespace Panther.CodeAnalysis
 {
@@ -135,6 +136,8 @@ namespace Panther.CodeAnalysis
                         continue;
 
                     functionBody.Key.WriteTo(writer);
+                    writer.WritePunctuation(" = ");
+                    writer.WriteLine();
                     functionBody.Value.WriteTo(writer);
                 }
             }
@@ -142,13 +145,26 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(FunctionSymbol function, TextWriter writer)
         {
-            var program = GetProgram();
+            BoundProgram? program = GetProgram();
 
-            if (!program.Functions.TryGetValue(function, out var block))
-                return;
+            while (program != null)
+            {
+                if (program.Functions.TryGetValue(function, out var block))
+                {
+
+                    function.WriteTo(writer);
+                    writer.WritePunctuation(" = ");
+                    writer.WriteLine();
+                    block.WriteTo(writer);
+
+                    return;
+                }
+
+                program = program.Previous;
+            }
 
             function.WriteTo(writer);
-            block.WriteTo(writer);
+
         }
     }
 }

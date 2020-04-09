@@ -185,6 +185,14 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteBlockExpression(BoundBlockExpression node, IndentedTextWriter writer)
         {
+            if (node.Statements.Length == 0)
+            {
+                writer.Write("    ");
+                node.Expression.WriteTo(writer);
+                writer.WriteLine();
+                return;
+            }
+
             writer.WritePunctuation("{");
             writer.WriteLine();
             writer.Indent++;

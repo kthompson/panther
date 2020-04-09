@@ -78,8 +78,6 @@ namespace Panther.CodeAnalysis.Symbols
 
             writer.WritePunctuation("): ");
             symbol.ReturnType.WriteTo(writer);
-            writer.WritePunctuation(" = ");
-            writer.WriteLine();
         }
     }
 }
