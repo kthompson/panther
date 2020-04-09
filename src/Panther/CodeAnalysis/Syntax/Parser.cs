@@ -139,8 +139,12 @@ namespace Panther.CodeAnalysis.Syntax
 
         private void NextToken()
         {
-            var pos = _tokenPosition++;
-            TokenFromPosition(ref _tokenPosition);
+            // get position of current token
+            var pos = _tokenPosition;
+            TokenFromPosition(ref pos);
+
+            // set next position to pos + 1
+            _tokenPosition = pos + 1;
         }
 
         private SyntaxToken Accept()
@@ -261,6 +265,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             while (CurrentToken.Kind != SyntaxKind.EndOfInputToken)
             {
+                var currentToken = CurrentToken;
                 var arg = ParseParameter();
                 items.Add(arg);
 
@@ -269,6 +274,10 @@ namespace Panther.CodeAnalysis.Syntax
 
                 var comma = Accept(SyntaxKind.CommaToken);
                 items.Add(comma);
+                if (CurrentToken == currentToken)
+                {
+                    NextToken();
+                }
             }
 
             return new SeparatedSyntaxList<ParameterSyntax>(items.ToImmutable());
