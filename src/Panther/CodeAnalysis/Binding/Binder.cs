@@ -139,14 +139,7 @@ namespace Panther.CodeAnalysis.Binding
             if (_isScript && isGlobal)
                 return statement;
 
-            if (!(statement is BoundExpressionStatement es))
-                return statement;
-
-            var exprKind = es.Expression.Kind;
-            var isAllowed = exprKind == BoundNodeKind.ErrorExpression ||
-                            exprKind == BoundNodeKind.AssignmentExpression ||
-                            exprKind == BoundNodeKind.CallExpression;
-
+            var isAllowed = IsSideEffectStatement(statement);
             if (!isAllowed)
             {
                 var exprStatementSyntax = (ExpressionStatementSyntax) syntax;
@@ -154,6 +147,44 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             return statement;
+        }
+
+        private static bool IsSideEffectStatement(BoundStatement statement)
+        {
+            if (statement is BoundExpressionStatement es)
+                return IsSideEffectExpression(es.Expression);
+
+            return true;
+        }
+
+        private static bool IsSideEffectExpression(BoundExpression expression)
+        {
+            var exprKind = expression.Kind;
+
+            if (expression is BoundWhileExpression boundWhileExpression)
+            {
+                return IsSideEffectExpression(boundWhileExpression.Body);
+            }
+
+            if (expression is BoundForExpression boundForExpression)
+            {
+                return IsSideEffectExpression(boundForExpression.Body);
+            }
+
+            if (expression is BoundIfExpression boundIfExpression)
+            {
+                return IsSideEffectExpression(boundIfExpression.Then) || IsSideEffectExpression(boundIfExpression.Else);
+            }
+
+            if (expression is BoundBlockExpression blockExpression)
+            {
+                return blockExpression.Statements.Any(IsSideEffectStatement) ||
+                       IsSideEffectExpression(blockExpression.Expression);
+            }
+
+            return exprKind == BoundNodeKind.ErrorExpression ||
+                   exprKind == BoundNodeKind.AssignmentExpression ||
+                   exprKind == BoundNodeKind.CallExpression;
         }
 
         private BoundStatement BindStatementInternal(StatementSyntax syntax, BoundScope scope) =>
