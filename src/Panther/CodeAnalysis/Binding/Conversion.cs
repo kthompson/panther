@@ -1,4 +1,5 @@
 ﻿using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -25,6 +26,12 @@ namespace Panther.CodeAnalysis.Binding
         {
             if (from == to)
                 return Identity;
+
+            if (to == TypeSymbol.Any)
+                return Implicit;
+
+            if (from == TypeSymbol.Any)
+                return Explicit;
 
             if ((from == TypeSymbol.Bool || from == TypeSymbol.Int) && to == TypeSymbol.String)
                 return Explicit;

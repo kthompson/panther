@@ -322,9 +322,6 @@ namespace Panther.CodeAnalysis.Binding
             if (syntax.Arguments.Count == 1 && LookupType(syntax.IdentifierToken.Text) is { } type)
                 return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
 
-            var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
-            var argTypes = boundArguments.Select(argument => argument.Type).ToImmutableArray();
-
             if (!scope.TryLookup(syntax.IdentifierToken.Text, out var symbol))
             {
                 Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
@@ -337,31 +334,31 @@ namespace Panther.CodeAnalysis.Binding
                 return BoundErrorExpression.Default;
             }
 
+            var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
             if (syntax.Arguments.Count != function.Parameters.Length)
             {
+                var argTypes = boundArguments.Select(argument => argument.Type).ToImmutableArray();
                 Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
                 return BoundErrorExpression.Default;
             }
 
+            var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
             for (int i = 0; i < syntax.Arguments.Count; i++)
             {
                 var argument = boundArguments[i];
                 var parameter = function.Parameters[i];
-
-                if (argument.Type != parameter.Type)
-                {
-                    Diagnostics.ReportArgumentTypeMismatch(syntax.Arguments[i].Location, parameter.Name, parameter.Type, argument.Type);
-                    return BoundErrorExpression.Default;
-                }
+                var convertedArgument = BindConversion(syntax.Arguments[i].Location, argument, parameter.Type);
+                convertedArgs.Add(convertedArgument);
             }
 
-            return new BoundCallExpression(function, boundArguments.ToImmutableArray());
+            return new BoundCallExpression(function, convertedArgs.ToImmutable());
         }
 
         private TypeSymbol? LookupType(string text)
         {
             var types = new[]
             {
+                TypeSymbol.Any,
                 TypeSymbol.Int,
                 TypeSymbol.Bool,
                 TypeSymbol.String,

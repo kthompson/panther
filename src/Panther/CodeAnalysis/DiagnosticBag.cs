@@ -81,9 +81,6 @@ namespace Panther.CodeAnalysis
         public void ReportUndefinedType(TextLocation location, string name) =>
             Report(location, $"Type '{name}' is not defined");
 
-        public void ReportArgumentTypeMismatch(TextLocation location, string parameterName, TypeSymbol expectedType, TypeSymbol actualType) =>
-            Report(location, $"Argument {parameterName}, type mismatch. Expected '{expectedType}', found '{actualType}'");
-
         public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName) =>
             Report(location, $"Function parameter '{parameterName}' was already declared");
 

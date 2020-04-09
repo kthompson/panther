@@ -137,6 +137,9 @@ namespace Panther.CodeAnalysis
         {
             var value = EvaluateExpression(conversionExpression.Expression);
 
+            if (conversionExpression.Type == TypeSymbol.Any)
+                return value;
+
             if (conversionExpression.Type == TypeSymbol.String)
             {
                 return Convert.ToString(value);
