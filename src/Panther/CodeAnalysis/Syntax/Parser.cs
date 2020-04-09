@@ -210,7 +210,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<MemberSyntax> ParseMembers()
         {
             var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-
+            SkipNewLines();
             while (CurrentToken.Kind != SyntaxKind.EndOfInputToken)
             {
                 var startToken = CurrentToken;
@@ -218,6 +218,7 @@ namespace Panther.CodeAnalysis.Syntax
                 var member = ParseMember();
                 members.Add(member);
 
+                SkipNewLines();
                 if (CurrentToken == startToken)
                     NextToken();
             }
