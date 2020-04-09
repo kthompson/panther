@@ -98,5 +98,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportNotAFunction(TextLocation location, string name) =>
             Report(location, $"Variable '{name}' is not a function");
+
+        public void ReportInvalidExpressionStatement(TextLocation location) =>
+            Report(location, $"Only call, or assignment expressions can be used as a statement");
     }
 }

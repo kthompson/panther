@@ -12,13 +12,19 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class Binder
     {
+        private readonly bool _isScript;
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
 
-        public static BoundGlobalScope BindGlobalScope(BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees)
+        public Binder(bool isScript)
+        {
+            _isScript = isScript;
+        }
+
+        public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees)
         {
             var parentScope = CreateParentScope(previous);
             var scope = new BoundScope(parentScope, function: null);
-            var binder = new Binder();
+            var binder = new Binder(isScript);
 
             var functionDeclarations =
                 from tree in syntaxTrees
@@ -36,7 +42,7 @@ namespace Panther.CodeAnalysis.Binding
             var statements = ImmutableArray.CreateBuilder<BoundStatement>();
             foreach (var globalStatementSyntax in globalStatements)
             {
-                var boundStatement = binder.BindStatement(globalStatementSyntax.Statement, scope);
+                var boundStatement = binder.BindGlobalStatement(globalStatementSyntax.Statement, scope);
                 statements.Add(boundStatement);
             }
 
@@ -52,9 +58,9 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundGlobalScope(previous, diagnostics, variables, functions, statements.ToImmutable());
         }
 
-        public static BoundProgram BindProgram(BoundProgram previous, BoundGlobalScope globalScope)
+        public static BoundProgram BindProgram(bool isScript, BoundProgram previous, BoundGlobalScope globalScope)
         {
-            var binder = new Binder();
+            var binder = new Binder(isScript);
             var parentScope = CreateParentScope(globalScope);
 
             var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
@@ -123,7 +129,34 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private BoundStatement BindStatement(StatementSyntax syntax, BoundScope scope) =>
+        private BoundStatement BindGlobalStatement(StatementSyntax syntax, BoundScope scope) =>
+            BindStatement(syntax, scope, true);
+
+        private BoundStatement BindStatement(StatementSyntax syntax, BoundScope scope, bool isGlobal = false)
+        {
+            var statement = BindStatementInternal(syntax, scope);
+
+            if (_isScript && isGlobal)
+                return statement;
+
+            if (!(statement is BoundExpressionStatement es))
+                return statement;
+
+            var exprKind = es.Expression.Kind;
+            var isAllowed = exprKind == BoundNodeKind.ErrorExpression ||
+                            exprKind == BoundNodeKind.AssignmentExpression ||
+                            exprKind == BoundNodeKind.CallExpression;
+
+            if (!isAllowed)
+            {
+                var exprStatementSyntax = (ExpressionStatementSyntax) syntax;
+                Diagnostics.ReportInvalidExpressionStatement(exprStatementSyntax.Expression.Location);
+            }
+
+            return statement;
+        }
+
+        private BoundStatement BindStatementInternal(StatementSyntax syntax, BoundScope scope) =>
             syntax switch
             {
                 ExpressionStatementSyntax expressionStatementSyntax => BindExpressionStatement(expressionStatementSyntax, scope),
@@ -153,28 +186,6 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             return new BoundGotoStatement(label);
-        }
-
-        private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope)
-        {
-            var boundExpression = BindExpression(syntax.Expression, scope);
-
-            if (!scope.TryLookupVariable(syntax.IdentifierToken.Text, out var variable))
-            {
-                Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-
-                return BoundErrorExpression.Default;
-            }
-
-            if (variable.IsReadOnly)
-            {
-                Diagnostics.ReportReassignmentToVal(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-                return BoundErrorExpression.Default;
-            }
-
-            var convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
-
-            return new BoundAssignmentExpression(variable, convertedExpression);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
@@ -229,9 +240,8 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundExpressionStatement(expression.Type == TypeSymbol.Error ? BoundErrorExpression.Default : expression);
         }
 
-        private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope)
-        {
-            return syntax switch
+        private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope) =>
+            syntax switch
             {
                 BreakExpressionSyntax breakStatementSyntax => BindStatementToExpression(BindBreakStatement(breakStatementSyntax, scope)),
                 ContinueExpressionSyntax continueStatementSyntax => BindStatementToExpression(BindContinueStatement(continueStatementSyntax, scope)),
@@ -249,6 +259,27 @@ namespace Panther.CodeAnalysis.Binding
                 UnitExpressionSyntax unit => BindUnitExpression(),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
+
+        private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope)
+        {
+            var boundExpression = BindExpression(syntax.Expression, scope);
+
+            if (!scope.TryLookupVariable(syntax.IdentifierToken.Text, out var variable))
+            {
+                Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
+
+                return BoundErrorExpression.Default;
+            }
+
+            if (variable.IsReadOnly)
+            {
+                Diagnostics.ReportReassignmentToVal(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
+                return BoundErrorExpression.Default;
+            }
+
+            var convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
+
+            return new BoundAssignmentExpression(variable, convertedExpression);
         }
 
         // hack to convert a statement into an expression

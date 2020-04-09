@@ -28,7 +28,7 @@ namespace Panther.Tests.CodeAnalysis
         {
             var annotatedText = AnnotatedText.Parse(text);
             var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
-            var compilation = new Compilation(builtins ?? new TestBuiltins(), syntaxTree);
+            var compilation = Compilation.CreateScript(null, builtins ?? new TestBuiltins(), syntaxTree);
             var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
             var expectedDiagnosticMessages = AnnotatedText.UnindentLines(diagnosticText);
 
@@ -76,7 +76,7 @@ namespace Panther.Tests.CodeAnalysis
             dictionary ??= new Dictionary<VariableSymbol, object>();
             var tree = SyntaxTree.Parse(code);
             Assert.Empty(tree.Diagnostics);
-            var compilation = previous == null ? new Compilation(builtins ?? new TestBuiltins(), tree) : previous.ContinueWith(tree);
+            var compilation = Compilation.CreateScript(previous, builtins ?? new TestBuiltins(), tree);
 
             result = compilation.Evaluate(dictionary);
 

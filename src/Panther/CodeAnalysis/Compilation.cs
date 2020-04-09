@@ -14,6 +14,7 @@ namespace Panther.CodeAnalysis
     public class Compilation
     {
         private readonly IBuiltins _builtins;
+        public bool IsScript { get; }
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
         public ImmutableArray<FunctionSymbol> Functions => GlobalScope.Functions;
@@ -27,7 +28,7 @@ namespace Panther.CodeAnalysis
             {
                 if (_globalScope == null)
                 {
-                    var globalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTrees);
+                    var globalScope = Binder.BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees);
                     Interlocked.CompareExchange(ref _globalScope, globalScope, null);
                 }
 
@@ -35,27 +36,25 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public Compilation(params SyntaxTree[] syntaxTree)
-            : this((IBuiltins?)null, syntaxTree)
-        {
-        }
-
-        public Compilation(IBuiltins? builtins, params SyntaxTree[] syntaxTree)
-            : this(null, builtins, syntaxTree)
-        {
-        }
-
-        private Compilation(Compilation? previous, params SyntaxTree[] syntaxTrees)
-            : this(previous, null, syntaxTrees)
-        {
-        }
-
-        private Compilation(Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees)
+        private Compilation(bool isScript, Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees)
         {
             _builtins = builtins ?? Builtins.Default;
+            IsScript = isScript;
             Previous = previous;
             SyntaxTrees = syntaxTrees.ToImmutableArray();
         }
+
+        public static Compilation Create(params SyntaxTree[] syntaxTrees) =>
+            Create(null, syntaxTrees);
+
+        public static Compilation Create(IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
+            new Compilation(false, null, null, syntaxTrees);
+
+        public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees) =>
+            CreateScript(previous, previous?._builtins, syntaxTrees);
+
+        public static Compilation CreateScript(Compilation previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
+            new Compilation(isScript: true, previous, builtins, syntaxTrees);
 
         public IEnumerable<Symbol> GetSymbols()
         {
@@ -73,8 +72,6 @@ namespace Panther.CodeAnalysis
                 compilation = compilation.Previous;
             }
         }
-
-        public Compilation ContinueWith(SyntaxTree syntaxTree) => new Compilation(this, this._builtins, syntaxTree);
 
         public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
         {
@@ -119,7 +116,7 @@ namespace Panther.CodeAnalysis
         private BoundProgram GetProgram()
         {
             var previous = this.Previous?.GetProgram();
-            return Binder.BindProgram(previous, GlobalScope);
+            return Binder.BindProgram(IsScript, previous, GlobalScope);
         }
 
         public void EmitTree(TextWriter writer)
