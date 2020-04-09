@@ -91,7 +91,7 @@ namespace Panther.CodeAnalysis
                 return new EvaluationResult(diagnostics, null);
             }
 
-            var program = Binder.BindProgram(GlobalScope);
+            var program = GetProgram();
 
             // temp hack for CI/NCRUNCH to not break
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NCRUNCH") ?? Environment.GetEnvironmentVariable("BUILD_SERVER")))
@@ -116,9 +116,15 @@ namespace Panther.CodeAnalysis
             return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
         }
 
+        private BoundProgram GetProgram()
+        {
+            var previous = this.Previous?.GetProgram();
+            return Binder.BindProgram(previous, GlobalScope);
+        }
+
         public void EmitTree(TextWriter writer)
         {
-            var program = Binder.BindProgram(GlobalScope);
+            var program = GetProgram();
 
             if (program.Expression.Statements.Any() || program.Expression.Expression != BoundUnitExpression.Default)
             {
@@ -139,7 +145,7 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(FunctionSymbol function, TextWriter writer)
         {
-            var program = Binder.BindProgram(GlobalScope);
+            var program = GetProgram();
 
             if (!program.Functions.TryGetValue(function, out var block))
                 return;

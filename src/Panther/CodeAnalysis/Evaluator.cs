@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis
 {
@@ -11,6 +12,9 @@ namespace Panther.CodeAnalysis
     {
         private readonly BoundProgram _program;
         private readonly Dictionary<VariableSymbol, object> _globals;
+
+        private readonly Dictionary<FunctionSymbol, BoundBlockExpression> _functions =
+            new Dictionary<FunctionSymbol, BoundBlockExpression>();
         private readonly Stack<Dictionary<VariableSymbol, object>> _locals = new Stack<Dictionary<VariableSymbol, object>>();
         private readonly IBuiltins _builtins;
         private readonly Random _random = new Random();
@@ -22,6 +26,18 @@ namespace Panther.CodeAnalysis
             _globals = globals;
             _builtins = builtins;
             _locals.Push(new Dictionary<VariableSymbol, object>());
+
+            var p = program;
+
+            while (p != null)
+            {
+                foreach (var (key, value) in p.Functions)
+                {
+                    _functions.Add(key, value);
+                }
+
+                p = p.Previous;
+            }
         }
 
         public object? Evaluate() => EvaluateBlockExpression(_program.Expression);
@@ -225,7 +241,7 @@ namespace Panther.CodeAnalysis
 
             _locals.Push(locals);
 
-            var expression = _program.Functions[node.Function];
+            var expression = _functions[node.Function];
             var result = EvaluateExpression(expression);
 
             _locals.Pop();

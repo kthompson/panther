@@ -52,39 +52,32 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundGlobalScope(previous, diagnostics, variables, functions, statements.ToImmutable());
         }
 
-        public static BoundProgram BindProgram(BoundGlobalScope globalScope)
+        public static BoundProgram BindProgram(BoundProgram previous, BoundGlobalScope globalScope)
         {
             var binder = new Binder();
             var parentScope = CreateParentScope(globalScope);
 
             var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
 
-            BoundGlobalScope? scope = globalScope;
-
-            while (scope != null)
+            foreach (var function in globalScope.Functions)
             {
-                foreach (var function in scope.Functions)
+                var functionScope = new BoundScope(parentScope, function);
+
+                var body = binder.BindExpression(function.Declaration.Body, functionScope);
+
+                var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body));
+
+                if (function.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
                 {
-                    var functionScope = new BoundScope(parentScope, function);
-
-                    var body = binder.BindExpression(function.Declaration.Body, functionScope);
-
-                    var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body));
-
-                    if (function.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
-                    {
-                        binder.Diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
-                    }
-
-                    functionBodies.Add(function, loweredBody);
+                    binder.Diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
                 }
 
-                scope = scope.Previous;
+                functionBodies.Add(function, loweredBody);
             }
 
             var statement = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
 
-            return new BoundProgram(binder.Diagnostics.ToImmutableArray(), functionBodies.ToImmutable(), statement);
+            return new BoundProgram(previous, binder.Diagnostics.ToImmutableArray(), functionBodies.ToImmutable(), statement);
         }
 
         private static BoundExpressionStatement BoundStatementFromStatements(IReadOnlyCollection<BoundStatement> statements)

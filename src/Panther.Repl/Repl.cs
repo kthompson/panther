@@ -90,10 +90,7 @@ namespace Panther
                     Console.SetCursorPosition(0, _cursorTop + lineCount);
                     Console.ForegroundColor = ConsoleColor.Green;
 
-                    if (lineCount == 0)
-                        Console.Write("» ");
-                    else
-                        Console.Write("· ");
+                    Console.Write(lineCount == 0 ? "» " : "· ");
 
                     Console.ResetColor();
                     _lineRenderer(line);
