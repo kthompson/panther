@@ -40,7 +40,16 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public object? Evaluate() => EvaluateBlockExpression(_program.Expression);
+        public object? Evaluate()
+        {
+            var function = _program.MainFunction ?? _program.ScriptFunction;
+
+            if (function == null)
+                return null;
+
+            var body = _functions[function];
+            return EvaluateBlockExpression(body);
+        }
 
         private object EvaluateBlockExpression(BoundBlockExpression body)
         {

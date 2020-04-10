@@ -18,6 +18,7 @@ namespace Panther.CodeAnalysis
         public bool IsScript { get; }
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+        public FunctionSymbol MainFunction => GlobalScope.MainFunction;
         public ImmutableArray<FunctionSymbol> Functions => GlobalScope.Functions;
         public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
 
@@ -54,7 +55,7 @@ namespace Panther.CodeAnalysis
         public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees) =>
             CreateScript(previous, previous?._builtins, syntaxTrees);
 
-        public static Compilation CreateScript(Compilation previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
+        public static Compilation CreateScript(Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
             new Compilation(isScript: true, previous, builtins, syntaxTrees);
 
         public IEnumerable<Symbol> GetSymbols()
@@ -91,19 +92,15 @@ namespace Panther.CodeAnalysis
 
             var program = GetProgram();
 
-            // temp hack for CI/NCRUNCH to not break
-            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NCRUNCH") ?? Environment.GetEnvironmentVariable("BUILD_SERVER")))
-            {
-                var appPath = Environment.GetCommandLineArgs()[0];
-                var appDirectory = Path.GetDirectoryName(appPath);
-                var cfgPath = Path.Combine(appDirectory, "cfg.dot");
-                var cfgExpression = !program.Expression.Statements.Any() && program.Functions.Any()
-                    ? program.Functions.Last().Value
-                    : program.Expression;
-                var cfg = ControlFlowGraph.Create(cfgExpression);
-                using var stream = new StreamWriter(cfgPath);
-                cfg.WriteTo(stream);
-            }
+            // var appPath = Environment.GetCommandLineArgs()[0];
+            // var appDirectory = Path.GetDirectoryName(appPath);
+            // var cfgPath = Path.Combine(appDirectory, "cfg.dot");
+            // var cfgExpression = !program.Expression.Statements.Any() && program.Functions.Any()
+            //     ? program.Functions.Last().Value
+            //     : program.Expression;
+            // var cfg = ControlFlowGraph.Create(cfgExpression);
+            // using var stream = new StreamWriter(cfgPath);
+            // cfg.WriteTo(stream);
 
             if (program.Diagnostics.Any())
                 return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
@@ -122,24 +119,13 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(TextWriter writer)
         {
-            var program = GetProgram();
-
-            if (program.Expression.Statements.Any() || program.Expression.Expression != BoundUnitExpression.Default)
+            if (GlobalScope.MainFunction != null)
             {
-                program.Expression.WriteTo(writer);
+                EmitTree(GlobalScope.MainFunction, writer);
             }
-            else
+            else if (GlobalScope.ScriptFunction != null)
             {
-                foreach (var functionBody in program.Functions)
-                {
-                    if (!GlobalScope.Functions.Contains(functionBody.Key))
-                        continue;
-
-                    functionBody.Key.WriteTo(writer);
-                    writer.WritePunctuation(" = ");
-                    writer.WriteLine();
-                    functionBody.Value.WriteTo(writer);
-                }
+                EmitTree(GlobalScope.ScriptFunction, writer);
             }
         }
 

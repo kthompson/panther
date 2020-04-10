@@ -1,2 +1,7 @@
-﻿val name = getName()
-print("Hello " + name + "!")
+﻿
+
+
+def main() = {
+    val name = getName()
+    print("Hello " + name + "!")
+}

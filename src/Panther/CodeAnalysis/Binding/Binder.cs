@@ -35,19 +35,22 @@ namespace Panther.CodeAnalysis.Binding
                 binder.BindFunctionDeclaration(function, scope);
 
             var globalStatements =
+            (
                 from tree in syntaxTrees
                 from function in tree.Root.Members.OfType<GlobalStatementSyntax>()
-                select function;
+                select function
+            ).ToImmutableArray();
 
-            var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-            foreach (var globalStatementSyntax in globalStatements)
-            {
-                var boundStatement = binder.BindGlobalStatement(globalStatementSyntax.Statement, scope);
-                statements.Add(boundStatement);
-            }
+            var statements =
+                globalStatements
+                    .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, scope))
+                    .ToImmutableArray();
+
+            var functions = scope.GetDeclaredFunctions();
+            
+            BindMainFunctions(isScript, syntaxTrees, globalStatements, functions, binder, out var mainFunction, out var scriptFunction);
 
             var variables = scope.GetDeclaredVariables();
-            var functions = scope.GetDeclaredFunctions();
             var diagnostics = binder.Diagnostics.ToImmutableArray();
 
             if (previous != null)
@@ -55,18 +58,76 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
-            return new BoundGlobalScope(previous, diagnostics, variables, functions, statements.ToImmutable());
+            return new BoundGlobalScope(previous, diagnostics, mainFunction,  scriptFunction, variables, functions, statements);
+        }
+
+        private static void BindMainFunctions(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<GlobalStatementSyntax> globalStatements,
+            ImmutableArray<FunctionSymbol> functions, Binder binder, out FunctionSymbol mainFunction, out FunctionSymbol scriptFunction)
+        {
+            if (isScript)
+            {
+                mainFunction = null;
+                scriptFunction = globalStatements.Any()
+                    ? new FunctionSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
+                    : null;
+
+                return;
+            }
+
+            scriptFunction = null;
+            mainFunction = functions.FirstOrDefault(func => func.Name == "main");
+
+            var firstStatementPerSyntaxTree =
+                (from tree in syntaxTrees
+                    let firstStatement = tree.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault()
+                    where firstStatement != null
+                    select firstStatement)
+                .ToImmutableArray();
+            
+            if (mainFunction == null)
+            {
+                // Global statements can only exist in one syntax tree
+                if (firstStatementPerSyntaxTree.Length > 1)
+                {
+                    foreach (var firstStatement2 in firstStatementPerSyntaxTree)
+                    {
+                        binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2.Location);
+                    }
+                }
+
+                mainFunction = new FunctionSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit);
+                return;
+            }
+
+            // main function signature should be correct
+            if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
+            {
+                binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Declaration.Identifier
+                    .Location);
+            }
+
+            // if a main function exists, global statements cannot
+            if (!globalStatements.Any()) 
+                return;
+            
+            binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Declaration.Identifier.Location);
+
+            foreach (var firstStatement1 in firstStatementPerSyntaxTree)
+            {
+                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1.Location);
+            }
         }
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram previous, BoundGlobalScope globalScope)
         {
-            var binder = new Binder(isScript);
             var parentScope = CreateParentScope(globalScope);
 
             var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
-
+            var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+            
             foreach (var function in globalScope.Functions)
             {
+                var binder = new Binder(isScript);
                 var functionScope = new BoundScope(parentScope, function);
 
                 var body = binder.BindExpression(function.Declaration.Body, functionScope);
@@ -79,11 +140,21 @@ namespace Panther.CodeAnalysis.Binding
                 }
 
                 functionBodies.Add(function, loweredBody);
+                diagnostics.AddRange(binder.Diagnostics);
             }
 
-            var statement = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
-
-            return new BoundProgram(previous, binder.Diagnostics.ToImmutableArray(), functionBodies.ToImmutable(), statement);
+            if (globalScope.MainFunction != null && globalScope.Statements.Any())
+            {
+                var body = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
+                functionBodies.Add(globalScope.MainFunction, body);
+            }
+            else if (globalScope.ScriptFunction != null)
+            {
+                var body = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
+                functionBodies.Add(globalScope.ScriptFunction, body);
+            }
+            
+            return new BoundProgram(previous, diagnostics.ToImmutableArray(), globalScope.MainFunction, globalScope.ScriptFunction, functionBodies.ToImmutable());
         }
 
         private static BoundExpressionStatement BoundStatementFromStatements(IReadOnlyCollection<BoundStatement> statements)

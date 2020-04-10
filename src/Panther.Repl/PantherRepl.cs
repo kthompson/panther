@@ -14,7 +14,7 @@ namespace Panther
 {
     internal class PantherRepl : Repl
     {
-        private Compilation _previous;
+        private Compilation? _previous;
         private bool _showTree;
         private bool _showProgram;
         private readonly Dictionary<VariableSymbol, object> _variables = new Dictionary<VariableSymbol, object>();
