@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Nuke.Common" Version="0.24.4" />
-    <PackageDownload Include="ReportGenerator" Version="[4.2.16]" />
+    <PackageDownload Include="ReportGenerator" Version="[4.5.4]" />
     <PackageDownload Include="GitVersion.Tool" Version="[5.1.1]" />
     <PackageDownload Include="OpenCover" Version="[4.7.922]" />
     <PackageDownload Include="xunit.runner.console" Version="[2.4.1]" />

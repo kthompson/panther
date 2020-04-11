@@ -24,14 +24,14 @@ using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
-[AzurePipelines(
+[FixedAzurePipelines(
     suffix: null,
     AzurePipelinesImage.UbuntuLatest,
     AzurePipelinesImage.WindowsLatest,
     AzurePipelinesImage.MacOsLatest,
     InvokedTargets = new[] { nameof(Test) },
     NonEntryTargets = new[] { nameof(Restore) },
-    ExcludedTargets = new[] { nameof(Clean), nameof(Coverage) }
+    ExcludedTargets = new[] { nameof(Clean) }
     )]
 internal class Build : NukeBuild
 {
@@ -52,9 +52,12 @@ internal class Build : NukeBuild
     [GitRepository] private readonly GitRepository GitRepository;
     //[GitVersion] private readonly GitVersion GitVersion;
 
-    private AbsolutePath SourceDirectory => RootDirectory / "src";
-    private AbsolutePath TestsDirectory => RootDirectory / "tests";
-    private AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    AbsolutePath SourceDirectory => RootDirectory / "src";
+    AbsolutePath TestsDirectory => RootDirectory / "tests";
+    AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    AbsolutePath TestResultDirectory => ArtifactsDirectory / "test-results";
+    AbsolutePath CoverageReportDirectory => ArtifactsDirectory / "coverage-report";
+    AbsolutePath CoverageReportArchive => ArtifactsDirectory / "coverage-report.zip";
 
     private Target Clean => _ => _
          .Before(Restore)
@@ -86,7 +89,6 @@ internal class Build : NukeBuild
          });
 
     [Partition(1)] private readonly Partition TestPartition;
-    AbsolutePath TestResultDirectory => ArtifactsDirectory / "test-results";
     IEnumerable<Project> TestProjects => TestPartition.GetCurrent(Solution.GetProjects("*.Tests"));
 
     private Target Test => _ => _
@@ -111,16 +113,16 @@ internal class Build : NukeBuild
                     .SetLogger($"trx;LogFileName={v.Name}.trx")
                     .When(InvokedTargets.Contains(Coverage) || IsServerBuild, _ => _
                         .SetCoverletOutput(TestResultDirectory / $"{v.Name}.xml"))));
-
-            ArtifactsDirectory.GlobFiles("*.trx").ForEach(x =>
-                AzurePipelines?.PublishTestResults(
-                    type: AzurePipelinesTestResultsType.XUnit,
-                    title: $"{Path.GetFileNameWithoutExtension(x)} ({AzurePipelines.StageDisplayName})",
-                    files: new string[] { x }));
+            
+            TestResultDirectory
+                .GlobFiles("*.trx")
+                .ForEach(x =>
+                    AzurePipelines?.PublishTestResults(
+                        type: AzurePipelinesTestResultsType.VSTest,
+                        title: $"{Path.GetFileNameWithoutExtension(x)} ({AzurePipelines.StageDisplayName})",
+                        files: new string[] {x}));
         });
 
-    private string CoverageReportDirectory => ArtifactsDirectory / "coverage-report";
-    private string CoverageReportArchive => ArtifactsDirectory / "coverage-report.zip";
 
     private Target Coverage => _ => _
           .DependsOn(Test)
