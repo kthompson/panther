@@ -13,32 +13,17 @@ namespace Panther.Tests.CodeAnalysis.Syntax
 
         public AssertingEnumerator(SyntaxNode node)
         {
-            _enumerator = Flatten(node).GetEnumerator();
+            _enumerator = node.DescendantsAndSelf().GetEnumerator();
         }
 
-        private static IEnumerable<SyntaxNode> Flatten(SyntaxNode node)
-        {
-            var stack = new Stack<SyntaxNode>();
-            stack.Push(node);
-            while (stack.Count > 0)
-            {
-                var n = stack.Pop();
-                yield return n;
-                foreach (var child in n.GetChildren().Reverse())
-                {
-                    stack.Push(child);
-                }
-            }
-        }
-
-        public void AssertToken(SyntaxKind kind, string text) =>
+        public SyntaxToken AssertToken(SyntaxKind kind, string text) =>
             AssertToken(token =>
             {
                 Assert.Equal(kind, token.Kind);
                 Assert.Equal(text, token.Text);
             });
 
-        public void AssertToken(Action<SyntaxToken> action)
+        public SyntaxToken AssertToken(Action<SyntaxToken> action)
         {
             try
             {
@@ -47,6 +32,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
 
                 var token = Assert.IsType<SyntaxToken>(_enumerator.Current);
                 action(token);
+                return token;
             }
             catch
             {
@@ -55,7 +41,35 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             }
         }
 
-        public void AssertNode(SyntaxKind kind)
+        public SyntaxTrivia AssertTrivia(SyntaxKind kind, string text) =>
+            AssertTrivia(token =>
+            {
+                Assert.Equal(kind, token.Kind);
+                Assert.Equal(text, token.Text);
+            });
+
+        public SyntaxTrivia AssertTrivia(SyntaxKind kind) =>
+            AssertTrivia(token => Assert.Equal(kind, token.Kind));
+
+        public SyntaxTrivia AssertTrivia(Action<SyntaxTrivia> action)
+        {
+            try
+            {
+                Assert.True(_enumerator.MoveNext());
+                Assert.NotNull(_enumerator.Current);
+
+                var token = Assert.IsType<SyntaxTrivia>(_enumerator.Current);
+                action(token);
+                return token;
+            }
+            catch
+            {
+                _hasErrors = true;
+                throw;
+            }
+        }
+
+        public SyntaxNode AssertNode(SyntaxKind kind)
         {
             try
             {
@@ -64,6 +78,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
 
                 Assert.Equal(kind, _enumerator.Current.Kind);
                 Assert.IsNotType<SyntaxToken>(_enumerator.Current);
+                return _enumerator.Current;
             }
             catch
             {

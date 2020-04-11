@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
@@ -36,22 +37,123 @@ namespace Panther.CodeAnalysis.Syntax
             if (!predicate(Current))
                 return false;
 
+            ParsePredicate(predicate);
+
+            return true;
+        }
+
+        private (int start, int end) ParsePredicate(Func<char, bool> predicate)
+        {
+            var start = _position;
             while (predicate(Current))
             {
                 Next();
             }
 
-            return true;
+            var end = _position;
+            return (start, end);
         }
 
+        private ImmutableArray<SyntaxTrivia> ParseTrivia(bool leadingTrivia)
+        {
+            var trivia = ImmutableArray.CreateBuilder<SyntaxTrivia>();
+            while (true)
+            {
+                if (IsEndOfLine(Current))
+                {
+                    var (start, end) = ParsePredicate(IsEndOfLine);
+
+                    var span = _text[start..end];
+
+                    trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.EndOfLineTrivia, span));
+                    if (!leadingTrivia)
+                    {
+                        // trailing trivia should always terminate at the end of a line
+                        break;
+                    }
+                    // leading trivia will terminate once we find out first non-trivia token
+                    continue;
+                }
+
+                if (IsNonNewLineWhiteSpace(Current))
+                {
+                    var (start, end) = ParsePredicate(IsNonNewLineWhiteSpace);
+
+                    var span = _text[start..end];
+                    trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.WhitespaceTrivia, span));
+                    continue;
+                }
+
+                if (Current == '/' && Lookahead == '/')
+                {
+                    trivia.Add(ParseLineComment());
+                    continue;
+                }
+
+                if (Current == '/' && Lookahead == '*')
+                {
+                    trivia.Add(ParseBlockComment());
+                    continue;
+                }
+
+                // non-trivia
+                break;
+            }
+
+            return trivia.ToImmutable();
+        }
+
+        private SyntaxTrivia ParseBlockComment()
+        {
+            var start = _position;
+            Next(); // '/'
+            Next(); // '*'
+
+            while (true)
+            {
+                if (Current == '\0')
+                {
+                    _diagnostics.ReportUnterminatedBlockComment(new TextLocation(_text, new TextSpan(start, _position)));
+                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position]);
+                }
+
+                if (Current == '*' && Lookahead == '/')
+                {
+                    Next(); // '*'
+                    Next(); // '/'
+                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position]);
+                }
+
+                Next();
+            }
+        }
+
+        bool IsEndOfLine(char c) => c == '\n' || c == '\r';
+
+        bool IsNonNewLineWhiteSpace(char c1) => !IsEndOfLine(c1) && char.IsWhiteSpace(c1);
+
         public SyntaxToken NextToken()
+        {
+            // leading trivia only occurs for the first token on a line
+            //                or before in the case of trivia only lines
+            var leading = ParseTrivia(true);
+            // Trailing trivia is anything after the first token
+
+            var ( kind, start, text, value) = ParseToken();
+
+            var trailing = ParseTrivia(false);
+
+            return new SyntaxToken(_syntaxTree, kind, start, text, value, leading, trailing);
+        }
+
+        private (SyntaxKind kind, int start, string text, object? value) ParseToken()
         {
             var start = _position;
 
             switch (Current)
             {
                 case '\0':
-                    return new SyntaxToken(_syntaxTree, SyntaxKind.EndOfInputToken, _position, string.Empty, null);
+                    return (SyntaxKind.EndOfInputToken, _position, string.Empty, null);
 
                 case '+':
                     return ReturnKindOneChar(SyntaxKind.PlusToken);
@@ -126,16 +228,6 @@ namespace Panther.CodeAnalysis.Syntax
 
                 default:
 
-                    bool IsNonNewLineWhiteSpace(char c1) => c1 != '\n' && c1 != '\r' && char.IsWhiteSpace(c1);
-
-                    bool IsNewLine(char c) => c == '\n' || c == '\r';
-
-                    if (IfWhile(IsNewLine))
-                    {
-                        var span = _text[start.._position];
-
-                        return new SyntaxToken(_syntaxTree, SyntaxKind.NewLineToken, start, span, null);
-                    }
                     if (IfWhile(char.IsDigit))
                     {
                         var span = _text[start.._position];
@@ -146,14 +238,7 @@ namespace Panther.CodeAnalysis.Syntax
                                 span.AsSpan().ToString(),
                                 TypeSymbol.Int);
 
-                        return new SyntaxToken(_syntaxTree, SyntaxKind.NumberToken, start, span, value);
-                    }
-
-                    if (IfWhile(IsNonNewLineWhiteSpace))
-                    {
-                        var span = _text[start.._position];
-
-                        return new SyntaxToken(_syntaxTree, SyntaxKind.WhitespaceToken, start, span, null);
+                        return (SyntaxKind.NumberToken, start, span, value);
                     }
 
                     if (IfWhile(char.IsLetter))
@@ -162,7 +247,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                         var kind = SyntaxFacts.GetKeywordKind(span);
 
-                        return new SyntaxToken(_syntaxTree, kind, start, span, null);
+                        return (kind, start, span, null);
                     }
 
                     _diagnostics.ReportBadCharacter(
@@ -171,7 +256,21 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        private SyntaxToken ParseStringToken(int start)
+        private SyntaxTrivia ParseLineComment()
+        {
+            var start = _position;
+
+            Next(); // '/'
+            Next(); // '/'
+            while (Current != '\r' && Current != '\n' && Current != '\0')
+            {
+                Next();
+            }
+
+            return new SyntaxTrivia(_syntaxTree, SyntaxKind.LineCommentTrivia, _text[start.._position]);
+        }
+
+        private (SyntaxKind kind, int start, string text, object value) ParseStringToken(int start)
         {
             Next(); // start "
             var sb = new StringBuilder();
@@ -206,7 +305,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var span = _text[start.._position];
 
-            return new SyntaxToken(_syntaxTree, SyntaxKind.StringToken, start, span, sb.ToString());
+            return (SyntaxKind.StringToken, start, span, sb.ToString());
         }
 
         private string? ParseEscapeSequence()
@@ -282,18 +381,20 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        private SyntaxToken ReturnKindTwoChar(SyntaxKind kind)
+        private (SyntaxKind kind, int start, string text, object? value) ReturnKindTwoChar(SyntaxKind kind)
         {
-            var token = new SyntaxToken(_syntaxTree, kind, _position, _text[_position..(_position + 2)], null);
+            var start = _position;
+            var text = _text[_position..(_position + 2)];
             _position += 2;
-            return token;
+            return (kind, start, text, null);
         }
 
-        private SyntaxToken ReturnKindOneChar(SyntaxKind kind)
+        private (SyntaxKind kind, int start, string text, object? value) ReturnKindOneChar(SyntaxKind kind)
         {
-            var token = new SyntaxToken(_syntaxTree, kind, _position, _text[_position..(_position + 1)], null);
+            var start = _position;
+            var text = _text[_position..(_position + 1)];
             _position++;
-            return token;
+            return (kind, start, text, null);
         }
     }
 }

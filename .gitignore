@@ -7,6 +7,9 @@ project.lock.json
 
 ### VisualStudio ###
 
+#rider
+.idea
+
 #ncrunch
 *.ncrunchsolution
 *.ncrunchproject

@@ -107,5 +107,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportGlobalStatementsCanOnlyExistInOneFile(TextLocation location) =>
             Report(location, "Global statements can only exist in one file");
+
+        public void ReportUnterminatedBlockComment(TextLocation location) =>
+            Report(location, "Unterminated block comment");
     }
 }

@@ -58,6 +58,18 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
+        public virtual IEnumerable<SyntaxNode> DescendantsAndSelf()
+        {
+            yield return this;
+
+            foreach (var descendant in Descendants())
+                yield return descendant;
+        }
+
+        public IEnumerable<SyntaxNode> Descendants() =>
+            GetChildren()
+                .SelectMany(child => child.DescendantsAndSelf());
+
         public void WriteTo(TextWriter writer)
         {
             PrettyPrint(writer, this);

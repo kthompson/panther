@@ -29,9 +29,20 @@ namespace Panther
             var tokens = SyntaxTree.ParseTokens(line);
             foreach (var token in tokens)
             {
-                Console.ForegroundColor = GetTokenColor(token);
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                foreach (var trivia in token.LeadingTrivia)
+                {
+                    Console.Write(trivia.Text);
+                }
 
+                Console.ForegroundColor = GetTokenColor(token);
                 Console.Write(token.Text);
+
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                foreach (var trivia in token.TrailingTrivia)
+                {
+                    Console.Write(trivia.Text);
+                }
 
                 Console.ResetColor();
             }

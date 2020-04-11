@@ -8,9 +8,11 @@
         IdentifierToken,
         CommaToken,
 
-        // Whitespace tokens
-        NewLineToken,
-        WhitespaceToken,
+        // Trivia tokens
+        EndOfLineTrivia,
+        WhitespaceTrivia,
+        LineCommentTrivia,
+        BlockCommentTrivia,
 
         // Literal tokens
         NumberToken,

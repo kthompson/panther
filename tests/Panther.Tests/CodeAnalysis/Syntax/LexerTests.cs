@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FsCheck.Xunit;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
@@ -10,7 +11,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
     public class LexerTests
     {
         [Property]
-        public void LexerLexesToken(TokenTestData test)
+        public void LexerLexesToken(NonSeparatorTokenTestData test)
         {
             var tokens = SyntaxTree.ParseTokens(test.Text);
 
@@ -49,16 +50,43 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 Assert.NotNull(token1);
                 Assert.Equal(expectedToken1.Kind, token1.Kind);
                 Assert.Equal(expectedToken1.Text, token1.Text);
-            }, sepToken =>
-            {
-                Assert.NotNull(sepToken);
-                Assert.Equal(expectedSepToken.Kind, sepToken.Kind);
-                Assert.Equal(expectedSepToken.Text, sepToken.Text);
+
+                Assert.Collection(token1.TrailingTrivia,
+                    sepToken =>
+                    {
+                        Assert.NotNull(sepToken);
+                        Assert.Equal(expectedSepToken.Kind, sepToken.Kind);
+                        Assert.Equal(expectedSepToken.Text, sepToken.Text);
+                    });
             }, token2 =>
             {
                 Assert.NotNull(token2);
                 Assert.Equal(expectedToken2.Kind, token2.Kind);
                 Assert.Equal(expectedToken2.Text, token2.Text);
+            });
+        }
+
+        [Property]
+        public void CanLexComment(LineCommentTriviaData lineCommentTrivia)
+        {
+            var text = AnnotatedText.Parse($@"
+            {lineCommentTrivia.Text}
+            1
+").Text;
+            var tokens = SyntaxTree.ParseTokens(text);
+
+            Assert.Collection(tokens, token1 =>
+            {
+                Assert.NotNull(token1);
+                Assert.Collection(token1.LeadingTrivia, trivia =>
+                {
+                    Assert.Equal(SyntaxKind.LineCommentTrivia, trivia.Kind);
+                    Assert.Equal(lineCommentTrivia.Text, trivia.Text);
+                }, trivia =>
+               {
+               });
+                Assert.Equal(SyntaxKind.NumberToken, token1.Kind);
+                Assert.Equal("1", token1.Text);
             });
         }
     }

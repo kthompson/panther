@@ -127,7 +127,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                 var token = _tokens[pos];
 
-                if (token.Kind == SyntaxKind.WhitespaceToken || token.Kind == SyntaxKind.InvalidToken)
+                if (token.Kind == SyntaxKind.WhitespaceTrivia || token.Kind == SyntaxKind.InvalidToken)
                 {
                     pos++;
                     continue;
@@ -154,26 +154,6 @@ namespace Panther.CodeAnalysis.Syntax
             return token;
         }
 
-        private SyntaxToken? AcceptStatementTerminator()
-        {
-            var currentToken = CurrentToken;
-            switch (currentToken.Kind)
-            {
-                case SyntaxKind.NewLineToken:
-                    return Accept();
-
-                case SyntaxKind.EndOfInputToken:
-                case SyntaxKind.CloseBraceToken:
-                    // return end of file token but do not consume it
-                    return null;
-
-                default:
-                    Diagnostics.ReportUnexpectedToken(currentToken.Location, currentToken.Kind, SyntaxKind.NewLineToken);
-
-                    return new SyntaxToken(_syntaxTree, SyntaxKind.NewLineToken, currentToken.Position);
-            }
-        }
-
         private SyntaxToken Accept(SyntaxKind kind)
         {
             var currentToken = CurrentToken;
@@ -183,12 +163,6 @@ namespace Panther.CodeAnalysis.Syntax
             Diagnostics.ReportUnexpectedToken(currentToken.Location, currentToken.Kind, kind);
 
             return new SyntaxToken(_syntaxTree, kind, currentToken.Position);
-        }
-
-        private void SkipNewLines()
-        {
-            while (CurrentToken.Kind == SyntaxKind.NewLineToken)
-                Accept();
         }
 
         private SyntaxToken Create(SyntaxKind kind, string text)
@@ -210,7 +184,6 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<MemberSyntax> ParseMembers()
         {
             var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-            SkipNewLines();
             while (CurrentToken.Kind != SyntaxKind.EndOfInputToken)
             {
                 var startToken = CurrentToken;
@@ -218,7 +191,6 @@ namespace Panther.CodeAnalysis.Syntax
                 var member = ParseMember();
                 members.Add(member);
 
-                SkipNewLines();
                 if (CurrentToken == startToken)
                     NextToken();
             }
@@ -292,7 +264,7 @@ namespace Panther.CodeAnalysis.Syntax
             return new ParameterSyntax(_syntaxTree, ident, typeAnnotation);
         }
 
-        private ExpressionSyntax ParseExpression(OperatorPrecedence precedence)
+        private ExpressionSyntax ParseExpression(OperatorPrecedence precedence, bool inGroup = false)
         {
             // advance until we get to the actual current token
             var currentToken = CurrentToken;
@@ -310,7 +282,8 @@ namespace Panther.CodeAnalysis.Syntax
             var left = prefixFunction();
 
             // investigate if we can use precedence to break early
-            if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression)
+            var isTerminatingLine = !inGroup && left.Descendants().Select(x => x.Kind == SyntaxKind.EndOfLineTrivia).LastOrDefault();
+            if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression || isTerminatingLine)
                 return left;
 
             while (precedence < CurrentPrecedence())
@@ -346,7 +319,6 @@ namespace Panther.CodeAnalysis.Syntax
             // left + right
             var precedence = CurrentPrecedence();
             var binaryOperatorToken = Accept();
-            SkipNewLines();
             var right = ParseExpression(precedence);
 
             return new BinaryExpressionSyntax(_syntaxTree, left, binaryOperatorToken, right);
@@ -358,8 +330,6 @@ namespace Panther.CodeAnalysis.Syntax
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
             var condition = ParseExpression(OperatorPrecedence.Lowest);
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
-
-            SkipNewLines();
 
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
@@ -377,8 +347,6 @@ namespace Panther.CodeAnalysis.Syntax
             var toKeyword = Accept(SyntaxKind.ToKeyword);
             var toExpression = ParseExpression(OperatorPrecedence.Lowest);
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
-
-            SkipNewLines();
 
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
@@ -422,15 +390,10 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var ifKeyword = Accept();
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
-            SkipNewLines();
             var condition = ParseExpression(OperatorPrecedence.Lowest);
-            SkipNewLines();
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
-            SkipNewLines();
             var thenExpr = ParseExpression(OperatorPrecedence.Lowest);
-            SkipNewLines();
             var elseKeyword = Accept(SyntaxKind.ElseKeyword);
-            SkipNewLines();
             var elseExpr = ParseExpression(OperatorPrecedence.Lowest);
 
             return new IfExpressionSyntax(_syntaxTree, ifKeyword, openParenToken, condition, closeParenToken, thenExpr, elseKeyword, elseExpr);
@@ -447,7 +410,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
             else
             {
-                var expr = ParseExpression(OperatorPrecedence.Lowest);
+                var expr = ParseExpression(OperatorPrecedence.Lowest, true);
                 var close = Accept(SyntaxKind.CloseParenToken);
 
                 return new GroupExpressionSyntax(_syntaxTree, open, expr, close);
@@ -490,7 +453,6 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var statements = new List<StatementSyntax>();
             var openBraceToken = Accept(SyntaxKind.OpenBraceToken);
-            SkipNewLines();
             while (true)
             {
                 var currentToken = CurrentToken;
@@ -547,8 +509,18 @@ namespace Panther.CodeAnalysis.Syntax
         private StatementSyntax ParseExpressionStatement()
         {
             var expr = ParseExpression(OperatorPrecedence.Lowest);
-            var newLineToken = AcceptStatementTerminator();
-            return new ExpressionStatementSyntax(_syntaxTree, expr, newLineToken);
+            AssertStatementTerminator(expr);
+            return new ExpressionStatementSyntax(_syntaxTree, expr);
+        }
+
+        private void AssertStatementTerminator(ExpressionSyntax expr)
+        {
+            var lastKind = expr.Descendants().Last(token => token.Kind != SyntaxKind.WhitespaceTrivia).Kind;
+
+            if (lastKind != SyntaxKind.EndOfLineTrivia && lastKind != SyntaxKind.CloseBraceToken && CurrentToken.Kind != SyntaxKind.EndOfInputToken)
+            {
+                throw new Exception("expected end of line trivia");
+            }
         }
 
         private StatementSyntax ParseVariableDeclarationStatement()
@@ -559,9 +531,10 @@ namespace Panther.CodeAnalysis.Syntax
 
             var equalsToken = Accept(SyntaxKind.EqualsToken);
             var expr = ParseExpression(OperatorPrecedence.Lowest);
-            var newLineToken = AcceptStatementTerminator();
 
-            return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, equalsToken, expr, newLineToken);
+            AssertStatementTerminator(expr);
+
+            return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, equalsToken, expr);
         }
 
         private ExpressionSyntax ParseAssignmentExpression()

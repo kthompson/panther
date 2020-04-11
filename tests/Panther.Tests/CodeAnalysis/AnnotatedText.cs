@@ -12,7 +12,7 @@ namespace Panther.Tests.CodeAnalysis
         public string Text { get; }
         public ImmutableArray<TextSpan> Spans { get; }
 
-        public AnnotatedText(string text, ImmutableArray<TextSpan> spans)
+        private AnnotatedText(string text, ImmutableArray<TextSpan> spans)
         {
             Text = text;
             Spans = spans;

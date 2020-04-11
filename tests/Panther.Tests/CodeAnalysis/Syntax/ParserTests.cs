@@ -40,10 +40,14 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "a");
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op1.Kind, op1Text);
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "b");
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op2.Kind, op2Text);
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
                 e.AssertToken(SyntaxKind.EndOfInputToken, "");
@@ -68,11 +72,15 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "a");
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op1.Kind, op1Text);
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "b");
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op2.Kind, op2Text);
+                e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertNode(SyntaxKind.NameExpression);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
                 e.AssertToken(SyntaxKind.EndOfInputToken, "");
@@ -105,9 +113,12 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.BinaryExpression);
             e.AssertNode(SyntaxKind.UnaryExpression);
             e.AssertToken(op1.Kind, unaryText);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "a");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(op2.Kind, binaryText);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "b");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
@@ -151,11 +162,12 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Fact]
         public void ParseNestedNonUnitBlockExpression()
         {
-            var text = @"{{
+            var text = AnnotatedText.Parse(@"
+                         {
                             val x = 5
                             5
-                         }}";
-            var tree = SyntaxTree.Parse(text);
+                         }");
+            var tree = SyntaxTree.Parse(text.Text);
             Assert.Empty(tree.Diagnostics);
 
             var expression = tree.Root;
@@ -179,25 +191,45 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BlockExpression);
             e.AssertToken(SyntaxKind.OpenBraceToken, "{");
-            e.AssertNode(SyntaxKind.BlockExpression);
-            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
             e.AssertNode(SyntaxKind.VariableDeclarationStatement);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "   ");
             e.AssertToken(SyntaxKind.ValKeyword, "val");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.EqualsToken, "=");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
-            e.AssertToken(token =>
-            {
-                Assert.Equal(SyntaxKind.NewLineToken, token.Kind);
-                Assert.True(token.Text == "\r\n" || token.Text == "\n");
-            });
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+
             e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "   ");
             e.AssertToken(SyntaxKind.NumberToken, "5");
-            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
             e.AssertToken(SyntaxKind.CloseBraceToken, "}");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
+
+
+
+        [Fact]
+        public void ParseLineCommentOnly()
+        {
+            var text = @"// taco";
+            var tree = SyntaxTree.Parse(text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root;
+
+            using var e = new AssertingEnumerator(expression);
+
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertTrivia(SyntaxKind.LineCommentTrivia, "// taco");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
 
         [Fact]
         public void ParseForExpression()
@@ -233,18 +265,113 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.ForExpression);
             e.AssertToken(SyntaxKind.ForKeyword, "for");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.OpenParenToken, "(");
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.LessThanDashToken, "<-");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "0");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.ToKeyword, "to");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
             e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
+
+         [Fact]
+        public void ParseUnaryExpressionAfterLineBreak()
+        {
+            var text = AnnotatedText.Parse(@"
+                {
+                    val x = 3
+                    -x
+                }
+            ");
+            var tree = SyntaxTree.Parse(text.Text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root;
+
+            using var e = new AssertingEnumerator(expression);
+
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+            e.AssertNode(SyntaxKind.VariableDeclarationStatement);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "    ");
+            e.AssertToken(SyntaxKind.ValKeyword, "val");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertToken(SyntaxKind.EqualsToken, "=");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.NumberToken, "3");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+
+            e.AssertNode(SyntaxKind.UnaryExpression);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "    ");
+            e.AssertToken(SyntaxKind.DashToken, "-");
+            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
+
+        [Fact]
+        public void ParseBinaryExpressionWithLineBreakInsideGroup()
+        {
+            var text = AnnotatedText.Parse(@"
+                (false
+                    || (false
+                           || true))
+            ");
+            var tree = SyntaxTree.Parse(text.Text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root;
+
+            using var e = new AssertingEnumerator(expression);
+
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.GroupExpression);
+            e.AssertToken(SyntaxKind.OpenParenToken, "(");
+            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.FalseKeyword, "false");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "    ");
+            e.AssertToken(SyntaxKind.PipePipeToken, "||");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertNode(SyntaxKind.GroupExpression);
+            e.AssertToken(SyntaxKind.OpenParenToken, "(");
+            e.AssertNode(SyntaxKind.BinaryExpression);
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.FalseKeyword, "false");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "           ");
+            e.AssertToken(SyntaxKind.PipePipeToken, "||");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertNode(SyntaxKind.LiteralExpression);
+            e.AssertToken(SyntaxKind.TrueKeyword, "true");
+            e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertToken(SyntaxKind.CloseParenToken, ")");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
 
@@ -286,17 +413,24 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.ForExpression);
             e.AssertToken(SyntaxKind.ForKeyword, "for");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.OpenParenToken, "(");
             e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.LessThanDashToken, "<-");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "0");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.ToKeyword, "to");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
             e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
             e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "    ");
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
@@ -304,10 +438,11 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         [Fact]
         public void ParseWhileExpression()
         {
-            var text = @"{
+            var text = AnnotatedText.Parse(@"
+                          {
                             while ( true ) 1
-                         }";
-            var tree = SyntaxTree.Parse(text);
+                          }");
+            var tree = SyntaxTree.Parse(text.Text);
             Assert.Empty(tree.Diagnostics);
 
             var expression = tree.Root;
@@ -319,14 +454,21 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.ExpressionStatement);
             e.AssertNode(SyntaxKind.BlockExpression);
             e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
             e.AssertNode(SyntaxKind.WhileExpression);
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "  ");
             e.AssertToken(SyntaxKind.WhileKeyword, "while");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.OpenParenToken, "(");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.TrueKeyword, "true");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.CloseParenToken, ")");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "1");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
             e.AssertToken(SyntaxKind.CloseBraceToken, "}");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }

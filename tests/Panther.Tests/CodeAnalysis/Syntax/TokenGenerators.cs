@@ -52,10 +52,24 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         public static Arbitrary<SeparatorTokenTestData> SeparatorTokenTestData()
         {
             return Gen.Elements(
-                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, " "),
-                new SeparatorTokenTestData(SyntaxKind.WhitespaceToken, "\t")
+                new SeparatorTokenTestData(SyntaxKind.WhitespaceTrivia, " "),
+                new SeparatorTokenTestData(SyntaxKind.WhitespaceTrivia, "\t")
             ).ToArbitrary();
         }
+
+        public static Arbitrary<WhitespaceTriviaData> WhitespaceTriviaData() =>
+            Arb.Generate<char>()
+                .Where(c => char.IsWhiteSpace(c) && c != '\r' && c != '\n')
+                .NonEmptyListOf()
+                .Select(x => new WhitespaceTriviaData(string.Join("", x)))
+                .ToArbitrary();
+
+        public static Arbitrary<LineCommentTriviaData> LineCommentTriviaData() =>
+            Arb.Generate<char>()
+                .Where(c => char.IsWhiteSpace(c) && c != '\r' && c != '\n')
+                .NonEmptyListOf()
+                .Select(x => new LineCommentTriviaData("// " + string.Join("", x)))
+                .ToArbitrary();
 
         private static readonly SyntaxKind[] CoalescingKinds = new[]
         {
