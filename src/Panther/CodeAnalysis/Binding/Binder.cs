@@ -47,7 +47,7 @@ namespace Panther.CodeAnalysis.Binding
                     .ToImmutableArray();
 
             var functions = scope.GetDeclaredFunctions();
-            
+
             BindMainFunctions(isScript, syntaxTrees, globalStatements, functions, binder, out var mainFunction, out var scriptFunction);
 
             var variables = scope.GetDeclaredVariables();
@@ -62,7 +62,7 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         private static void BindMainFunctions(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<GlobalStatementSyntax> globalStatements,
-            ImmutableArray<FunctionSymbol> functions, Binder binder, out FunctionSymbol mainFunction, out FunctionSymbol scriptFunction)
+            ImmutableArray<FunctionSymbol> functions, Binder binder, out FunctionSymbol? mainFunction, out FunctionSymbol? scriptFunction)
         {
             if (isScript)
             {
@@ -83,7 +83,7 @@ namespace Panther.CodeAnalysis.Binding
                     where firstStatement != null
                     select firstStatement)
                 .ToImmutableArray();
-            
+
             if (mainFunction == null)
             {
                 // Global statements can only exist in one syntax tree
@@ -102,14 +102,13 @@ namespace Panther.CodeAnalysis.Binding
             // main function signature should be correct
             if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
             {
-                binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Declaration.Identifier
-                    .Location);
+                binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Declaration.Identifier.Location);
             }
 
             // if a main function exists, global statements cannot
-            if (!globalStatements.Any()) 
+            if (!globalStatements.Any())
                 return;
-            
+
             binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Declaration.Identifier.Location);
 
             foreach (var firstStatement1 in firstStatementPerSyntaxTree)
@@ -118,13 +117,13 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        public static BoundProgram BindProgram(bool isScript, BoundProgram previous, BoundGlobalScope globalScope)
+        public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
         {
             var parentScope = CreateParentScope(globalScope);
 
             var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
             var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
-            
+
             foreach (var function in globalScope.Functions)
             {
                 var binder = new Binder(isScript);
@@ -153,7 +152,7 @@ namespace Panther.CodeAnalysis.Binding
                 var body = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
                 functionBodies.Add(globalScope.ScriptFunction, body);
             }
-            
+
             return new BoundProgram(previous, diagnostics.ToImmutableArray(), globalScope.MainFunction, globalScope.ScriptFunction, functionBodies.ToImmutable());
         }
 
@@ -366,7 +365,8 @@ namespace Panther.CodeAnalysis.Binding
         {
             var boundExpression = BindExpression(syntax.Expression, scope);
 
-            if (!scope.TryLookupVariable(syntax.IdentifierToken.Text, out var variable))
+            var variable = scope.TryLookupVariable(syntax.IdentifierToken.Text);
+            if (variable == null)
             {
                 Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
 
@@ -594,7 +594,8 @@ namespace Panther.CodeAnalysis.Binding
 
             var name = syntax.IdentifierToken.Text;
 
-            if (scope.TryLookupVariable(name, out var variable))
+            var variable = scope.TryLookupVariable(name);
+            if (variable != null)
                 return new BoundVariableExpression(variable);
 
             Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);

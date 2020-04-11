@@ -187,7 +187,11 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.EqualsToken, "=");
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
-            e.AssertToken(SyntaxKind.NewLineToken, "\n");
+            e.AssertToken(token =>
+            {
+                Assert.Equal(SyntaxKind.NewLineToken, token.Kind);
+                Assert.True(token.Text == "\r\n" || token.Text == "\n");
+            });
             e.AssertNode(SyntaxKind.LiteralExpression);
             e.AssertToken(SyntaxKind.NumberToken, "5");
             e.AssertToken(SyntaxKind.CloseBraceToken, "}");

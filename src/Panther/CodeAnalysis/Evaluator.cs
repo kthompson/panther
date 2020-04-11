@@ -27,7 +27,7 @@ namespace Panther.CodeAnalysis
             _builtins = builtins;
             _locals.Push(new Dictionary<VariableSymbol, object>());
 
-            var p = program;
+            BoundProgram? p = program;
 
             while (p != null)
             {

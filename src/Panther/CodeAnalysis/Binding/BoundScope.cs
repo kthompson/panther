@@ -51,22 +51,19 @@ namespace Panther.CodeAnalysis.Binding
             return true;
         }
 
-        public bool TryLookupVariable(string name, out VariableSymbol variable)
+        public VariableSymbol? TryLookupVariable(string name)
         {
-            variable = null;
-
             if (_symbols.TryGetValue(name, out var existingSymbol))
             {
                 if (existingSymbol is VariableSymbol outSymbol)
                 {
-                    variable = outSymbol;
-                    return true;
+                    return outSymbol;
                 }
 
-                return false;
+                return null;
             }
 
-            return Parent != null && Parent.TryLookupVariable(name, out variable);
+            return Parent?.TryLookupVariable(name);
         }
 
         public bool TryLookup(string name, out Symbol symbol)

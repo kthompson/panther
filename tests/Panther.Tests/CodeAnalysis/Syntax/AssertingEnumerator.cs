@@ -31,16 +31,22 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             }
         }
 
-        public void AssertToken(SyntaxKind kind, string text)
+        public void AssertToken(SyntaxKind kind, string text) =>
+            AssertToken(token =>
+            {
+                Assert.Equal(kind, token.Kind);
+                Assert.Equal(text, token.Text);
+            });
+
+        public void AssertToken(Action<SyntaxToken> action)
         {
             try
             {
                 Assert.True(_enumerator.MoveNext());
                 Assert.NotNull(_enumerator.Current);
-                Assert.Equal(kind, _enumerator.Current.Kind);
 
                 var token = Assert.IsType<SyntaxToken>(_enumerator.Current);
-                Assert.Equal(text, token.Text);
+                action(token);
             }
             catch
             {
