@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Mono.Cecil;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
@@ -110,5 +111,44 @@ namespace Panther.CodeAnalysis
 
         public void ReportUnterminatedBlockComment(TextLocation location) =>
             Report(location, "Unterminated block comment");
+
+        public void ReportInvalidReference(string reference) =>
+            Report(default, $"The specified reference is not valid: {reference}");
+
+        public void ReportBuiltinTypeNotFound(string builtinName) =>
+            Report(default, $"The required builtin type '{builtinName}' could not be found");
+
+        public void ReportTypeNotFound(string typeName) =>
+            Report(default, $"The required type '{typeName}' could not be found");
+
+        public void ReportAmbiguousBuiltinType(string builtinName, IEnumerable<TypeDefinition> foundTypes)
+        {
+            var assemblyNames = from type in foundTypes
+                let asmName = type.Module.Assembly.Name.Name
+                group type by asmName
+                into g
+                select g.Key;
+            var assemblyNameList = string.Join(", ", assemblyNames);
+
+            Report(default, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
+        }
+
+        public void ReportAmbiguousType(string typeName, TypeDefinition[] foundTypes)
+        {
+            var assemblyNames = from type in foundTypes
+                let asmName = type.Module.Assembly.Name.Name
+                group type by asmName
+                into g
+                select g.Key;
+            var assemblyNameList = string.Join(", ", assemblyNames);
+
+            Report(default, $"Ambiguous type '{typeName}' was found in the given assemblies: {assemblyNameList}");
+        }
+
+        public void ReportRequiredMethodNotFound(string typeName, string methodName, string[] parameterTypeNames)
+        {
+            var parameterTypeNamesList = string.Join(", ", parameterTypeNames);
+            Report(default, $"Required method {typeName}.{methodName}({parameterTypeNamesList}) was not found");
+        }
     }
 }

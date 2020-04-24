@@ -1,3 +1,4 @@
+using System;
 using FsCheck.Xunit;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;

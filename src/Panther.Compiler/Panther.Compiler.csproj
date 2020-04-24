@@ -10,4 +10,8 @@
       <ProjectReference Include="..\Panther\Panther.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20214.1" />
+    </ItemGroup>
+
 </Project>

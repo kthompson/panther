@@ -1,0 +1,7 @@
+<Project>
+
+    <PropertyGroup>
+        <DefaultLanguageSourceExtension>.pn</DefaultLanguageSourceExtension>
+    </PropertyGroup>
+
+</Project>

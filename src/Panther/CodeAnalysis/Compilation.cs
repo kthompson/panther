@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Emit;
 using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -151,6 +152,12 @@ namespace Panther.CodeAnalysis
 
             function.WriteTo(writer);
 
+        }
+
+        public ImmutableArray<Diagnostic> Emit(string moduleName, string[] references, string outputPath)
+        {
+            var program = GetProgram();
+            return Emitter.Emit(program, moduleName, references, outputPath);
         }
     }
 }

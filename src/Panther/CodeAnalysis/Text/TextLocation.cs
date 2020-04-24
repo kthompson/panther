@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Text
 {
-    public sealed class TextLocation : IComparable<TextLocation>, IComparable
+    public struct TextLocation
     {
         public SourceText Text { get; }
         public TextSpan Span { get; }
@@ -19,20 +19,29 @@ namespace Panther.CodeAnalysis.Text
             Span = span;
         }
 
-        public int CompareTo(TextLocation? other)
+        public bool Equals(TextLocation other)
         {
-            if (ReferenceEquals(this, other)) return 0;
-            if (ReferenceEquals(null, other)) return 1;
-            var filenameComparison = string.Compare(Filename, other.Filename, StringComparison.Ordinal);
-            if (filenameComparison != 0) return filenameComparison;
-            return Span.CompareTo(other.Span);
+            return Text.Equals(other.Text) && Span.Equals(other.Span);
         }
 
-        public int CompareTo(object? obj)
+        public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) return 1;
-            if (ReferenceEquals(this, obj)) return 0;
-            return obj is TextLocation other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(TextLocation)}");
+            return obj is TextLocation other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Text, Span);
+        }
+
+        public static bool operator ==(TextLocation left, TextLocation right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(TextLocation left, TextLocation right)
+        {
+            return !left.Equals(right);
         }
     }
 }

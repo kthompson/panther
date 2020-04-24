@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Panther.CodeAnalysis;
@@ -13,63 +18,53 @@ namespace Panther.Compiler
     {
         static int Main(string[] args)
         {
-            if (args.Length == 0)
-            {
-                Console.Error.WriteLine("usage: pantherc <source-paths>");
-                return 1;
-            }
 
-            var paths = GetFilePaths(args).ToArray();
-            var syntaxTrees = new List<SyntaxTree>(args.Length);
-
-            var errors = false;
-            foreach (var path in paths)
+            var rootCommand = new RootCommand
             {
-                if (!File.Exists(path))
+                new Option<FileInfo>(aliases: new []{"/output", "/o"}, description: "The output path of the assembly to create")
                 {
-                    Console.Error.WriteLine($"error: file `{path}` not found");
-                    errors = true;
-                    continue;
-                }
+                    Required = true,
+                },
+                new Option<FileInfo[]>(aliases: new[] {"/reference", "/r"}, description: "An assembly reference").ExistingOnly(),
+                new Option<string>(aliases: new[] {"/module", "/m"}, getDefaultValue: () => "main", description: "The module name"),
+                new Argument<FileInfo[]>("sources").ExistingOnly()
+            };
 
-                var syntaxTree = SyntaxTree.LoadFile(path);
-                syntaxTrees.Add(syntaxTree);
-            }
-
-            if (errors)
-                return 1;
-
-            var compilation = Compilation.Create(syntaxTrees.ToArray());
-            var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
-            if (result.Diagnostics.Any())
-            {
-                Console.Error.WriteDiagnostics(result.Diagnostics);
-                return 1;
-            }
-
-            if (result.Value != null)
-                Console.WriteLine(result.Value);
-
-            return 0;
-        }
-
-        private static IEnumerable<string> GetFilePaths(IEnumerable<string> paths)
-        {
-            var results = new SortedSet<string>();
-
-            foreach (var path in paths)
-            {
-                if (Directory.Exists(path))
+            rootCommand.Handler = CommandHandler.Create(
+                (FileInfo output, FileInfo[] reference, string module, FileInfo[] sources, ParseResult parseResult) =>
                 {
-                    results.UnionWith(Directory.EnumerateFiles(path, "*.pn", SearchOption.AllDirectories));
-                }
-                else
-                {
-                    results.Add(path);
-                }
-            }
+                    if (sources.Length == 0)
+                    {
+                        Console.Error.WriteLine("usage: pantherc <source-paths>");
+                        return 1;
+                    }
 
-            return results;
+                    var syntaxTrees = sources.Select(source => SyntaxTree.LoadFile(source.FullName)).ToArray();
+                    var compilation = Compilation.Create(syntaxTrees);
+
+                    var diagnostics = compilation.Emit(module, reference.Select(x => x.FullName).ToArray(), output.FullName);
+
+                    if (diagnostics.Any())
+                    {
+                        Console.Error.WriteDiagnostics(diagnostics);
+                        return 1;
+                    }
+
+                    //
+                    // var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+                    // if (result.Diagnostics.Any())
+                    // {
+                    //     Console.Error.WriteDiagnostics(result.Diagnostics);
+                    //     return 1;
+                    // }
+                    //
+                    // if (result.Value != null)
+                    //     Console.WriteLine(result.Value);
+
+                    return 0;
+                });
+
+            return rootCommand.InvokeAsync(args).Result;
         }
     }
 }
