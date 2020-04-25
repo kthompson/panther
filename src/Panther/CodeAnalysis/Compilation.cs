@@ -120,13 +120,23 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(TextWriter writer)
         {
-            if (GlobalScope.MainFunction != null)
+            var mainFunction = GlobalScope.MainFunction;
+            var scriptFunction = GlobalScope.ScriptFunction;
+            foreach (var function in GlobalScope.Functions)
             {
-                EmitTree(GlobalScope.MainFunction, writer);
+                var isMain = mainFunction == function;
+                var isScript = scriptFunction == function;
+
+                EmitTree(function, writer);
             }
-            else if (GlobalScope.ScriptFunction != null)
+
+            if (mainFunction != null)
             {
-                EmitTree(GlobalScope.ScriptFunction, writer);
+                EmitTree(mainFunction, writer);
+            }
+            else if (scriptFunction != null)
+            {
+                EmitTree(scriptFunction, writer);
             }
         }
 

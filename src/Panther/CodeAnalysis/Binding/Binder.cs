@@ -173,8 +173,9 @@ namespace Panther.CodeAnalysis.Binding
 
             var seenParamNames = new HashSet<string>();
 
-            foreach (var parameterSyntax in syntax.Parameters)
+            for (var index = 0; index < syntax.Parameters.Count; index++)
             {
+                var parameterSyntax = syntax.Parameters[index];
                 var parameterName = parameterSyntax.Identifier.Text;
                 var parameterType = BindTypeAnnotation(parameterSyntax.TypeAnnotation);
 
@@ -184,7 +185,7 @@ namespace Panther.CodeAnalysis.Binding
                 }
                 else
                 {
-                    var parameter = new ParameterSymbol(parameterName, parameterType);
+                    var parameter = new ParameterSymbol(parameterName, parameterType, index);
                     parameters.Add(parameter);
                 }
             }

@@ -3,6 +3,9 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
+    /// <summary>
+    /// Access a local variable
+    /// </summary>
     internal class BoundVariableExpression : BoundExpression
     {
         public VariableSymbol Variable { get; }
