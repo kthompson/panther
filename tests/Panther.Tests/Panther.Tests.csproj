@@ -26,4 +26,14 @@
     <ProjectReference Include="..\..\src\Panther\Panther.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="CodeAnalysis\EmitterTests\**\*.il" />
+    <None Remove="CodeAnalysis\EmitterTests\**\*.pn" />
+    <Content Include="CodeAnalysis\EmitterTests\**\*.pn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CodeAnalysis\EmitterTests\**\*.il">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

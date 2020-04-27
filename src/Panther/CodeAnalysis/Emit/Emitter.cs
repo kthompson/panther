@@ -98,9 +98,12 @@ namespace Panther.CodeAnalysis.Emit
             foreach (var (functionSignature, boundBlockExpression) in program.Functions)
                 EmitFunctionBody(functionSignature, boundBlockExpression);
 
-            var entryPoint = _methods[program.MainFunction];
+            if (program.MainFunction != null)
+            {
+                var entryPoint = _methods[program.MainFunction];
+                _assemblyDefinition.EntryPoint = entryPoint;
+            }
 
-            _assemblyDefinition.EntryPoint = entryPoint;
             _assemblyDefinition.Write(outputPath);
 
             return _diagnostics.ToImmutableArray();
