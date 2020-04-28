@@ -23,6 +23,11 @@ namespace Panther.CodeAnalysis.Emit
         private readonly MethodReference? _consoleWriteLineReference;
         private readonly MethodReference? _consoleReadLineReference;
         private readonly MethodReference? _stringConcatReference;
+        private readonly MethodReference? _convertBoolToString;
+        private readonly MethodReference? _convertInt32ToString;
+        private readonly MethodReference? _convertToBool;
+        private readonly MethodReference? _convertToInt32;
+
         private readonly Dictionary<VariableSymbol, VariableDefinition> _locals = new Dictionary<VariableSymbol, VariableDefinition>();
         private readonly Dictionary<VariableSymbol, int> _localIndices = new Dictionary<VariableSymbol, int>();
 
@@ -69,6 +74,11 @@ namespace Panther.CodeAnalysis.Emit
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
             _stringConcatReference = ResolveMethod("System.String", "Concat", new[] {"System.String", "System.String"});
+
+            _convertBoolToString = ResolveMethod("System.Convert", "ToString", new[] {"System.Boolean"});
+            _convertInt32ToString = ResolveMethod("System.Convert", "ToString", new[] {"System.Int32"});
+            _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] {"System.Object"});
+            _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] {"System.Object"});
         }
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, string moduleName, string[] references,
@@ -111,7 +121,8 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitFunctionDeclaration(FunctionSymbol function)
         {
-            var returnType = _knownTypes[function.ReturnType];
+            var type = function.ReturnType;
+            var returnType = _knownTypes[type];
             var method = new MethodDefinition(function.Name, MethodAttributes.Static | MethodAttributes.Private, returnType);
             var methodParams =
                 from parameter in function.Parameters
@@ -410,6 +421,24 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitConversionExpression(ILProcessor ilProcessor, BoundConversionExpression conversionExpression)
         {
+            EmitExpression(ilProcessor, conversionExpression.Expression);
+
+            var fromType = conversionExpression.Expression.Type;
+            var toType = conversionExpression.Type;
+            if (toType == TypeSymbol.String)
+            {
+                if (fromType == TypeSymbol.Bool)
+                {
+                    ilProcessor.Emit(OpCodes.Call, _convertBoolToString);
+                    return;
+                }
+
+                if(fromType == TypeSymbol.Int)
+                {
+                    ilProcessor.Emit(OpCodes.Call, _convertInt32ToString);
+                    return;
+                }
+            }
             throw new NotImplementedException();
         }
 

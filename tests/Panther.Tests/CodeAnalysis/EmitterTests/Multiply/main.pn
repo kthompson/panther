@@ -1,0 +1,6 @@
+﻿def multiply(a: int, b: int): int = a * b
+
+def main(): unit = {
+    println(string(multiply(1, 7)))
+    println(string(multiply(2, 18)))
+}
