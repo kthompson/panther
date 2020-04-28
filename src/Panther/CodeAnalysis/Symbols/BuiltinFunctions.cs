@@ -5,7 +5,7 @@ namespace Panther.CodeAnalysis.Symbols
 {
     public sealed class BuiltinFunctions
     {
-        public static readonly FunctionSymbol Print = new FunctionSymbol("print",
+        public static readonly FunctionSymbol Print = new FunctionSymbol("println",
             ImmutableArray.Create(new ParameterSymbol("text", TypeSymbol.String, 0)), TypeSymbol.Unit);
 
         public static readonly FunctionSymbol Read =

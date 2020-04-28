@@ -33,10 +33,10 @@ namespace Panther.Tests.CodeAnalysis
             builtins.Setup(x => x.Print("Hello, Kevin"));
 
             AssertEvaluation(@"{
-                                   print(""What is your name?"")
+                                   println(""What is your name?"")
                                    val name = read()
                                    val message = ""Hello, "" + name
-                                   print(message)
+                                   println(message)
                                    message
                                }", "Hello, Kevin", builtins: builtins.Object);
         }

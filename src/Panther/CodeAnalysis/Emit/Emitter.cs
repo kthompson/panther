@@ -395,7 +395,7 @@ namespace Panther.CodeAnalysis.Emit
                 switch (callExpression.Function.Name)
                 {
                     // case "rnd":
-                    case "print":
+                    case "println":
                         ilProcessor.Emit(OpCodes.Call, _consoleWriteLineReference);
                         break;
                     case "read":

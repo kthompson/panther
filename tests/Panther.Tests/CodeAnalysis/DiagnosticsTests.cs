@@ -215,10 +215,10 @@ namespace Panther.Tests.CodeAnalysis
         [Fact]
         public void ReportInvalidParameter()
         {
-            var text = @"[print](""hey"", [=])";
+            var text = @"[println](""hey"", [=])";
 
             var diagnostic = @"
-                No overloads matching function name 'print' and argument types 'string', 'err'
+                No overloads matching function name 'println' and argument types 'string', 'err'
                 Unexpected token EqualsToken, expected Expression
             ";
 
