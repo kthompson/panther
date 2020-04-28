@@ -123,6 +123,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
             var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+            diagnostics.AddRange(globalScope.Diagnostics);
 
             foreach (var function in globalScope.Functions)
             {
