@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Text
 {
-    public struct TextLocation
+    public class TextLocation : IEquatable<TextLocation>
     {
         public SourceText Text { get; }
         public TextSpan Span { get; }
@@ -19,14 +19,19 @@ namespace Panther.CodeAnalysis.Text
             Span = span;
         }
 
-        public bool Equals(TextLocation other)
+        public bool Equals(TextLocation? other)
         {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
             return Text.Equals(other.Text) && Span.Equals(other.Span);
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is TextLocation other && Equals(other);
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((TextLocation) obj);
         }
 
         public override int GetHashCode()
@@ -34,14 +39,15 @@ namespace Panther.CodeAnalysis.Text
             return HashCode.Combine(Text, Span);
         }
 
-        public static bool operator ==(TextLocation left, TextLocation right)
+        public static bool operator ==(TextLocation? left, TextLocation? right)
         {
-            return left.Equals(right);
+            return Equals(left, right);
         }
 
-        public static bool operator !=(TextLocation left, TextLocation right)
+        public static bool operator !=(TextLocation? left, TextLocation? right)
         {
-            return !left.Equals(right);
+            return !Equals(left, right);
         }
+
     }
 }

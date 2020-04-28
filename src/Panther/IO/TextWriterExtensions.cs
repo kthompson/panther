@@ -76,48 +76,64 @@ namespace Panther.IO
         {
             foreach (var diagnostic in diagnostics.OrderBy(diagnostic => diagnostic.Span))
             {
-                var text = diagnostic.Location.Text;
-                var fileName = diagnostic.Location.Filename;
-                var startLine = diagnostic.Location.StartLine + 1;
-                var startCharacter = diagnostic.Location.StartCharacter + 1;
-                var endLine = diagnostic.Location.EndLine + 1;
-                var endCharacter = diagnostic.Location.EndCharacter + 1;
-
-
-                writer.WriteLine();
-
-                writer.SetForeground(ConsoleColor.DarkRed);
-                writer.Write($"{fileName}({startLine},{startCharacter},{endLine},{endCharacter}): ");
-                writer.WriteLine(diagnostic);
-                writer.ResetColor();
-
-                for (int currentLine = diagnostic.Location.StartLine; currentLine <= diagnostic.Location.EndLine; currentLine++)
+                var textLocation = diagnostic.Location;
+                if (textLocation == null)
                 {
-                    var line = text.Lines[currentLine];
-                    var startInCurrentLine = text.GetLineIndex(diagnostic.Span.Start) == currentLine;
-                    var endInCurrentLine = text.GetLineIndex(diagnostic.Span.End) == currentLine;
-
-                    var prefixEnd = startInCurrentLine ? diagnostic.Span.Start : line.Start;
-                    var suffixStart = endInCurrentLine ? diagnostic.Span.End : line.End;
-
-                    var prefixSpan = TextSpan.FromBounds(line.Start, prefixEnd);
-                    var errorSpan = TextSpan.FromBounds(prefixEnd, suffixStart);
-                    var suffixSpan = TextSpan.FromBounds(suffixStart, line.End);
-
-                    var prefix = text.ToString(prefixSpan);
-                    var error = text.ToString(errorSpan);
-                    var suffix = text.ToString(suffixSpan);
-
-                    writer.Write("  ");
-                    writer.Write(prefix);
+                    writer.WriteLine();
 
                     writer.SetForeground(ConsoleColor.DarkRed);
-                    writer.Write(error);
+                    writer.Write($"Error: ");
+                    writer.WriteLine(diagnostic);
                     writer.ResetColor();
+                }
+                else
+                {
+                    var span = textLocation.Span;
+                    var text = textLocation.Text;
+                    var fileName = textLocation.Filename ?? "";
+                    var startLine = textLocation.StartLine + 1;
+                    var startCharacter = textLocation.StartCharacter + 1;
+                    var endLine = textLocation.EndLine + 1;
+                    var endCharacter = textLocation.EndCharacter + 1;
 
-                    writer.Write(suffix);
 
                     writer.WriteLine();
+
+                    writer.SetForeground(ConsoleColor.DarkRed);
+                    writer.Write($"{fileName}({startLine},{startCharacter},{endLine},{endCharacter}): ");
+                    writer.WriteLine(diagnostic);
+                    writer.ResetColor();
+
+                    for (int currentLine = textLocation.StartLine;
+                        currentLine <= textLocation.EndLine;
+                        currentLine++)
+                    {
+                        var line = text.Lines[currentLine];
+                        var startInCurrentLine = text.GetLineIndex(span.Start) == currentLine;
+                        var endInCurrentLine = text.GetLineIndex(span.End) == currentLine;
+
+                        var prefixEnd = startInCurrentLine ? span.Start : line.Start;
+                        var suffixStart = endInCurrentLine ? span.End : line.End;
+
+                        var prefixSpan = TextSpan.FromBounds(line.Start, prefixEnd);
+                        var errorSpan = TextSpan.FromBounds(prefixEnd, suffixStart);
+                        var suffixSpan = TextSpan.FromBounds(suffixStart, line.End);
+
+                        var prefix = text.ToString(prefixSpan);
+                        var error = text.ToString(errorSpan);
+                        var suffix = text.ToString(suffixSpan);
+
+                        writer.Write("  ");
+                        writer.Write(prefix);
+
+                        writer.SetForeground(ConsoleColor.DarkRed);
+                        writer.Write(error);
+                        writer.ResetColor();
+
+                        writer.Write(suffix);
+
+                        writer.WriteLine();
+                    }
                 }
             }
         }

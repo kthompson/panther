@@ -14,7 +14,7 @@ namespace Panther.CodeAnalysis
     {
         private readonly List<Diagnostic> _diagnostics = new List<Diagnostic>();
 
-        private void Report(TextLocation span, string message)
+        private void Report(TextLocation? span, string message)
         {
             var diagnostic = new Diagnostic(span, message);
             _diagnostics.Add(diagnostic);
@@ -113,13 +113,13 @@ namespace Panther.CodeAnalysis
             Report(location, "Unterminated block comment");
 
         public void ReportInvalidReference(string reference) =>
-            Report(default, $"The specified reference is not valid: {reference}");
+            Report(null, $"The specified reference is not valid: {reference}");
 
         public void ReportBuiltinTypeNotFound(string builtinName) =>
-            Report(default, $"The required builtin type '{builtinName}' could not be found");
+            Report(null, $"The required builtin type '{builtinName}' could not be found");
 
         public void ReportTypeNotFound(string typeName) =>
-            Report(default, $"The required type '{typeName}' could not be found");
+            Report(null, $"The required type '{typeName}' could not be found");
 
         public void ReportAmbiguousBuiltinType(string builtinName, IEnumerable<TypeDefinition> foundTypes)
         {
@@ -130,7 +130,7 @@ namespace Panther.CodeAnalysis
                 select g.Key;
             var assemblyNameList = string.Join(", ", assemblyNames);
 
-            Report(default, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
+            Report(null, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
         }
 
         public void ReportAmbiguousType(string typeName, TypeDefinition[] foundTypes)
@@ -142,13 +142,13 @@ namespace Panther.CodeAnalysis
                 select g.Key;
             var assemblyNameList = string.Join(", ", assemblyNames);
 
-            Report(default, $"Ambiguous type '{typeName}' was found in the given assemblies: {assemblyNameList}");
+            Report(null, $"Ambiguous type '{typeName}' was found in the given assemblies: {assemblyNameList}");
         }
 
         public void ReportRequiredMethodNotFound(string typeName, string methodName, string[] parameterTypeNames)
         {
             var parameterTypeNamesList = string.Join(", ", parameterTypeNames);
-            Report(default, $"Required method {typeName}.{methodName}({parameterTypeNamesList}) was not found");
+            Report(null, $"Required method {typeName}.{methodName}({parameterTypeNamesList}) was not found");
         }
     }
 }
