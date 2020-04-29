@@ -102,6 +102,11 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             if (kind1 == SyntaxKind.EqualsToken && kind2 == SyntaxKind.EqualsEqualsToken)
                 return true;
 
+            // '/' + '*' => '/*'
+            // '/' + '/' => '//'
+            if (kind1 == SyntaxKind.SlashToken && (kind2 == SyntaxKind.SlashToken || kind2 == SyntaxKind.StarToken))
+                return true;
+
             // '<' + '=' => '<='
             // '<' + '-' => '<-'
             // '<' + '==' => '<=' + '='
