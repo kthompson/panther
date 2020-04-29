@@ -204,7 +204,7 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitGotoStatement(ILProcessor ilProcessor, BoundGotoStatement gotoStatement)
         {
-            var branchInstr = ilProcessor.Create(OpCodes.Br);
+            var branchInstr = ilProcessor.Create(OpCodes.Br, Instruction.Create(OpCodes.Nop));
 
             SetBranchTarget(gotoStatement.BoundLabel, branchInstr);
 
@@ -222,7 +222,9 @@ namespace Panther.CodeAnalysis.Emit
         {
             EmitExpression(ilProcessor, conditionalGotoStatement.Condition);
             var op = (conditionalGotoStatement.JumpIfTrue) ? OpCodes.Brtrue : OpCodes.Brfalse;
-            var branchInstruction = ilProcessor.Create(op);
+            // create temp target instruction
+            var tmp = Instruction.Create(OpCodes.Nop);
+            var branchInstruction = ilProcessor.Create(op, tmp);
 
             SetBranchTarget(conditionalGotoStatement.BoundLabel, branchInstruction);
             ilProcessor.Append(branchInstruction);
@@ -352,27 +354,38 @@ namespace Panther.CodeAnalysis.Emit
                     break;
                 case BoundBinaryOperatorKind.GreaterThan:
                     // int
-                    throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.Cgt);
+                    break;
 
                 case BoundBinaryOperatorKind.GreaterThanOrEqual:
                     // int
-                    throw new NotImplementedException();
+                    // convert a >= b to !(a < b) or  (a < b) == false
+                    ilProcessor.Emit(OpCodes.Clt);
+                    ilProcessor.Emit(OpCodes.Ldc_I4_0);
+                    ilProcessor.Emit(OpCodes.Ceq);
+                    break;
 
                 case BoundBinaryOperatorKind.LessThan:
                     // int
-                    throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.Clt);
+                    break;
 
                 case BoundBinaryOperatorKind.LessThanOrEqual:
                     // int
-                    throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.Cgt);
+                    ilProcessor.Emit(OpCodes.Ldc_I4_0);
+                    ilProcessor.Emit(OpCodes.Ceq);
+                    break;
 
                 case BoundBinaryOperatorKind.LogicalAnd:
                     // bool
-                    throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.And);
+                    break;
 
                 case BoundBinaryOperatorKind.LogicalOr:
                     // bool
-                    throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.Or);
+                    break;
 
                 case BoundBinaryOperatorKind.Multiplication:
                     // int
@@ -380,7 +393,10 @@ namespace Panther.CodeAnalysis.Emit
                     break;
                 case BoundBinaryOperatorKind.NotEqual:
                     // int, bool, string
-                    throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.Ceq);
+                    ilProcessor.Emit(OpCodes.Ldc_I4_0);
+                    ilProcessor.Emit(OpCodes.Ceq);
+                    break;
 
                 case BoundBinaryOperatorKind.Subtraction:
                     // int

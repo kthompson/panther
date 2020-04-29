@@ -30,10 +30,14 @@
   <ItemGroup>
     <None Remove="CodeAnalysis\EmitterTests\**\*.il" />
     <None Remove="CodeAnalysis\EmitterTests\**\*.pn" />
+    <None Remove="CodeAnalysis\EmitterTests\**\output.txt" />
     <Content Include="CodeAnalysis\EmitterTests\**\*.pn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="CodeAnalysis\EmitterTests\**\*.il">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CodeAnalysis\EmitterTests\**\output.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
