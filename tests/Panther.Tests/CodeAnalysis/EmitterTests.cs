@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
+using System.Threading;
+using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.Disassembler;
+using ICSharpCode.Decompiler.Metadata;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
@@ -37,34 +39,36 @@ namespace Panther.Tests.CodeAnalysis
             var outputPath = Path.Combine(Path.GetTempPath(), "Panther", "EmitterTests", moduleName);
 
             Directory.CreateDirectory(outputPath);
-            try
+            var assemblyLocation = Path.Combine(outputPath, moduleName + ".dll");
+            var results = compilation.Emit(moduleName, new[] { typeof(object).Assembly.Location, typeof(Console).Assembly.Location },
+                assemblyLocation);
+
+            Assert.Empty(results);
+
+            var actualSource = DumpIl(assemblyLocation).Split('\n');
+            for (var i = 0; i < actualSource.Length; i++)
             {
-                var assemblyLocation = Path.Combine(outputPath, moduleName + ".dll");
-                var results = compilation.Emit(moduleName, new[] { typeof(object).Assembly.Location, typeof(Console).Assembly.Location },
-                    assemblyLocation);
-
-                Assert.Empty(results);
-
-                using var proc = Process.Start(IlSpyPath, $"{assemblyLocation} -il -o {outputPath}");
-                Assert.NotNull(proc);
-                proc.WaitForExit();
-
-                var ilLocation = Path.Combine(outputPath, moduleName + ".il");
-                var actualSource = File.ReadAllLines(ilLocation);
-                for (int i = 0; i < actualSource.Length; i++)
-                {
-                    Assert.True(expectedSource.Length >= i, $"Missing line {i + 1}. Expected: {actualSource[i]}");
-                    if (expectedSource[i].Trim() != actualSource[i].Trim())
-                        throw new AssertActualExpectedException(expectedSource[i].Trim(), actualSource[i].Trim(),
-                            $"Line {i + 1}");
-                }
-
-                Assert.Equal(expectedSource.Length, actualSource.Length);
+                Assert.True(expectedSource.Length >= i, $"Missing line {i + 1}. Expected: {actualSource[i]}");
+                if (expectedSource[i].Trim() != actualSource[i].Trim())
+                    throw new AssertActualExpectedException(expectedSource[i].Trim(), actualSource[i].Trim(),
+                        $"Line {i + 1}");
             }
-            finally
-            {
-                // Directory.Delete(outputPath, true);
-            }
+
+            Assert.Equal(expectedSource.Length, actualSource.Length);
+
+            Directory.Delete(outputPath, true);
+        }
+
+        private static string DumpIl(string assemblyLocation)
+        {
+            using var sw = new StringWriter();
+            using var module = new PEFile(assemblyLocation);
+
+            sw.WriteLine($"// IL code: {module.Name}");
+            var disassembler = new ReflectionDisassembler(new PlainTextOutput(sw), CancellationToken.None);
+            disassembler.WriteModuleContents(module);
+
+            return sw.ToString();
         }
 
         public static IEnumerable<object[]> GetEmitterTests()

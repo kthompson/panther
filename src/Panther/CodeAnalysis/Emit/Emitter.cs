@@ -101,7 +101,8 @@ namespace Panther.CodeAnalysis.Emit
             _assemblyDefinition.MainModule.Types.Add(_typeDef);
 
             // ensure all functions exist first so we can reference them
-            foreach (var functionSignature in program.Functions.Keys)
+            // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
+            foreach (var functionSignature in program.Functions.Keys.OrderBy(x => x.Name))
                 EmitFunctionDeclaration(functionSignature);
 
             // emit the function bodies now

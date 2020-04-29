@@ -8,9 +8,22 @@
 {
 	// Methods
 	.method private static
-		void main () cil managed
+		string getName () cil managed
 	{
 		// Method begins at RVA 0x2050
+		// Code size 16 (0x10)
+		.maxstack 8
+
+		IL_0000: ldstr "What is your name?"
+		IL_0005: call void [System.Console]System.Console::WriteLine(string)
+		IL_000a: call string [System.Console]System.Console::ReadLine()
+		IL_000f: ret
+	} // end of method Program::getName
+
+	.method private static
+		void main () cil managed
+	{
+		// Method begins at RVA 0x2064
 		// Code size 33 (0x21)
 		.maxstack 2
 		.entrypoint
@@ -28,19 +41,6 @@
 		IL_001b: call void [System.Console]System.Console::WriteLine(string)
 		IL_0020: ret
 	} // end of method Program::main
-
-	.method private static
-		string getName () cil managed
-	{
-		// Method begins at RVA 0x207d
-		// Code size 16 (0x10)
-		.maxstack 8
-
-		IL_0000: ldstr "What is your name?"
-		IL_0005: call void [System.Console]System.Console::WriteLine(string)
-		IL_000a: call string [System.Console]System.Console::ReadLine()
-		IL_000f: ret
-	} // end of method Program::getName
 
 } // end of class Program
 
