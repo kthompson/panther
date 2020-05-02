@@ -3,11 +3,11 @@
 {
 } // end of class <Module>
 
-.class private auto ansi abstract sealed Program
+.class public auto ansi abstract sealed Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
-	.method private static
+	.method public static
 		int32 doThing (
 			int32 'value'
 		) cil managed
@@ -30,7 +30,7 @@
 		IL_0011: ret
 	} // end of method Program::doThing
 
-	.method private static
+	.method public static
 		void main () cil managed
 	{
 		// Method begins at RVA 0x2070

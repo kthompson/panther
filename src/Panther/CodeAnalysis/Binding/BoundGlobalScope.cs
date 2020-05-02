@@ -15,7 +15,7 @@ namespace Panther.CodeAnalysis.Binding
         public ImmutableArray<MethodSymbol> Functions { get; }
         public ImmutableArray<VariableSymbol> Variables { get; }
         public ImmutableArray<BoundStatement> Statements { get; }
-        public ImmutableArray<AssemblyDefinition> References  { get; }
+        public ImmutableArray<AssemblyDefinition> References { get; }
 
         public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics,
             MethodSymbol? mainFunction, MethodSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,

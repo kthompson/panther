@@ -3,11 +3,11 @@
 {
 } // end of class <Module>
 
-.class private auto ansi abstract sealed Program
+.class public auto ansi abstract sealed Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
-	.method private static
+	.method public static
 		void main () cil managed
 	{
 		// Method begins at RVA 0x2050
@@ -48,7 +48,7 @@
 		IL_0033: ret
 	} // end of method Program::main
 
-	.method private static
+	.method public static
 		int32 multiply (
 			int32 a,
 			int32 b

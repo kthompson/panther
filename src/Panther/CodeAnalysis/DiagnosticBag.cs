@@ -136,7 +136,7 @@ namespace Panther.CodeAnalysis
             Report(null, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
         }
 
-        public void ReportAmbiguousType(string typeName, TypeDefinition[] foundTypes)
+        public void ReportAmbiguousType(string typeName, ImmutableArray<TypeDefinition> foundTypes)
         {
             var assemblyNames = from type in foundTypes
                                 let asmName = type.Module.Assembly.Name.Name

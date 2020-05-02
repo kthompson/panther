@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using FsCheck.Xunit;
+using Mono.Cecil;
 using Moq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
@@ -12,6 +14,7 @@ using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
 using Panther.Tests.CodeAnalysis.Syntax;
 using Xunit;
+using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis.Lowering
 {
@@ -34,14 +37,6 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         private void LoweringShouldPreserveSideEffectOrderInCallExpressions()
         {
 
-            var builtins = new Mock<IBuiltins>(MockBehavior.Strict);
-            var sequence = new MockSequence();
-            builtins.InSequence(sequence).Setup(x => x.Println("first"));
-            builtins.InSequence(sequence).Setup(x => x.Println("0"));
-            builtins.InSequence(sequence).Setup(x => x.Println("1"));
-            builtins.InSequence(sequence).Setup(x => x.Println("2"));
-            builtins.InSequence(sequence).Setup(x => x.Println("V0V1V2"));
-            builtins.InSequence(sequence).Setup(x => x.Println("last"));
 
             string SideEffectBlock(int i) =>
                 AnnotatedText.Parse($@"{{
@@ -49,10 +44,8 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                                         ""V{i}""
                                       }}").Text;
 
-            string CallExpr()
-            {
 
-                return AnnotatedText.Parse($@"
+            var source = AnnotatedText.Parse($@"
                                         def sideEffect(a: string): string = {{
                                             println(a)
                                             ""V"" + a
@@ -65,14 +58,21 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                                           println(concat({SideEffectBlock(0)}, sideEffect(""1""), {SideEffectBlock(2)})) 
                                           println(""last"")                                        
                                         }}").Text;
-            }
 
-            var source = CallExpr();
             var tree = SyntaxTree.Parse(source);
-            var compilation = Compilation.CreateScript(null, builtins.Object, tree);
-            var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+            using var scriptHost = BuildScriptHostTestLib();
 
-            builtins.VerifyAll();
+            scriptHost.Execute(tree);
+
+            var expectedOutput = BuildExpectedOutput(
+                "first",
+                "0",
+                "1",
+                "2",
+                "V0V1V2",
+                "last");
+
+            AssertEvaluation("getOutput()", expectedOutput, scriptHost);
         }
 
         private bool ContainsBlock(BoundBlockExpression block) =>

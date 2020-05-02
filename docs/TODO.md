@@ -3,10 +3,7 @@
 
 # TODO:
 
-- convert interpreter to use emitter
-    - Create Test StdLib with Faked IO
-    - support continuation in an assembly
-    - Remove "Builtins"
+- Remove "Builtins"/Support detecting Predef methods
 - debugging support
 - qualified names
 - object definitions

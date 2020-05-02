@@ -59,6 +59,8 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
+            diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics, (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
+
             return new BoundGlobalScope(previous, diagnostics, mainFunction, scriptFunction, variables,
                 ImmutableArray<TypeSymbol>.Empty, functions, statements, references);
         }
@@ -216,7 +218,15 @@ namespace Panther.CodeAnalysis.Binding
                 }
             }
 
-            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation) ?? TypeSymbol.Unit;
+            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation);
+            if (type == null)
+            {
+                // HACK: temporarily bind to body so that we can detect the type
+                var tempFunction = new MethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
+                var functionScope = new BoundScope(scope, tempFunction);
+                var expr = BindExpression(syntax.Body, functionScope);
+                type = expr.Type;
+            }
 
             var function = new MethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
@@ -608,9 +618,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var result = new BoundScope(null);
             foreach (var symbol in BuiltinFunctions.GetAll())
-            {
                 result.TryDeclareFunction(symbol);
-            }
 
             return result;
         }

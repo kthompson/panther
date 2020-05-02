@@ -120,17 +120,17 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             Gen<BoundExpression> StringGen() =>
                 from token in Arb.Generate<SyntaxNode>()
                 from x in Arb.Generate<NonNull<string>>()
-                select (BoundExpression) new BoundLiteralExpression(token, x.Item);
+                select (BoundExpression)new BoundLiteralExpression(token, x.Item);
 
             Gen<BoundExpression> IntGen() =>
                 from token in Arb.Generate<SyntaxNode>()
                 from x in Arb.Generate<int>()
-                select (BoundExpression) new BoundLiteralExpression(token, x);
+                select (BoundExpression)new BoundLiteralExpression(token, x);
 
             Gen<BoundExpression> BoolGen() =>
                 from token in Arb.Generate<SyntaxNode>()
                 from x in Arb.Generate<bool>()
-                select (BoundExpression) new BoundLiteralExpression(token, x);
+                select (BoundExpression)new BoundLiteralExpression(token, x);
 
             if (typeSymbol == Panther.CodeAnalysis.Symbols.TypeSymbol.Bool)
                 return BoolGen();

@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Panther.StdLib\Panther.StdLib.csproj" />
     <ProjectReference Include="..\Panther\Panther.csproj" />
   </ItemGroup>
 

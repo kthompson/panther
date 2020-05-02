@@ -1,43 +1,63 @@
+extern alias TestLib;
+extern alias StdLib;
+
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Loader;
+using Mono.Cecil;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 using Xunit;
+
 
 namespace Panther.Tests.CodeAnalysis
 {
     public static class TestHelpers
     {
+        public static ImmutableArray<AssemblyDefinition> AssembliesWithStdLib { get; }
+        public static ImmutableArray<AssemblyDefinition> AssembliesWithTestStdLib { get; }
         public static string b(bool value) => value ? "true" : "false";
 
-        private class TestBuiltins : IBuiltins
+        static TestHelpers()
         {
-            public string ReadLine()
-            {
-                return "";
-            }
+            AssembliesWithTestStdLib = GetAssemblyDefinitions(typeof(object).Assembly.Location,
+                typeof(Console).Assembly.Location, typeof(TestLib::Panther.Unit).Assembly.Location);
 
-            public void Print(object message)
-            {
-            }
-
-            public void Println(object message)
-            {
-            }
-
-            public void Print(string message)
-            {
-            }
+            AssembliesWithStdLib = GetAssemblyDefinitions(typeof(object).Assembly.Location,
+                typeof(Console).Assembly.Location, typeof(StdLib::Panther.Unit).Assembly.Location);
         }
 
-        public static void AssertHasDiagnostics(string text, string diagnosticText, IBuiltins? builtins = null)
+        private static ImmutableArray<AssemblyDefinition> GetAssemblyDefinitions(params string[] references)
+        {
+            var assemblies = ImmutableArray.CreateBuilder<AssemblyDefinition>();
+
+            foreach (var reference in references)
+            {
+                var asm = AssemblyDefinition.ReadAssembly(reference);
+                assemblies.Add(asm);
+            }
+
+            var result = assemblies.ToImmutable();
+            return result;
+        }
+
+
+        public static void AssertHasDiagnostics(string text, string diagnosticText, [CallerMemberName] string? testName = null)
         {
             var annotatedText = AnnotatedText.Parse(text);
             var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
-            var compilation = Compilation.CreateScript(null, builtins ?? new TestBuiltins(), syntaxTree);
-            var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+            using var scriptHost = new ScriptHost(AssembliesWithStdLib, testName ?? "test");
+
+            var result = scriptHost.Execute(syntaxTree);
             var expectedDiagnosticMessages = AnnotatedText.UnindentLines(diagnosticText);
 
             Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length, "Test invalid, must have equal number of diagnostics as text spans");
@@ -65,31 +85,38 @@ namespace Panther.Tests.CodeAnalysis
             Assert.Equal(expectedDiagnosticMessages.Length, expectedDiagnostics.Length);
         }
 
-        public static void AssertEvaluation(string code, object value,
-            Dictionary<VariableSymbol, object>? dictionary = null, Compilation? previous = null, IBuiltins? builtins = null)
+        public static void AssertEvaluation(string code, object value, ScriptHost host)
         {
-            Compile(code, ref dictionary, previous, builtins, out var result);
+            var result = Execute(code, host);
             Assert.Equal(value, result.Value);
         }
 
-        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object>? dictionary) =>
-            Compile(code, ref dictionary, null, null, out var result);
+        public static ScriptHost BuildScriptHost([CallerMemberName] string? testName = null) =>
+            new ScriptHost(AssembliesWithStdLib, testName ?? "test");
 
-        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object>? dictionary,
-            Compilation? previous,
-            IBuiltins? builtins,
-            out EvaluationResult result)
+        public static ScriptHost BuildScriptHostTestLib([CallerMemberName] string? testName = null) =>
+            new ScriptHost(AssembliesWithTestStdLib, testName ?? "test");
+
+        public static ExecutionResult Execute(string code, ScriptHost host)
         {
-            dictionary ??= new Dictionary<VariableSymbol, object>();
             var tree = SyntaxTree.Parse(code);
             Assert.Empty(tree.Diagnostics);
-            var compilation = Compilation.CreateScript(previous, builtins ?? new TestBuiltins(), tree);
 
-            result = compilation.Evaluate(dictionary);
+            var compilation = host.Compile(tree);
 
-            Assert.NotNull(result);
-            Assert.Empty(result.Diagnostics);
-            return compilation;
+            var executionResult = host.Execute(compilation);
+            Assert.Empty(executionResult.Diagnostics);
+
+            return executionResult;
+        }
+
+        public static string BuildExpectedOutput(params string[] expectedLines)
+        {
+            using var sb = new StringWriter();
+            foreach (var expectedLine in expectedLines)
+                sb.WriteLine(expectedLine);
+
+            return sb.ToString();
         }
     }
 }

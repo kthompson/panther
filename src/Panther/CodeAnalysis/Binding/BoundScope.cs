@@ -16,7 +16,7 @@ namespace Panther.CodeAnalysis.Binding
         public BoundScope? Parent { get; }
 
         public BoundScope(BoundScope? parent)
-            : this(parent, null) // should we pass parent._function here?
+            : this(parent, parent?._function)
         {
         }
 

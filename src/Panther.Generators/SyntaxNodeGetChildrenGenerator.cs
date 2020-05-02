@@ -116,12 +116,12 @@ namespace Panther.Generators
         bool IsPartial(INamedTypeSymbol type)
         {
             var items = from syntaxReference in type.DeclaringSyntaxReferences
-                let syntax = syntaxReference.GetSyntax()
-                where syntax is TypeDeclarationSyntax
-                let typeDeclarationSyntax = (TypeDeclarationSyntax) syntax
-                from modifier in typeDeclarationSyntax.Modifiers
-                where modifier.ValueText == "partial"
-                select modifier;
+                        let syntax = syntaxReference.GetSyntax()
+                        where syntax is TypeDeclarationSyntax
+                        let typeDeclarationSyntax = (TypeDeclarationSyntax)syntax
+                        from modifier in typeDeclarationSyntax.Modifiers
+                        where modifier.ValueText == "partial"
+                        select modifier;
 
             return items.Any();
         }

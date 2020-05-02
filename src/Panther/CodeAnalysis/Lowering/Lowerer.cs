@@ -9,12 +9,12 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Lowering
 {
-    sealed class Lowerer : BoundTreeRewriter
+    internal sealed class Lowerer : BoundTreeRewriter
     {
         private int _labelCount;
         private int _variableCount;
 
-        enum LabelToken
+        private enum LabelToken
         {
         }
 
@@ -67,7 +67,6 @@ namespace Panther.CodeAnalysis.Lowering
                 tac.WriteTo(Console.Out);
             }
 
-
             var unitLessStatements = RemoveUnitAssignments.Lower(tac);
             if (debug)
             {
@@ -91,7 +90,6 @@ namespace Panther.CodeAnalysis.Lowering
 
             return deadCodeRemoval;
         }
-
 
         private static BoundBlockExpression RemoveDeadCode(BoundBlockExpression block)
         {
@@ -123,7 +121,6 @@ namespace Panther.CodeAnalysis.Lowering
             return new BoundNopStatement(node.Syntax);
         }
 
-
         protected override BoundExpression RewriteBlockExpression(BoundBlockExpression node)
         {
             if (node.Statements.Length == 0)
@@ -150,11 +147,11 @@ namespace Panther.CodeAnalysis.Lowering
             return RewriteExpression(
                 new BoundBlockExpression(node.Syntax,
                     ImmutableArray.Create<BoundStatement>(
-                        new BoundLabelStatement(node.Syntax,node.ContinueLabel),
-                        new BoundConditionalGotoStatement(node.Syntax,node.BreakLabel, condition),
-                        new BoundExpressionStatement(node.Syntax,body),
-                        new BoundGotoStatement(node.Syntax,node.ContinueLabel),
-                        new BoundLabelStatement(node.Syntax,node.BreakLabel)
+                        new BoundLabelStatement(node.Syntax, node.ContinueLabel),
+                        new BoundConditionalGotoStatement(node.Syntax, node.BreakLabel, condition),
+                        new BoundExpressionStatement(node.Syntax, body),
+                        new BoundGotoStatement(node.Syntax, node.ContinueLabel),
+                        new BoundLabelStatement(node.Syntax, node.BreakLabel)
                     ),
                     new BoundUnitExpression(node.Syntax)
                 )
@@ -192,13 +189,13 @@ namespace Panther.CodeAnalysis.Lowering
             var block = new BoundBlockExpression(node.Syntax,
                 ImmutableArray.Create<BoundStatement>(
                     new BoundConditionalGotoStatement(node.Syntax, elseLabel, condition),
-                    new BoundVariableDeclarationStatement(node.Syntax,variable, then),
-                    new BoundGotoStatement(node.Syntax,endLabel),
-                    new BoundLabelStatement(node.Syntax,elseLabel),
-                    new BoundVariableDeclarationStatement(node.Syntax,variable, @else),
-                    new BoundLabelStatement(node.Syntax,endLabel)
+                    new BoundVariableDeclarationStatement(node.Syntax, variable, then),
+                    new BoundGotoStatement(node.Syntax, endLabel),
+                    new BoundLabelStatement(node.Syntax, elseLabel),
+                    new BoundVariableDeclarationStatement(node.Syntax, variable, @else),
+                    new BoundLabelStatement(node.Syntax, endLabel)
                 ),
-                new BoundVariableExpression(node.Syntax,variable)
+                new BoundVariableExpression(node.Syntax, variable)
             );
 
             return RewriteExpression(block);
@@ -230,12 +227,12 @@ namespace Panther.CodeAnalysis.Lowering
                 BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
                 upperBound
             );
-            var continueLabelStatement = new BoundLabelStatement(node.Syntax,node.ContinueLabel);
+            var continueLabelStatement = new BoundLabelStatement(node.Syntax, node.ContinueLabel);
             var incrementX = new BoundExpressionStatement(
                 node.Syntax,
                 new BoundAssignmentExpression(node.Syntax, node.Variable, new BoundBinaryExpression(
                     node.Syntax,
-                    new BoundVariableExpression(node.Syntax,node.Variable),
+                    new BoundVariableExpression(node.Syntax, node.Variable),
                     BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
                     new BoundLiteralExpression(node.Syntax, 1)
                 )));

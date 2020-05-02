@@ -16,7 +16,6 @@ namespace Panther.CodeAnalysis
 {
     public class Compilation
     {
-        private readonly IBuiltins _builtins;
         public bool IsScript { get; }
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
@@ -41,9 +40,8 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        private Compilation(ImmutableArray<AssemblyDefinition> references, bool isScript, Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees)
+        private Compilation(ImmutableArray<AssemblyDefinition> references, bool isScript, Compilation? previous, params SyntaxTree[] syntaxTrees)
         {
-            _builtins = builtins ?? Builtins.Default;
             References = references;
             IsScript = isScript;
             Previous = previous;
@@ -72,20 +70,14 @@ namespace Panther.CodeAnalysis
                 return (bag.ToImmutableArray(), null);
             }
 
-            return (ImmutableArray<Diagnostic>.Empty,  Create(assemblies.ToImmutable(), syntaxTrees));
+            return (ImmutableArray<Diagnostic>.Empty, Create(assemblies.ToImmutable(), syntaxTrees));
         }
 
         public static Compilation Create(ImmutableArray<AssemblyDefinition> references, params SyntaxTree[] syntaxTrees) =>
-            Create(references, null, syntaxTrees);
+            new Compilation(references, false, null, syntaxTrees);
 
-        public static Compilation Create(ImmutableArray<AssemblyDefinition> references, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
-            new Compilation(references, false, null, null, syntaxTrees);
-
-        public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees) =>
-            CreateScript(previous, previous?._builtins, syntaxTrees);
-
-        public static Compilation CreateScript(Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
-            new Compilation(ImmutableArray<AssemblyDefinition>.Empty, isScript: true, previous, builtins, syntaxTrees);
+        public static Compilation CreateScript(ImmutableArray<AssemblyDefinition> references, Compilation? previous, params SyntaxTree[] syntaxTrees) =>
+            new Compilation(references, isScript: true, previous, syntaxTrees);
 
         public IEnumerable<Symbol> GetSymbols()
         {
@@ -102,42 +94,6 @@ namespace Panther.CodeAnalysis
 
                 compilation = compilation.Previous;
             }
-        }
-
-        public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
-        {
-            var globalScope = GlobalScope;
-            var syntaxDiags =
-                from tree in SyntaxTrees
-                from diag in tree.Diagnostics
-                select diag;
-
-            var diagnostics = syntaxDiags.Concat(globalScope.Diagnostics).ToImmutableArray();
-
-            if (diagnostics.Any())
-            {
-                return new EvaluationResult(diagnostics, null);
-            }
-
-            var program = GetProgram();
-
-            // var appPath = Environment.GetCommandLineArgs()[0];
-            // var appDirectory = Path.GetDirectoryName(appPath);
-            // var cfgPath = Path.Combine(appDirectory, "cfg.dot");
-            // var cfgExpression = !program.Expression.Statements.Any() && program.Functions.Any()
-            //     ? program.Functions.Last().Value
-            //     : program.Expression;
-            // var cfg = ControlFlowGraph.Create(cfgExpression);
-            // using var stream = new StreamWriter(cfgPath);
-            // cfg.WriteTo(stream);
-
-            if (program.Diagnostics.Any())
-                return new EvaluationResult(program.Diagnostics.ToImmutableArray(), null);
-
-            var evaluator = new Evaluator(program, variables, _builtins);
-            var value = evaluator.Evaluate();
-
-            return new EvaluationResult(ImmutableArray<Diagnostic>.Empty, value);
         }
 
         private BoundProgram GetProgram()
@@ -194,10 +150,16 @@ namespace Panther.CodeAnalysis
             method.WriteTo(writer);
         }
 
-        public ImmutableArray<Diagnostic> Emit(string moduleName, string outputPath)
+        public EmitResult Emit(string moduleName, string outputPath)
         {
             var program = GetProgram();
             return Emitter.Emit(program, moduleName, outputPath);
+        }
+
+        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<GlobalVariableSymbol, FieldReference> previousGlobals, Dictionary<MethodSymbol, MethodReference> previousMethods)
+        {
+            var program = GetProgram();
+            return Emitter.Emit(program, moduleName, outputPath, previousGlobals, previousMethods);
         }
     }
 }

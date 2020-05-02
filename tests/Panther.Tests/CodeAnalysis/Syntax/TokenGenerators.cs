@@ -41,7 +41,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                         {
                             var text = SyntaxFacts.GetText(kind);
                             if (text != null)
-                                return new[] {new NonSeparatorTokenTestData(kind, text)};
+                                return new[] { new NonSeparatorTokenTestData(kind, text) };
 
                             return Enumerable.Empty<NonSeparatorTokenTestData>();
                         }))

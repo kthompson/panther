@@ -27,29 +27,26 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Panther.StdLib\Panther.StdLib.csproj">
+      <Aliases>StdLib</Aliases>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\Panther\Panther.csproj" />
+    <ProjectReference Include="..\Panther.TestStdLib\Panther.TestStdLib.csproj">
+      <Aliases>TestLib</Aliases>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="CodeAnalysis\EmitterTests\**\*.il" />
-    <None Remove="CodeAnalysis\EmitterTests\**\*.pn" />
-    <None Remove="CodeAnalysis\EmitterTests\**\output.txt" />
-    <Content Include="CodeAnalysis\EmitterTests\**\*.pn">
+    <None Remove="CodeAnalysis\Emit\**\*.il" />
+    <None Remove="CodeAnalysis\Emit\**\*.pn" />
+    <None Remove="CodeAnalysis\Emit\**\output.txt" />
+    <Content Include="CodeAnalysis\Emit\**\*.pn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="CodeAnalysis\EmitterTests\**\*.il">
+    <Content Include="CodeAnalysis\Emit\**\*.il">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="CodeAnalysis\EmitterTests\**\output.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="CodeAnalysis\EmitterTests\GlobalStatements\main.pn">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="CodeAnalysis\EmitterTests\GlobalStatements\output.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="CodeAnalysis\EmitterTests\GlobalStatements\expected.il">
+    <Content Include="CodeAnalysis\Emit\**\output.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed partial  class CallExpressionSyntax : ExpressionSyntax
+    public sealed partial class CallExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken IdentifierToken { get; }
         public SyntaxToken OpenParenToken { get; }

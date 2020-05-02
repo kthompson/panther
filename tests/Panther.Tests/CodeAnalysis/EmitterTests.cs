@@ -1,4 +1,6 @@
-﻿using System;
+﻿extern alias StdLib;
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,12 +13,14 @@ using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 using Xunit.Sdk;
+using Predef = StdLib::Panther.Predef;
+using Unit = StdLib::Panther.Unit;
 
 namespace Panther.Tests.CodeAnalysis
 {
     public class EmitterTests
     {
-        public static readonly string OutputPath = Path.Combine("CodeAnalysis", "EmitterTests");
+        public static readonly string OutputPath = Path.Combine("CodeAnalysis", "Emit");
 
         [Theory]
         [MemberData(nameof(GetEmitterTests))]
@@ -31,27 +35,36 @@ namespace Panther.Tests.CodeAnalysis
 
             var moduleName = Path.GetFileName(testDirectory);
             Assert.NotNull(moduleName);
+            var outputDirectory = Path.Combine(Path.GetTempPath(), "Panther", "Emit", moduleName);
+            if (Directory.Exists(outputDirectory))
+                Directory.Delete(outputDirectory, recursive: true);
+
+            Directory.CreateDirectory(outputDirectory);
+
             var references = new[]
             {
                 typeof(object).Assembly.Location,
                 typeof(Console).Assembly.Location,
-                typeof(Unit).Assembly.Location // TODO use the testlib here
+                typeof(Unit).Assembly.Location
             };
+
+            foreach (var reference in references)
+            {
+                var referenceCopy = Path.Combine(outputDirectory, Path.GetFileName(reference));
+                TryCopy(reference, referenceCopy);
+            }
 
             var (diagnostics, compilation) = Compilation.Create(references, trees);
             Assert.Empty(diagnostics);
             Assert.NotNull(compilation); Debug.Assert(compilation != null);
 
-            var outputDirectory = Path.Combine(Path.GetTempPath(), "Panther", "EmitterTests", moduleName);
-
-            Directory.CreateDirectory(outputDirectory);
             var assemblyLocation = Path.Combine(outputDirectory, moduleName + ".dll");
-            var results = compilation.Emit(
-                moduleName,
 
+            var emitResult = compilation.Emit(
+                moduleName,
                 assemblyLocation);
 
-            Assert.Empty(results);
+            Assert.Empty(emitResult.Diagnostics);
 
             var actualSource = DumpIl(assemblyLocation).Split('\n');
             AssertFileLines(expectedSource, actualSource);
@@ -59,9 +72,6 @@ namespace Panther.Tests.CodeAnalysis
             Assert.Equal(expectedSource.Length, actualSource.Length);
 
             // verify command output
-
-            TryCopy(typeof(Unit).Assembly.Location,
-                Path.Combine(outputDirectory, Path.GetFileName(typeof(Unit).Assembly.Location)));
             AssertCommandOutput(testDirectory, outputDirectory, assemblyLocation);
 
             Directory.Delete(outputDirectory, true);
@@ -107,7 +117,7 @@ namespace Panther.Tests.CodeAnalysis
         {
             for (var i = 0; i < expectedLines.Length; i++)
             {
-                Assert.True(actualLines.Length > i, $"Missing line {i + 1}. Expected: {actualLines[i]}");
+                Assert.True(actualLines.Length > i, $"Missing line {i + 1}. Expected: {expectedLines[i]}");
                 if (expectedLines[i].Trim() != actualLines[i].Trim())
                     throw new AssertActualExpectedException(expectedLines[i].Trim(), actualLines[i].Trim(),
                         $"Line {i + 1}");
@@ -140,7 +150,11 @@ namespace Panther.Tests.CodeAnalysis
         {
             foreach (var directory in Directory.GetDirectories(OutputPath))
             {
-                var sources = Directory.GetFiles(directory, "*.pn");
+                // HACK: currently the compilation order of files will dictate whether a function is out of scope
+                // for now lets make sure we have a predictable sort order so that we can ensure the correct
+                // compilation order for our sources
+                var sources = Directory.GetFiles(directory, "*.pn").OrderBy(x => x).ToArray();
+
                 var expected = Directory.GetFiles(directory, "*.il").SingleOrDefault();
                 yield return new object[] { directory, sources, expected };
             }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Mono.Cecil;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Authoring;
 using Panther.CodeAnalysis.Binding;
@@ -18,10 +20,12 @@ namespace Panther
         private Compilation? _previous;
         private bool _showTree;
         private bool _showProgram;
-        private readonly Dictionary<VariableSymbol, object> _variables = new Dictionary<VariableSymbol, object>();
+
+        private ScriptHost _scriptHost;
 
         public PantherRepl()
         {
+            _scriptHost = BuildDefaultScriptHost();
             LoadSubmissions();
         }
 
@@ -88,8 +92,31 @@ namespace Panther
         private void MetaReset()
         {
             _previous = null;
-            _variables.Clear();
+            _scriptHost.Dispose();
+            _scriptHost = BuildDefaultScriptHost();
             ClearSubmissions();
+        }
+
+        private static ScriptHost BuildDefaultScriptHost()
+        {
+            var references = new string[]
+            {
+                typeof(object).Assembly.Location,
+                typeof(Console).Assembly.Location,
+                typeof(Unit).Assembly.Location
+            };
+
+            var assemblies = ImmutableArray.CreateBuilder<AssemblyDefinition>();
+
+            foreach (var reference in references)
+            {
+                var asm = AssemblyDefinition.ReadAssembly(reference);
+                assemblies.Add(asm);
+            }
+
+            var result = assemblies.ToImmutable();
+
+            return new ScriptHost(result, null, "Repl");
         }
 
         [MetaCommand("showTree", "Toggle showing the parse tree")]
@@ -131,7 +158,7 @@ namespace Panther
         {
             if (_previous == null)
                 return;
-            
+
             var function = _previous.GetSymbols().OfType<MethodSymbol>().FirstOrDefault(func => func.Name == functionName);
 
             if (function == null)
@@ -166,7 +193,7 @@ namespace Panther
             try
             {
                 var syntaxTree = SyntaxTree.Parse(text.TrimEnd('\r', '\n'));
-                var compilation = Compilation.CreateScript(_previous, syntaxTree);
+                var compilation = _scriptHost.Compile(syntaxTree);
 
                 if (_showTree)
                     syntaxTree.Root.WriteTo(Console.Out);
@@ -174,26 +201,24 @@ namespace Panther
                 if (_showProgram)
                     compilation.EmitTree(Console.Out);
 
-                var result = compilation.Evaluate(_variables);
+                var result = _scriptHost.Execute(compilation);
 
-                if (!result.Diagnostics.Any())
-                {
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine(result.Value);
-                    Console.ResetColor();
-                    _previous = compilation;
-
-                    SaveSubmission(text);
-                }
-                else
+                if (result.Diagnostics.Any())
                 {
                     Console.Error.WriteDiagnostics(result.Diagnostics);
                     Console.WriteLine();
+                    return;
                 }
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(result.Value);
+                Console.ResetColor();
+                _previous = compilation;
+
+                SaveSubmission(text);
             }
             catch (Exception e)
             {
-
                 Console.WriteLine(e);
             }
 

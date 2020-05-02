@@ -7,6 +7,7 @@ namespace Panther.CodeAnalysis.Symbols
     {
         public ImmutableArray<ParameterSymbol> Parameters { get; }
         public TypeSymbol ReturnType { get; }
+        // TODO: make this non-nullable
         public FunctionDeclarationSyntax? Declaration { get; }
 
         public override SymbolKind Kind => SymbolKind.Method;
