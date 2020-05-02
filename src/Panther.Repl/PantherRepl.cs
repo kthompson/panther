@@ -58,6 +58,12 @@ namespace Panther
                 _ => ConsoleColor.DarkGray
             };
 
+        [MetaCommand("exit", "Exit the repl environment")]
+        private void MetaExit()
+        {
+            Running = false;
+        }
+
         [MetaCommand("showProgram", "Toggle showing the bound tree")]
         private void MetaShowProgram()
         {

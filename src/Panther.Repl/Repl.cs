@@ -21,6 +21,8 @@ namespace Panther
 
         private bool _done;
 
+        private protected bool Running = true;
+
         protected Repl()
         {
             InitializeMetaCommands();
@@ -40,11 +42,11 @@ namespace Panther
 
         public void Run()
         {
-            while (true)
+            while (Running)
             {
                 var text = EditSubmission();
                 if (string.IsNullOrEmpty(text))
-                    return;
+                    continue;
 
                 if (!text.Contains(Environment.NewLine) && text.StartsWith("#"))
                     EvaluateMetaCommand(text);
