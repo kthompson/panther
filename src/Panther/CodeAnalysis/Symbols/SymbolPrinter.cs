@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Symbols
     {
         public static void WriteTo(this Symbol symbol, TextWriter writer)
         {
-            switch (symbol  )
+            switch (symbol)
             {
                 case FunctionSymbol functionSymbol:
                     WriteFunctionSymbol(functionSymbol, writer);

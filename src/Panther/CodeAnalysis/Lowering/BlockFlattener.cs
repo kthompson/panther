@@ -44,8 +44,8 @@ namespace Panther.CodeAnalysis.Lowering
             }
 
             var rewritten = this.RewriteExpression(node.Expression);
-             if (rewritten.Kind == BoundNodeKind.LiteralExpression)
-                 return rewritten;
+            if (rewritten.Kind == BoundNodeKind.LiteralExpression)
+                return rewritten;
 
             // node.Expression had a nested block so assign it to a temp and return the variable
             var tempVariable = CreateTemporary(rewritten);

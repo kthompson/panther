@@ -70,15 +70,15 @@ namespace Panther.CodeAnalysis.Emit
                 _knownTypes.Add(typeSymbol, typeReference);
             }
 
-            _consoleWriteLineReference = ResolveMethod("System.Console", "WriteLine", new[] {"System.String"});
+            _consoleWriteLineReference = ResolveMethod("System.Console", "WriteLine", new[] { "System.String" });
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
-            _stringConcatReference = ResolveMethod("System.String", "Concat", new[] {"System.String", "System.String"});
+            _stringConcatReference = ResolveMethod("System.String", "Concat", new[] { "System.String", "System.String" });
 
-            _convertBoolToString = ResolveMethod("System.Convert", "ToString", new[] {"System.Boolean"});
-            _convertInt32ToString = ResolveMethod("System.Convert", "ToString", new[] {"System.Int32"});
-            _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] {"System.Object"});
-            _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] {"System.Object"});
+            _convertBoolToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Boolean" });
+            _convertInt32ToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Int32" });
+            _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
+            _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
         }
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, string moduleName, string[] references,
@@ -297,15 +297,15 @@ namespace Panther.CodeAnalysis.Emit
         {
             if (literalExpression.Type == TypeSymbol.Bool)
             {
-                ilProcessor.Emit((bool) literalExpression.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                ilProcessor.Emit((bool)literalExpression.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             }
             else if (literalExpression.Type == TypeSymbol.Int)
             {
-                ilProcessor.Emit(OpCodes.Ldc_I4, (int) literalExpression.Value);
+                ilProcessor.Emit(OpCodes.Ldc_I4, (int)literalExpression.Value);
             }
             else if (literalExpression.Type == TypeSymbol.String)
             {
-                ilProcessor.Emit(OpCodes.Ldstr, (string) literalExpression.Value);
+                ilProcessor.Emit(OpCodes.Ldstr, (string)literalExpression.Value);
             }
             else
             {
@@ -425,7 +425,7 @@ namespace Panther.CodeAnalysis.Emit
             foreach (var argExpr in callExpression.Arguments)
                 EmitExpression(ilProcessor, argExpr);
 
-            if(_methods.TryGetValue(callExpression.Function, out var method))
+            if (_methods.TryGetValue(callExpression.Function, out var method))
             {
                 ilProcessor.Emit(OpCodes.Call, method);
             }
@@ -464,7 +464,7 @@ namespace Panther.CodeAnalysis.Emit
                     return;
                 }
 
-                if(fromType == TypeSymbol.Int)
+                if (fromType == TypeSymbol.Int)
                 {
                     ilProcessor.Emit(OpCodes.Call, _convertInt32ToString);
                     return;
@@ -510,7 +510,7 @@ namespace Panther.CodeAnalysis.Emit
             switch (variableExpression.Variable)
             {
                 case ParameterSymbol parameterSymbol:
-                    ilProcessor.Emit(OpCodes.Ldarg,  parameterSymbol.Index);
+                    ilProcessor.Emit(OpCodes.Ldarg, parameterSymbol.Index);
                     break;
 
                 case GlobalVariableSymbol _:

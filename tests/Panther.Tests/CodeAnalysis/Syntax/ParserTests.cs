@@ -287,7 +287,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         }
 
 
-         [Fact]
+        [Fact]
         public void ParseUnaryExpressionAfterLineBreak()
         {
             var text = AnnotatedText.Parse(@"

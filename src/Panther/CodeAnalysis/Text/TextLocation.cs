@@ -31,7 +31,7 @@ namespace Panther.CodeAnalysis.Text
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((TextLocation) obj);
+            return Equals((TextLocation)obj);
         }
 
         public override int GetHashCode()

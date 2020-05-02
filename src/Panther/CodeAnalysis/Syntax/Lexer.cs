@@ -139,7 +139,7 @@ namespace Panther.CodeAnalysis.Syntax
             var leading = ParseTrivia(true);
             // Trailing trivia is anything after the first token
 
-            var ( kind, start, text, value) = ParseToken();
+            var (kind, start, text, value) = ParseToken();
 
             var trailing = ParseTrivia(false);
 

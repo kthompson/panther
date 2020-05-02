@@ -37,7 +37,7 @@ namespace Panther.Tests.CodeAnalysis
             var assemblyLocation = Path.Combine(outputDirectory, moduleName + ".dll");
             var results = compilation.Emit(
                 moduleName,
-                new[] {typeof(object).Assembly.Location, typeof(Console).Assembly.Location},
+                new[] { typeof(object).Assembly.Location, typeof(Console).Assembly.Location },
                 assemblyLocation);
 
             Assert.Empty(results);
@@ -118,7 +118,7 @@ namespace Panther.Tests.CodeAnalysis
             {
                 var sources = Directory.GetFiles(directory, "*.pn");
                 var expected = Directory.GetFiles(directory, "*.il").SingleOrDefault();
-                yield return new object[] {directory, sources, expected };
+                yield return new object[] { directory, sources, expected };
             }
         }
     }

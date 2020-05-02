@@ -58,7 +58,7 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
-            return new BoundGlobalScope(previous, diagnostics, mainFunction,  scriptFunction, variables, functions, statements);
+            return new BoundGlobalScope(previous, diagnostics, mainFunction, scriptFunction, variables, functions, statements);
         }
 
         private static void BindMainFunctions(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<GlobalStatementSyntax> globalStatements,
@@ -79,9 +79,9 @@ namespace Panther.CodeAnalysis.Binding
 
             var firstStatementPerSyntaxTree =
                 (from tree in syntaxTrees
-                    let firstStatement = tree.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault()
-                    where firstStatement != null
-                    select firstStatement)
+                 let firstStatement = tree.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault()
+                 where firstStatement != null
+                 select firstStatement)
                 .ToImmutableArray();
 
             if (mainFunction == null)
@@ -213,7 +213,7 @@ namespace Panther.CodeAnalysis.Binding
             var isAllowed = IsSideEffectStatement(statement);
             if (!isAllowed)
             {
-                var exprStatementSyntax = (ExpressionStatementSyntax) syntax;
+                var exprStatementSyntax = (ExpressionStatementSyntax)syntax;
                 Diagnostics.ReportInvalidExpressionStatement(exprStatementSyntax.Expression.Location);
             }
 

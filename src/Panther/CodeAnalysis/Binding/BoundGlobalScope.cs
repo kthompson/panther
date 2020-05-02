@@ -14,7 +14,7 @@ namespace Panther.CodeAnalysis.Binding
         public ImmutableArray<BoundStatement> Statements { get; }
 
         public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics,
-            FunctionSymbol? mainFunction,FunctionSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,
+            FunctionSymbol? mainFunction, FunctionSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,
             ImmutableArray<FunctionSymbol> functions, ImmutableArray<BoundStatement> statements)
         {
             Previous = previous;

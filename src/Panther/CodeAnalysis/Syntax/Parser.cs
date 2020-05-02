@@ -500,7 +500,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ExpressionSyntax ParseBreakExpression()
         {
             var keyword = Accept();
-           return new BreakExpressionSyntax(_syntaxTree, keyword);
+            return new BreakExpressionSyntax(_syntaxTree, keyword);
         }
 
         private StatementSyntax ParseExpressionStatement()

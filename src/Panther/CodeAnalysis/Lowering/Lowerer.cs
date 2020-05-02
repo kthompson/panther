@@ -22,7 +22,7 @@ namespace Panther.CodeAnalysis.Lowering
         private LabelToken GenerateLabelToken()
         {
             _labelCount++;
-            return (LabelToken) _labelCount;
+            return (LabelToken)_labelCount;
         }
 
         private BoundLabel GenerateLabel(string tag)
@@ -32,7 +32,7 @@ namespace Panther.CodeAnalysis.Lowering
         }
 
         private BoundLabel GenerateLabel(string tag, LabelToken token) =>
-            new BoundLabel($"{tag}Label{(int) token}");
+            new BoundLabel($"{tag}Label{(int)token}");
 
         private VariableSymbol GenerateVariable(TypeSymbol type)
         {

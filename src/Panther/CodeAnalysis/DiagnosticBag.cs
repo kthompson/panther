@@ -124,10 +124,10 @@ namespace Panther.CodeAnalysis
         public void ReportAmbiguousBuiltinType(string builtinName, IEnumerable<TypeDefinition> foundTypes)
         {
             var assemblyNames = from type in foundTypes
-                let asmName = type.Module.Assembly.Name.Name
-                group type by asmName
+                                let asmName = type.Module.Assembly.Name.Name
+                                group type by asmName
                 into g
-                select g.Key;
+                                select g.Key;
             var assemblyNameList = string.Join(", ", assemblyNames);
 
             Report(null, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
@@ -136,10 +136,10 @@ namespace Panther.CodeAnalysis
         public void ReportAmbiguousType(string typeName, TypeDefinition[] foundTypes)
         {
             var assemblyNames = from type in foundTypes
-                let asmName = type.Module.Assembly.Name.Name
-                group type by asmName
+                                let asmName = type.Module.Assembly.Name.Name
+                                group type by asmName
                 into g
-                select g.Key;
+                                select g.Key;
             var assemblyNameList = string.Join(", ", assemblyNames);
 
             Report(null, $"Ambiguous type '{typeName}' was found in the given assemblies: {assemblyNameList}");

@@ -113,14 +113,14 @@ internal class Build : NukeBuild
                     .SetLogger($"trx;LogFileName={v.Name}.trx")
                     .When(InvokedTargets.Contains(Coverage) || IsServerBuild, _ => _
                         .SetCoverletOutput(TestResultDirectory / $"{v.Name}.xml"))));
-            
+
             TestResultDirectory
                 .GlobFiles("*.trx")
                 .ForEach(x =>
                     AzurePipelines?.PublishTestResults(
                         type: AzurePipelinesTestResultsType.VSTest,
                         title: $"{Path.GetFileNameWithoutExtension(x)} ({AzurePipelines.StageDisplayName})",
-                        files: new string[] {x}));
+                        files: new string[] { x }));
         });
 
 

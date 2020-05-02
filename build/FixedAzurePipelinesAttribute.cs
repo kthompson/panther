@@ -1,4 +1,4 @@
-﻿﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.CI.AzurePipelines.Configuration;
@@ -21,8 +21,8 @@ public class FixedAzurePipelinesAttribute : AzurePipelinesAttribute
         var job = base.GetJob(executableTarget, jobs);
 
         var downloads = (from dep in job.Dependencies
-            from pub in dep.PublishArtifacts
-            select pub).ToArray();
+                         from pub in dep.PublishArtifacts
+                         select pub).ToArray();
 
         return new FixedAzurePipelinesJob
         {
@@ -39,7 +39,8 @@ public class FixedAzurePipelinesAttribute : AzurePipelinesAttribute
     }
 }
 
-class FixedAzurePipelinesJob : AzurePipelinesJob {
+class FixedAzurePipelinesJob : AzurePipelinesJob
+{
     protected override void WriteSteps(CustomFileWriter writer)
     {
         DownloadArtifacts.ForEach(x =>

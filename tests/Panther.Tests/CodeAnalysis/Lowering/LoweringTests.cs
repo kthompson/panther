@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Panther.Tests.CodeAnalysis.Lowering
 {
-    [Properties(Arbitrary = new[] {typeof(BindingGenerators)})]
+    [Properties(Arbitrary = new[] { typeof(BindingGenerators) })]
     public class LoweringTests
     {
         [Property]
