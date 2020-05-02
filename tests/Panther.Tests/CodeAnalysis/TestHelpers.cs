@@ -4,6 +4,7 @@ using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.StdLib;
 using Xunit;
 
 namespace Panther.Tests.CodeAnalysis

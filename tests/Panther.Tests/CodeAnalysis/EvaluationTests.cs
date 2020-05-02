@@ -5,6 +5,7 @@ using FsCheck.Xunit;
 using Moq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Symbols;
+using Panther.StdLib;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
 

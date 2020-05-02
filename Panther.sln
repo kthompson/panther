@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Compiler", "src\Pan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hello", "samples\hello\hello.pnproj", "{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.StdLib", "src\Panther.StdLib\Panther.StdLib.csproj", "{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,6 +73,7 @@ Global
 		{7122216E-DCED-4E69-87A6-7AD3388E6552} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 		{BCA3FE64-88D0-475D-943D-B62D07EA288E} = {DE9991AB-E783-4C47-B224-BFE5493F2A9B}
 		{C4267DB6-1BB2-4F68-80E8-E647D702CBEA} = {3A9F57E8-52F8-4A65-93B7-910383111244}
+		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685AA9B0-62DB-4F96-984D-2922750366A4}

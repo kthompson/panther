@@ -8,6 +8,7 @@ using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
+using Panther.StdLib;
 using Xunit;
 using Xunit.Sdk;
 

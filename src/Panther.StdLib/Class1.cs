@@ -1,4 +1,6 @@
-﻿namespace Panther.CodeAnalysis
+﻿using System;
+
+namespace Panther.StdLib
 {
     public class Unit
     {
