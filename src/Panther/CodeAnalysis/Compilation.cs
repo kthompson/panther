@@ -128,15 +128,18 @@ namespace Panther.CodeAnalysis
                 var isScript = scriptFunction == function;
 
                 EmitTree(function, writer);
+                writer.WriteLine();
             }
 
             if (mainFunction != null)
             {
                 EmitTree(mainFunction, writer);
+                writer.WriteLine();
             }
             else if (scriptFunction != null)
             {
                 EmitTree(scriptFunction, writer);
+                writer.WriteLine();
             }
         }
 

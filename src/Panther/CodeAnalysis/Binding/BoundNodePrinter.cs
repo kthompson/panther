@@ -25,57 +25,75 @@ namespace Panther.CodeAnalysis.Binding
                 case BoundBinaryExpression boundBinaryExpression:
                     WriteBinaryExpression(boundBinaryExpression, writer);
                     break;
+
                 case BoundBlockExpression boundBlockExpression:
                     WriteBlockExpression(boundBlockExpression, writer);
                     break;
+
                 case BoundCallExpression boundCallExpression:
                     WriteCallExpression(boundCallExpression, writer);
                     break;
+
                 case BoundConversionExpression boundConversionExpression:
                     WriteConversionExpression(boundConversionExpression, writer);
                     break;
+
                 case BoundErrorExpression boundErrorExpression:
                     WriteErrorExpression(boundErrorExpression, writer);
                     break;
+
                 case BoundAssignmentExpression boundAssignmentExpression:
                     WriteAssignmentExpression(boundAssignmentExpression, writer);
                     break;
+
                 case BoundForExpression boundForExpression:
                     WriteForExpression(boundForExpression, writer);
                     break;
+
                 case BoundIfExpression boundIfExpression:
                     WriteIfExpression(boundIfExpression, writer);
                     break;
+
                 case BoundLiteralExpression boundLiteralExpression:
                     WriteLiteralExpression(boundLiteralExpression, writer);
                     break;
+
                 case BoundUnaryExpression boundUnaryExpression:
                     WriteUnaryExpression(boundUnaryExpression, writer);
                     break;
+
                 case BoundUnitExpression boundUnitExpression:
                     WriteUnitExpression(boundUnitExpression, writer);
                     break;
+
                 case BoundVariableExpression boundVariableExpression:
                     WriteVariableExpression(boundVariableExpression, writer);
                     break;
+
                 case BoundWhileExpression boundWhileExpression:
                     WriteWhileExpression(boundWhileExpression, writer);
                     break;
+
                 case BoundConditionalGotoStatement boundConditionalGotoStatement:
                     WriteConditionalGotoStatement(boundConditionalGotoStatement, writer);
                     break;
+
                 case BoundExpressionStatement boundExpressionStatement:
                     WriteExpressionStatement(boundExpressionStatement, writer);
                     break;
+
                 case BoundGotoStatement boundGotoStatement:
                     WriteGotoStatement(boundGotoStatement, writer);
                     break;
+
                 case BoundLabelStatement boundLabelStatement:
                     WriteLabelStatement(boundLabelStatement, writer);
                     break;
+
                 case BoundVariableDeclarationStatement boundVariableDeclarationStatement:
                     WriteVariableDeclarationStatement(boundVariableDeclarationStatement, writer);
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(node));
             }
@@ -158,6 +176,8 @@ namespace Panther.CodeAnalysis.Binding
         {
             writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
             writer.WriteIdentifier(node.Variable.Name);
+            writer.WritePunctuation(": ");
+            writer.WriteKeyword(node.Variable.Type.Name);
             writer.WritePunctuation(" = ");
             node.Expression.WriteTo(writer);
             writer.WriteLine();
@@ -208,7 +228,6 @@ namespace Panther.CodeAnalysis.Binding
             writer.Indent--;
             writer.WritePunctuation("}");
         }
-
 
         private static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
         {
@@ -282,7 +301,6 @@ namespace Panther.CodeAnalysis.Binding
             var precedence = node.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ??
                              throw new Exception("Invalid operator");
 
-
             writer.WriteNestedExpression(node.Left, precedence);
             writer.Write(" ");
             writer.WritePunctuation(op);
@@ -302,7 +320,6 @@ namespace Panther.CodeAnalysis.Binding
                 node.WriteTo(writer);
             }
         }
-
 
         private static void WriteNestedExpression(this IndentedTextWriter writer, BoundNode node, OperatorPrecedence parent, OperatorPrecedence current)
         {

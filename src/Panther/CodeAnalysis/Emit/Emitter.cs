@@ -171,18 +171,23 @@ namespace Panther.CodeAnalysis.Emit
                 case BoundConditionalGotoStatement conditionalGotoStatement:
                     EmitConditionalGotoStatement(ilProcessor, conditionalGotoStatement);
                     break;
+
                 case BoundExpressionStatement expressionStatement:
                     EmitExpressionStatement(ilProcessor, expressionStatement);
                     break;
+
                 case BoundGotoStatement gotoStatement:
                     EmitGotoStatement(ilProcessor, gotoStatement);
                     break;
+
                 case BoundLabelStatement labelStatement:
                     EmitLabelStatement(ilProcessor, labelStatement);
                     break;
+
                 case BoundVariableDeclarationStatement variableDeclarationStatement:
                     EmitVariableDeclarationStatement(ilProcessor, variableDeclarationStatement);
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }
@@ -332,26 +337,32 @@ namespace Panther.CodeAnalysis.Emit
                     }
 
                     break;
+
                 case BoundBinaryOperatorKind.BitwiseAnd:
                     // int
                     ilProcessor.Emit(OpCodes.And);
                     break;
+
                 case BoundBinaryOperatorKind.BitwiseOr:
                     // int
                     ilProcessor.Emit(OpCodes.Or);
                     break;
+
                 case BoundBinaryOperatorKind.BitwiseXor:
                     // int
                     ilProcessor.Emit(OpCodes.Xor);
                     break;
+
                 case BoundBinaryOperatorKind.Division:
                     // int
                     ilProcessor.Emit(OpCodes.Div);
                     break;
+
                 case BoundBinaryOperatorKind.Equal:
                     // int, bool, string
                     ilProcessor.Emit(OpCodes.Ceq);
                     break;
+
                 case BoundBinaryOperatorKind.GreaterThan:
                     // int
                     ilProcessor.Emit(OpCodes.Cgt);
@@ -391,6 +402,7 @@ namespace Panther.CodeAnalysis.Emit
                     // int
                     ilProcessor.Emit(OpCodes.Mul);
                     break;
+
                 case BoundBinaryOperatorKind.NotEqual:
                     // int, bool, string
                     ilProcessor.Emit(OpCodes.Ceq);
@@ -402,6 +414,7 @@ namespace Panther.CodeAnalysis.Emit
                     // int
                     ilProcessor.Emit(OpCodes.Sub);
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -426,14 +439,15 @@ namespace Panther.CodeAnalysis.Emit
                     case "println":
                         ilProcessor.Emit(OpCodes.Call, _consoleWriteLineReference);
                         break;
+
                     case "read":
                         ilProcessor.Emit(OpCodes.Call, _consoleReadLineReference);
                         break;
+
                     default:
                         throw new NotImplementedException();
                 }
             }
-
         }
 
         private void EmitConversionExpression(ILProcessor ilProcessor, BoundConversionExpression conversionExpression)
@@ -467,16 +481,20 @@ namespace Panther.CodeAnalysis.Emit
                 case BoundUnaryOperatorKind.Identity:
                     // no op
                     break;
+
                 case BoundUnaryOperatorKind.Negation:
                     // TODO: is Negation and BitwiseNegation the same opcode??
                     ilProcessor.Emit(OpCodes.Neg);
                     break;
+
                 case BoundUnaryOperatorKind.LogicalNegation:
                     ilProcessor.Emit(OpCodes.Not);
                     break;
+
                 case BoundUnaryOperatorKind.BitwiseNegation:
                     ilProcessor.Emit(OpCodes.Neg);
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -557,8 +575,10 @@ namespace Panther.CodeAnalysis.Emit
                 case 0:
                     _diagnostics.ReportBuiltinTypeNotFound(builtinName);
                     break;
+
                 case 1:
                     return _assemblyDefinition.MainModule.ImportReference(foundTypes[0]);
+
                 default:
                     _diagnostics.ReportAmbiguousBuiltinType(builtinName, foundTypes);
                     break;
@@ -576,8 +596,10 @@ namespace Panther.CodeAnalysis.Emit
                 case 0:
                     _diagnostics.ReportTypeNotFound(typeName);
                     break;
+
                 case 1:
                     return foundTypes[0];
+
                 default:
                     _diagnostics.ReportAmbiguousType(typeName, foundTypes);
                     break;
