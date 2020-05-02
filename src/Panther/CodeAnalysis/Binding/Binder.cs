@@ -164,8 +164,7 @@ namespace Panther.CodeAnalysis.Binding
                 ? statements.ToImmutableArray()
                 : statements.Take(statements.Count - 1).ToImmutableArray();
 
-            var statement = new BoundExpressionStatement(new BoundBlockExpression(stmts, expr ?? BoundUnitExpression.Default));
-            return statement;
+            return new BoundExpressionStatement(new BoundBlockExpression(stmts, expr ?? BoundUnitExpression.Default));
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)

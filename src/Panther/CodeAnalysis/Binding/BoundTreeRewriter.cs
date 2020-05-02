@@ -187,7 +187,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Condition == cond)
                 return node;
 
-            return new BoundConditionalGotoStatement(node.BoundLabel, node.Condition, node.JumpIfTrue);
+            return new BoundConditionalGotoStatement(node.BoundLabel, cond, node.JumpIfTrue);
         }
 
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)

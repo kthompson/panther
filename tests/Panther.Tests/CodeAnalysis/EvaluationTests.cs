@@ -39,6 +39,8 @@ namespace Panther.Tests.CodeAnalysis
                                    println(message)
                                    message
                                }", "Hello, Kevin", builtins: builtins.Object);
+
+            builtins.VerifyAll();
         }
 
         [Property]
