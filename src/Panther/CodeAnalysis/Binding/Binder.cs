@@ -150,7 +150,18 @@ namespace Panther.CodeAnalysis.Binding
             }
             else if (globalScope.ScriptFunction != null)
             {
-                var body = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
+                var boundStatementFromStatements = BoundStatementFromStatements(globalScope.Statements);
+
+                // for our script function we need to return an object. if the expression is not an object then we will
+                // create a conversion expression to convert it.
+                if (boundStatementFromStatements.Expression.Type != TypeSymbol.Any)
+                {
+                    // what should we do when we have a unit expression?
+                    boundStatementFromStatements = new BoundExpressionStatement(
+                        new BoundConversionExpression(TypeSymbol.Any, boundStatementFromStatements.Expression));
+                }
+
+                var body = Lowerer.Lower(boundStatementFromStatements);
                 functionBodies.Add(globalScope.ScriptFunction, body);
             }
 

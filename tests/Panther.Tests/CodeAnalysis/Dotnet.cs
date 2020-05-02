@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Panther.Tests.CodeAnalysis
 {
@@ -27,7 +28,10 @@ namespace Panther.Tests.CodeAnalysis
 
             proc.WaitForExit();
 
-            Assert.Equal("", errorOutput.ToString());
+            var errorText = errorOutput.ToString();
+            if (!string.IsNullOrEmpty(errorText))
+                throw new XunitException("Failed to run dotnet command: " + errorText);
+
             return output.ToString();
         }
 
