@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Disassembler;
@@ -17,12 +15,7 @@ namespace Panther.Tests.CodeAnalysis
 {
     public class EmitterTests
     {
-
-        public static readonly string SourceRoot = Path.Combine("..", "..", "..", "..", "..");
         public static readonly string OutputPath = Path.Combine("CodeAnalysis", "EmitterTests");
-        public static readonly string ToolsPath = Path.Combine(SourceRoot, "tools");
-        public static readonly string IlSpyPath = Path.Combine(ToolsPath, "ilspycmd.exe");
-        public static readonly string EmitterTestsPath = Path.Combine(SourceRoot, "tests");
 
         [Theory]
         [MemberData(nameof(GetEmitterTests))]
@@ -79,62 +72,44 @@ namespace Panther.Tests.CodeAnalysis
 }");
 
             // Build script
-            var actualOutputTxtPath = Path.Combine(outputDirectory, "output.txt");
-            var scriptPath = CreateOutputScript(outputDirectory, assemblyLocation);
+            var output = Dotnet.Invoke(assemblyLocation);
 
-            using var proc = Process.Start(new ProcessStartInfo(scriptPath)
-            {
-                UseShellExecute = true,
-
-                CreateNoWindow = true,
-                WorkingDirectory = outputDirectory
-            });
-            proc.WaitForExit();
-
-            var actualOutputTxt = File.ReadAllLines(actualOutputTxtPath);
-
+            var actualOutputTxt = output.Split('\n');
             var expectedOutputTxt = File.ReadAllLines(outputTxtPath);
             AssertFileLines(expectedOutputTxt, actualOutputTxt);
         }
 
-        private static string CreateOutputScript(string outputDirectory, string assemblyLocation)
-        {
-            string scriptPath;
-            if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
-            {
-                scriptPath = Path.Combine(outputDirectory, "createOutput.sh");
-                File.WriteAllText(scriptPath, $@"dotnet {assemblyLocation} > output.txt 2>&1");
-            }
-            else
-            {
-                scriptPath = Path.Combine(outputDirectory, "createOutput.cmd");
-                File.WriteAllText(scriptPath, $@"dotnet {assemblyLocation} > output.txt 2>&1");
-            }
-
-            return scriptPath;
-        }
-
         private static void AssertFileLines(string[] expectedLines, string[] actualLines)
         {
-            for (var i = 0; i < actualLines.Length; i++)
+            for (var i = 0; i < expectedLines.Length; i++)
             {
-                Assert.True(expectedLines.Length >= i, $"Missing line {i + 1}. Expected: {actualLines[i]}");
+                Assert.True(actualLines.Length > i, $"Missing line {i + 1}. Expected: {actualLines[i]}");
                 if (expectedLines[i].Trim() != actualLines[i].Trim())
                     throw new AssertActualExpectedException(expectedLines[i].Trim(), actualLines[i].Trim(),
                         $"Line {i + 1}");
             }
+
+            Assert.Equal(expectedLines.Length, actualLines.Length);
         }
 
         private static string DumpIl(string assemblyLocation)
         {
+            using var file = new StreamWriter(assemblyLocation.Substring(0, assemblyLocation.Length - 3) + "txt");
+            DumpIl(file, assemblyLocation);
+
             using var sw = new StringWriter();
+            DumpIl(sw, assemblyLocation);
+
+            return sw.ToString();
+        }
+
+        private static void DumpIl(TextWriter sw, string assemblyLocation)
+        {
             using var module = new PEFile(assemblyLocation);
 
             sw.WriteLine($"// IL code: {module.Name}");
             var disassembler = new ReflectionDisassembler(new PlainTextOutput(sw), CancellationToken.None);
             disassembler.WriteModuleContents(module);
-
-            return sw.ToString();
         }
 
         public static IEnumerable<object[]> GetEmitterTests()
