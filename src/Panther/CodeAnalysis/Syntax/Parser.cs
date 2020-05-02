@@ -71,9 +71,6 @@ namespace Panther.CodeAnalysis.Syntax
             _prefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
             _prefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
             _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
-            //PrefixParseFunctions[SyntaxKind.Function] = ParseFunctionLiteral;
-            //PrefixParseFunctions[SyntaxKind.String] = ParseStringLiteral;
-            //PrefixParseFunctions[SyntaxKind.LeftBracket] = ParseArrayLiteral;
             _prefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
             _prefixParseFunctions[SyntaxKind.BreakKeyword] = ParseBreakExpression;
             _prefixParseFunctions[SyntaxKind.ContinueKeyword] = ParseContinueExpression;

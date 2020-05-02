@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -46,55 +44,16 @@ namespace Panther.CodeAnalysis.Lowering
         {
             var lowerer = new Lowerer();
             var boundStatement = lowerer.RewriteStatement(statement);
-            return FlattenBlocks(boundStatement);
+            return BlockFlattener.FlattenBlocks(boundStatement);
         }
 
-        /// <summary>
-        /// Takes all block expressions and flattens them into a single block expression/statement
-        /// </summary>
-        /// <param name="boundStatement"></param>
-        /// <returns></returns>
-        private static BoundBlockExpression FlattenBlocks(BoundStatement boundStatement)
+
+        protected override BoundExpression RewriteBlockExpression(BoundBlockExpression node)
         {
-            var statements = new List<BoundStatement>();
-            var work = new Stack<BoundStatement>();
-            work.Push(boundStatement);
+            if (node.Statements.Length == 0)
+                return RewriteExpression(node.Expression);
 
-            while (work.Count > 0)
-            {
-                var current = work.Pop();
-                if (current is BoundExpressionStatement expressionStatement &&
-                    expressionStatement.Expression is BoundBlockExpression block)
-                {
-                    work.Push(new BoundExpressionStatement(block.Expression));
-                    foreach (var statement in block.Statements.Reverse())
-                    {
-                        work.Push(statement);
-                    }
-                }
-                else if (current is BoundVariableDeclarationStatement variableDeclarationStatement &&
-                         variableDeclarationStatement.Expression is BoundBlockExpression variableDeclBlock)
-                {
-                    work.Push(new BoundExpressionStatement(
-                        new BoundVariableExpression(variableDeclarationStatement.Variable)));
-                    work.Push(new BoundVariableDeclarationStatement(variableDeclarationStatement.Variable,
-                        variableDeclBlock.Expression));
-
-                    foreach (var statement in variableDeclBlock.Statements.Reverse())
-                        work.Push(statement);
-                }
-                else
-                {
-                    statements.Add(current);
-                }
-            }
-
-            var expr = (statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
-            var stmts = expr == null ? statements : statements.Take(statements.Count - 1);
-
-            expr ??= BoundUnitExpression.Default;
-
-            return new BoundBlockExpression(stmts.ToImmutableArray(), expr);
+            return base.RewriteBlockExpression(node);
         }
 
         protected override BoundExpression RewriteWhileExpression(BoundWhileExpression node)
