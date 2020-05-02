@@ -38,7 +38,7 @@
 		.locals (
 			[0] string,
 			[1] string,
-			[2] void
+			[2] class [Panther.StdLib]Panther.StdLib.Unit
 		)
 
 		IL_0000: call string Program::getName()

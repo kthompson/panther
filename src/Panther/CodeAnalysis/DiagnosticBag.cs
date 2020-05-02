@@ -150,5 +150,8 @@ namespace Panther.CodeAnalysis
             var parameterTypeNamesList = string.Join(", ", parameterTypeNames);
             Report(null, $"Required method {typeName}.{methodName}({parameterTypeNamesList}) was not found");
         }
+
+        public void ReportRequiredFieldNotFound(string typeName, string fieldName) =>
+            Report(null, $"Required field {typeName}.{fieldName} was not found");
     }
 }

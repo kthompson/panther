@@ -7,6 +7,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
+using Panther.StdLib;
 
 namespace Panther.CodeAnalysis.Emit
 {
@@ -15,11 +16,13 @@ namespace Panther.CodeAnalysis.Emit
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
 
         private readonly Dictionary<TypeSymbol, TypeReference> _knownTypes = new Dictionary<TypeSymbol, TypeReference>();
+
         private readonly Dictionary<FunctionSymbol, MethodDefinition> _methods = new Dictionary<FunctionSymbol, MethodDefinition>();
         private readonly AssemblyDefinition _assemblyDefinition;
         private readonly List<AssemblyDefinition> _assemblies = new List<AssemblyDefinition>();
         private TypeDefinition _typeDef;
 
+        private readonly TypeReference? _voidType;
         private readonly MethodReference? _consoleWriteLineReference;
         private readonly MethodReference? _consoleReadLineReference;
         private readonly MethodReference? _stringConcatReference;
@@ -27,6 +30,7 @@ namespace Panther.CodeAnalysis.Emit
         private readonly MethodReference? _convertInt32ToString;
         private readonly MethodReference? _convertToBool;
         private readonly MethodReference? _convertToInt32;
+        private readonly FieldReference? _unit;
 
         private readonly Dictionary<VariableSymbol, VariableDefinition> _locals = new Dictionary<VariableSymbol, VariableDefinition>();
         private readonly Dictionary<VariableSymbol, int> _localIndices = new Dictionary<VariableSymbol, int>();
@@ -55,7 +59,7 @@ namespace Panther.CodeAnalysis.Emit
                 (TypeSymbol.Bool, typeof(bool)),
                 (TypeSymbol.Int, typeof(int)),
                 (TypeSymbol.String, typeof(string)),
-                (TypeSymbol.Unit, typeof(void)), // this might not work?
+                (TypeSymbol.Unit, typeof(Unit)),
             };
 
             var assemblyName = new AssemblyNameDefinition(moduleName, new Version(1, 0));
@@ -70,6 +74,8 @@ namespace Panther.CodeAnalysis.Emit
                 _knownTypes.Add(typeSymbol, typeReference);
             }
 
+            _voidType = ResolveBuiltinType("unit", typeof(void).FullName);
+
             _consoleWriteLineReference = ResolveMethod("System.Console", "WriteLine", new[] { "System.String" });
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
@@ -79,6 +85,7 @@ namespace Panther.CodeAnalysis.Emit
             _convertInt32ToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Int32" });
             _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
             _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
+            _unit = ResolveField("Panther.StdLib.Unit", "Default");
         }
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, string moduleName, string[] references,
@@ -123,7 +130,7 @@ namespace Panther.CodeAnalysis.Emit
         private void EmitFunctionDeclaration(FunctionSymbol function)
         {
             var type = function.ReturnType;
-            var returnType = _knownTypes[type];
+            var returnType = type == TypeSymbol.Unit ? _voidType : _knownTypes[type];
             var method = new MethodDefinition(function.Name, MethodAttributes.Static | MethodAttributes.Private, returnType);
             var methodParams =
                 from parameter in function.Parameters
@@ -470,7 +477,37 @@ namespace Panther.CodeAnalysis.Emit
                     return;
                 }
             }
-            throw new NotImplementedException();
+
+            if (toType == TypeSymbol.Any)
+            {
+                if (fromType == TypeSymbol.Bool)
+                {
+                    ilProcessor.Emit(OpCodes.Box, _knownTypes[TypeSymbol.Int]);
+                    return;
+                }
+
+                if (fromType == TypeSymbol.Int)
+                {
+                    ilProcessor.Emit(OpCodes.Box, _knownTypes[TypeSymbol.Int]);
+                    return;
+                }
+
+                if (fromType == TypeSymbol.String)
+                {
+                    // no conversion required
+                    return;
+                }
+
+                if (fromType == TypeSymbol.Unit)
+                {
+                    // pop the expression if it was a ()
+                    ilProcessor.Emit(OpCodes.Pop);
+                    ilProcessor.Emit(OpCodes.Ldsfld, _unit);
+                    return;
+                }
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(conversionExpression), $"Could not find conversion from '{fromType}' to '{toType}'");
         }
 
         private void EmitUnaryExpression(ILProcessor ilProcessor, BoundUnaryExpression unaryExpression)
@@ -502,7 +539,7 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitUnitExpression(ILProcessor ilProcessor, BoundUnitExpression unitExpression)
         {
-            // no-op
+            ilProcessor.Emit(OpCodes.Ldsfld, _unit);
         }
 
         private void EmitVariableExpression(ILProcessor ilProcessor, BoundVariableExpression variableExpression)
@@ -608,7 +645,22 @@ namespace Panther.CodeAnalysis.Emit
             return null;
         }
 
-        MethodReference? ResolveMethod(string typeName, string methodName, string[] parameterTypeNames)
+        private FieldReference? ResolveField(string typeName, string fieldName)
+        {
+            var type = FindTypeByName(typeName);
+            if (type == null)
+                return null;
+
+            foreach (var fieldDefinition in type.Fields.Where(field => field.Name == fieldName))
+            {
+                return _assemblyDefinition.MainModule.ImportReference(fieldDefinition);
+            }
+
+            _diagnostics.ReportRequiredFieldNotFound(typeName, fieldName);
+            return null;
+        }
+
+        private MethodReference? ResolveMethod(string typeName, string methodName, string[] parameterTypeNames)
         {
             // var types = FindTypesByName(typeName);
             var type = FindTypeByName(typeName);

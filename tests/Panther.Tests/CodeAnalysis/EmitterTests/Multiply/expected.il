@@ -21,7 +21,7 @@
 			[3] int32,
 			[4] int32,
 			[5] string,
-			[6] void
+			[6] class [Panther.StdLib]Panther.StdLib.Unit
 		)
 
 		IL_0000: ldc.i4.1

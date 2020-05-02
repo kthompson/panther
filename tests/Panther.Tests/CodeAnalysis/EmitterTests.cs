@@ -38,7 +38,12 @@ namespace Panther.Tests.CodeAnalysis
             var assemblyLocation = Path.Combine(outputDirectory, moduleName + ".dll");
             var results = compilation.Emit(
                 moduleName,
-                new[] { typeof(object).Assembly.Location, typeof(Console).Assembly.Location },
+                new[]
+                {
+                    typeof(object).Assembly.Location,
+                    typeof(Console).Assembly.Location,
+                    typeof(Unit).Assembly.Location
+                },
                 assemblyLocation);
 
             Assert.Empty(results);
