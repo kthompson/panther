@@ -187,9 +187,9 @@ namespace Panther.CodeAnalysis.Binding
         {
             if (node.Statements.Length == 0)
             {
-                writer.Write("    ");
+                writer.WritePunctuation("{ ");
                 node.Expression.WriteTo(writer);
-                writer.WriteLine();
+                writer.WritePunctuation(" }");
                 return;
             }
 
@@ -207,7 +207,6 @@ namespace Panther.CodeAnalysis.Binding
 
             writer.Indent--;
             writer.WritePunctuation("}");
-            writer.WriteLine();
         }
 
 
