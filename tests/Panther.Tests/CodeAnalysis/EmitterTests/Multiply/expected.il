@@ -11,7 +11,7 @@
 		void main () cil managed
 	{
 		// Method begins at RVA 0x2050
-		// Code size 56 (0x38)
+		// Code size 52 (0x34)
 		.maxstack 2
 		.entrypoint
 		.locals (
@@ -20,8 +20,7 @@
 			[2] string,
 			[3] int32,
 			[4] int32,
-			[5] string,
-			[6] class [Panther.StdLib]Panther.StdLib.Unit
+			[5] string
 		)
 
 		IL_0000: ldc.i4.1
@@ -46,9 +45,7 @@
 		IL_002a: stloc.s 5
 		IL_002c: ldloc.s 5
 		IL_002e: call void [System.Console]System.Console::WriteLine(string)
-		IL_0033: stloc.s 6
-		IL_0035: ldloc.s 6
-		IL_0037: ret
+		IL_0033: ret
 	} // end of method Program::main
 
 	.method private static
@@ -57,7 +54,7 @@
 			int32 b
 		) cil managed
 	{
-		// Method begins at RVA 0x2094
+		// Method begins at RVA 0x2090
 		// Code size 4 (0x4)
 		.maxstack 8
 

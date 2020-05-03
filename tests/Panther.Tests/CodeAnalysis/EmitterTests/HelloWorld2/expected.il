@@ -11,11 +11,10 @@
 		string getName () cil managed
 	{
 		// Method begins at RVA 0x2050
-		// Code size 20 (0x14)
+		// Code size 18 (0x12)
 		.maxstack 1
 		.locals (
-			[0] string,
-			[1] string
+			[0] string
 		)
 
 		IL_0000: ldstr "What is your name?"
@@ -23,22 +22,19 @@
 		IL_0006: ldloc.0
 		IL_0007: call void [System.Console]System.Console::WriteLine(string)
 		IL_000c: call string [System.Console]System.Console::ReadLine()
-		IL_0011: stloc.1
-		IL_0012: ldloc.1
-		IL_0013: ret
+		IL_0011: ret
 	} // end of method Program::getName
 
 	.method private static
 		void main () cil managed
 	{
 		// Method begins at RVA 0x2070
-		// Code size 37 (0x25)
+		// Code size 35 (0x23)
 		.maxstack 2
 		.entrypoint
 		.locals (
 			[0] string,
-			[1] string,
-			[2] class [Panther.StdLib]Panther.StdLib.Unit
+			[1] string
 		)
 
 		IL_0000: call string Program::getName()
@@ -51,9 +47,7 @@
 		IL_001b: stloc.1
 		IL_001c: ldloc.1
 		IL_001d: call void [System.Console]System.Console::WriteLine(string)
-		IL_0022: stloc.2
-		IL_0023: ldloc.2
-		IL_0024: ret
+		IL_0022: ret
 	} // end of method Program::main
 
 } // end of class Program

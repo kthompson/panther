@@ -33,7 +33,6 @@ namespace Panther.CodeAnalysis.Emit
         private readonly FieldReference? _unit;
 
         private readonly Dictionary<VariableSymbol, VariableDefinition> _locals = new Dictionary<VariableSymbol, VariableDefinition>();
-        private readonly Dictionary<VariableSymbol, int> _localIndices = new Dictionary<VariableSymbol, int>();
 
         private readonly Dictionary<BoundLabel, Instruction> _labelTarget = new Dictionary<BoundLabel, Instruction>();
         private readonly Dictionary<BoundLabel, List<Instruction>> _branchInstructionsToPatch = new Dictionary<BoundLabel, List<Instruction>>();
@@ -151,12 +150,19 @@ namespace Panther.CodeAnalysis.Emit
             var ilProcessor = method.Body.GetILProcessor();
 
             _locals.Clear();
-            _localIndices.Clear();
             _labelTarget.Clear();
             _branchInstructionsToPatch.Clear();
 
             foreach (var statement in block.Statements)
                 EmitStatement(ilProcessor, statement);
+
+            if (block.Expression == BoundUnitExpression.Default && function.ReturnType == TypeSymbol.Unit)
+            {
+                // dont emit block expression since it is just the unit expression and we return void
+                ilProcessor.Emit(OpCodes.Ret);
+                method.Body.OptimizeMacros();
+                return;
+            }
 
             // emit expression
             EmitExpression(ilProcessor, block.Expression);
@@ -167,7 +173,6 @@ namespace Panther.CodeAnalysis.Emit
 
             ilProcessor.Emit(OpCodes.Ret);
             method.Body.OptimizeMacros();
-
             // TODO: verify that _branchInstructionsToPatch is empty
         }
 
@@ -200,7 +205,7 @@ namespace Panther.CodeAnalysis.Emit
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(statement));
+                    throw new ArgumentOutOfRangeException(nameof(statement), statement.Kind.ToString());
             }
         }
 
@@ -217,7 +222,6 @@ namespace Panther.CodeAnalysis.Emit
             var variableDef = new VariableDefinition(variableType);
             _locals[pantherVar] = variableDef;
             var index = ilProcessor.Body.Variables.Count;
-            _localIndices[pantherVar] = index;
             ilProcessor.Body.Variables.Add(variableDef);
 
             EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
@@ -306,7 +310,6 @@ namespace Panther.CodeAnalysis.Emit
         private void EmitAssignmentExpression(ILProcessor ilProcessor, BoundAssignmentExpression assignmentExpression)
         {
             EmitExpression(ilProcessor, assignmentExpression.Expression);
-            ilProcessor.Emit(OpCodes.Dup);
             ilProcessor.Emit(OpCodes.Stloc, _locals[assignmentExpression.Variable]);
         }
 
@@ -513,6 +516,15 @@ namespace Panther.CodeAnalysis.Emit
                     // pop the expression if it was a ()
                     ilProcessor.Emit(OpCodes.Pop);
                     ilProcessor.Emit(OpCodes.Ldsfld, _unit);
+                    return;
+                }
+            }
+
+            if (toType == TypeSymbol.Int)
+            {
+                if (fromType == TypeSymbol.String)
+                {
+                    ilProcessor.Emit(OpCodes.Call, _convertToInt32);
                     return;
                 }
             }

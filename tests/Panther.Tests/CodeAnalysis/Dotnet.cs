@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -9,7 +10,7 @@ namespace Panther.Tests.CodeAnalysis
 {
     class Dotnet
     {
-        public static string Invoke(string assemblyLocation)
+        public static string[] Invoke(string assemblyLocation)
         {
             var dotnet = FindDotnet();
             using var proc = Process.Start(new ProcessStartInfo(dotnet)
@@ -19,20 +20,28 @@ namespace Panther.Tests.CodeAnalysis
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             });
-            var errorOutput = new StringBuilder();
-            var output = new StringBuilder();
-            proc.ErrorDataReceived += (sender, args) => errorOutput.Append(args.Data);
-            proc.OutputDataReceived += (sender, args) => output.Append(args.Data);
+            var errorOutput = new List<string>();
+            var output = new List<string>();
+            proc.ErrorDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                    errorOutput.Add(args.Data);
+            };
+            proc.OutputDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                    output.Add(args.Data);
+            };
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
 
             proc.WaitForExit();
 
-            var errorText = errorOutput.ToString();
+            var errorText = string.Join(Environment.NewLine, errorOutput);
             if (!string.IsNullOrEmpty(errorText))
                 throw new XunitException("Failed to run dotnet command: " + errorText);
 
-            return output.ToString();
+            return output.ToArray();
         }
 
         private static string FindDotnet()

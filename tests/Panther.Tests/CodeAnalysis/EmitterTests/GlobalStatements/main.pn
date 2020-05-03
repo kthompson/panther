@@ -1,0 +1,2 @@
+﻿val x = 12
+println(string(x))

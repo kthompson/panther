@@ -77,10 +77,8 @@ namespace Panther.Tests.CodeAnalysis
   }
 }");
 
-            // Build script
-            var output = Dotnet.Invoke(assemblyLocation);
-
-            var actualOutputTxt = output.Split('\n');
+            // Run emitted assembly
+            var actualOutputTxt = Dotnet.Invoke(assemblyLocation);
             var expectedOutputTxt = File.ReadAllLines(outputTxtPath);
             AssertFileLines(expectedOutputTxt, actualOutputTxt);
         }

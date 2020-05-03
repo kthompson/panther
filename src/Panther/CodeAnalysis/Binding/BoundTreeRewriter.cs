@@ -135,7 +135,8 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                statements?.Add(newStatement);
+                if (newStatement != null)
+                    statements?.Add(newStatement);
             }
 
             var expression = RewriteExpression(node.Expression);

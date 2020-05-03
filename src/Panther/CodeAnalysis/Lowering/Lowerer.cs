@@ -42,9 +42,44 @@ namespace Panther.CodeAnalysis.Lowering
 
         public static BoundBlockExpression Lower(BoundStatement statement)
         {
+            var debug = false;
+            if (debug)
+            {
+                Console.WriteLine("==== Original Code ===");
+                statement.WriteTo(Console.Out);
+            }
+
             var lowerer = new Lowerer();
             var boundStatement = lowerer.RewriteStatement(statement);
-            return BlockFlattener.FlattenBlocks(boundStatement);
+            if (debug)
+            {
+                Console.WriteLine("==== Lowered Code ===");
+                boundStatement.WriteTo(Console.Out);
+            }
+
+            var tac = ThreeAddressCode.Lower(boundStatement);
+            if (debug)
+            {
+                Console.WriteLine("==== Three Address Code ===");
+                tac.WriteTo(Console.Out);
+            }
+
+
+            var unitLessStatements = RemoveUnitAssignments.Lower(tac);
+            if (debug)
+            {
+                Console.WriteLine("==== Remove Unit Assignments ===");
+                unitLessStatements.WriteTo(Console.Out);
+            }
+
+            var inlinedTemporaries = InlineTemporaries.Lower(unitLessStatements);
+            if (debug)
+            {
+                Console.WriteLine("==== Inlined Temporaries ===");
+                inlinedTemporaries.WriteTo(Console.Out);
+            }
+
+            return inlinedTemporaries;
         }
 
 

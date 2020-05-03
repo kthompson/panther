@@ -34,7 +34,7 @@ namespace Panther.CodeAnalysis
             {
                 foreach (var (key, value) in p.Functions)
                 {
-                    _functions.Add(key, value);
+                    _functions[key] = value;
                 }
 
                 p = p.Previous;

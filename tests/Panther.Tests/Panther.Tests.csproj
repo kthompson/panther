@@ -42,5 +42,14 @@
     <Content Include="CodeAnalysis\EmitterTests\**\output.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Update="CodeAnalysis\EmitterTests\GlobalStatements\main.pn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="CodeAnalysis\EmitterTests\GlobalStatements\output.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="CodeAnalysis\EmitterTests\GlobalStatements\expected.il">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
