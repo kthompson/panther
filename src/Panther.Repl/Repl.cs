@@ -449,8 +449,8 @@ namespace Panther
             if (metaParams.Length != args.Count)
             {
                 var paramsString = string.Join(" ", metaParams.Select(p => $"<{p.Name}>"));
-                WriteError($"error: invalid number of arguments for command {args[0]}");
-                WriteError($"usage: #{args[0]} {paramsString}");
+                WriteError($"error: invalid number of arguments for command {commandName}");
+                WriteError($"usage: #{commandName} {paramsString}");
                 return;
             }
 
