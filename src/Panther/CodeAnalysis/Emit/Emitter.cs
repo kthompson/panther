@@ -169,12 +169,11 @@ namespace Panther.CodeAnalysis.Emit
 
             ilProcessor.Emit(OpCodes.Ret);
 
-            foreach (var patch in _branchInstructionsToPatch)
+            foreach (var (patchIndex, targetLabel) in _branchInstructionsToPatch)
             {
-                var targetLabel = patch.Target;
-                var instructionIndex = _labels[targetLabel];
-                var targetInstruction = ilProcessor.Body.Instructions[instructionIndex];
-                var patchInstruction =  ilProcessor.Body.Instructions[patch.InstructionIndex];
+                var targetIndex = _labels[targetLabel];
+                var targetInstruction = ilProcessor.Body.Instructions[targetIndex];
+                var patchInstruction =  ilProcessor.Body.Instructions[patchIndex];
                 patchInstruction.Operand = targetInstruction;
             }
 
@@ -267,10 +266,6 @@ namespace Panther.CodeAnalysis.Emit
         {
             switch (expression)
             {
-                case BoundAssignmentExpression assignmentExpression:
-                    EmitAssignmentExpression(ilProcessor, assignmentExpression);
-                    break;
-
                 case BoundBinaryExpression binaryExpression:
                     EmitBinaryExpression(ilProcessor, binaryExpression);
                     break;
@@ -302,12 +297,6 @@ namespace Panther.CodeAnalysis.Emit
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expression));
             }
-        }
-
-        private void EmitAssignmentExpression(ILProcessor ilProcessor, BoundAssignmentExpression assignmentExpression)
-        {
-            EmitExpression(ilProcessor, assignmentExpression.Expression);
-            ilProcessor.Emit(OpCodes.Stloc, _locals[assignmentExpression.Variable]);
         }
 
         private void EmitLiteralExpression(ILProcessor ilProcessor, BoundLiteralExpression literalExpression)

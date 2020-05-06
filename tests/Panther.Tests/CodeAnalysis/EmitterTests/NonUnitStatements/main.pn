@@ -1,0 +1,9 @@
+﻿def doThing(value: int): int = {
+    println(string(value))
+    value - 12
+}
+
+def main(): unit = {
+    doThing(1)
+    doThing(2)
+}
