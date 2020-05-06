@@ -1,9 +1,4 @@
-# Road map
 
-- replace evaluator with emitter?
-- floats?
-- calling constructors on creation
-- native imports and exports
 
 # Name/File extensions
 

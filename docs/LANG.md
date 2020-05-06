@@ -5,17 +5,19 @@
 Unsigned ints u8, u16, u32, u64, usize
 Signed ints   i8, i16, i32, i64, isize
 Floats:   f32, f64
-Bool
-Char
+bool
+char
 
 # expressions
 
-if x == 12 {
+if (x == 12) {
     ...
 } else {
     ...
 }
 
+
+val result = if (x == 12) ... else ...
 
 structs are value types? or should a trait decide if something is a value type like `Clone` in rust
 
@@ -38,19 +40,21 @@ println(name)
 println(age)
 
 # discriminated union
-
-union List<T> {
-    Cons(head: T, tail: List),
-    Nil
+```
+enum List<T> {
+    case Cons(head: T, tail: List),
+    case Nil
 }
+```
 
 OR
 
+```
 sum List<T> {
     Cons(head: T, tail: List),
     Nil
 }
-
+```
 
 # traits
 
