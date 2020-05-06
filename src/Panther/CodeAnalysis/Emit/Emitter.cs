@@ -34,8 +34,8 @@ namespace Panther.CodeAnalysis.Emit
 
         private readonly Dictionary<VariableSymbol, VariableDefinition> _locals = new Dictionary<VariableSymbol, VariableDefinition>();
 
-        private readonly Dictionary<BoundLabel, Instruction> _labelTarget = new Dictionary<BoundLabel, Instruction>();
-        private readonly Dictionary<BoundLabel, List<Instruction>> _branchInstructionsToPatch = new Dictionary<BoundLabel, List<Instruction>>();
+        private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
+        private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch = new List<(int InstructionIndex, BoundLabel Target)>();
 
         private Emitter(string moduleName, string[] references)
         {
@@ -150,30 +150,35 @@ namespace Panther.CodeAnalysis.Emit
             var ilProcessor = method.Body.GetILProcessor();
 
             _locals.Clear();
-            _labelTarget.Clear();
+            _labels.Clear();
             _branchInstructionsToPatch.Clear();
 
             foreach (var statement in block.Statements)
                 EmitStatement(ilProcessor, statement);
 
-            if (block.Expression == BoundUnitExpression.Default && function.ReturnType == TypeSymbol.Unit)
+            // only emit block's expression if its a non-unit expression or we are not void
+            if (block.Expression != BoundUnitExpression.Default || function.ReturnType != TypeSymbol.Unit)
             {
-                // dont emit block expression since it is just the unit expression and we return void
-                ilProcessor.Emit(OpCodes.Ret);
-                method.Body.OptimizeMacros();
-                return;
+                // emit expression
+                EmitExpression(ilProcessor, block.Expression);
+
+                // pop non-unit expressions off the stack for unit functions
+                if (block.Expression.Type != TypeSymbol.Unit && function.ReturnType == TypeSymbol.Unit)
+                    ilProcessor.Emit(OpCodes.Pop);
             }
 
-            // emit expression
-            EmitExpression(ilProcessor, block.Expression);
-
-            // pop non-unit expressions off the stack for unit functions
-            if (block.Expression.Type != TypeSymbol.Unit && function.ReturnType == TypeSymbol.Unit)
-                ilProcessor.Emit(OpCodes.Pop);
-
             ilProcessor.Emit(OpCodes.Ret);
+
+            foreach (var patch in _branchInstructionsToPatch)
+            {
+                var targetLabel = patch.Target;
+                var instructionIndex = _labels[targetLabel];
+                var targetInstruction = ilProcessor.Body.Instructions[instructionIndex];
+                var patchInstruction =  ilProcessor.Body.Instructions[patch.InstructionIndex];
+                patchInstruction.Operand = targetInstruction;
+            }
+
             method.Body.OptimizeMacros();
-            // TODO: verify that _branchInstructionsToPatch is empty
         }
 
         private void EmitStatement(ILProcessor ilProcessor, BoundStatement statement)
@@ -228,32 +233,24 @@ namespace Panther.CodeAnalysis.Emit
             ilProcessor.Emit(OpCodes.Stloc, index);
         }
 
-        private void EmitGotoStatement(ILProcessor ilProcessor, BoundGotoStatement gotoStatement)
-        {
-            var branchInstr = ilProcessor.Create(OpCodes.Br, Instruction.Create(OpCodes.Nop));
-
-            SetBranchTarget(gotoStatement.BoundLabel, branchInstr);
-
-            ilProcessor.Append(branchInstr);
-        }
-
         private void EmitLabelStatement(ILProcessor ilProcessor, BoundLabelStatement labelStatement)
         {
-            var target = ilProcessor.Create(OpCodes.Nop);
-            ilProcessor.Append(target);
-            CreateLabel(labelStatement.BoundLabel, target);
+            _labels[labelStatement.BoundLabel] = ilProcessor.Body.Instructions.Count;
+        }
+
+        private void EmitGotoStatement(ILProcessor ilProcessor, BoundGotoStatement gotoStatement)
+        {
+            _branchInstructionsToPatch.Add((ilProcessor.Body.Instructions.Count, gotoStatement.BoundLabel));
+            ilProcessor.Emit(OpCodes.Br, Instruction.Create(OpCodes.Nop));
         }
 
         private void EmitConditionalGotoStatement(ILProcessor ilProcessor, BoundConditionalGotoStatement conditionalGotoStatement)
         {
             EmitExpression(ilProcessor, conditionalGotoStatement.Condition);
-            var op = (conditionalGotoStatement.JumpIfTrue) ? OpCodes.Brtrue : OpCodes.Brfalse;
-            // create temp target instruction
-            var tmp = Instruction.Create(OpCodes.Nop);
-            var branchInstruction = ilProcessor.Create(op, tmp);
 
-            SetBranchTarget(conditionalGotoStatement.BoundLabel, branchInstruction);
-            ilProcessor.Append(branchInstruction);
+            var op = conditionalGotoStatement.JumpIfTrue ? OpCodes.Brtrue : OpCodes.Brfalse;
+            _branchInstructionsToPatch.Add((ilProcessor.Body.Instructions.Count, conditionalGotoStatement.BoundLabel));
+            ilProcessor.Emit(op, Instruction.Create(OpCodes.Nop));
         }
 
         private void EmitExpressionStatement(ILProcessor ilProcessor, BoundExpressionStatement expressionStatement)
@@ -578,51 +575,6 @@ namespace Panther.CodeAnalysis.Emit
                     ilProcessor.Emit(OpCodes.Ldloc, _locals[variableExpression.Variable]);
                     break;
             }
-        }
-
-        private void CreateLabel(BoundLabel boundLabel, Instruction target)
-        {
-            if (_labelTarget.ContainsKey(boundLabel))
-            {
-                // todo this shouldn't happen. diag error or throw?
-                throw new InvalidProgramException($"Label target '{boundLabel.Name}' has already been assigned");
-            }
-
-            // we have two cases here:
-            // 1. we have already emitted instructions and they need to be patched to target this label
-            if (_branchInstructionsToPatch.TryGetValue(boundLabel, out var targetsToPatch))
-            {
-                foreach (var instruction in targetsToPatch)
-                {
-                    instruction.Operand = target;
-                }
-
-                _branchInstructionsToPatch.Remove(boundLabel);
-            }
-            else
-            {
-                // 2. the label is the first instruction so we just create the label instruction and nothing left to do
-                _labelTarget[boundLabel] = target;
-            }
-        }
-
-        private void SetBranchTarget(BoundLabel boundLabel, Instruction instruction)
-        {
-            // label exists, return the target instruction
-            if (_labelTarget.TryGetValue(boundLabel, out var target))
-            {
-                instruction.Operand = target;
-                return;
-            }
-
-            // no label yet, create a reservation to patch later
-            if (_branchInstructionsToPatch.TryGetValue(boundLabel, out var list))
-            {
-                list.Add(instruction);
-                return;
-            }
-
-            _branchInstructionsToPatch[boundLabel] = new List<Instruction> { instruction };
         }
 
         private TypeReference? ResolveBuiltinType(string builtinName, string metadataTypeName)
