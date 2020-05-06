@@ -38,5 +38,3 @@ def main() = {
 - replace evaluator with emitter?
 - optimize programs before emitting
 - floats?
-- calling constructors on creation
-- native imports and exports
