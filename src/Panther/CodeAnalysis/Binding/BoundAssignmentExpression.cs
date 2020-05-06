@@ -9,7 +9,7 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression Expression { get; }
         public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
 
-        public override TypeSymbol Type => Expression.Type;
+        public override TypeSymbol Type => TypeSymbol.Unit;
 
         public BoundAssignmentExpression(VariableSymbol variable, BoundExpression expression)
         {
