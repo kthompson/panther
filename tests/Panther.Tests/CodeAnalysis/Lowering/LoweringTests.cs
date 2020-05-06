@@ -118,6 +118,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             {
                 BoundGotoStatement _ => false,
                 BoundLabelStatement _ => false,
+                BoundAssignmentStatement assignmentStatement => ContainsBlock(assignmentStatement.Expression),
                 BoundConditionalGotoStatement boundConditionalGotoStatement => ContainsBlock(
                     boundConditionalGotoStatement.Condition),
                 BoundExpressionStatement boundExpressionStatement => ContainsBlock(boundExpressionStatement.Expression),

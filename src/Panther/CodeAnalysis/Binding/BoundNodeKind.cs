@@ -18,6 +18,7 @@ namespace Panther.CodeAnalysis.Binding
         WhileExpression,
         ErrorExpression,
 
+        AssignmentStatement,
         ConditionalGotoStatement,
         ExpressionStatement,
         GotoStatement,

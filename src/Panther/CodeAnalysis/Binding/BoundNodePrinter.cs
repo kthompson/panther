@@ -94,9 +94,21 @@ namespace Panther.CodeAnalysis.Binding
                     WriteVariableDeclarationStatement(boundVariableDeclarationStatement, writer);
                     break;
 
+                case BoundAssignmentStatement boundAssignmentStatement:
+                    WriteAssignmentStatement(boundAssignmentStatement, writer);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(node));
             }
+        }
+
+        private static void WriteAssignmentStatement(BoundAssignmentStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteIdentifier(node.Variable.Name);
+            writer.WritePunctuation(" = ");
+            node.Expression.WriteTo(writer);
+            writer.WriteLine();
         }
 
         private static void WriteNestedExpression(this IndentedTextWriter writer, BoundNode node)

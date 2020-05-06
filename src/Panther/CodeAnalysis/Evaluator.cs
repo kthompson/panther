@@ -88,10 +88,16 @@ namespace Panther.CodeAnalysis
                         break;
 
                     case BoundVariableDeclarationStatement a:
-                        {
-                            _lastValue = EvaluateVariableDeclaration(a);
-                            break;
-                        }
+                    {
+                        _lastValue = EvaluateVariableDeclaration(a);
+                        break;
+                    }
+
+                    case BoundAssignmentStatement a:
+                    {
+                        EvaluateAssignmentStatement(a);
+                        break;
+                    }
                     case BoundExpressionStatement expressionStatement:
                         _lastValue = EvaluateExpression(expressionStatement.Expression);
                         break;
@@ -106,6 +112,13 @@ namespace Panther.CodeAnalysis
             _lastValue = EvaluateExpression(body.Expression);
 
             return _lastValue;
+        }
+
+        private void EvaluateAssignmentStatement(BoundAssignmentStatement a)
+        {
+            var value = EvaluateExpression(a.Expression);
+            Assign(a.Variable, value);
+            _lastValue = Unit.Default;
         }
 
         private object EvaluateVariableDeclaration(BoundVariableDeclarationStatement a)

@@ -195,9 +195,19 @@ namespace Panther.CodeAnalysis.Emit
                     EmitVariableDeclarationStatement(ilProcessor, variableDeclarationStatement);
                     break;
 
+                case BoundAssignmentStatement assignmentStatement:
+                    EmitAssignmentStatement(ilProcessor, assignmentStatement);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }
+        }
+
+        private void EmitAssignmentStatement(ILProcessor ilProcessor, BoundAssignmentStatement assignmentStatement)
+        {
+            EmitExpression(ilProcessor, assignmentStatement.Expression);
+            ilProcessor.Emit(OpCodes.Stloc, _locals[assignmentStatement.Variable]);
         }
 
         private void EmitVariableDeclarationStatement(ILProcessor ilProcessor, BoundVariableDeclarationStatement variableDeclarationStatement)

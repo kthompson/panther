@@ -173,6 +173,7 @@ namespace Panther.CodeAnalysis.Binding
         protected virtual BoundStatement RewriteStatement(BoundStatement node) =>
             node switch
             {
+                BoundAssignmentStatement assignmentStatement => RewriteAssignmentStatement(assignmentStatement),
                 BoundExpressionStatement expressionStatement => RewriteExpressionStatement(expressionStatement),
                 BoundVariableDeclarationStatement variableDeclarationStatement => RewriteVariableDeclarationStatement(variableDeclarationStatement),
                 BoundLabelStatement labelStatement => RewriteBoundLabelStatement(labelStatement),
@@ -180,6 +181,15 @@ namespace Panther.CodeAnalysis.Binding
                 BoundConditionalGotoStatement conditionalGotoStatement => RewriteBoundConditionalGotoStatement(conditionalGotoStatement),
                 _ => throw new ArgumentOutOfRangeException(nameof(node))
             };
+
+        protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
+        {
+            var expr = RewriteExpression(node.Expression);
+            if (expr == node.Expression)
+                return node;
+
+            return new BoundAssignmentStatement(node.Variable, expr);
+        }
 
         protected virtual BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
