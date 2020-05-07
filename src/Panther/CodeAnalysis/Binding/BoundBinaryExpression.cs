@@ -10,6 +10,7 @@ namespace Panther.CodeAnalysis.Binding
             Operator = @operator;
             Left = left;
             Right = right;
+            ConstantValue = ConstantFolding.ComputeConstant(left, @operator, right);
         }
 
         public BoundExpression Left { get; }
@@ -20,5 +21,6 @@ namespace Panther.CodeAnalysis.Binding
 
         public override BoundNodeKind Kind => BoundNodeKind.BinaryExpression;
         public override TypeSymbol Type => Operator.Type;
+        public override BoundConstant? ConstantValue { get; }
     }
 }

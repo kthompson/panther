@@ -112,7 +112,7 @@ namespace Panther.CodeAnalysis.Lowering
         {
             _tempCount++;
             var name = $"{prefix}${boundExpression.Type.Name}${_tempCount:0000}";
-            var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type);
+            var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
             _statements.Add(new BoundVariableDeclarationStatement(tempVariable, boundExpression));
             return new BoundVariableExpression(tempVariable);
         }

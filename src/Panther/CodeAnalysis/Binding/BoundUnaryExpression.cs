@@ -1,5 +1,4 @@
-﻿using System;
-using Panther.CodeAnalysis.Symbols;
+﻿using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -9,6 +8,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             Operator = @operator;
             Operand = operand;
+            ConstantValue = ConstantFolding.ComputeConstant(@operator, operand);
         }
 
         public BoundUnaryOperator Operator { get; }
@@ -17,5 +17,6 @@ namespace Panther.CodeAnalysis.Binding
 
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
         public override TypeSymbol Type => Operator.Type;
+        public override BoundConstant? ConstantValue { get; }
     }
 }

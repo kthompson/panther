@@ -176,11 +176,12 @@ namespace Panther.CodeAnalysis.Binding
             {
                 BoundAssignmentStatement assignmentStatement => RewriteAssignmentStatement(assignmentStatement),
                 BoundExpressionStatement expressionStatement => RewriteExpressionStatement(expressionStatement),
+                BoundNopStatement nopStatement => RewriteNopStatement(nopStatement),
                 BoundVariableDeclarationStatement variableDeclarationStatement => RewriteVariableDeclarationStatement(variableDeclarationStatement),
                 BoundLabelStatement labelStatement => RewriteBoundLabelStatement(labelStatement),
                 BoundGotoStatement gotoStatement => RewriteBoundGotoStatement(gotoStatement),
                 BoundConditionalGotoStatement conditionalGotoStatement => RewriteBoundConditionalGotoStatement(conditionalGotoStatement),
-                _ => throw new ArgumentOutOfRangeException(nameof(node))
+                _ => throw new ArgumentOutOfRangeException(nameof(node), $"Unexpected kind: {node.Kind}")
             };
 
         protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
@@ -220,6 +221,8 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node) => node;
+
+        protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node) => node;
 
         protected virtual BoundStatement RewriteBoundGotoStatement(BoundGotoStatement node) => node;
 

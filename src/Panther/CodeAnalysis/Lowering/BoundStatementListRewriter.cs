@@ -26,7 +26,8 @@ namespace Panther.CodeAnalysis.Lowering
 
         protected BoundBlockExpression Rewrite(BoundBlockExpression block)
         {
-            foreach (var statement in block.Statements) RewriteStatement(statement);
+            foreach (var statement in block.Statements)
+                RewriteStatement(statement);
 
             RewriteStatement(new BoundExpressionStatement(block.Expression));
 

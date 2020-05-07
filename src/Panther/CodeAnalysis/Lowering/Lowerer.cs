@@ -37,7 +37,7 @@ namespace Panther.CodeAnalysis.Lowering
         private VariableSymbol GenerateVariable(TypeSymbol type)
         {
             _variableCount++;
-            return new LocalVariableSymbol($"variable${_variableCount}", false, type);
+            return new LocalVariableSymbol($"variable${_variableCount}", false, type, null);
         }
 
         public static BoundBlockExpression Lower(BoundStatement statement)
@@ -80,6 +80,22 @@ namespace Panther.CodeAnalysis.Lowering
             }
 
             return inlinedTemporaries;
+        }
+
+
+        protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
+        {
+            var constant = node.Condition.ConstantValue;
+            if(constant == null)
+                return base.RewriteBoundConditionalGotoStatement(node);
+
+            var condition = (bool) constant.Value;
+
+            var condition2 = node.JumpIfTrue ? condition : !condition;
+            if (condition2)
+                return new BoundGotoStatement(node.BoundLabel);
+
+            return BoundNopStatement.Default;
         }
 
 

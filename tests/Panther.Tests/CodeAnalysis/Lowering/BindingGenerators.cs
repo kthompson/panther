@@ -58,7 +58,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from ident in Identifier()
             from type in Arb.Generate<TypeSymbol>()
             from readOnly in Arb.Generate<bool>()
-            select new GlobalVariableSymbol(ident, readOnly, type)
+            select new GlobalVariableSymbol(ident, readOnly, type, null)
         ).ToArbitrary();
 
         public static Gen<string> Identifier() =>
@@ -95,7 +95,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         public static Gen<LocalVariableSymbol> GenLocalVariableSymbol(TypeSymbol typeSymbol) =>
             from ident in Identifier()
             from readOnly in Arb.Generate<bool>()
-            select new LocalVariableSymbol(ident, readOnly, typeSymbol);
+            select new LocalVariableSymbol(ident, readOnly, typeSymbol, null);
 
         public static Gen<BoundExpression> GenBoundLiteralExpression(TypeSymbol typeSymbol)
         {

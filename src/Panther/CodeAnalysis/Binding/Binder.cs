@@ -309,7 +309,7 @@ namespace Panther.CodeAnalysis.Binding
             var expressionType = type ?? boundExpression.Type;
 
             var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
-            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, scope);
+            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, boundExpression.ConstantValue,  scope);
 
             return new BoundVariableDeclarationStatement(variable, converted);
         }
@@ -330,13 +330,14 @@ namespace Panther.CodeAnalysis.Binding
             syntaxTypeClause == null ? null : BindTypeAnnotation(syntaxTypeClause);
 
         private VariableSymbol BindVariable(SyntaxToken identifier, TypeSymbol expressionType, bool isReadOnly,
+            BoundConstant? constantValue,
             BoundScope scope)
         {
             var name = identifier.Text ?? "??";
             var declare = !identifier.IsInsertedToken;
             var variable = scope.IsGlobalScope
-                ? (VariableSymbol)new GlobalVariableSymbol(name, isReadOnly, expressionType)
-                : new LocalVariableSymbol(name, isReadOnly, expressionType);
+                ? (VariableSymbol)new GlobalVariableSymbol(name, isReadOnly, expressionType, constantValue)
+                : new LocalVariableSymbol(name, isReadOnly, expressionType, constantValue);
 
             if (declare && !scope.TryDeclareVariable(variable))
             {
@@ -500,7 +501,7 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             var newScope = new BoundScope(scope);
-            var variable = BindVariable(syntax.VariableExpression.IdentifierToken, TypeSymbol.Int, true, newScope);
+            var variable = BindVariable(syntax.VariableExpression.IdentifierToken, TypeSymbol.Int, true, null, newScope);
 
             var body = BindLoopBody(syntax.Body, newScope, out var breakLabel, out var continueLabel);
 

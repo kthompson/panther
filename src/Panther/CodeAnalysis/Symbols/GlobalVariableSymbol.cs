@@ -1,9 +1,11 @@
-﻿namespace Panther.CodeAnalysis.Symbols
+﻿using Panther.CodeAnalysis.Binding;
+
+namespace Panther.CodeAnalysis.Symbols
 {
     public sealed class GlobalVariableSymbol : VariableSymbol
     {
-        internal GlobalVariableSymbol(string name, bool isReadOnly, TypeSymbol type)
-            : base(name, isReadOnly, type)
+        internal GlobalVariableSymbol(string name, bool isReadOnly, TypeSymbol type, BoundConstant? constantValue)
+            : base(name, isReadOnly, type, constantValue)
         {
         }
 

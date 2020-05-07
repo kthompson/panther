@@ -264,6 +264,12 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitExpression(ILProcessor ilProcessor, BoundExpression expression)
         {
+            if (expression.ConstantValue != null)
+            {
+                EmitConstantExpression(ilProcessor, expression, expression.ConstantValue);
+                return;
+            }
+
             switch (expression)
             {
                 case BoundBinaryExpression binaryExpression:
@@ -276,10 +282,6 @@ namespace Panther.CodeAnalysis.Emit
 
                 case BoundConversionExpression conversionExpression:
                     EmitConversionExpression(ilProcessor, conversionExpression);
-                    break;
-
-                case BoundLiteralExpression literalExpression:
-                    EmitLiteralExpression(ilProcessor, literalExpression);
                     break;
 
                 case BoundUnaryExpression unaryExpression:
@@ -299,19 +301,19 @@ namespace Panther.CodeAnalysis.Emit
             }
         }
 
-        private void EmitLiteralExpression(ILProcessor ilProcessor, BoundLiteralExpression literalExpression)
+        private void EmitConstantExpression(ILProcessor ilProcessor, BoundExpression node, BoundConstant constant)
         {
-            if (literalExpression.Type == TypeSymbol.Bool)
+            if (node.Type == TypeSymbol.Bool)
             {
-                ilProcessor.Emit((bool)literalExpression.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                ilProcessor.Emit((bool)constant.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             }
-            else if (literalExpression.Type == TypeSymbol.Int)
+            else if (node.Type == TypeSymbol.Int)
             {
-                ilProcessor.Emit(OpCodes.Ldc_I4, (int)literalExpression.Value);
+                ilProcessor.Emit(OpCodes.Ldc_I4, (int)constant.Value);
             }
-            else if (literalExpression.Type == TypeSymbol.String)
+            else if (node.Type == TypeSymbol.String)
             {
-                ilProcessor.Emit(OpCodes.Ldstr, (string)literalExpression.Value);
+                ilProcessor.Emit(OpCodes.Ldstr, (string)constant.Value);
             }
             else
             {

@@ -102,6 +102,9 @@ namespace Panther.CodeAnalysis
                         _lastValue = EvaluateExpression(expressionStatement.Expression);
                         break;
 
+                    case BoundNopStatement _:
+                        break;
+
                     default:
                         throw new Exception($"Unexpected statement {body.Statements[position].Kind}");
                 }
@@ -124,6 +127,7 @@ namespace Panther.CodeAnalysis
         private object EvaluateVariableDeclaration(BoundVariableDeclarationStatement a)
         {
             var value = EvaluateExpression(a.Expression);
+
             Assign(a.Variable, value);
             return value;
         }
@@ -141,8 +145,12 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        private object EvaluateExpression(BoundExpression node) =>
-            node switch
+        private object EvaluateExpression(BoundExpression node)
+        {
+            if (node.ConstantValue != null)
+                return node.ConstantValue.Value;
+
+            return node switch
             {
                 BoundLiteralExpression n => n.Value,
                 BoundUnitExpression _ => Unit.Default,
@@ -155,6 +163,7 @@ namespace Panther.CodeAnalysis
                 BoundBlockExpression block => EvaluateBlockExpression(block),
                 _ => throw new Exception($"Unexpected expression {node.Kind}")
             };
+        }
 
         private object EvaluateConversionExpression(BoundConversionExpression conversionExpression)
         {
@@ -199,6 +208,11 @@ namespace Panther.CodeAnalysis
 
         private object EvaluateBinaryExpression(BoundBinaryExpression binaryExpression)
         {
+            if (binaryExpression.ConstantValue != null)
+            {
+                return binaryExpression.ConstantValue.Value;
+            }
+
             var left = EvaluateExpression(binaryExpression.Left);
             var right = EvaluateExpression(binaryExpression.Right);
 

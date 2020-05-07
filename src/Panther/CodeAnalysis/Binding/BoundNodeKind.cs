@@ -23,6 +23,7 @@ namespace Panther.CodeAnalysis.Binding
         ExpressionStatement,
         GotoStatement,
         LabelStatement,
-        VariableDeclarationStatement
+        NopStatement,
+        VariableDeclarationStatement,
     }
 }
