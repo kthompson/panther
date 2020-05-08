@@ -81,7 +81,7 @@
         VariableDeclarationStatement,
 
         //  Nodes
-        TypeClause,
+        TypeAnnotation,
         Parameter,
         CompilationUnit,
 

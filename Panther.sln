@@ -3,15 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{81F68F61-0935-4ABA-985E-8578A8982865}"
-	ProjectSection(SolutionItems) = preProject
-		docs\LANG.md = docs\LANG.md
-		TODO.md = TODO.md
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DE9991AB-E783-4C47-B224-BFE5493F2A9B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3A9F57E8-52F8-4A65-93B7-910383111244}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+		src\Directory.Build.targets = src\Directory.Build.targets
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.Repl", "src\Panther.Repl\Panther.Repl.csproj", "{3B6FB84F-9BD7-4DC6-9096-6EFF4670B3DF}"
 EndProject
@@ -26,11 +24,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{2C7EA852-0336-45D4-9AAA-D3A5D1F2F4AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.Compiler", "src\Panther.Compiler\Panther.Compiler.csproj", "{C4267DB6-1BB2-4F68-80E8-E647D702CBEA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.Compiler", "src\Panther.Compiler\Panther.Compiler.csproj", "{C4267DB6-1BB2-4F68-80E8-E647D702CBEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hello", "samples\hello\hello.pnproj", "{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.StdLib", "src\Panther.StdLib\Panther.StdLib.csproj", "{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.StdLib", "src\Panther.StdLib\Panther.StdLib.csproj", "{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther.Generators", "src\Panther.Generators\Panther.Generators.csproj", "{DD9FBDF6-61EA-40C8-93FA-CC7792E32822}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -64,6 +64,10 @@ Global
 		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,6 +78,7 @@ Global
 		{BCA3FE64-88D0-475D-943D-B62D07EA288E} = {DE9991AB-E783-4C47-B224-BFE5493F2A9B}
 		{C4267DB6-1BB2-4F68-80E8-E647D702CBEA} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 		{7CF9CF6A-89F2-4DA5-BE1D-75887BA6E5EB} = {3A9F57E8-52F8-4A65-93B7-910383111244}
+		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685AA9B0-62DB-4F96-984D-2922750366A4}

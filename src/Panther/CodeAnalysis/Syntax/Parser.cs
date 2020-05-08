@@ -266,7 +266,7 @@ namespace Panther.CodeAnalysis.Syntax
             var left = prefixFunction();
 
             // investigate if we can use precedence to break early
-            var isTerminatingLine = !inGroup && left.Descendants().Select(x => x.Kind == SyntaxKind.EndOfLineTrivia).LastOrDefault();
+            var isTerminatingLine = !inGroup && left.Descendants().Any(x => x.Kind == SyntaxKind.EndOfLineTrivia);
             if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression || isTerminatingLine)
                 return left;
 

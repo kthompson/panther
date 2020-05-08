@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public class WhileExpressionSyntax : ExpressionSyntax
+    public sealed partial class WhileExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken WhileKeyword { get; }
         public SyntaxToken OpenParenToken { get; }
@@ -17,7 +17,5 @@
             CloseParenToken = closeParenToken;
             Body = body;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.WhileExpression;
     }
 }

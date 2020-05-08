@@ -108,8 +108,6 @@ namespace Panther.CodeAnalysis.Binding
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-            throw new NotImplementedException();
         }
     }
 }

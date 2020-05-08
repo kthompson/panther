@@ -1,0 +1,9 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>8.0</LangVersion>
+    <LangVersion>preview</LangVersion>
+    <Features>strict</Features>
+  </PropertyGroup>
+
+</Project>

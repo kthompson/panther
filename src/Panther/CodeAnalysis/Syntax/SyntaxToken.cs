@@ -60,6 +60,8 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
+        public override IEnumerable<SyntaxNode> GetChildren() => Enumerable.Empty<SyntaxNode>();
+
         public override IEnumerable<SyntaxNode> DescendantsAndSelf()
         {
             foreach (var trivia in LeadingTrivia)

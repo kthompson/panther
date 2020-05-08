@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public class ForExpressionSyntax : ExpressionSyntax
+    public sealed partial class ForExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken ForKeyword { get; }
         public SyntaxToken OpenParenToken { get; }
@@ -24,7 +24,5 @@
             CloseParenToken = closeParenToken;
             Body = body;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.ForExpression;
     }
 }

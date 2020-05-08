@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class ContinueExpressionSyntax : ExpressionSyntax
+    public sealed partial class ContinueExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken ContinueKeyword { get; }
 
@@ -8,7 +8,5 @@
         {
             ContinueKeyword = continueKeyword;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.ContinueExpression;
     }
 }

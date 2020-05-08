@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    internal class UnitExpressionSyntax : ExpressionSyntax
+    public sealed partial class UnitExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken OpenParenToken { get; }
         public SyntaxToken CloseParenToken { get; }
@@ -10,7 +10,5 @@
             OpenParenToken = openParenToken;
             CloseParenToken = closeParenToken;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.UnitExpression;
     }
 }

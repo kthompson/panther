@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    internal sealed class LiteralExpressionSyntax : ExpressionSyntax
+    internal sealed partial class LiteralExpressionSyntax : ExpressionSyntax
     {
         public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken)
             : this(syntaxTree, literalToken, literalToken.Value)
@@ -17,6 +17,5 @@ namespace Panther.CodeAnalysis.Syntax
 
         public SyntaxToken LiteralToken { get; }
         public object? Value { get; }
-        public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
     }
 }

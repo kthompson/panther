@@ -2,14 +2,13 @@
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class VariableDeclarationStatementSyntax : StatementSyntax
+    public sealed partial class VariableDeclarationStatementSyntax : StatementSyntax
     {
         public SyntaxToken ValOrVarToken { get; }
         public SyntaxToken IdentifierToken { get; }
         public TypeAnnotationSyntax? TypeAnnotation { get; }
         public SyntaxToken EqualsToken { get; }
         public ExpressionSyntax Expression { get; }
-        public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
 
         public VariableDeclarationStatementSyntax(SyntaxTree syntaxTree, SyntaxToken valOrVarToken,
             SyntaxToken identifierToken, TypeAnnotationSyntax? typeAnnotation, SyntaxToken equalsToken,

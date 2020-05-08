@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class ParameterSyntax : SyntaxNode
+    public sealed partial class ParameterSyntax : SyntaxNode
     {
         public SyntaxToken Identifier { get; }
         public TypeAnnotationSyntax TypeAnnotation { get; }
@@ -10,7 +10,5 @@
             Identifier = identifier;
             TypeAnnotation = typeAnnotation;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.Parameter;
     }
 }

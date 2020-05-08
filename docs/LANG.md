@@ -2,11 +2,11 @@
 
 # primitive types
 
-Unsigned ints u8, u16, u32, u64, usize
-Signed ints   i8, i16, i32, i64, isize
-Floats:   f32, f64
-bool
-char
+* Unsigned ints u8, u16, u32, u64, usize (TODO)
+* Signed ints   i8, i16, i32, i64, isize (TODO)
+* Floats:   f32, f64 (TODO)
+* char (TODO)
+* bool
 
 # expressions
 
@@ -76,6 +76,6 @@ expression(a, b, c) -> expression.Invoke(a, b, c)
 
 lock -> try finally
 
-for comprension -> flapMap + map chain
+for comprehension -> flapMap + map chain
 
 val Person(name, Age(age)) = michael

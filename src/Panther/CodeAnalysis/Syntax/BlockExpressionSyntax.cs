@@ -2,13 +2,12 @@
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public class BlockExpressionSyntax : ExpressionSyntax
+    public sealed partial class BlockExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken OpenBraceToken { get; }
         public ImmutableArray<StatementSyntax> Statements { get; }
         public ExpressionSyntax Expression { get; }
         public SyntaxToken CloseBraceToken { get; }
-        public override SyntaxKind Kind => SyntaxKind.BlockExpression;
 
         public BlockExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken openBraceToken, ImmutableArray<StatementSyntax> statements, ExpressionSyntax expression, SyntaxToken closeBraceToken) : base(syntaxTree)
         {

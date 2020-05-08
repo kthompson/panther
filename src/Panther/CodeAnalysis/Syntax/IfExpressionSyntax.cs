@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public class IfExpressionSyntax : ExpressionSyntax
+    public sealed partial class IfExpressionSyntax : ExpressionSyntax
     {
         public SyntaxToken IfKeyword { get; }
         public SyntaxToken OpenParenToken { get; }
@@ -20,7 +20,5 @@
             ElseKeyword = elseKeyword;
             ElseExpression = elseExpression;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.IfExpression;
     }
 }

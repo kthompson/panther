@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class FunctionDeclarationSyntax : MemberSyntax
+    public sealed partial class FunctionDeclarationSyntax : MemberSyntax
     {
         public SyntaxToken DefKeyword { get; }
         public SyntaxToken Identifier { get; }
@@ -24,7 +24,5 @@
             EqualsToken = equalsToken;
             Body = body;
         }
-
-        public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
     }
 }

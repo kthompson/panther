@@ -1,4 +1,6 @@
-﻿using Panther.CodeAnalysis.Text;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
@@ -18,5 +20,6 @@ namespace Panther.CodeAnalysis.Syntax
 
         public override TextSpan Span => new TextSpan(_position, Text?.Length ?? 0);
         public override TextSpan FullSpan => Span;
+        public override IEnumerable<SyntaxNode> GetChildren() => ImmutableArray<SyntaxNode>.Empty;
     }
 }
