@@ -98,9 +98,19 @@ namespace Panther.CodeAnalysis.Binding
                     WriteAssignmentStatement(boundAssignmentStatement, writer);
                     break;
 
+                case BoundNopStatement boundNopStatement:
+                    WriteNopStatement(boundNopStatement, writer);
+                    break;
+
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(node));
+                    throw new ArgumentOutOfRangeException(nameof(node), node.Kind.ToString());
             }
+        }
+
+        private static void WriteNopStatement(BoundNopStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword("nop");
+            writer.WriteLine();
         }
 
         private static void WriteAssignmentStatement(BoundAssignmentStatement node, IndentedTextWriter writer)

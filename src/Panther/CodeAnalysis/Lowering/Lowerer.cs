@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -79,9 +81,31 @@ namespace Panther.CodeAnalysis.Lowering
                 inlinedTemporaries.WriteTo(Console.Out);
             }
 
-            return inlinedTemporaries;
+            var deadCodeRemoval = RemoveDeadCode(inlinedTemporaries);
+            if (debug)
+            {
+                Console.WriteLine("==== Dead Code Removal ===");
+                deadCodeRemoval.WriteTo(Console.Out);
+            }
+
+            return deadCodeRemoval;
         }
 
+
+        private static BoundBlockExpression RemoveDeadCode(BoundBlockExpression block)
+        {
+            var controlFlow = ControlFlowGraph.Create(block);
+            var reachableStatements = new HashSet<BoundStatement>(controlFlow.Blocks.SelectMany(basicBlock => basicBlock.Statements));
+
+            var builder = block.Statements.ToBuilder();
+            for (int i = builder.Count - 1; i >= 0; i--)
+            {
+                if (!reachableStatements.Contains(builder[i]))
+                    builder.RemoveAt(i);
+            }
+
+            return new BoundBlockExpression(builder.ToImmutable(), block.Expression);
+        }
 
         protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
         {

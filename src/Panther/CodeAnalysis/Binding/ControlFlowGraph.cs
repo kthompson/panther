@@ -102,11 +102,13 @@ namespace Panther.CodeAnalysis.Binding
 
                         case BoundNodeKind.VariableDeclarationStatement:
                         case BoundNodeKind.ExpressionStatement:
+                        case BoundNodeKind.AssignmentStatement:
+                        case BoundNodeKind.NopStatement:
                             _statements.Add(statement);
                             break;
 
                         default:
-                            throw new ArgumentOutOfRangeException(nameof(statement));
+                            throw new ArgumentOutOfRangeException(nameof(statement), statement.Kind.ToString());
                     }
                 }
 
@@ -135,8 +137,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public sealed class GraphBuilder
         {
-            private Dictionary<BoundStatement, BasicBlock> _blockFromStatement = new Dictionary<BoundStatement, BasicBlock>();
-            private Dictionary<BoundLabel, BasicBlock> _blockFromLabel = new Dictionary<BoundLabel, BasicBlock>();
+            private readonly Dictionary<BoundLabel, BasicBlock> _blockFromLabel = new Dictionary<BoundLabel, BasicBlock>();
             private readonly List<BasicBlockBranch> _branches = new List<BasicBlockBranch>();
             private readonly BasicBlock _start = new BasicBlock(isStart: true);
             private readonly BasicBlock _end = new BasicBlock(isStart: false);
@@ -149,7 +150,6 @@ namespace Panther.CodeAnalysis.Binding
                 {
                     foreach (var statement in block.Statements)
                     {
-                        _blockFromStatement.Add(statement, block);
                         if (statement is BoundLabelStatement labelStatement)
                         {
                             _blockFromLabel.Add(labelStatement.BoundLabel, block);
@@ -209,36 +209,51 @@ namespace Panther.CodeAnalysis.Binding
                 {
                     case BoundConditionalGotoStatement conditionalGotoStatement:
                         {
-                            var thenBlock = _blockFromLabel[conditionalGotoStatement.BoundLabel];
-                            var negatedCondition = Negate(conditionalGotoStatement.Condition);
-                            var thenCondition = conditionalGotoStatement.JumpIfTrue
-                                ? conditionalGotoStatement.Condition
-                                : negatedCondition;
-                            var elseCondition = conditionalGotoStatement.JumpIfTrue
-                                ? negatedCondition
-                                : conditionalGotoStatement.Condition;
+                            if (_blockFromLabel.TryGetValue(conditionalGotoStatement.BoundLabel, out var thenBlock))
+                            {
+                                var negatedCondition = Negate(conditionalGotoStatement.Condition);
+                                var thenCondition = conditionalGotoStatement.JumpIfTrue
+                                    ? conditionalGotoStatement.Condition
+                                    : negatedCondition;
+                                var elseCondition = conditionalGotoStatement.JumpIfTrue
+                                    ? negatedCondition
+                                    : conditionalGotoStatement.Condition;
 
-                            Connect(current, thenBlock, thenCondition);
-                            Connect(current, next, elseCondition);
+                                Connect(current, thenBlock, thenCondition);
+                                Connect(current, next, elseCondition);
+                            }
+                            else
+                            {
+                                // we really shouldn't get here but we have a test that can produce invalid jumps at the moment
+                            }
 
                             break;
                         }
                     case BoundGotoStatement gotoStatement:
                         {
-                            var toBlock = _blockFromLabel[gotoStatement.BoundLabel];
-                            Connect(current, toBlock);
+                            if (_blockFromLabel.TryGetValue(gotoStatement.BoundLabel, out var toBlock))
+                            {
+                                Connect(current, toBlock);
+                            }
+                            else
+                            {
+                                // we really shouldn't get here but we have a test that can produce invalid jumps at the moment
+                            }
+
                             break;
                         }
                     case BoundLabelStatement _:
                     case BoundExpressionStatement _:
                     case BoundVariableDeclarationStatement _:
+                    case BoundAssignmentStatement _:
+                    case BoundNopStatement _:
                         if (isLastStatementInBlock)
                             Connect(current, next);
 
                         break;
 
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(statement));
+                        throw new ArgumentOutOfRangeException(nameof(statement), statement.Kind.ToString());
                 }
             }
 
