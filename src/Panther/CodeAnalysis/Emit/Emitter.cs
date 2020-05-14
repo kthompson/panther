@@ -85,6 +85,9 @@ namespace Panther.CodeAnalysis.Emit
             _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
             _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
             _unit = ResolveField("Panther.StdLib.Unit", "Default");
+
+            var objectType = _knownTypes[TypeSymbol.Any];
+            _typeDef = new TypeDefinition("", "Program", TypeAttributes.Abstract | TypeAttributes.Sealed, objectType);
         }
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, string moduleName, string[] references,
@@ -102,8 +105,6 @@ namespace Panther.CodeAnalysis.Emit
             if (_diagnostics.Any())
                 return _diagnostics.ToImmutableArray();
 
-            var objectType = _knownTypes[TypeSymbol.Any];
-            _typeDef = new TypeDefinition("", "Program", TypeAttributes.Abstract | TypeAttributes.Sealed, objectType);
             _assemblyDefinition.MainModule.Types.Add(_typeDef);
 
             // ensure all functions exist first so we can reference them

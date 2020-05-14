@@ -17,7 +17,7 @@ namespace Panther.CodeAnalysis.Lowering
             {
                 var expression = RewriteExpression(varDecl.Expression);
                 if (expression == BoundUnitExpression.Default)
-                    return null;
+                    return BoundNopStatement.Default;
 
                 return base.RewriteStatement(new BoundExpressionStatement(expression));
             }
@@ -26,7 +26,7 @@ namespace Panther.CodeAnalysis.Lowering
             {
                 var expression = RewriteExpression(expressionStatement.Expression);
                 if (expression == BoundUnitExpression.Default)
-                    return null;
+                    return BoundNopStatement.Default;
 
                 return base.RewriteStatement(new BoundExpressionStatement(expression));
             }

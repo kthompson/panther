@@ -278,7 +278,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
         {
-            var value = node.Value.ToString();
+            var value = node.Value.ToString() ?? "";
             if (node.Type == TypeSymbol.Bool)
             {
                 writer.WriteKeyword(value);

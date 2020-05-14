@@ -37,8 +37,8 @@ namespace Panther.CodeAnalysis.Lowering
         protected override BoundStatement RewriteStatement(BoundStatement node)
         {
             var statement = base.RewriteStatement(node);
-            if (statement != null)
-                _statements.Add(statement);
+
+            _statements.Add(statement);
 
             return statement;
         }

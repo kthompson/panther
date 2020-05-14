@@ -102,14 +102,14 @@ namespace Panther.CodeAnalysis.Binding
             // main function signature should be correct
             if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
             {
-                binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Declaration.Identifier.Location);
+                binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Declaration?.Identifier.Location);
             }
 
             // if a main function exists, global statements cannot
             if (!globalStatements.Any())
                 return;
 
-            binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Declaration.Identifier.Location);
+            binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Declaration?.Identifier.Location);
 
             foreach (var firstStatement1 in firstStatementPerSyntaxTree)
             {

@@ -100,10 +100,10 @@ namespace Panther.CodeAnalysis
         public void ReportInvalidExpressionStatement(TextLocation location) =>
             Report(location, $"Only expressions with side effects can be used as a statement");
 
-        public void ReportCannotMixMainAndGlobalStatements(TextLocation location) =>
+        public void ReportCannotMixMainAndGlobalStatements(TextLocation? location) =>
             Report(location, "Cannot mix main and global statements");
 
-        public void ReportMainMustHaveCorrectSignature(TextLocation location) =>
+        public void ReportMainMustHaveCorrectSignature(TextLocation? location) =>
             Report(location, "Main must have no parameters and return unit");
 
         public void ReportGlobalStatementsCanOnlyExistInOneFile(TextLocation location) =>
