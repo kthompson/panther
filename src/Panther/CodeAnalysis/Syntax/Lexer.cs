@@ -32,16 +32,6 @@ namespace Panther.CodeAnalysis.Syntax
             _position++;
         }
 
-        private bool IfWhile(Func<char, bool> predicate)
-        {
-            if (!predicate(Current))
-                return false;
-
-            ParsePredicate(predicate);
-
-            return true;
-        }
-
         private (int start, int end) ParsePredicate(Func<char, bool> predicate)
         {
             var start = _position;
@@ -227,33 +217,48 @@ namespace Panther.CodeAnalysis.Syntax
                     return ParseStringToken(start);
 
                 default:
+                    if (char.IsDigit(Current))
+                        return ParseNumber();
 
-                    if (IfWhile(char.IsDigit))
-                    {
-                        var span = _text[start.._position];
 
-                        if (!int.TryParse(span, out var value))
-                            _diagnostics.ReportInvalidNumber(
-                                new TextLocation(_text, new TextSpan(start, _position - start)),
-                                span.AsSpan().ToString(),
-                                TypeSymbol.Int);
+                    if (char.IsLetter(Current))
+                        return ParseIdentOrKeyword();
 
-                        return (SyntaxKind.NumberToken, start, span, value);
-                    }
-
-                    if (IfWhile(char.IsLetter))
-                    {
-                        var span = _text[start.._position];
-
-                        var kind = SyntaxFacts.GetKeywordKind(span);
-
-                        return (kind, start, span, null);
-                    }
-
-                    _diagnostics.ReportBadCharacter(
-                        new TextLocation(_text, new TextSpan(_position, 1)), Current);
+                    _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
                     return ReturnKindOneChar(SyntaxKind.InvalidToken);
             }
+        }
+
+        private (SyntaxKind kind, int start, string text, object? value) ParseIdentOrKeyword()
+        {
+            var start = _position;
+            Next(); // skip first letter
+            while (char.IsLetterOrDigit(Current))
+            {
+                Next();
+            }
+
+            var span = _text[start.._position];
+
+            var kind = SyntaxFacts.GetKeywordKind(span);
+
+            return (kind, start, span, null);
+        }
+
+        private (SyntaxKind kind, int start, string text, object value) ParseNumber()
+        {
+            var start = _position;
+            ParsePredicate(char.IsDigit);
+
+            var span = _text[start.._position];
+
+            if (!int.TryParse(span, out var value))
+                _diagnostics.ReportInvalidNumber(
+                    new TextLocation(_text, new TextSpan(start, _position - start)),
+                    span.AsSpan().ToString(),
+                    TypeSymbol.Int);
+
+            return (SyntaxKind.NumberToken, start, span, value);
         }
 
         private SyntaxTrivia ParseLineComment()

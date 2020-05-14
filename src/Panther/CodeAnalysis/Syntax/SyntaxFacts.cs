@@ -134,5 +134,18 @@ namespace Panther.CodeAnalysis.Syntax
         public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
             Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
                 .Where(kind => GetBinaryOperatorPrecedence(kind) > 0);
+
+        public static bool IsTrivia(this SyntaxKind kind) =>
+            kind switch
+            {
+                SyntaxKind.InvalidToken => true,
+                SyntaxKind.EndOfLineTrivia => true,
+                SyntaxKind.WhitespaceTrivia => true,
+                SyntaxKind.LineCommentTrivia => true,
+                SyntaxKind.BlockCommentTrivia => true,
+                _ => false
+            };
+
+        public static bool IsKeyword(this SyntaxKind kind) => kind.ToString().EndsWith("Keyword");
     }
 }

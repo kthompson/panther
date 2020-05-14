@@ -54,7 +54,7 @@ namespace Panther
                 SyntaxKind.IdentifierToken => ConsoleColor.DarkYellow,
                 SyntaxKind.StringToken => ConsoleColor.Magenta,
                 SyntaxKind.NumberToken => ConsoleColor.Cyan,
-                SyntaxKind kind when kind.ToString().EndsWith("Keyword") => ConsoleColor.Blue,
+                SyntaxKind kind when kind.IsKeyword() => ConsoleColor.Blue,
                 _ => ConsoleColor.DarkGray
             };
 

@@ -30,6 +30,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 {
                     new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "a"),
                     new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc"),
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc123"),
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
@@ -81,10 +82,13 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             if (kind1 == kind2 && CoalescingKinds.Contains(kind1))
                 return true;
 
-            var kind1Keyword = kind1.ToString().EndsWith("Keyword");
-            var kind2Keyword = kind2.ToString().EndsWith("Keyword");
+            var kind1Keyword = kind1.IsKeyword();
+            var kind2Keyword = kind2.IsKeyword();
 
             if (kind1Keyword && (kind2Keyword || kind2 == SyntaxKind.IdentifierToken))
+                return true;
+
+            if ((kind1Keyword || kind1 == SyntaxKind.IdentifierToken) && kind2 == SyntaxKind.NumberToken)
                 return true;
 
             if (kind1 == SyntaxKind.IdentifierToken && kind2Keyword)
