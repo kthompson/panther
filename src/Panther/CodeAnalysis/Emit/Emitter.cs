@@ -17,7 +17,7 @@ namespace Panther.CodeAnalysis.Emit
 
         private readonly Dictionary<TypeSymbol, TypeReference> _knownTypes = new Dictionary<TypeSymbol, TypeReference>();
 
-        private readonly Dictionary<FunctionSymbol, MethodDefinition> _methods = new Dictionary<FunctionSymbol, MethodDefinition>();
+        private readonly Dictionary<MethodSymbol, MethodDefinition> _methods = new Dictionary<MethodSymbol, MethodDefinition>();
         private readonly AssemblyDefinition _assemblyDefinition;
         private readonly List<AssemblyDefinition> _assemblies = new List<AssemblyDefinition>();
         private TypeDefinition _typeDef;
@@ -127,28 +127,28 @@ namespace Panther.CodeAnalysis.Emit
             return _diagnostics.ToImmutableArray();
         }
 
-        private void EmitFunctionDeclaration(FunctionSymbol function)
+        private void EmitFunctionDeclaration(MethodSymbol method)
         {
-            var type = function.ReturnType;
+            var type = method.ReturnType;
             var returnType = type == TypeSymbol.Unit ? _voidType : _knownTypes[type];
-            var method = new MethodDefinition(function.Name, MethodAttributes.Static | MethodAttributes.Private, returnType);
+            var methodDefinition = new MethodDefinition(method.Name, MethodAttributes.Static | MethodAttributes.Private, returnType);
             var methodParams =
-                from parameter in function.Parameters
+                from parameter in method.Parameters
                 let paramType = _knownTypes[parameter.Type]
                 select new ParameterDefinition(parameter.Name, ParameterAttributes.None, paramType);
 
             foreach (var p in methodParams)
-                method.Parameters.Add(p);
+                methodDefinition.Parameters.Add(p);
 
-            _methods[function] = method;
+            _methods[method] = methodDefinition;
 
-            _typeDef.Methods.Add(method);
+            _typeDef.Methods.Add(methodDefinition);
         }
 
-        private void EmitFunctionBody(FunctionSymbol function, BoundBlockExpression block)
+        private void EmitFunctionBody(MethodSymbol method, BoundBlockExpression block)
         {
-            var method = _methods[function];
-            var ilProcessor = method.Body.GetILProcessor();
+            var methodDefinition = _methods[method];
+            var ilProcessor = methodDefinition.Body.GetILProcessor();
 
             _locals.Clear();
             _labels.Clear();
@@ -158,13 +158,13 @@ namespace Panther.CodeAnalysis.Emit
                 EmitStatement(ilProcessor, statement);
 
             // only emit block's expression if its a non-unit expression or we are not void
-            if (block.Expression != BoundUnitExpression.Default || function.ReturnType != TypeSymbol.Unit)
+            if (block.Expression != BoundUnitExpression.Default || method.ReturnType != TypeSymbol.Unit)
             {
                 // emit expression
                 EmitExpression(ilProcessor, block.Expression);
 
                 // pop non-unit expressions off the stack for unit functions
-                if (block.Expression.Type != TypeSymbol.Unit && function.ReturnType == TypeSymbol.Unit)
+                if (block.Expression.Type != TypeSymbol.Unit && method.ReturnType == TypeSymbol.Unit)
                     ilProcessor.Emit(OpCodes.Pop);
             }
 
@@ -178,7 +178,7 @@ namespace Panther.CodeAnalysis.Emit
                 patchInstruction.Operand = targetInstruction;
             }
 
-            method.Body.OptimizeMacros();
+            methodDefinition.Body.OptimizeMacros();
         }
 
         private void EmitStatement(ILProcessor ilProcessor, BoundStatement statement)
@@ -434,7 +434,7 @@ namespace Panther.CodeAnalysis.Emit
             foreach (var argExpr in callExpression.Arguments)
                 EmitExpression(ilProcessor, argExpr);
 
-            if (_methods.TryGetValue(callExpression.Function, out var method))
+            if (_methods.TryGetValue(callExpression.Method, out var method))
             {
                 ilProcessor.Emit(OpCodes.Call, method);
             }
@@ -442,7 +442,7 @@ namespace Panther.CodeAnalysis.Emit
             {
                 // probably a builtin
                 // TODO: improve this
-                switch (callExpression.Function.Name)
+                switch (callExpression.Method.Name)
                 {
                     // case "rnd":
                     case "println":

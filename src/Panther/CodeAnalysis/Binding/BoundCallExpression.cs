@@ -5,14 +5,14 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundCallExpression : BoundExpression
     {
-        public FunctionSymbol Function { get; }
+        public MethodSymbol Method { get; }
         public ImmutableArray<BoundExpression> Arguments { get; }
         public override BoundNodeKind Kind => BoundNodeKind.CallExpression;
-        public override TypeSymbol Type => Function.ReturnType;
+        public override TypeSymbol Type => Method.ReturnType;
 
-        public BoundCallExpression(FunctionSymbol function, ImmutableArray<BoundExpression> arguments)
+        public BoundCallExpression(MethodSymbol method, ImmutableArray<BoundExpression> arguments)
         {
-            Function = function;
+            Method = method;
             Arguments = arguments;
         }
     }

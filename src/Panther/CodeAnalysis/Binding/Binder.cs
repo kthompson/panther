@@ -62,13 +62,13 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         private static void BindMainFunctions(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<GlobalStatementSyntax> globalStatements,
-            ImmutableArray<FunctionSymbol> functions, Binder binder, out FunctionSymbol? mainFunction, out FunctionSymbol? scriptFunction)
+            ImmutableArray<MethodSymbol> functions, Binder binder, out MethodSymbol? mainFunction, out MethodSymbol? scriptFunction)
         {
             if (isScript)
             {
                 mainFunction = null;
                 scriptFunction = globalStatements.Any()
-                    ? new FunctionSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
+                    ? new MethodSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
                     : null;
 
                 return;
@@ -95,7 +95,7 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                mainFunction = new FunctionSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit);
+                mainFunction = new MethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit);
                 return;
             }
 
@@ -121,7 +121,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var parentScope = CreateParentScope(globalScope);
 
-            var functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockExpression>();
+            var functionBodies = ImmutableDictionary.CreateBuilder<MethodSymbol, BoundBlockExpression>();
             var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
             diagnostics.AddRange(globalScope.Diagnostics);
 
@@ -203,7 +203,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation) ?? TypeSymbol.Unit;
 
-            var function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+            var function = new MethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
             if (!scope.TryDeclareFunction(function))
             {
@@ -443,7 +443,7 @@ namespace Panther.CodeAnalysis.Binding
                 return BoundErrorExpression.Default;
             }
 
-            if (!(symbol is FunctionSymbol function))
+            if (!(symbol is MethodSymbol function))
             {
                 Diagnostics.ReportNotAFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
                 return BoundErrorExpression.Default;

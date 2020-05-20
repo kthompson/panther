@@ -87,10 +87,10 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from statements in Arb.Generate<ImmutableArray<BoundStatement>>()
             from expr in GenBoundExpression(typeSymbol)
             select new BoundBlockExpression(statements, expr);
-        public static Gen<FunctionSymbol> GenFunctionSymbol(TypeSymbol typeSymbol) =>
+        public static Gen<MethodSymbol> GenFunctionSymbol(TypeSymbol typeSymbol) =>
             from name in Identifier()
             from parameters in Arb.Generate<ImmutableArray<ParameterSymbol>>()
-            select new FunctionSymbol(name, parameters, typeSymbol);
+            select new MethodSymbol(name, parameters, typeSymbol);
 
         public static Gen<LocalVariableSymbol> GenLocalVariableSymbol(TypeSymbol typeSymbol) =>
             from ident in Identifier()

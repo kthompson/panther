@@ -207,7 +207,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteCallExpression(BoundCallExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.Function.Name);
+            writer.WriteIdentifier(node.Method.Name);
             writer.WritePunctuation("(");
             var iterator = node.Arguments.GetEnumerator();
             if (iterator.MoveNext())

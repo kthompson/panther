@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundScope
     {
-        private readonly FunctionSymbol? _function;
+        private readonly MethodSymbol? _function;
         private readonly Dictionary<string, Symbol> _symbols = new Dictionary<string, Symbol>();
         private readonly Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _breakContinueLabels = new Stack<(BoundLabel, BoundLabel)>();
         private int _labelCounter = 0;
@@ -20,7 +20,7 @@ namespace Panther.CodeAnalysis.Binding
         {
         }
 
-        public BoundScope(BoundScope? parent, FunctionSymbol? function)
+        public BoundScope(BoundScope? parent, MethodSymbol? function)
         {
             _function = function;
             Parent = parent;
@@ -39,8 +39,8 @@ namespace Panther.CodeAnalysis.Binding
         public bool TryDeclareVariable(VariableSymbol variable) =>
             TryDeclare(variable);
 
-        public bool TryDeclareFunction(FunctionSymbol function) =>
-            TryDeclare(function);
+        public bool TryDeclareFunction(MethodSymbol method) =>
+            TryDeclare(method);
 
         private bool TryDeclare(Symbol variable)
         {
@@ -76,7 +76,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.OfType<VariableSymbol>().ToImmutableArray();
 
-        public ImmutableArray<FunctionSymbol> GetDeclaredFunctions() => _symbols.Values.OfType<FunctionSymbol>().ToImmutableArray();
+        public ImmutableArray<MethodSymbol> GetDeclaredFunctions() => _symbols.Values.OfType<MethodSymbol>().ToImmutableArray();
 
         public void DeclareLoop(out BoundLabel breakLabel, out BoundLabel continueLabel)
         {

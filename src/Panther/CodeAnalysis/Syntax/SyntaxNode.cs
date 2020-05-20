@@ -46,12 +46,14 @@ namespace Panther.CodeAnalysis.Syntax
                 else if (typeof(SeparatedSyntaxList).IsAssignableFrom(property.PropertyType))
                 {
                     var children = (SeparatedSyntaxList)property.GetValue(this);
+                    if (children == null) continue;
                     foreach (var child in children.GetWithSeparators())
                         yield return child;
                 }
                 else if (typeof(IEnumerable<SyntaxNode>).IsAssignableFrom(property.PropertyType))
                 {
                     var children = (IEnumerable<SyntaxNode>)property.GetValue(this);
+                    if (children == null) continue;
                     foreach (var child in children)
                         yield return child;
                 }

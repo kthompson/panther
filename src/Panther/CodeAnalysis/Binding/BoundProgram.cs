@@ -7,12 +7,12 @@ namespace Panther.CodeAnalysis.Binding
     {
         public BoundProgram? Previous { get; }
         public ImmutableArray<Diagnostic> Diagnostics { get; }
-        public FunctionSymbol? MainFunction { get; }
-        public FunctionSymbol? ScriptFunction { get; }
-        public ImmutableDictionary<FunctionSymbol, BoundBlockExpression> Functions { get; }
+        public MethodSymbol? MainFunction { get; }
+        public MethodSymbol? ScriptFunction { get; }
+        public ImmutableDictionary<MethodSymbol, BoundBlockExpression> Functions { get; }
 
-        public BoundProgram(BoundProgram? previous, ImmutableArray<Diagnostic> diagnostics, FunctionSymbol? mainFunction, FunctionSymbol? scriptFunction,
-            ImmutableDictionary<FunctionSymbol, BoundBlockExpression> functions)
+        public BoundProgram(BoundProgram? previous, ImmutableArray<Diagnostic> diagnostics, MethodSymbol? mainFunction, MethodSymbol? scriptFunction,
+            ImmutableDictionary<MethodSymbol, BoundBlockExpression> functions)
         {
             Previous = previous;
             Diagnostics = diagnostics;

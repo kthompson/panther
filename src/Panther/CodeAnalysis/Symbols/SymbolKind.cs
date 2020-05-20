@@ -2,10 +2,11 @@
 {
     public enum SymbolKind
     {
-        Function,
+        Method,
         Parameter,
         Type,
         GlobalVariable,
-        LocalVariable
+        LocalVariable,
+        Field
     }
 }

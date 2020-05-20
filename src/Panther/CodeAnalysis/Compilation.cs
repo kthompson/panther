@@ -19,8 +19,8 @@ namespace Panther.CodeAnalysis
         public bool IsScript { get; }
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
-        public FunctionSymbol? MainFunction => GlobalScope.MainFunction;
-        public ImmutableArray<FunctionSymbol> Functions => GlobalScope.Functions;
+        public MethodSymbol? MainFunction => GlobalScope.MainFunction;
+        public ImmutableArray<MethodSymbol> Functions => GlobalScope.Functions;
         public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
 
         private BoundGlobalScope? _globalScope;
@@ -143,16 +143,16 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public void EmitTree(FunctionSymbol function, TextWriter writer)
+        public void EmitTree(MethodSymbol method, TextWriter writer)
         {
             BoundProgram? program = GetProgram();
 
             while (program != null)
             {
-                if (program.Functions.TryGetValue(function, out var block))
+                if (program.Functions.TryGetValue(method, out var block))
                 {
 
-                    function.WriteTo(writer);
+                    method.WriteTo(writer);
                     writer.WritePunctuation(" = ");
                     writer.WriteLine();
                     block.WriteTo(writer);
@@ -163,7 +163,7 @@ namespace Panther.CodeAnalysis
                 program = program.Previous;
             }
 
-            function.WriteTo(writer);
+            method.WriteTo(writer);
 
         }
 

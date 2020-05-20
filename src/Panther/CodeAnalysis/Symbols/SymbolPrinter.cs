@@ -10,7 +10,7 @@ namespace Panther.CodeAnalysis.Symbols
         {
             switch (symbol)
             {
-                case FunctionSymbol functionSymbol:
+                case MethodSymbol functionSymbol:
                     WriteFunctionSymbol(functionSymbol, writer);
                     break;
                 case TypeSymbol typeSymbol:
@@ -58,7 +58,7 @@ namespace Panther.CodeAnalysis.Symbols
             symbol.Type.WriteTo(writer);
         }
 
-        private static void WriteFunctionSymbol(FunctionSymbol symbol, TextWriter writer)
+        private static void WriteFunctionSymbol(MethodSymbol symbol, TextWriter writer)
         {
             writer.WriteKeyword("def ");
             writer.WriteIdentifier(symbol.Name);

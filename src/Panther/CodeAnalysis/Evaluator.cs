@@ -14,8 +14,8 @@ namespace Panther.CodeAnalysis
         private readonly BoundProgram _program;
         private readonly Dictionary<VariableSymbol, object> _globals;
 
-        private readonly Dictionary<FunctionSymbol, BoundBlockExpression> _functions =
-            new Dictionary<FunctionSymbol, BoundBlockExpression>();
+        private readonly Dictionary<MethodSymbol, BoundBlockExpression> _functions =
+            new Dictionary<MethodSymbol, BoundBlockExpression>();
         private readonly Stack<Dictionary<VariableSymbol, object>> _locals = new Stack<Dictionary<VariableSymbol, object>>();
         private readonly IBuiltins _builtins;
         private readonly Random _random = new Random();
@@ -254,19 +254,19 @@ namespace Panther.CodeAnalysis
 
         private object EvaluateCallExpressions(BoundCallExpression node)
         {
-            if (node.Function == BuiltinFunctions.Print)
+            if (node.Method == BuiltinFunctions.Print)
             {
                 var message = (string)EvaluateExpression(node.Arguments[0]);
                 _builtins.Print(message);
                 return Unit.Default;
             }
 
-            if (node.Function == BuiltinFunctions.Read)
+            if (node.Method == BuiltinFunctions.Read)
             {
                 return _builtins.Read();
             }
 
-            if (node.Function == BuiltinFunctions.Rnd)
+            if (node.Method == BuiltinFunctions.Rnd)
             {
                 return _random.Next((int)EvaluateExpression(node.Arguments[0]));
             }
@@ -274,14 +274,14 @@ namespace Panther.CodeAnalysis
             var locals = new Dictionary<VariableSymbol, object>();
             for (int i = 0; i < node.Arguments.Length; i++)
             {
-                var parameter = node.Function.Parameters[i];
+                var parameter = node.Method.Parameters[i];
                 var value = EvaluateExpression(node.Arguments[i]);
                 locals.Add(parameter, value);
             }
 
             _locals.Push(locals);
 
-            var expression = _functions[node.Function];
+            var expression = _functions[node.Method];
             var result = EvaluateExpression(expression);
 
             _locals.Pop();

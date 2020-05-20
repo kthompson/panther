@@ -64,7 +64,7 @@ namespace Panther.CodeAnalysis.Binding
             if (newArguments == null)
                 return node;
 
-            return new BoundCallExpression(node.Function, newArguments.ToImmutableArray());
+            return new BoundCallExpression(node.Method, newArguments.ToImmutableArray());
         }
 
         protected virtual BoundExpression RewriteWhileExpression(BoundWhileExpression node)

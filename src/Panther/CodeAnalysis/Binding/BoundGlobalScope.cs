@@ -7,15 +7,15 @@ namespace Panther.CodeAnalysis.Binding
     {
         public BoundGlobalScope? Previous { get; }
         public ImmutableArray<Diagnostic> Diagnostics { get; }
-        public FunctionSymbol? MainFunction { get; }
-        public FunctionSymbol? ScriptFunction { get; }
-        public ImmutableArray<FunctionSymbol> Functions { get; }
+        public MethodSymbol? MainFunction { get; }
+        public MethodSymbol? ScriptFunction { get; }
+        public ImmutableArray<MethodSymbol> Functions { get; }
         public ImmutableArray<VariableSymbol> Variables { get; }
         public ImmutableArray<BoundStatement> Statements { get; }
 
         public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics,
-            FunctionSymbol? mainFunction, FunctionSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,
-            ImmutableArray<FunctionSymbol> functions, ImmutableArray<BoundStatement> statements)
+            MethodSymbol? mainFunction, MethodSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,
+            ImmutableArray<MethodSymbol> functions, ImmutableArray<BoundStatement> statements)
         {
             Previous = previous;
             Diagnostics = diagnostics;
