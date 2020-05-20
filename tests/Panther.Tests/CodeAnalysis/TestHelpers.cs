@@ -25,7 +25,7 @@ namespace Panther.Tests.CodeAnalysis
             }
         }
 
-        public static void AssertHasDiagnostics(string text, string diagnosticText, IBuiltins builtins = null)
+        public static void AssertHasDiagnostics(string text, string diagnosticText, IBuiltins? builtins = null)
         {
             var annotatedText = AnnotatedText.Parse(text);
             var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
@@ -59,18 +59,18 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         public static void AssertEvaluation(string code, object value,
-            Dictionary<VariableSymbol, object> dictionary = null, Compilation previous = null, IBuiltins builtins = null)
+            Dictionary<VariableSymbol, object>? dictionary = null, Compilation? previous = null, IBuiltins? builtins = null)
         {
             Compile(code, ref dictionary, previous, builtins, out var result);
             Assert.Equal(value, result.Value);
         }
 
-        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object> dictionary) =>
+        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object>? dictionary) =>
             Compile(code, ref dictionary, null, null, out var result);
 
-        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object> dictionary,
-            Compilation previous,
-            IBuiltins builtins,
+        public static Compilation Compile(string code, ref Dictionary<VariableSymbol, object>? dictionary,
+            Compilation? previous,
+            IBuiltins? builtins,
             out EvaluationResult result)
         {
             dictionary ??= new Dictionary<VariableSymbol, object>();

@@ -322,7 +322,7 @@ namespace Panther.Tests.CodeAnalysis
         [Property]
         public void EvaluatesValIntCreation(int n)
         {
-            Dictionary<VariableSymbol, object> dictionary = null;
+            Dictionary<VariableSymbol, object>? dictionary = null;
 
             Compile($"val a = {n}", ref dictionary);
 
@@ -337,7 +337,7 @@ namespace Panther.Tests.CodeAnalysis
         [Property]
         public void EvaluatesValBoolCreation(bool n)
         {
-            Dictionary<VariableSymbol, object> dictionary = null;
+            Dictionary<VariableSymbol, object>? dictionary = null;
 
             Compile($"val a = {n.ToString().ToLower()}", ref dictionary);
 
@@ -352,7 +352,7 @@ namespace Panther.Tests.CodeAnalysis
         [Property]
         public void EvaluatesBoundInt(int n)
         {
-            Dictionary<VariableSymbol, object> dictionary = null;
+            Dictionary<VariableSymbol, object>? dictionary = null;
             var compilation = Compile($"val a = {n}", ref dictionary);
 
             AssertEvaluation($"a", n, dictionary, compilation);
@@ -361,7 +361,7 @@ namespace Panther.Tests.CodeAnalysis
         [Property]
         public void EvaluatesBoundBool(bool n)
         {
-            Dictionary<VariableSymbol, object> dictionary = null;
+            Dictionary<VariableSymbol, object>? dictionary = null;
             var compilation = Compile($"val a = {n.ToString().ToLower()}", ref dictionary);
 
             AssertEvaluation($"a", n, dictionary, compilation);

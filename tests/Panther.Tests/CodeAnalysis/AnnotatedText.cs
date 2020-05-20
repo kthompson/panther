@@ -69,7 +69,7 @@ namespace Panther.Tests.CodeAnalysis
 
             using var reader = new StringReader(text);
 
-            string readLine;
+            string? readLine;
             while ((readLine = reader.ReadLine()) != null)
             {
                 lines.Add(readLine);
