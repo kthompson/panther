@@ -501,7 +501,7 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             var newScope = new BoundScope(scope);
-            var variable = BindVariable(syntax.VariableExpression.IdentifierToken, TypeSymbol.Int, true, null, newScope);
+            var variable = BindVariable(syntax.Variable, TypeSymbol.Int, true, null, newScope);
 
             var body = BindLoopBody(syntax.Body, newScope, out var breakLabel, out var continueLabel);
 

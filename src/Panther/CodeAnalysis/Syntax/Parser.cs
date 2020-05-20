@@ -91,19 +91,6 @@ namespace Panther.CodeAnalysis.Syntax
             _infixParseFunctions[SyntaxKind.PlusToken] = ParseInfixExpression;
             _infixParseFunctions[SyntaxKind.SlashToken] = ParseInfixExpression;
             _infixParseFunctions[SyntaxKind.StarToken] = ParseInfixExpression;
-            //InfixParseFunctions[SyntaxKind.LeftBracket] = ParseIndexExpression;
-        }
-
-        private SyntaxToken PeekToken
-        {
-            get
-            {
-                var pos = _tokenPosition;
-
-                TokenFromPosition(ref pos);
-                pos++;
-                return TokenFromPosition(ref pos);
-            }
         }
 
         private SyntaxToken CurrentToken
@@ -337,7 +324,7 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var forKeyword = Accept();
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
-            var variable = ParseNameExpression(true);
+            var variable = Accept(SyntaxKind.IdentifierToken);
             var leftArrow = Accept(SyntaxKind.LessThanDashToken);
 
             var fromExpression = ParseExpression(OperatorPrecedence.Lowest);
@@ -350,14 +337,13 @@ namespace Panther.CodeAnalysis.Syntax
             return new ForExpressionSyntax(_syntaxTree, forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
         }
 
-        private ExpressionSyntax ParseCallExpression()
+        private ExpressionSyntax ParseCallExpression(SyntaxToken name)
         {
-            var ident = Accept();
             var openParenToken = Accept(SyntaxKind.OpenParenToken);
             var arguments = ParseArguments();
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
 
-            return new CallExpressionSyntax(_syntaxTree, ident, openParenToken, arguments, closeParenToken);
+            return new CallExpressionSyntax(_syntaxTree, name, openParenToken, arguments, closeParenToken);
         }
 
         private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
@@ -422,22 +408,15 @@ namespace Panther.CodeAnalysis.Syntax
 
         private ExpressionSyntax ParseNameOrAssignmentExpression()
         {
-            if (PeekTokenExact.Kind == SyntaxKind.EqualsToken)
-                return ParseAssignmentExpression();
+            var name = Accept();
 
-            if (PeekTokenExact.Kind == SyntaxKind.OpenParenToken)
-                return ParseCallExpression();
+            if (CurrentToken.Kind == SyntaxKind.EqualsToken)
+                return ParseAssignmentExpression(name);
 
-            return ParseNameExpression(false);
-        }
+            if (CurrentToken.Kind == SyntaxKind.OpenParenToken)
+                return ParseCallExpression(name);
 
-        private SyntaxToken PeekTokenExact => PeekToken;
-
-        private NameExpressionSyntax ParseNameExpression(bool skipNewLines)
-        {
-            var token = Accept();
-
-            return new NameExpressionSyntax(_syntaxTree, token);
+            return new NameExpressionSyntax(_syntaxTree, name);
         }
 
         private LiteralExpressionSyntax ParseBooleanLiteral()
@@ -534,13 +513,12 @@ namespace Panther.CodeAnalysis.Syntax
             return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, equalsToken, expr);
         }
 
-        private ExpressionSyntax ParseAssignmentExpression()
+        private ExpressionSyntax ParseAssignmentExpression(SyntaxToken name)
         {
-            var identToken = Accept(SyntaxKind.IdentifierToken);
             var equalsToken = Accept(SyntaxKind.EqualsToken);
             var expr = ParseExpression(OperatorPrecedence.Lowest);
 
-            return new AssignmentExpressionSyntax(_syntaxTree, identToken, equalsToken, expr);
+            return new AssignmentExpressionSyntax(_syntaxTree, name, equalsToken, expr);
         }
 
         private TypeAnnotationSyntax? ParseOptionalTypeAnnotation() =>

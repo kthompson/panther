@@ -267,7 +267,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.ForKeyword, "for");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.OpenParenToken, "(");
-            e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.LessThanDashToken, "<-");
@@ -415,7 +414,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.ForKeyword, "for");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.OpenParenToken, "(");
-            e.AssertNode(SyntaxKind.NameExpression);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.LessThanDashToken, "<-");
