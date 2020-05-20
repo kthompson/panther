@@ -209,6 +209,21 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
     
+    partial class ObjectDeclarationSyntax
+    {
+        public override SyntaxKind Kind => SyntaxKind.ObjectDeclaration;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return ObjectKeyword;
+            yield return Identifier;
+            yield return OpenBrace;
+            foreach (var child in Members)
+                yield return child;
+            yield return CloseBrace;
+        }
+    }
+    
     partial class ParameterSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.Parameter;

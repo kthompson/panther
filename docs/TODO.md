@@ -3,8 +3,8 @@
 
 # TODO:
 - using directive to tell us what symbols to import
+- symbols and binder for object definitions
 - create or import TypeSymbols that have Method/Field symbols
-- object definitions
 - debugging support
 - qualified names
 - Add SyntaxFactory for nicer API. Make ctors private. use source generators

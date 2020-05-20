@@ -146,7 +146,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<MemberSyntax> ParseMembers()
         {
             var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-            while (CurrentKind != SyntaxKind.EndOfInputToken)
+            while (CurrentKind != SyntaxKind.EndOfInputToken && CurrentKind != SyntaxKind.CloseBraceToken)
             {
                 var startToken = CurrentToken;
 
@@ -166,8 +166,21 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 SyntaxKind.DefKeyword => ParseFunctionDeclaration(),
                 SyntaxKind.UsingKeyword => ParseUsingDirective(),
+                SyntaxKind.ObjectKeyword => ParseObjectDeclaration(),
                 _ => ParseGlobalStatement()
             };
+        }
+
+        private MemberSyntax ParseObjectDeclaration()
+        {
+            var objectKeyword = Accept();
+            var identifier = Accept(SyntaxKind.IdentifierToken);
+
+            var openBraceToken = Accept(SyntaxKind.OpenBraceToken);
+            var members = ParseMembers();
+            var closeBraceToken = Accept(SyntaxKind.CloseBraceToken);
+
+            return new ObjectDeclarationSyntax(_syntaxTree, objectKeyword, identifier, openBraceToken, members, closeBraceToken);
         }
 
         private MemberSyntax ParseGlobalStatement()

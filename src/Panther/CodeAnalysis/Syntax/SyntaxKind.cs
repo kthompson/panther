@@ -27,6 +27,7 @@
         ForKeyword,
         IfKeyword,
         ImplicitKeyword,
+        ObjectKeyword,
         ToKeyword,
         TrueKeyword,
         UsingKeyword,
@@ -94,5 +95,6 @@
         FunctionDeclaration,
         UsingDirective,
         GlobalStatement,
+        ObjectDeclaration
     }
 }
