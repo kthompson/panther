@@ -48,7 +48,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var functions = scope.GetDeclaredFunctions();
 
-            BindMainFunctions(isScript, syntaxTrees, globalStatements, functions, binder, out var mainFunction, out var scriptFunction);
+            var (mainFunction, scriptFunction) = BindMainFunctions(isScript, syntaxTrees, ImmutableArray<TypeSymbol>.Empty, globalStatements, functions, binder);
 
             var variables = scope.GetDeclaredVariables();
             var diagnostics = binder.Diagnostics.ToImmutableArray();
@@ -58,24 +58,26 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
-            return new BoundGlobalScope(previous, diagnostics, mainFunction, scriptFunction, variables, functions, statements);
+            return new BoundGlobalScope(previous, diagnostics, mainFunction, scriptFunction, variables,
+                ImmutableArray<TypeSymbol>.Empty, functions, statements);
         }
 
-        private static void BindMainFunctions(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<GlobalStatementSyntax> globalStatements,
-            ImmutableArray<MethodSymbol> functions, Binder binder, out MethodSymbol? mainFunction, out MethodSymbol? scriptFunction)
+        private static (MethodSymbol? mainFunction, MethodSymbol? scriptFunction) BindMainFunctions(bool isScript,
+            ImmutableArray<SyntaxTree> syntaxTrees,
+            ImmutableArray<TypeSymbol> types, ImmutableArray<GlobalStatementSyntax> globalStatements,
+            ImmutableArray<MethodSymbol> functions, Binder binder)
         {
+            var hasGlobalStatements = globalStatements.Any();
             if (isScript)
             {
-                mainFunction = null;
-                scriptFunction = globalStatements.Any()
+                var scriptFunction = hasGlobalStatements
                     ? new MethodSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
                     : null;
 
-                return;
+                return (null, scriptFunction);
             }
 
-            scriptFunction = null;
-            mainFunction = functions.FirstOrDefault(func => func.Name == "main");
+            var mainFunction = functions.FirstOrDefault(func => func.Name == "main");
 
             var firstStatementPerSyntaxTree =
                 (from tree in syntaxTrees
@@ -95,8 +97,7 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                mainFunction = new MethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit);
-                return;
+                return (new MethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit), null);
             }
 
             // main function signature should be correct
@@ -106,8 +107,8 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             // if a main function exists, global statements cannot
-            if (!globalStatements.Any())
-                return;
+            if (!hasGlobalStatements)
+                return (mainFunction, null);
 
             binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Declaration?.Identifier.Location);
 
@@ -115,6 +116,8 @@ namespace Panther.CodeAnalysis.Binding
             {
                 binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1.Location);
             }
+
+            return (mainFunction, null);
         }
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
