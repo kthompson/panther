@@ -110,10 +110,10 @@ namespace Panther.CodeAnalysis.Lowering
         protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
             var constant = node.Condition.ConstantValue;
-            if(constant == null)
+            if (constant == null)
                 return base.RewriteBoundConditionalGotoStatement(node);
 
-            var condition = (bool) constant.Value;
+            var condition = (bool)constant.Value;
 
             var condition2 = node.JumpIfTrue ? condition : !condition;
             if (condition2)

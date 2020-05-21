@@ -17,7 +17,7 @@ namespace Panther.CodeAnalysis.Binding
 
             ConstantValue = condition.ConstantValue == null
                 ? null
-                : (bool) condition.ConstantValue.Value ? then.ConstantValue : @else.ConstantValue;
+                : (bool)condition.ConstantValue.Value ? then.ConstantValue : @else.ConstantValue;
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.IfExpression;

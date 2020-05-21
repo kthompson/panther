@@ -174,7 +174,7 @@ namespace Panther.CodeAnalysis.Emit
             {
                 var targetIndex = _labels[targetLabel];
                 var targetInstruction = ilProcessor.Body.Instructions[targetIndex];
-                var patchInstruction =  ilProcessor.Body.Instructions[patchIndex];
+                var patchInstruction = ilProcessor.Body.Instructions[patchIndex];
                 patchInstruction.Operand = targetInstruction;
             }
 

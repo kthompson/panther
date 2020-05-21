@@ -9,7 +9,7 @@ namespace Panther.CodeAnalysis.Symbols
 
         public override SymbolKind Kind => SymbolKind.Type;
 
-        public TypeSymbol(string name, ImmutableArray<MethodSymbol> methods,  ImmutableArray<FieldSymbol> fields) : base(name)
+        public TypeSymbol(string name, ImmutableArray<MethodSymbol> methods, ImmutableArray<FieldSymbol> fields) : base(name)
         {
             Methods = methods;
             Fields = fields;

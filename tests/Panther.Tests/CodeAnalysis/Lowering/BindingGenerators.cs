@@ -166,7 +166,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 if (typeSymbol == Panther.CodeAnalysis.Symbols.TypeSymbol.Unit)
                 {
                     return Gen.Resize(size / 2, Gen.OneOf(
-                        GenIfExpression(typeSymbol).Select(x => (BoundExpression) x),
+                        GenIfExpression(typeSymbol).Select(x => (BoundExpression)x),
                         // Arb.Generate<BoundVariableExpression>().Select(x => (BoundExpression) x),
                         // Arb.Generate<BoundForExpression>().Select(x => (BoundExpression) x),
                         // Arb.Generate<BoundWhileExpression>().Select(x => (BoundExpression) x)
@@ -180,7 +180,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 return Gen.Resize(size / 2, Gen.OneOf(
                     // Arb.Generate<BoundBinaryExpression>().Select(x => (BoundExpression) x),
                     // Arb.Generate<BoundConversionExpression>().Select(x => (BoundExpression) x),
-                    GenIfExpression(typeSymbol).Select(x => (BoundExpression) x),
+                    GenIfExpression(typeSymbol).Select(x => (BoundExpression)x),
                     // Arb.Generate<BoundUnaryExpression>().Select(x => (BoundExpression) x),
                     // Arb.Generate<BoundVariableExpression>().Select(x => (BoundExpression) x),
                     GenBoundBlockExpression(typeSymbol).Select(x => (BoundExpression)x),

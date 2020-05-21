@@ -312,7 +312,7 @@ namespace Panther.CodeAnalysis.Binding
             var expressionType = type ?? boundExpression.Type;
 
             var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
-            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, boundExpression.ConstantValue,  scope);
+            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, boundExpression.ConstantValue, scope);
 
             return new BoundVariableDeclarationStatement(variable, converted);
         }

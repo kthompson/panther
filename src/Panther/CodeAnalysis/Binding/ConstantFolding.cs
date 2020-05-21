@@ -7,7 +7,7 @@ namespace Panther.CodeAnalysis.Binding
     {
         public static BoundConstant? ComputeConstant(BoundUnaryOperator @operator, BoundExpression operand)
         {
-            if(operand.ConstantValue == null)
+            if (operand.ConstantValue == null)
                 return null;
 
             var constant = operand.ConstantValue.Value;
@@ -15,9 +15,9 @@ namespace Panther.CodeAnalysis.Binding
             return @operator.Kind switch
             {
                 BoundUnaryOperatorKind.Identity => operand.ConstantValue,
-                BoundUnaryOperatorKind.Negation => new BoundConstant(-(int) constant),
-                BoundUnaryOperatorKind.LogicalNegation => new BoundConstant(!(bool) constant),
-                BoundUnaryOperatorKind.BitwiseNegation => new BoundConstant(~(int) constant),
+                BoundUnaryOperatorKind.Negation => new BoundConstant(-(int)constant),
+                BoundUnaryOperatorKind.LogicalNegation => new BoundConstant(!(bool)constant),
+                BoundUnaryOperatorKind.BitwiseNegation => new BoundConstant(~(int)constant),
                 _ => throw new ArgumentOutOfRangeException(nameof(@operator),
                     $"Unknown operator kind '{@operator.Kind}'")
             };
@@ -48,7 +48,7 @@ namespace Panther.CodeAnalysis.Binding
                     return new BoundConstant(true);
 
                 if (rightConstant != null)
-                    return new BoundConstant((bool) rightConstant.Value);
+                    return new BoundConstant((bool)rightConstant.Value);
             }
 
             if (rightConstant == null)
@@ -60,50 +60,50 @@ namespace Panther.CodeAnalysis.Binding
             {
                 case BoundBinaryOperatorKind.Addition:
                     return new BoundConstant(left.Type == TypeSymbol.Int
-                        ? (int) leftValue + (int) rightValue
-                        : (object) ((string) leftValue + (string) rightValue));
+                        ? (int)leftValue + (int)rightValue
+                        : (object)((string)leftValue + (string)rightValue));
 
                 case BoundBinaryOperatorKind.BitwiseAnd:
                     return new BoundConstant(left.Type == TypeSymbol.Int
-                        ? (int) leftValue & (int) rightValue
-                        : (object) ((bool) leftValue & (bool) rightValue));
+                        ? (int)leftValue & (int)rightValue
+                        : (object)((bool)leftValue & (bool)rightValue));
 
                 case BoundBinaryOperatorKind.BitwiseOr:
                     return new BoundConstant(left.Type == TypeSymbol.Int
-                        ? (int) leftValue | (int) rightValue
-                        : (object) ((bool) leftValue | (bool) rightValue));
+                        ? (int)leftValue | (int)rightValue
+                        : (object)((bool)leftValue | (bool)rightValue));
 
                 case BoundBinaryOperatorKind.BitwiseXor:
                     return new BoundConstant(left.Type == TypeSymbol.Int
-                        ? (int) leftValue ^ (int) rightValue
-                        : (object) ((bool) leftValue ^ (bool) rightValue));
+                        ? (int)leftValue ^ (int)rightValue
+                        : (object)((bool)leftValue ^ (bool)rightValue));
 
                 case BoundBinaryOperatorKind.Division:
-                    return new BoundConstant((int) leftValue / (int) rightValue);
+                    return new BoundConstant((int)leftValue / (int)rightValue);
 
                 case BoundBinaryOperatorKind.Equal:
                     return new BoundConstant(Equals(leftValue, rightValue));
 
                 case BoundBinaryOperatorKind.GreaterThan:
-                    return new BoundConstant((int) leftValue > (int) rightValue);
+                    return new BoundConstant((int)leftValue > (int)rightValue);
 
                 case BoundBinaryOperatorKind.GreaterThanOrEqual:
-                    return new BoundConstant((int) leftValue >= (int) rightValue);
+                    return new BoundConstant((int)leftValue >= (int)rightValue);
 
                 case BoundBinaryOperatorKind.LessThan:
-                    return new BoundConstant((int) leftValue < (int) rightValue);
+                    return new BoundConstant((int)leftValue < (int)rightValue);
 
                 case BoundBinaryOperatorKind.LessThanOrEqual:
-                    return new BoundConstant((int) leftValue <= (int) rightValue);
+                    return new BoundConstant((int)leftValue <= (int)rightValue);
 
                 case BoundBinaryOperatorKind.Multiplication:
-                    return new BoundConstant((int) leftValue * (int) rightValue);
+                    return new BoundConstant((int)leftValue * (int)rightValue);
 
                 case BoundBinaryOperatorKind.NotEqual:
                     return new BoundConstant(!Equals(leftValue, rightValue));
 
                 case BoundBinaryOperatorKind.Subtraction:
-                    return new BoundConstant((int) leftValue - (int) rightValue);
+                    return new BoundConstant((int)leftValue - (int)rightValue);
 
                 default:
                     throw new ArgumentOutOfRangeException();
