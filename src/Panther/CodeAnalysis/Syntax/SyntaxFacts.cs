@@ -138,9 +138,17 @@ namespace Panther.CodeAnalysis.Syntax
         public static bool IsTrivia(this SyntaxKind kind) =>
             kind switch
             {
-                SyntaxKind.InvalidToken => true,
+                SyntaxKind.InvalidTokenTrivia => true,
                 SyntaxKind.EndOfLineTrivia => true,
                 SyntaxKind.WhitespaceTrivia => true,
+                SyntaxKind.LineCommentTrivia => true,
+                SyntaxKind.BlockCommentTrivia => true,
+                _ => false
+            };
+
+        public static bool IsComment(this SyntaxKind kind) =>
+            kind switch
+            {
                 SyntaxKind.LineCommentTrivia => true,
                 SyntaxKind.BlockCommentTrivia => true,
                 _ => false

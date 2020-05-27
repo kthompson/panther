@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
@@ -13,11 +14,40 @@ namespace Panther.CodeAnalysis.Syntax
         private readonly SourceText _text;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
         private int _position;
+        private Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>> _lexFunctions = new Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>>();
 
         public Lexer(SyntaxTree syntaxTree)
         {
             _syntaxTree = syntaxTree;
             _text = syntaxTree.Text;
+            InitializeLexFunctions();
+        }
+
+        private void InitializeLexFunctions()
+        {
+            _lexFunctions['\0'] = ReturnEndOfInput;
+            _lexFunctions['+'] = ReturnPlusToken;
+            _lexFunctions['-'] = ReturnDashToken;
+            _lexFunctions['/'] = ReturnSlashToken;
+            _lexFunctions['*'] = ReturnStarToken;
+            _lexFunctions['('] = ReturnOpenParenToken;
+            _lexFunctions[')'] = ReturnCloseParenToken;
+            _lexFunctions['{'] = ReturnOpenBraceToken;
+            _lexFunctions['}'] = ReturnCloseBraceToken;
+            _lexFunctions['^'] = ReturnCaretToken;
+            _lexFunctions['~'] = ReturnTildeToken;
+            _lexFunctions[','] = ReturnCommaToken;
+            _lexFunctions[':'] = ReturnColonToken;
+            _lexFunctions['>'] = ReturnGreaterThanToken;
+            _lexFunctions['<'] = ReturnLessThanToken;
+            _lexFunctions['!'] = ReturnBangToken;
+            _lexFunctions['&'] = ReturnAmpersandToken;
+            _lexFunctions['|'] = ReturnPipeToken;
+            _lexFunctions['='] = ReturnEqualsToken;
+            _lexFunctions['"'] = ParseStringToken;
+
+            for (var i = '0'; i <= '9'; i++)
+                _lexFunctions[i] = ParseNumber;
         }
 
         public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
@@ -55,7 +85,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                     var span = _text[start..end];
 
-                    trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.EndOfLineTrivia, span));
+                    trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.EndOfLineTrivia, span, start));
                     if (!leadingTrivia)
                     {
                         // trailing trivia should always terminate at the end of a line
@@ -70,7 +100,7 @@ namespace Panther.CodeAnalysis.Syntax
                     var (start, end) = ParsePredicate(IsNonNewLineWhiteSpace);
 
                     var span = _text[start..end];
-                    trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.WhitespaceTrivia, span));
+                    trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.WhitespaceTrivia, span, start));
                     continue;
                 }
 
@@ -86,11 +116,24 @@ namespace Panther.CodeAnalysis.Syntax
                     continue;
                 }
 
+                if (IsInvalidTokenTrivia())
+                {
+                    trivia.Add(ParseInvalidTokenTrivia());
+                }
                 // non-trivia
                 break;
             }
 
             return trivia.ToImmutable();
+        }
+
+        private bool IsInvalidTokenTrivia() => !_lexFunctions.ContainsKey(Current) && !char.IsLetter(Current);
+
+        private SyntaxTrivia ParseInvalidTokenTrivia()
+        {
+            var (kind, start, text, _) = ReturnInvalidTokenTrivia();
+
+            return new SyntaxTrivia(_syntaxTree, kind, text, start);
         }
 
         private SyntaxTrivia ParseBlockComment()
@@ -104,14 +147,14 @@ namespace Panther.CodeAnalysis.Syntax
                 if (Current == '\0')
                 {
                     _diagnostics.ReportUnterminatedBlockComment(new TextLocation(_text, new TextSpan(start, _position)));
-                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position]);
+                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position], start);
                 }
 
                 if (Current == '*' && Lookahead == '/')
                 {
                     Next(); // '*'
                     Next(); // '/'
-                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position]);
+                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position], start);
                 }
 
                 Next();
@@ -138,96 +181,81 @@ namespace Panther.CodeAnalysis.Syntax
 
         private (SyntaxKind kind, int start, string text, object? value) ParseToken()
         {
-            var start = _position;
-
-            switch (Current)
+            if (_lexFunctions.TryGetValue(Current, out var function))
             {
-                case '\0':
-                    return (SyntaxKind.EndOfInputToken, _position, string.Empty, null);
-
-                case '+':
-                    return ReturnKindOneChar(SyntaxKind.PlusToken);
-
-                case '-':
-                    return ReturnKindOneChar(SyntaxKind.DashToken);
-
-                case '/':
-                    return ReturnKindOneChar(SyntaxKind.SlashToken);
-
-                case '*':
-                    return ReturnKindOneChar(SyntaxKind.StarToken);
-
-                case '(':
-                    return ReturnKindOneChar(SyntaxKind.OpenParenToken);
-
-                case ')':
-                    return ReturnKindOneChar(SyntaxKind.CloseParenToken);
-
-                case '{':
-                    return ReturnKindOneChar(SyntaxKind.OpenBraceToken);
-
-                case '}':
-                    return ReturnKindOneChar(SyntaxKind.CloseBraceToken);
-
-                case '^':
-                    return ReturnKindOneChar(SyntaxKind.CaretToken);
-
-                case '~':
-                    return ReturnKindOneChar(SyntaxKind.TildeToken);
-
-                case ',':
-                    return ReturnKindOneChar(SyntaxKind.CommaToken);
-
-                case ':':
-                    return ReturnKindOneChar(SyntaxKind.ColonToken);
-
-                case '>':
-                    return Lookahead == '='
-                        ? ReturnKindTwoChar(SyntaxKind.GreaterThanEqualsToken)
-                        : ReturnKindOneChar(SyntaxKind.GreaterThanToken);
-
-                case '<':
-                    return Lookahead == '='
-                        ? ReturnKindTwoChar(SyntaxKind.LessThanEqualsToken)
-                        : Lookahead == '-'
-                            ? ReturnKindTwoChar(SyntaxKind.LessThanDashToken)
-                            : ReturnKindOneChar(SyntaxKind.LessThanToken);
-
-                case '!':
-                    return Lookahead == '='
-                        ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)
-                        : ReturnKindOneChar(SyntaxKind.BangToken);
-
-                case '&':
-                    return Lookahead == '&'
-                        ? ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken)
-                        : ReturnKindOneChar(SyntaxKind.AmpersandToken);
-
-                case '|':
-                    return Lookahead == '|'
-                        ? ReturnKindTwoChar(SyntaxKind.PipePipeToken)
-                        : ReturnKindOneChar(SyntaxKind.PipeToken);
-
-                case '=':
-                    return Lookahead == '='
-                        ? ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken)
-                        : ReturnKindOneChar(SyntaxKind.EqualsToken);
-
-                case '"':
-                    return ParseStringToken(start);
-
-                default:
-                    if (char.IsDigit(Current))
-                        return ParseNumber();
-
-
-                    if (char.IsLetter(Current))
-                        return ParseIdentOrKeyword();
-
-                    _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
-                    return ReturnKindOneChar(SyntaxKind.InvalidToken);
+                return function();
             }
+
+            if (char.IsLetter(Current))
+                return ParseIdentOrKeyword();
+
+            return ReturnInvalidTokenTrivia();
         }
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnInvalidTokenTrivia()
+        {
+            _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
+            return ReturnKindOneChar(SyntaxKind.InvalidTokenTrivia);
+        }
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnEqualsToken() =>
+            Lookahead == '='
+                ? ReturnKindTwoChar(SyntaxKind.EqualsEqualsToken)
+                : ReturnKindOneChar(SyntaxKind.EqualsToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnPipeToken() =>
+            Lookahead == '|'
+                ? ReturnKindTwoChar(SyntaxKind.PipePipeToken)
+                : ReturnKindOneChar(SyntaxKind.PipeToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnAmpersandToken() =>
+            Lookahead == '&'
+                ? ReturnKindTwoChar(SyntaxKind.AmpersandAmpersandToken)
+                : ReturnKindOneChar(SyntaxKind.AmpersandToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnBangToken() =>
+            Lookahead == '='
+                ? ReturnKindTwoChar(SyntaxKind.BangEqualsToken)
+                : ReturnKindOneChar(SyntaxKind.BangToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnLessThanToken() =>
+            Lookahead switch
+            {
+                '=' => ReturnKindTwoChar(SyntaxKind.LessThanEqualsToken),
+                '-' => ReturnKindTwoChar(SyntaxKind.LessThanDashToken),
+                _ => ReturnKindOneChar(SyntaxKind.LessThanToken)
+            };
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnGreaterThanToken() =>
+            Lookahead == '='
+                ? ReturnKindTwoChar(SyntaxKind.GreaterThanEqualsToken)
+                : ReturnKindOneChar(SyntaxKind.GreaterThanToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnColonToken() => ReturnKindOneChar(SyntaxKind.ColonToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnCommaToken() => ReturnKindOneChar(SyntaxKind.CommaToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnTildeToken() => ReturnKindOneChar(SyntaxKind.TildeToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnCaretToken() => ReturnKindOneChar(SyntaxKind.CaretToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBraceToken() => ReturnKindOneChar(SyntaxKind.CloseBraceToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBraceToken() => ReturnKindOneChar(SyntaxKind.OpenBraceToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnCloseParenToken() => ReturnKindOneChar(SyntaxKind.CloseParenToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnOpenParenToken() => ReturnKindOneChar(SyntaxKind.OpenParenToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnStarToken() => ReturnKindOneChar(SyntaxKind.StarToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnSlashToken() => ReturnKindOneChar(SyntaxKind.SlashToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnDashToken() => ReturnKindOneChar(SyntaxKind.DashToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnPlusToken() => ReturnKindOneChar(SyntaxKind.PlusToken);
+
+        private (SyntaxKind kind, int start, string text, object? value) ReturnEndOfInput() => (SyntaxKind.EndOfInputToken, _position, string.Empty, null);
 
         private (SyntaxKind kind, int start, string text, object? value) ParseIdentOrKeyword()
         {
@@ -272,11 +300,12 @@ namespace Panther.CodeAnalysis.Syntax
                 Next();
             }
 
-            return new SyntaxTrivia(_syntaxTree, SyntaxKind.LineCommentTrivia, _text[start.._position]);
+            return new SyntaxTrivia(_syntaxTree, SyntaxKind.LineCommentTrivia, _text[start.._position], start);
         }
 
-        private (SyntaxKind kind, int start, string text, object value) ParseStringToken(int start)
+        private (SyntaxKind kind, int start, string text, object value) ParseStringToken()
         {
+            int start = _position;
             Next(); // start "
             var sb = new StringBuilder();
             while (true)

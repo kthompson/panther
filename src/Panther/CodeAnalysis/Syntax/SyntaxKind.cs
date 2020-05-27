@@ -3,12 +3,12 @@
     public enum SyntaxKind
     {
         // Special Tokens
-        InvalidToken,
         EndOfInputToken,
         IdentifierToken,
         CommaToken,
 
         // Trivia tokens
+        InvalidTokenTrivia,
         EndOfLineTrivia,
         WhitespaceTrivia,
         LineCommentTrivia,

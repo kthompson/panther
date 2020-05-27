@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Panther.CodeAnalysis;
+using Panther.CodeAnalysis.Authoring;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -24,37 +25,43 @@ namespace Panther
             LoadSubmissions();
         }
 
-        protected override void RenderLine(string line)
+        protected override object? RenderLine(IReadOnlyList<string> lines, int lineIndex, object? state)
         {
-            var tokens = SyntaxTree.ParseTokens(line);
-            foreach (var token in tokens)
+            SyntaxTree tree;
+            if (state == null)
             {
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                foreach (var trivia in token.LeadingTrivia)
-                {
-                    Console.Write(trivia.Text);
-                }
+                var text = string.Join(Environment.NewLine, lines);
+                tree = SyntaxTree.Parse(text);
+            }
+            else
+            {
+                tree = (SyntaxTree)state;
+            }
 
-                Console.ForegroundColor = GetTokenColor(token);
-                Console.Write(token.Text);
+            var lineSpan = tree.Text.Lines[lineIndex].Span;
+            var classifiedSpans = Classifier.Classify(tree, lineSpan);
 
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                foreach (var trivia in token.TrailingTrivia)
-                {
-                    Console.Write(trivia.Text);
-                }
+            foreach (var classifiedSpan in classifiedSpans)
+            {
+                var text = tree.Text.ToString(classifiedSpan.Span);
 
+                Console.ForegroundColor = GetClassificationColor(classifiedSpan.Classification);
+                Console.Write(text);
                 Console.ResetColor();
             }
+
+            return tree;
         }
 
-        private static ConsoleColor GetTokenColor(SyntaxToken token) =>
-            token.Kind switch
+        private static ConsoleColor GetClassificationColor(Classification classification) =>
+            classification switch
             {
-                SyntaxKind.IdentifierToken => ConsoleColor.DarkYellow,
-                SyntaxKind.StringToken => ConsoleColor.Magenta,
-                SyntaxKind.NumberToken => ConsoleColor.Cyan,
-                SyntaxKind kind when kind.IsKeyword() => ConsoleColor.Blue,
+                Classification.Keyword => ConsoleColor.Blue,
+                Classification.Identifier => ConsoleColor.DarkYellow,
+                Classification.Number => ConsoleColor.Cyan,
+                Classification.String => ConsoleColor.Magenta,
+                Classification.Comment => ConsoleColor.Green,
+                Classification.Text => ConsoleColor.DarkGray,
                 _ => ConsoleColor.DarkGray
             };
 
@@ -153,31 +160,40 @@ namespace Panther
 
         protected override void EvaluateSubmission(string text)
         {
-            var syntaxTree = SyntaxTree.Parse(text.TrimEnd('\r', '\n'));
-            var compilation = Compilation.CreateScript(_previous, syntaxTree);
-
-            if (_showTree)
-                syntaxTree.Root.WriteTo(Console.Out);
-
-            if (_showProgram)
-                compilation.EmitTree(Console.Out);
-
-            var result = compilation.Evaluate(_variables);
-
-            if (!result.Diagnostics.Any())
+            try
             {
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(result.Value);
-                Console.ResetColor();
-                _previous = compilation;
+                var syntaxTree = SyntaxTree.Parse(text.TrimEnd('\r', '\n'));
+                var compilation = Compilation.CreateScript(_previous, syntaxTree);
 
-                SaveSubmission(text);
+                if (_showTree)
+                    syntaxTree.Root.WriteTo(Console.Out);
+
+                if (_showProgram)
+                    compilation.EmitTree(Console.Out);
+
+                var result = compilation.Evaluate(_variables);
+
+                if (!result.Diagnostics.Any())
+                {
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine(result.Value);
+                    Console.ResetColor();
+                    _previous = compilation;
+
+                    SaveSubmission(text);
+                }
+                else
+                {
+                    Console.Error.WriteDiagnostics(result.Diagnostics);
+                    Console.WriteLine();
+                }
             }
-            else
+            catch (Exception e)
             {
-                Console.Error.WriteDiagnostics(result.Diagnostics);
-                Console.WriteLine();
+
+                Console.WriteLine(e);
             }
+
         }
 
         private static readonly string SubmissionsFolder =

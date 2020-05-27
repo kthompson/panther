@@ -111,7 +111,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                 var token = _tokens[pos];
 
-                if (token.Kind == SyntaxKind.WhitespaceTrivia || token.Kind == SyntaxKind.InvalidToken)
+                if (token.Kind == SyntaxKind.WhitespaceTrivia || token.Kind == SyntaxKind.InvalidTokenTrivia)
                 {
                     pos++;
                     continue;
@@ -491,11 +491,12 @@ namespace Panther.CodeAnalysis.Syntax
 
         private void AssertStatementTerminator(ExpressionSyntax expr)
         {
-            var lastKind = expr.Descendants().Last(token => token.Kind != SyntaxKind.WhitespaceTrivia).Kind;
+            var syntaxNode = expr.Descendants().Last(token => token.Kind != SyntaxKind.WhitespaceTrivia);
+            var lastKind = syntaxNode.Kind;
 
             if (lastKind != SyntaxKind.EndOfLineTrivia && lastKind != SyntaxKind.CloseBraceToken && CurrentToken.Kind != SyntaxKind.EndOfInputToken)
             {
-                throw new Exception("expected end of line trivia");
+                Diagnostics.ReportUnexpectedEndOfLineTrivia(syntaxNode.Location, lastKind);
             }
         }
 

@@ -16,6 +16,17 @@ namespace Panther.CodeAnalysis.Text
 
         public static TextSpan FromBounds(in int start, in int end) => new TextSpan(start, end - start);
 
+
+        public bool Contains(int position) => Start <= position && position <= End;
+
+        public bool Overlaps(TextSpan other) =>
+            other.Contains(Start) || Contains(other.Start);
+
+        public TextSpan? Intersection(TextSpan other) =>
+            Overlaps(other)
+                ? (TextSpan?)TextSpan.FromBounds(Math.Max(Start, other.Start), Math.Min(End, other.End))
+                : null;
+
         public override string ToString()
         {
             return $"{Start}..{End}";

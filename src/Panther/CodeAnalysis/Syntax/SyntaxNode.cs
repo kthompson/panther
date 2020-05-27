@@ -30,6 +30,18 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
+        public virtual TextSpan FullSpan
+        {
+            get
+            {
+                var children = GetChildren().ToArray();
+                var first = children.First().FullSpan;
+                var last = children.Last().FullSpan;
+
+                return TextSpan.FromBounds(first.Start, last.End);
+            }
+        }
+
         public TextLocation Location => new TextLocation(SyntaxTree.Text, Span);
 
         public IEnumerable<SyntaxNode> GetChildren()
