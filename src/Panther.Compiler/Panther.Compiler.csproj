@@ -5,6 +5,7 @@
         <TargetFramework>netcoreapp3.0</TargetFramework>
         <AssemblyName>pantherc</AssemblyName>
         <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

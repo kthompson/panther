@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using FsCheck;
 using Panther.CodeAnalysis.Syntax;
@@ -36,7 +37,12 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
                 }.Concat(
                     Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
-                        .Select(k => new NonSeparatorTokenTestData(k, SyntaxFacts.GetText(k)))
+                        .Select(k =>
+                        {
+                            var text = SyntaxFacts.GetText(k);
+                            Debug.Assert(text != null);
+                            return new NonSeparatorTokenTestData(k, text);
+                        })
                         .Where(td => td.Text != null))
             ).ToArbitrary();
 

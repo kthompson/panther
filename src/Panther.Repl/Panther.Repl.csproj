@@ -6,6 +6,7 @@
     <RootNamespace>Panther</RootNamespace>
     <AssemblyName>pantheri</AssemblyName>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

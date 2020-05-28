@@ -66,13 +66,8 @@ namespace Panther.CodeAnalysis.Binding
             return Parent?.TryLookupVariable(name);
         }
 
-        public bool TryLookup(string name, out Symbol symbol)
-        {
-            if (_symbols.TryGetValue(name, out symbol))
-                return true;
-
-            return Parent != null && Parent.TryLookup(name, out symbol);
-        }
+        public Symbol? TryGetSymbol(string name) =>
+            _symbols.TryGetValue(name, out var sym) ? sym : Parent?.TryGetSymbol(name);
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.OfType<VariableSymbol>().ToImmutableArray();
 

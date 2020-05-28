@@ -47,7 +47,7 @@ namespace Panther.Tests.CodeAnalysis
         private static string FindDotnet()
         {
             var fileName = "dotnet";
-            var values = Environment.GetEnvironmentVariable("PATH");
+            var values = Environment.GetEnvironmentVariable("PATH") ?? "";
             foreach (var path in values.Split(Path.PathSeparator))
             {
                 var fullPath = Path.Combine(path, fileName);

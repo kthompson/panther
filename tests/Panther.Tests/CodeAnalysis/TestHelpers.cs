@@ -40,7 +40,7 @@ namespace Panther.Tests.CodeAnalysis
                 .OrderBy(diagnostic => diagnostic.Span.Start)
                 .ToArray();
 
-            var actualDiagnostics = result.Diagnostics.OrderBy(diagnostic => diagnostic.Location.Span.Start).ToArray();
+            var actualDiagnostics = result.Diagnostics.OrderBy(diagnostic => diagnostic.Location?.Span.Start ?? -1).ToArray();
 
             for (var i = 0; i < expectedDiagnosticMessages.Length; i++)
             {

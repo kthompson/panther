@@ -133,6 +133,12 @@ namespace Panther.CodeAnalysis.Binding
                 var binder = new Binder(isScript);
                 var functionScope = new BoundScope(parentScope, function);
 
+                if (function.Declaration == null)
+                {
+                    // TODO create a distinction of a Method Reference and a Method definition
+                    throw new Exception("this shouldn't happen");
+                }
+
                 var body = binder.BindExpression(function.Declaration.Body, functionScope);
 
                 var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body));
@@ -440,7 +446,8 @@ namespace Panther.CodeAnalysis.Binding
             if (syntax.Arguments.Count == 1 && LookupType(syntax.IdentifierToken.Text) is { } type)
                 return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
 
-            if (!scope.TryLookup(syntax.IdentifierToken.Text, out var symbol))
+            var symbol = scope.TryGetSymbol(syntax.IdentifierToken.Text);
+            if (symbol == null)
             {
                 Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
                 return BoundErrorExpression.Default;

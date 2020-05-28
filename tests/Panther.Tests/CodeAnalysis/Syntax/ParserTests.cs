@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using FsCheck.Xunit;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
@@ -92,6 +93,9 @@ namespace Panther.Tests.CodeAnalysis.Syntax
         {
             var unaryText = SyntaxFacts.GetText(op1.Kind);
             var binaryText = SyntaxFacts.GetText(op2.Kind);
+
+            Debug.Assert(unaryText != null);
+            Debug.Assert(binaryText != null);
 
             var text = $"{unaryText} a {binaryText} b";
             var expression = SyntaxTree.Parse(text).Root;

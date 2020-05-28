@@ -174,7 +174,7 @@ namespace Panther.CodeAnalysis
 
             if (conversionExpression.Type == TypeSymbol.String)
             {
-                return Convert.ToString(value);
+                return Convert.ToString(value) ?? "";
             }
 
             if (conversionExpression.Type == TypeSymbol.Bool)

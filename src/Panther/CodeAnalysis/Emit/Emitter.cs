@@ -52,13 +52,13 @@ namespace Panther.CodeAnalysis.Emit
                 }
             }
 
-            var builtinTypes = new List<(TypeSymbol tyoe, Type MetadataType)>
+            var builtinTypes = new List<(TypeSymbol tyoe, string? MetadataType)>
             {
-                (TypeSymbol.Any, typeof(object)),
-                (TypeSymbol.Bool, typeof(bool)),
-                (TypeSymbol.Int, typeof(int)),
-                (TypeSymbol.String, typeof(string)),
-                (TypeSymbol.Unit, typeof(Unit)),
+                (TypeSymbol.Any, typeof(object).FullName),
+                (TypeSymbol.Bool, typeof(bool).FullName),
+                (TypeSymbol.Int, typeof(int).FullName),
+                (TypeSymbol.String, typeof(string).FullName),
+                (TypeSymbol.Unit, typeof(Unit).FullName),
             };
 
             var assemblyName = new AssemblyNameDefinition(moduleName, new Version(1, 0));
@@ -66,14 +66,17 @@ namespace Panther.CodeAnalysis.Emit
 
             foreach (var (typeSymbol, metadataType) in builtinTypes)
             {
-                var typeReference = ResolveBuiltinType(typeSymbol.Name, metadataType.FullName);
+                if (metadataType == null)
+                    continue;
+
+                var typeReference = ResolveBuiltinType(typeSymbol.Name, metadataType);
                 if (typeReference == null)
                     continue;
 
                 _knownTypes.Add(typeSymbol, typeReference);
             }
 
-            _voidType = ResolveBuiltinType("unit", typeof(void).FullName);
+            _voidType = ResolveBuiltinType("unit", "System.Void");
 
             _consoleWriteLineReference = ResolveMethod("System.Console", "WriteLine", new[] { "System.String" });
             _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());

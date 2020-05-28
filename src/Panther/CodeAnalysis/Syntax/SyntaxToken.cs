@@ -14,7 +14,7 @@ namespace Panther.CodeAnalysis.Syntax
         }
 
         public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position, string text, object? value, ImmutableArray<SyntaxTrivia> leadingTrivia, ImmutableArray<SyntaxTrivia> trailingTrivia)
-            : this(syntaxTree, kind, position, position + (text?.Length ?? 0), text, value, false, leadingTrivia, trailingTrivia)
+            : this(syntaxTree, kind, position, position + text.Length, text, value, false, leadingTrivia, trailingTrivia)
         {
         }
 
