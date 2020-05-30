@@ -64,7 +64,7 @@ namespace Panther
         {
             private readonly LineRenderHandler _lineRenderer;
             private readonly ObservableCollection<string> _submissionDocument;
-            private readonly int _cursorTop;
+            private int _cursorTop;
             private int _renderedLineCount;
             private int _currentLine;
             private int _currentCharacter;
@@ -92,6 +92,14 @@ namespace Panther
 
                 foreach (var line in _submissionDocument)
                 {
+                    if (_cursorTop + lineCount >= Console.WindowHeight)
+                    {
+                        Console.SetCursorPosition(0, Console.WindowHeight - 1);
+                        Console.WriteLine();
+                        if (_cursorTop > 0)
+                            _cursorTop--;
+                    }
+
                     Console.SetCursorPosition(0, _cursorTop + lineCount);
                     Console.ForegroundColor = ConsoleColor.Green;
 
@@ -159,7 +167,7 @@ namespace Panther
         {
             _done = false;
 
-            var document = new ObservableCollection<string>() { "" };
+            var document = new ObservableCollection<string> { "" };
             var view = new SubmissionView(RenderLine, document);
 
             while (!_done)
@@ -244,7 +252,7 @@ namespace Panther
                 }
             }
 
-            if (key.KeyChar >= ' ')
+            if (key.Key != ConsoleKey.Backspace && key.KeyChar >= ' ')
                 HandleTyping(document, view, key.KeyChar.ToString());
         }
 
@@ -325,15 +333,13 @@ namespace Panther
                 view.CurrentCharacter = previousLine.Length;
                 return;
             }
-            else
-            {
-                var lineIndex = view.CurrentLine;
-                var line = document[lineIndex];
-                var before = line.Substring(0, start - 1);
-                var after = line.Substring(start);
-                document[lineIndex] = before + after;
-                view.CurrentCharacter--;
-            }
+
+            var lineIndex = view.CurrentLine;
+            var line = document[lineIndex];
+            var before = line.Substring(0, start - 1);
+            var after = line.Substring(start);
+            document[lineIndex] = before + after;
+            view.CurrentCharacter--;
         }
 
         private void HandleDelete(ObservableCollection<string> document, SubmissionView view)

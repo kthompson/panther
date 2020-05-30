@@ -235,7 +235,11 @@ namespace Panther
 
         private void ClearSubmissions()
         {
-            Directory.Delete(SubmissionsFolder, true);
+            if (Directory.Exists(SubmissionsFolder))
+            {
+                Directory.Delete(SubmissionsFolder, true);
+            }
+
         }
 
         private void SaveSubmission(string text)
