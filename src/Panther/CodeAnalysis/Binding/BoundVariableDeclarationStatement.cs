@@ -1,5 +1,6 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -9,7 +10,8 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression Expression { get; }
         public override BoundNodeKind Kind => BoundNodeKind.VariableDeclarationStatement;
 
-        public BoundVariableDeclarationStatement(VariableSymbol variable, BoundExpression expression)
+        public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression)
+            : base(syntax)
         {
             Variable = variable;
             Expression = expression;

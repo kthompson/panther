@@ -1,11 +1,13 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundBinaryExpression : BoundExpression
     {
-        public BoundBinaryExpression(BoundExpression left, BoundBinaryOperator @operator, BoundExpression right)
+        public BoundBinaryExpression(SyntaxNode syntax, BoundExpression left, BoundBinaryOperator @operator, BoundExpression right)
+            : base(syntax)
         {
             Operator = @operator;
             Left = left;

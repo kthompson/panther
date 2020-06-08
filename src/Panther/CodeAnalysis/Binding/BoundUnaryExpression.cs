@@ -1,10 +1,12 @@
 ﻿using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundUnaryExpression : BoundExpression
     {
-        public BoundUnaryExpression(BoundUnaryOperator @operator, BoundExpression operand)
+        public BoundUnaryExpression(SyntaxNode syntax, BoundUnaryOperator @operator, BoundExpression operand)
+            : base(syntax)
         {
             Operator = @operator;
             Operand = operand;

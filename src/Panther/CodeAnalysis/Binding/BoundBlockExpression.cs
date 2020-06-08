@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -11,7 +12,8 @@ namespace Panther.CodeAnalysis.Binding
         public override BoundNodeKind Kind => BoundNodeKind.BlockExpression;
         public override TypeSymbol Type => Expression.Type;
 
-        public BoundBlockExpression(ImmutableArray<BoundStatement> statements, BoundExpression expression)
+        public BoundBlockExpression(SyntaxNode syntax, ImmutableArray<BoundStatement> statements, BoundExpression expression)
+            : base(syntax)
         {
             Statements = statements;
             Expression = expression;

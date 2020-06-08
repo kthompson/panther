@@ -1,10 +1,13 @@
-﻿namespace Panther.CodeAnalysis.Binding
+﻿using Panther.CodeAnalysis.Syntax;
+
+namespace Panther.CodeAnalysis.Binding
 {
     internal class BoundExpressionStatement : BoundStatement
     {
         public BoundExpression Expression { get; }
 
-        public BoundExpressionStatement(BoundExpression expression)
+        public BoundExpressionStatement(SyntaxNode syntax, BoundExpression expression)
+            : base(syntax)
         {
             Expression = expression;
         }

@@ -18,7 +18,7 @@ namespace Panther.CodeAnalysis.Lowering
         {
             var tac = new ThreeAddressCode();
             tac.RewriteStatement(boundStatement);
-            return tac.GetBlock();
+            return tac.GetBlock(boundStatement.Syntax);
         }
 
 
@@ -52,7 +52,7 @@ namespace Panther.CodeAnalysis.Lowering
                 .Select(expr => CreateTemporary(expr, "ctemp"))
                 .ToImmutableArray();
 
-            return new BoundCallExpression(node.Method, args);
+            return new BoundCallExpression(node.Syntax, node.Method, args);
         }
 
         protected override BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
@@ -64,7 +64,7 @@ namespace Panther.CodeAnalysis.Lowering
             if (node.Left == left && node.Right == right && node.Operator == @operator)
                 return node;
 
-            return new BoundBinaryExpression(left, @operator, right);
+            return new BoundBinaryExpression(node.Syntax, left, @operator, right);
         }
 
         protected override BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
@@ -75,14 +75,14 @@ namespace Panther.CodeAnalysis.Lowering
             if (node.Operand == operand && node.Operator == @operator)
                 return node;
 
-            return new BoundUnaryExpression(@operator, operand);
+            return new BoundUnaryExpression(node.Syntax, @operator, operand);
         }
 
         protected override BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
         {
-            RewriteStatement(new BoundAssignmentStatement(node.Variable, node.Expression));
+            RewriteStatement(new BoundAssignmentStatement(node.Syntax, node.Variable, node.Expression));
 
-            return BoundUnitExpression.Default;
+            return new BoundUnitExpression(node.Syntax);
         }
 
         protected override BoundExpression RewriteForExpression(BoundForExpression node)
@@ -102,7 +102,7 @@ namespace Panther.CodeAnalysis.Lowering
             if (expr == node.Expression)
                 return node;
 
-            return new BoundConversionExpression(node.Type, expr);
+            return new BoundConversionExpression(node.Syntax, node.Type, expr);
         }
 
         private static bool IsSimpleNode(BoundExpression node) =>
@@ -113,8 +113,8 @@ namespace Panther.CodeAnalysis.Lowering
             _tempCount++;
             var name = $"{prefix}${boundExpression.Type.Name}${_tempCount:0000}";
             var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
-            _statements.Add(new BoundVariableDeclarationStatement(tempVariable, boundExpression));
-            return new BoundVariableExpression(tempVariable);
+            _statements.Add(new BoundVariableDeclarationStatement(boundExpression.Syntax, tempVariable, boundExpression));
+            return new BoundVariableExpression(boundExpression.Syntax, tempVariable);
         }
     }
 }

@@ -8,7 +8,13 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal abstract class BoundNode
     {
+        public SyntaxNode Syntax { get; }
         public abstract BoundNodeKind Kind { get; }
+
+        public BoundNode(SyntaxNode syntax)
+        {
+            Syntax = syntax;
+        }
 
         public override string ToString()
         {

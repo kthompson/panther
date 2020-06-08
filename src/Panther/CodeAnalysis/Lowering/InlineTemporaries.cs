@@ -18,7 +18,7 @@ namespace Panther.CodeAnalysis.Lowering
             if (node is BoundVariableDeclarationStatement varDecl && varDecl.Variable.Name.StartsWith("temp$"))
             {
                 _expressionsToInline[varDecl.Variable] = varDecl.Expression;
-                return BoundNopStatement.Default;
+                return new BoundNopStatement(node.Syntax);
             }
 
             return base.RewriteStatement(node);

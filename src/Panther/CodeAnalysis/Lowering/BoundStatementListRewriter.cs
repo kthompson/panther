@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Lowering
 {
@@ -13,14 +14,14 @@ namespace Panther.CodeAnalysis.Lowering
         {
         }
 
-        protected BoundBlockExpression GetBlock()
+        protected BoundBlockExpression GetBlock(SyntaxNode syntax)
         {
             var expr = (_statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
             var stmts = expr == null ? _statements : _statements.Take(_statements.Count - 1);
 
-            expr ??= BoundUnitExpression.Default;
+            expr ??= new BoundUnitExpression(syntax);
 
-            return new BoundBlockExpression(stmts.ToImmutableArray(), expr);
+            return new BoundBlockExpression(syntax, stmts.ToImmutableArray(), expr);
         }
 
 
@@ -29,9 +30,9 @@ namespace Panther.CodeAnalysis.Lowering
             foreach (var statement in block.Statements)
                 RewriteStatement(statement);
 
-            RewriteStatement(new BoundExpressionStatement(block.Expression));
+            RewriteStatement(new BoundExpressionStatement(block.Syntax, block.Expression));
 
-            return GetBlock();
+            return GetBlock(block.Syntax);
         }
 
         protected override BoundStatement RewriteStatement(BoundStatement node)

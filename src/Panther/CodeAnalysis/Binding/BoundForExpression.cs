@@ -1,5 +1,6 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -10,9 +11,10 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression UpperBound { get; }
         public BoundExpression Body { get; }
 
-        public BoundForExpression(VariableSymbol variable, BoundExpression lowerBound, BoundExpression upperBound,
+        public BoundForExpression(SyntaxNode syntax, VariableSymbol variable, BoundExpression lowerBound,
+            BoundExpression upperBound,
             BoundExpression body, BoundLabel breakLabel, BoundLabel continueLabel)
-            : base(breakLabel, continueLabel)
+            : base(syntax, breakLabel, continueLabel)
         {
             Variable = variable;
             LowerBound = lowerBound;

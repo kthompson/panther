@@ -1,5 +1,6 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -9,7 +10,8 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression Then { get; }
         public BoundExpression Else { get; }
 
-        public BoundIfExpression(BoundExpression condition, BoundExpression then, BoundExpression @else)
+        public BoundIfExpression(SyntaxNode syntax, BoundExpression condition, BoundExpression then, BoundExpression @else)
+            : base(syntax)
         {
             Condition = condition;
             Then = then;

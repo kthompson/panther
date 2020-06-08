@@ -112,7 +112,7 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                _statements.Add(new BoundExpressionStatement(block.Expression));
+                _statements.Add(new BoundExpressionStatement(block.Syntax, block.Expression));
 
                 EndBlock();
                 return _blocks.ToList();
@@ -262,12 +262,12 @@ namespace Panther.CodeAnalysis.Binding
                 if (condition is BoundLiteralExpression literalExpression)
                 {
                     var value = (bool)literalExpression.Value;
-                    return new BoundLiteralExpression(!value);
+                    return new BoundLiteralExpression(condition.Syntax, !value);
                 }
 
                 var op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.Bool) ?? throw new Exception("invalid operator");
 
-                return new BoundUnaryExpression(op, condition);
+                return new BoundUnaryExpression(condition.Syntax, op, condition);
             }
 
             private void Connect(BasicBlock @from, BasicBlock to, BoundExpression? boundCondition = null)

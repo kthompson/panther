@@ -32,7 +32,7 @@ namespace Panther.CodeAnalysis.Binding
             if (expr == node.Expression)
                 return node;
 
-            return new BoundConversionExpression(node.Type, expr);
+            return new BoundConversionExpression(node.Syntax, node.Type, expr);
         }
 
         protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
@@ -64,7 +64,7 @@ namespace Panther.CodeAnalysis.Binding
             if (newArguments == null)
                 return node;
 
-            return new BoundCallExpression(node.Method, newArguments.ToImmutableArray());
+            return new BoundCallExpression(node.Syntax, node.Method, newArguments.ToImmutableArray());
         }
 
         protected virtual BoundExpression RewriteWhileExpression(BoundWhileExpression node)
@@ -75,7 +75,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Condition == cond && node.Body == body)
                 return node;
 
-            return new BoundWhileExpression(cond, body, node.BreakLabel, node.ContinueLabel);
+            return new BoundWhileExpression(node.Syntax, cond, body, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
@@ -85,7 +85,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Operand == operand && node.Operator == @operator)
                 return node;
 
-            return new BoundUnaryExpression(@operator, operand);
+            return new BoundUnaryExpression(node.Syntax, @operator, operand);
         }
 
         protected virtual BoundExpression RewriteIfExpression(BoundIfExpression node)
@@ -97,7 +97,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Condition == cond && node.Then == then && node.Else == @else)
                 return node;
 
-            return new BoundIfExpression(cond, then, @else);
+            return new BoundIfExpression(node.Syntax, cond, then, @else);
         }
 
         protected virtual BoundExpression RewriteForExpression(BoundForExpression node)
@@ -109,7 +109,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.LowerBound == lowerBound && node.UpperBound == upperBound && node.Body == body)
                 return node;
 
-            return new BoundForExpression(node.Variable, lowerBound, upperBound, body, node.BreakLabel, node.ContinueLabel);
+            return new BoundForExpression(node.Syntax, node.Variable, lowerBound, upperBound, body, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundExpression RewriteBlockExpression(BoundBlockExpression node)
@@ -144,10 +144,9 @@ namespace Panther.CodeAnalysis.Binding
             if (statements == null && node.Expression == expression)
                 return node;
 
-            if (statements == null)
-                statements = node.Statements.ToList();
+            statements ??= node.Statements.ToList();
 
-            return new BoundBlockExpression(statements.ToImmutableArray(), expression);
+            return new BoundBlockExpression(node.Syntax, statements.ToImmutableArray(), expression);
         }
 
         protected virtual BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
@@ -159,7 +158,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Left == left && node.Right == right && node.Operator == @operator)
                 return node;
 
-            return new BoundBinaryExpression(left, @operator, right);
+            return new BoundBinaryExpression(node.Syntax, left, @operator, right);
         }
 
         protected virtual BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
@@ -168,7 +167,7 @@ namespace Panther.CodeAnalysis.Binding
             if (expr == node.Expression)
                 return node;
 
-            return new BoundAssignmentExpression(node.Variable, expr);
+            return new BoundAssignmentExpression(node.Syntax, node.Variable, expr);
         }
 
         protected virtual BoundStatement RewriteStatement(BoundStatement node) =>
@@ -190,7 +189,7 @@ namespace Panther.CodeAnalysis.Binding
             if (expr == node.Expression)
                 return node;
 
-            return new BoundAssignmentStatement(node.Variable, expr);
+            return new BoundAssignmentStatement(node.Syntax, node.Variable, expr);
         }
 
         protected virtual BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
@@ -199,7 +198,7 @@ namespace Panther.CodeAnalysis.Binding
             if (node.Condition == cond)
                 return node;
 
-            return new BoundConditionalGotoStatement(node.BoundLabel, cond, node.JumpIfTrue);
+            return new BoundConditionalGotoStatement(node.Syntax, node.BoundLabel, cond, node.JumpIfTrue);
         }
 
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
@@ -208,7 +207,7 @@ namespace Panther.CodeAnalysis.Binding
             if (expr == node.Expression)
                 return node;
 
-            return new BoundExpressionStatement(expr);
+            return new BoundExpressionStatement(node.Syntax, expr);
         }
 
         protected virtual BoundStatement RewriteVariableDeclarationStatement(BoundVariableDeclarationStatement node)
@@ -217,7 +216,7 @@ namespace Panther.CodeAnalysis.Binding
             if (expr == node.Expression)
                 return node;
 
-            return new BoundVariableDeclarationStatement(node.Variable, expr);
+            return new BoundVariableDeclarationStatement(node.Syntax, node.Variable, expr);
         }
 
         protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node) => node;

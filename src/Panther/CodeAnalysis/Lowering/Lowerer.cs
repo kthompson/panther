@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.VisualBasic;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -104,7 +105,7 @@ namespace Panther.CodeAnalysis.Lowering
                     builder.RemoveAt(i);
             }
 
-            return new BoundBlockExpression(builder.ToImmutable(), block.Expression);
+            return new BoundBlockExpression(block.Syntax, builder.ToImmutable(), block.Expression);
         }
 
         protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
@@ -117,9 +118,9 @@ namespace Panther.CodeAnalysis.Lowering
 
             var condition2 = node.JumpIfTrue ? condition : !condition;
             if (condition2)
-                return new BoundGotoStatement(node.BoundLabel);
+                return new BoundGotoStatement(node.Syntax, node.BoundLabel);
 
-            return BoundNopStatement.Default;
+            return new BoundNopStatement(node.Syntax);
         }
 
 
@@ -147,15 +148,15 @@ namespace Panther.CodeAnalysis.Lowering
             var body = RewriteExpression(node.Body);
             var condition = RewriteExpression(node.Condition);
             return RewriteExpression(
-                new BoundBlockExpression(
+                new BoundBlockExpression(node.Syntax,
                     ImmutableArray.Create<BoundStatement>(
-                        new BoundLabelStatement(node.ContinueLabel),
-                        new BoundConditionalGotoStatement(node.BreakLabel, condition),
-                        new BoundExpressionStatement(body),
-                        new BoundGotoStatement(node.ContinueLabel),
-                        new BoundLabelStatement(node.BreakLabel)
+                        new BoundLabelStatement(node.Syntax,node.ContinueLabel),
+                        new BoundConditionalGotoStatement(node.Syntax,node.BreakLabel, condition),
+                        new BoundExpressionStatement(node.Syntax,body),
+                        new BoundGotoStatement(node.Syntax,node.ContinueLabel),
+                        new BoundLabelStatement(node.Syntax,node.BreakLabel)
                     ),
-                    BoundUnitExpression.Default
+                    new BoundUnitExpression(node.Syntax)
                 )
             );
         }
@@ -188,16 +189,16 @@ namespace Panther.CodeAnalysis.Lowering
             var condition = RewriteExpression(node.Condition);
             var then = RewriteExpression(node.Then);
             var @else = RewriteExpression(node.Else);
-            var block = new BoundBlockExpression(
+            var block = new BoundBlockExpression(node.Syntax,
                 ImmutableArray.Create<BoundStatement>(
-                    new BoundConditionalGotoStatement(elseLabel, condition),
-                    new BoundVariableDeclarationStatement(variable, then),
-                    new BoundGotoStatement(endLabel),
-                    new BoundLabelStatement(elseLabel),
-                    new BoundVariableDeclarationStatement(variable, @else),
-                    new BoundLabelStatement(endLabel)
+                    new BoundConditionalGotoStatement(node.Syntax, elseLabel, condition),
+                    new BoundVariableDeclarationStatement(node.Syntax,variable, then),
+                    new BoundGotoStatement(node.Syntax,endLabel),
+                    new BoundLabelStatement(node.Syntax,elseLabel),
+                    new BoundVariableDeclarationStatement(node.Syntax,variable, @else),
+                    new BoundLabelStatement(node.Syntax,endLabel)
                 ),
-                new BoundVariableExpression(variable)
+                new BoundVariableExpression(node.Syntax,variable)
             );
 
             return RewriteExpression(block);
@@ -222,39 +223,35 @@ namespace Panther.CodeAnalysis.Lowering
             var upperBound = RewriteExpression(node.UpperBound);
             var body = RewriteExpression(node.Body);
 
-            var declareX = new BoundVariableDeclarationStatement(node.Variable, lowerBound);
+            var declareX = new BoundVariableDeclarationStatement(node.Syntax, node.Variable, lowerBound);
 
-            var condition = new BoundBinaryExpression(
-                new BoundVariableExpression(node.Variable),
+            var condition = new BoundBinaryExpression(node.Syntax,
+                new BoundVariableExpression(node.Syntax, node.Variable),
                 BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
                 upperBound
             );
-            var continueLabelStatement = new BoundLabelStatement(node.ContinueLabel);
+            var continueLabelStatement = new BoundLabelStatement(node.Syntax,node.ContinueLabel);
             var incrementX = new BoundExpressionStatement(
-                new BoundAssignmentExpression(
-                    node.Variable,
-                    new BoundBinaryExpression(
-                        new BoundVariableExpression(node.Variable),
-                        BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
-                        new BoundLiteralExpression(1)
-                    )
-                ));
+                node.Syntax,
+                new BoundAssignmentExpression(node.Syntax, node.Variable, new BoundBinaryExpression(
+                    node.Syntax,
+                    new BoundVariableExpression(node.Syntax,node.Variable),
+                    BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
+                    new BoundLiteralExpression(node.Syntax, 1)
+                )));
             var whileBody = new BoundBlockExpression(
+                node.Syntax,
                 ImmutableArray.Create<BoundStatement>(
-                    new BoundExpressionStatement(body),
+                    new BoundExpressionStatement(body.Syntax, body),
                     continueLabelStatement,
                     incrementX
-                ), BoundUnitExpression.Default
+                ), new BoundUnitExpression(node.Syntax)
             );
 
             var newBlock = new BoundBlockExpression(
+                node.Syntax,
                 ImmutableArray.Create<BoundStatement>(declareX),
-                new BoundWhileExpression(
-                    condition,
-                    whileBody,
-                    node.BreakLabel,
-                    new BoundLabel("continue")
-                )
+                new BoundWhileExpression(node.Syntax, condition, whileBody, node.BreakLabel, new BoundLabel("continue"))
             );
             return RewriteExpression(newBlock);
         }

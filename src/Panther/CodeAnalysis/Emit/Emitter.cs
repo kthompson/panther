@@ -161,7 +161,7 @@ namespace Panther.CodeAnalysis.Emit
                 EmitStatement(ilProcessor, statement);
 
             // only emit block's expression if its a non-unit expression or we are not void
-            if (block.Expression != BoundUnitExpression.Default || method.ReturnType != TypeSymbol.Unit)
+            if (block.Expression.Kind != BoundNodeKind.UnitExpression || method.ReturnType != TypeSymbol.Unit)
             {
                 // emit expression
                 EmitExpression(ilProcessor, block.Expression);

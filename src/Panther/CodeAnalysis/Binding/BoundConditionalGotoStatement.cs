@@ -1,4 +1,6 @@
-﻿namespace Panther.CodeAnalysis.Binding
+﻿using Panther.CodeAnalysis.Syntax;
+
+namespace Panther.CodeAnalysis.Binding
 {
     sealed class BoundConditionalGotoStatement : BoundStatement
     {
@@ -9,7 +11,8 @@
 
         public override BoundNodeKind Kind => BoundNodeKind.ConditionalGotoStatement;
 
-        public BoundConditionalGotoStatement(BoundLabel boundLabel, BoundExpression condition, bool jumpIfTrue = false)
+        public BoundConditionalGotoStatement(SyntaxNode syntax, BoundLabel boundLabel, BoundExpression condition, bool jumpIfTrue = false)
+            : base(syntax)
         {
             BoundLabel = boundLabel;
             Condition = condition;

@@ -4,6 +4,7 @@ using System.Linq;
 using FsCheck;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.Tests.CodeAnalysis.Lowering
 {
@@ -16,6 +17,9 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             Gen.Constant(Panther.CodeAnalysis.Symbols.TypeSymbol.Unit)
         );
 
+        public static Arbitrary<SyntaxNode> SyntaxNode() =>
+            Gen.Constant((SyntaxNode)new SyntaxToken(null!, SyntaxKind.InvalidTokenTrivia, 0)).ToArbitrary();
+
         public static Arbitrary<BoundStatement> BoundStatement() =>
             Gen.OneOf(
                 Arb.Generate<BoundConditionalGotoStatement>().Select(x => (BoundStatement)x),
@@ -27,31 +31,34 @@ namespace Panther.Tests.CodeAnalysis.Lowering
 
         public static Arbitrary<BoundConditionalGotoStatement> BoundConditionalGotoStatement() =>
         (
+            from token in Arb.Generate<SyntaxNode>()
             from label in Arb.Generate<BoundLabel>()
             from jumpIfTrue in Arb.Generate<bool>()
             from expr in GenBoundExpression(Panther.CodeAnalysis.Symbols.TypeSymbol.Bool)
-            select new BoundConditionalGotoStatement(label, expr, jumpIfTrue)
+            select new BoundConditionalGotoStatement(token, label, expr, jumpIfTrue)
         ).ToArbitrary();
 
         public static Arbitrary<BoundExpressionStatement> BoundExpressionStatement() =>
         (
+            from token in Arb.Generate<SyntaxNode>()
             from type in Arb.Generate<TypeSymbol>()
             from expr in GenBoundExpression(type)
-            select new BoundExpressionStatement(expr)
+            select new BoundExpressionStatement(token, expr)
         ).ToArbitrary();
 
         public static Arbitrary<BoundVariableDeclarationStatement> BoundVariableDeclarationStatement() =>
         (
+            from token in Arb.Generate<SyntaxNode>()
             from type in Arb.Generate<TypeSymbol>()
             from variable in GenLocalVariableSymbol(type)
             from expr in GenBoundExpression(type)
-            select new BoundVariableDeclarationStatement(variable, expr)
+            select new BoundVariableDeclarationStatement(token, variable, expr)
         ).ToArbitrary();
 
         public static Arbitrary<TypeSymbol> TypeSymbol => TypeSymbolGen.ToArbitrary();
 
         public static Arbitrary<BoundUnitExpression> BoundUnitExpression =>
-            Gen.Constant(Panther.CodeAnalysis.Binding.BoundUnitExpression.Default).ToArbitrary();
+            Gen.Constant(new BoundUnitExpression(null!)).ToArbitrary();
 
         public static Arbitrary<GlobalVariableSymbol> GlobalVariableSymbol() =>
         (
@@ -70,23 +77,30 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             Identifier().Select(x => new BoundLabel(x)).ToArbitrary();
 
         public static Arbitrary<BoundLabelStatement> BoundLabelStatement() =>
-            Arb.Generate<BoundLabel>().Select(x => new BoundLabelStatement(x)).ToArbitrary();
+            (
+                from token in Arb.Generate<SyntaxNode>()
+                from x in Arb.Generate<BoundLabel>()
+                select new BoundLabelStatement(token, x)
+            )
+            .ToArbitrary();
 
         public static Gen<BoundIfExpression> GenIfExpression(TypeSymbol typeSymbol) =>
             from condition in GenBoundExpression(Panther.CodeAnalysis.Symbols.TypeSymbol.Bool)
             from thenExpr in GenBoundExpression(typeSymbol)
             from elseExpr in GenBoundExpression(typeSymbol)
-            select new BoundIfExpression(condition, thenExpr, elseExpr);
+            select new BoundIfExpression(null!, condition, thenExpr, elseExpr);
 
         public static Gen<BoundAssignmentExpression> GenBoundAssignmentExpression(TypeSymbol typeSymbol) =>
             from variable in GenLocalVariableSymbol(typeSymbol)
             from initializer in GenBoundExpression(typeSymbol)
-            select new BoundAssignmentExpression(variable, initializer);
+            select new BoundAssignmentExpression(null!, variable, initializer);
 
         public static Gen<BoundBlockExpression> GenBoundBlockExpression(TypeSymbol typeSymbol) =>
+            from token in Arb.Generate<SyntaxNode>()
             from statements in Arb.Generate<ImmutableArray<BoundStatement>>()
             from expr in GenBoundExpression(typeSymbol)
-            select new BoundBlockExpression(statements, expr);
+            select new BoundBlockExpression(token, statements, expr);
+
         public static Gen<MethodSymbol> GenFunctionSymbol(TypeSymbol typeSymbol) =>
             from name in Identifier()
             from parameters in Arb.Generate<ImmutableArray<ParameterSymbol>>()
@@ -100,26 +114,23 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         public static Gen<BoundExpression> GenBoundLiteralExpression(TypeSymbol typeSymbol)
         {
             Gen<BoundExpression> UnitGen() =>
-                Gen
-                    .Constant(Panther.CodeAnalysis.Binding.BoundUnitExpression.Default)
-                    .Select(x => (BoundExpression)x);
+                from token in Arb.Generate<SyntaxNode>()
+                select (BoundExpression)new BoundUnitExpression(token!);
 
             Gen<BoundExpression> StringGen() =>
-                Arb
-                    .Generate<NonNull<string>>().Select(x => new BoundLiteralExpression(x.Item))
-                    .Select(x => (BoundExpression)x);
+                from token in Arb.Generate<SyntaxNode>()
+                from x in Arb.Generate<NonNull<string>>()
+                select (BoundExpression) new BoundLiteralExpression(token, x.Item);
 
             Gen<BoundExpression> IntGen() =>
-                Arb
-                    .Generate<int>()
-                    .Select(x => new BoundLiteralExpression(x))
-                    .Select(x => (BoundExpression)x);
+                from token in Arb.Generate<SyntaxNode>()
+                from x in Arb.Generate<int>()
+                select (BoundExpression) new BoundLiteralExpression(token, x);
 
             Gen<BoundExpression> BoolGen() =>
-                Arb
-                    .Generate<bool>()
-                    .Select(x => new BoundLiteralExpression(x))
-                    .Select(x => (BoundExpression)x);
+                from token in Arb.Generate<SyntaxNode>()
+                from x in Arb.Generate<bool>()
+                select (BoundExpression) new BoundLiteralExpression(token, x);
 
             if (typeSymbol == Panther.CodeAnalysis.Symbols.TypeSymbol.Bool)
                 return BoolGen();
@@ -150,9 +161,10 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         }
 
         public static Gen<BoundCallExpression> GenBoundCallExpression(TypeSymbol typeSymbol) =>
+            from token in Arb.Generate<SyntaxNode>()
             from function in GenFunctionSymbol(typeSymbol)
             from args in Gen.Sequence(function.Parameters.Select(p => GenBoundExpression(p.Type)))
-            select new BoundCallExpression(function, args.ToImmutableArray());
+            select new BoundCallExpression(token, function, args.ToImmutableArray());
 
         public static Gen<BoundExpression> GenBoundExpression(TypeSymbol typeSymbol)
         {

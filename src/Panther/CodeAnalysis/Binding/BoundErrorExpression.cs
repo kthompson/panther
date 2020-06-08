@@ -1,12 +1,12 @@
 ﻿using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundErrorExpression : BoundExpression
     {
-        public static readonly BoundErrorExpression Default = new BoundErrorExpression();
-
-        private BoundErrorExpression()
+        public BoundErrorExpression(SyntaxNode syntax)
+            : base(syntax)
         {
         }
 

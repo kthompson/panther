@@ -141,7 +141,7 @@ namespace Panther.CodeAnalysis.Binding
 
                 var body = binder.BindExpression(function.Declaration.Body, functionScope);
 
-                var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body));
+                var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
 
                 if (function.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
                 {
@@ -152,22 +152,25 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics.AddRange(binder.Diagnostics);
             }
 
+            var compilationUnit = globalScope.Statements.Any() ? globalScope.Statements.First().Syntax : null!;
+
             if (globalScope.MainFunction != null && globalScope.Statements.Any())
             {
-                var body = Lowerer.Lower(BoundStatementFromStatements(globalScope.Statements));
+                var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalScope.Statements));
                 functionBodies.Add(globalScope.MainFunction, body);
             }
             else if (globalScope.ScriptFunction != null)
             {
-                var boundStatementFromStatements = BoundStatementFromStatements(globalScope.Statements);
+                var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalScope.Statements);
 
                 // for our script function we need to return an object. if the expression is not an object then we will
                 // create a conversion expression to convert it.
                 if (boundStatementFromStatements.Expression.Type != TypeSymbol.Any)
                 {
                     // what should we do when we have a unit expression?
-                    boundStatementFromStatements = new BoundExpressionStatement(
-                        new BoundConversionExpression(TypeSymbol.Any, boundStatementFromStatements.Expression));
+                    boundStatementFromStatements = new BoundExpressionStatement(boundStatementFromStatements.Syntax,
+                        new BoundConversionExpression(boundStatementFromStatements.Syntax, TypeSymbol.Any,
+                            boundStatementFromStatements.Expression));
                 }
 
                 var body = Lowerer.Lower(boundStatementFromStatements);
@@ -177,14 +180,15 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundProgram(previous, diagnostics.ToImmutableArray(), globalScope.MainFunction, globalScope.ScriptFunction, functionBodies.ToImmutable());
         }
 
-        private static BoundExpressionStatement BoundStatementFromStatements(IReadOnlyCollection<BoundStatement> statements)
+        private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax, IReadOnlyCollection<BoundStatement> statements)
         {
             var expr = (statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
             var stmts = expr == null
                 ? statements.ToImmutableArray()
                 : statements.Take(statements.Count - 1).ToImmutableArray();
 
-            return new BoundExpressionStatement(new BoundBlockExpression(stmts, expr ?? BoundUnitExpression.Default));
+            // this doesnt really feel like the correct syntax as we should have something that encompasses all of the statements
+            return new BoundExpressionStatement(syntax, new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax)));
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
@@ -292,10 +296,10 @@ namespace Panther.CodeAnalysis.Binding
             if (label == null)
             {
                 Diagnostics.ReportInvalidBreakOrContinue(syntax.ContinueKeyword.Location, syntax.ContinueKeyword.Text);
-                return new BoundExpressionStatement(BoundErrorExpression.Default);
+                return new BoundExpressionStatement(syntax, new BoundErrorExpression(syntax));
             }
 
-            return new BoundGotoStatement(label);
+            return new BoundGotoStatement(syntax, label);
         }
 
         private BoundStatement BindBreakStatement(BreakExpressionSyntax syntax, BoundScope scope)
@@ -304,10 +308,10 @@ namespace Panther.CodeAnalysis.Binding
             if (label == null)
             {
                 Diagnostics.ReportInvalidBreakOrContinue(syntax.BreakKeyword.Location, syntax.BreakKeyword.Text);
-                return new BoundExpressionStatement(BoundErrorExpression.Default);
+                return new BoundExpressionStatement(syntax, new BoundErrorExpression(syntax));
             }
 
-            return new BoundGotoStatement(label);
+            return new BoundGotoStatement(syntax, label);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
@@ -320,7 +324,7 @@ namespace Panther.CodeAnalysis.Binding
             var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
             var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, boundExpression.ConstantValue, scope);
 
-            return new BoundVariableDeclarationStatement(variable, converted);
+            return new BoundVariableDeclarationStatement(syntax, variable, converted);
         }
 
         private TypeSymbol BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause)
@@ -360,7 +364,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var expression = BindExpression(syntax.Expression, scope);
 
-            return new BoundExpressionStatement(expression.Type == TypeSymbol.Error ? BoundErrorExpression.Default : expression);
+            return new BoundExpressionStatement(syntax, expression.Type == TypeSymbol.Error ? new BoundErrorExpression(syntax) : expression);
         }
 
         private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope) =>
@@ -379,7 +383,7 @@ namespace Panther.CodeAnalysis.Binding
                 WhileExpressionSyntax whileExpressionSyntax => BindWhileExpression(whileExpressionSyntax, scope),
                 ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
                 CallExpressionSyntax callExpressionSyntax => BindCallExpression(callExpressionSyntax, scope),
-                UnitExpressionSyntax unit => BindUnitExpression(),
+                UnitExpressionSyntax unit => BindUnitExpression(unit),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
 
@@ -392,23 +396,24 @@ namespace Panther.CodeAnalysis.Binding
             {
                 Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
 
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             if (variable.IsReadOnly)
             {
                 Diagnostics.ReportReassignmentToVal(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-                return BoundErrorExpression.Default;
+
+                return new BoundErrorExpression(syntax);
             }
 
             var convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
 
-            return new BoundAssignmentExpression(variable, convertedExpression);
+            return new BoundAssignmentExpression(syntax, variable, convertedExpression);
         }
 
         // hack to convert a statement into an expression
         private static BoundBlockExpression BindStatementToExpression(BoundStatement bindBreakStatement) =>
-            new BoundBlockExpression(ImmutableArray.Create(bindBreakStatement), BoundUnitExpression.Default);
+            new BoundBlockExpression(bindBreakStatement.Syntax, ImmutableArray.Create(bindBreakStatement), new BoundUnitExpression(bindBreakStatement.Syntax));
 
         private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol type, BoundScope scope, bool allowExplicit = false)
         {
@@ -427,7 +432,7 @@ namespace Panther.CodeAnalysis.Binding
                     Diagnostics.ReportCannotConvert(location, expression.Type, type);
                 }
 
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(expression.Syntax);
             }
 
             if (!allowExplicit && conversion.IsExplicit)
@@ -438,7 +443,7 @@ namespace Panther.CodeAnalysis.Binding
             if (conversion.IsIdentity)
                 return expression;
 
-            return new BoundConversionExpression(type, expression);
+            return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
@@ -450,13 +455,13 @@ namespace Panther.CodeAnalysis.Binding
             if (symbol == null)
             {
                 Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             if (!(symbol is MethodSymbol function))
             {
                 Diagnostics.ReportNotAFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
@@ -464,7 +469,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 var argTypes = boundArguments.Select(argument => argument.Type).ToImmutableArray();
                 Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
@@ -476,7 +481,7 @@ namespace Panther.CodeAnalysis.Binding
                 convertedArgs.Add(convertedArgument);
             }
 
-            return new BoundCallExpression(function, convertedArgs.ToImmutable());
+            return new BoundCallExpression(syntax, function, convertedArgs.ToImmutable());
         }
 
         private TypeSymbol? LookupType(string text)
@@ -501,13 +506,13 @@ namespace Panther.CodeAnalysis.Binding
             if (lowerBound.Type != TypeSymbol.Int)
             {
                 Diagnostics.ReportTypeMismatch(syntax.FromExpression.Location, TypeSymbol.Int, lowerBound.Type);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             if (upperBound.Type != TypeSymbol.Int)
             {
                 Diagnostics.ReportTypeMismatch(syntax.ToExpression.Location, TypeSymbol.Int, upperBound.Type);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             var newScope = new BoundScope(scope);
@@ -515,7 +520,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var body = BindLoopBody(syntax.Body, newScope, out var breakLabel, out var continueLabel);
 
-            return new BoundForExpression(variable, lowerBound, upperBound, body, breakLabel, continueLabel);
+            return new BoundForExpression(syntax, variable, lowerBound, upperBound, body, breakLabel, continueLabel);
         }
 
         private BoundExpression BindWhileExpression(WhileExpressionSyntax syntax, BoundScope scope)
@@ -523,7 +528,7 @@ namespace Panther.CodeAnalysis.Binding
             var condition = BindExpression(syntax.ConditionExpression, TypeSymbol.Bool, scope);
             var expr = BindLoopBody(syntax.Body, scope, out var breakLabel, out var continueLabel);
 
-            return new BoundWhileExpression(condition, expr, breakLabel, continueLabel);
+            return new BoundWhileExpression(syntax, condition, expr, breakLabel, continueLabel);
         }
 
         private BoundExpression BindLoopBody(ExpressionSyntax syntax, BoundScope scope, out BoundLabel breakLabel,
@@ -540,24 +545,24 @@ namespace Panther.CodeAnalysis.Binding
             var elseExpr = BindExpression(syntax.ElseExpression, scope);
 
             if (condition.Type == TypeSymbol.Error || then.Type == TypeSymbol.Error || elseExpr.Type == TypeSymbol.Error)
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
 
             if (then.Type != elseExpr.Type)
             {
                 Diagnostics.ReportTypeMismatch(syntax.ElseExpression.Location, then.Type, elseExpr.Type);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             if (condition.Type != TypeSymbol.Bool)
             {
                 Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Location, TypeSymbol.Bool, condition.Type);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
-            return new BoundIfExpression(condition, then, elseExpr);
+            return new BoundIfExpression(syntax, condition, then, elseExpr);
         }
 
-        private BoundExpression BindUnitExpression() => BoundUnitExpression.Default;
+        private BoundExpression BindUnitExpression(UnitExpressionSyntax syntax) => new BoundUnitExpression(syntax);
 
         private BoundExpression BindBlockExpression(BlockExpressionSyntax syntax, BoundScope scope)
         {
@@ -566,7 +571,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var expr = BindExpression(syntax.Expression, blockScope);
 
-            return new BoundBlockExpression(stmts, expr);
+            return new BoundBlockExpression(syntax, stmts, expr);
         }
 
         private static BoundScope? CreateParentScope(BoundGlobalScope? previous)
@@ -612,17 +617,17 @@ namespace Panther.CodeAnalysis.Binding
         {
             if (syntax.IdentifierToken.IsInsertedToken)
             {
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
             var name = syntax.IdentifierToken.Text;
 
             var variable = scope.TryLookupVariable(name);
             if (variable != null)
-                return new BoundVariableExpression(variable);
+                return new BoundVariableExpression(syntax, variable);
 
             Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
-            return BoundErrorExpression.Default;
+            return new BoundErrorExpression(syntax);
         }
 
         private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax, BoundScope scope) =>
@@ -632,17 +637,17 @@ namespace Panther.CodeAnalysis.Binding
         {
             var boundOperand = BindExpression(syntax.Operand, scope);
             if (boundOperand.Type == TypeSymbol.Error)
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
 
             var boundOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, boundOperand.Type);
 
             if (boundOperator == null)
             {
                 Diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, boundOperand.Type);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
 
-            return new BoundUnaryExpression(boundOperator, boundOperand);
+            return new BoundUnaryExpression(syntax, boundOperator, boundOperand);
         }
 
         private BoundExpression BindBinaryExpression(BinaryExpressionSyntax syntax, BoundScope scope)
@@ -652,20 +657,20 @@ namespace Panther.CodeAnalysis.Binding
             var boundOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
 
             if (left.Type == TypeSymbol.Error || right.Type == TypeSymbol.Error)
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
 
             if (boundOperator == null)
             {
                 Diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, left.Type, right.Type);
-                return BoundErrorExpression.Default;
+                return new BoundErrorExpression(syntax);
             }
-            return new BoundBinaryExpression(left, boundOperator, right);
+            return new BoundBinaryExpression(syntax, left, boundOperator, right);
         }
 
         private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
         {
             var value = syntax.Value;
-            return value == null ? (BoundExpression)BoundErrorExpression.Default : new BoundLiteralExpression(value);
+            return value == null ? (BoundExpression)new BoundErrorExpression(syntax) : new BoundLiteralExpression(syntax, value);
         }
     }
 }

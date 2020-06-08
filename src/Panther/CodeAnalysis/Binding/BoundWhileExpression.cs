@@ -1,5 +1,6 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -8,9 +9,10 @@ namespace Panther.CodeAnalysis.Binding
         public BoundExpression Condition { get; }
         public BoundExpression Body { get; }
 
-        public BoundWhileExpression(BoundExpression condition, BoundExpression body, BoundLabel breakLabel,
+        public BoundWhileExpression(SyntaxNode syntax, BoundExpression condition, BoundExpression body,
+            BoundLabel breakLabel,
             BoundLabel continueLabel)
-            : base(breakLabel, continueLabel)
+            : base(syntax, breakLabel, continueLabel)
         {
             Condition = condition;
             Body = body;

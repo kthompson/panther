@@ -1,4 +1,6 @@
-﻿namespace Panther.CodeAnalysis.Binding
+﻿using Panther.CodeAnalysis.Syntax;
+
+namespace Panther.CodeAnalysis.Binding
 {
     sealed class BoundGotoStatement : BoundStatement
     {
@@ -6,7 +8,7 @@
 
         public override BoundNodeKind Kind => BoundNodeKind.GotoStatement;
 
-        public BoundGotoStatement(BoundLabel boundLabel)
+        public BoundGotoStatement(SyntaxNode syntax, BoundLabel boundLabel) : base(syntax)
         {
             BoundLabel = boundLabel;
         }
