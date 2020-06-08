@@ -37,13 +37,14 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
                 }.Concat(
                     Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
-                        .Select(k =>
+                        .SelectMany(kind =>
                         {
-                            var text = SyntaxFacts.GetText(k);
-                            Debug.Assert(text != null);
-                            return new NonSeparatorTokenTestData(k, text);
-                        })
-                        .Where(td => td.Text != null))
+                            var text = SyntaxFacts.GetText(kind);
+                            if (text != null)
+                                return new[] {new NonSeparatorTokenTestData(kind, text)};
+
+                            return Enumerable.Empty<NonSeparatorTokenTestData>();
+                        }))
             ).ToArbitrary();
 
         public static Arbitrary<TokenPairTestData> TokenPairTestData()
