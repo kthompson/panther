@@ -5,7 +5,6 @@ using FsCheck.Xunit;
 using Moq;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Symbols;
-using Panther.StdLib;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
 
@@ -29,13 +28,13 @@ namespace Panther.Tests.CodeAnalysis
         public void EvaluatesHelloWorld()
         {
             var builtins = new Mock<IBuiltins>(MockBehavior.Strict);
-            builtins.Setup(x => x.Read()).Returns("Kevin");
-            builtins.Setup(x => x.Print("What is your name?"));
-            builtins.Setup(x => x.Print("Hello, Kevin"));
+            builtins.Setup(x => x.ReadLine()).Returns("Kevin");
+            builtins.Setup(x => x.Println("What is your name?"));
+            builtins.Setup(x => x.Println("Hello, Kevin"));
 
             AssertEvaluation(@"{
                                    println(""What is your name?"")
-                                   val name = read()
+                                   val name = readLine()
                                    val message = ""Hello, "" + name
                                    println(message)
                                    message

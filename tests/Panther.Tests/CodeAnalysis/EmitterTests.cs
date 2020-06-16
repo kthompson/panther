@@ -8,7 +8,6 @@ using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
-using Panther.StdLib;
 using Xunit;
 using Xunit.Sdk;
 
@@ -54,9 +53,24 @@ namespace Panther.Tests.CodeAnalysis
             Assert.Equal(expectedSource.Length, actualSource.Length);
 
             // verify command output
+
+            TryCopy(typeof(Unit).Assembly.Location,
+                Path.Combine(outputDirectory, Path.GetFileName(typeof(Unit).Assembly.Location)));
             AssertCommandOutput(testDirectory, outputDirectory, assemblyLocation);
 
             Directory.Delete(outputDirectory, true);
+        }
+
+        private static void TryCopy(string src, string dst)
+        {
+            try
+            {
+                File.Copy(src, dst);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         private static void AssertCommandOutput(string testDirectory, string outputDirectory, string assemblyLocation)

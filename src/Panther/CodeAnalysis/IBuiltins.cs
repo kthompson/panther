@@ -4,9 +4,10 @@ namespace Panther.CodeAnalysis
 {
     public interface IBuiltins
     {
-        string Read();
+        string ReadLine();
 
-        void Print(string message);
+        void Print(object message);
+        void Println(object message);
     }
 
     public class Builtins : IBuiltins
@@ -17,8 +18,9 @@ namespace Panther.CodeAnalysis
         {
         }
 
-        public string Read() => Console.ReadLine();
-
+        public string ReadLine() => Console.ReadLine();
+        public void Print(object message) => Console.Write(message);
+        public void Println(object message) => Console.WriteLine(message);
         public void Print(string message) => Console.WriteLine(message);
     }
 }

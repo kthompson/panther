@@ -5,7 +5,7 @@
 
     while (guess != answer) {
         println("Guess the answer:")
-        guess = int(read())
+        guess = int(readLine())
         guessCount = guessCount + 1
 
         if (guess > answer) {

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Panther.StdLib
+﻿namespace Panther
 {
     public class Unit
     {

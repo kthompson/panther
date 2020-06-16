@@ -5,7 +5,6 @@ using System.Text;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
-using Panther.StdLib;
 
 namespace Panther.CodeAnalysis
 {
@@ -256,14 +255,21 @@ namespace Panther.CodeAnalysis
         {
             if (node.Method == BuiltinFunctions.Print)
             {
-                var message = (string)EvaluateExpression(node.Arguments[0]);
+                var message = EvaluateExpression(node.Arguments[0]);
                 _builtins.Print(message);
+                return Unit.Default;
+            }
+
+            if (node.Method == BuiltinFunctions.Println)
+            {
+                var message = EvaluateExpression(node.Arguments[0]);
+                _builtins.Println(message);
                 return Unit.Default;
             }
 
             if (node.Method == BuiltinFunctions.Read)
             {
-                return _builtins.Read();
+                return _builtins.ReadLine();
             }
 
             if (node.Method == BuiltinFunctions.Rnd)

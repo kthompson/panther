@@ -7,7 +7,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
-using Panther.StdLib;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Emit
 {
@@ -23,8 +23,6 @@ namespace Panther.CodeAnalysis.Emit
         private TypeDefinition _typeDef;
 
         private readonly TypeReference? _voidType;
-        private readonly MethodReference? _consoleWriteLineReference;
-        private readonly MethodReference? _consoleReadLineReference;
         private readonly MethodReference? _stringConcatReference;
         private readonly MethodReference? _convertBoolToString;
         private readonly MethodReference? _convertInt32ToString;
@@ -78,16 +76,13 @@ namespace Panther.CodeAnalysis.Emit
 
             _voidType = ResolveBuiltinType("unit", "System.Void");
 
-            _consoleWriteLineReference = ResolveMethod("System.Console", "WriteLine", new[] { "System.String" });
-            _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
-            _consoleReadLineReference = ResolveMethod("System.Console", "ReadLine", Array.Empty<string>());
             _stringConcatReference = ResolveMethod("System.String", "Concat", new[] { "System.String", "System.String" });
 
             _convertBoolToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Boolean" });
             _convertInt32ToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Int32" });
             _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
             _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
-            _unit = ResolveField("Panther.StdLib.Unit", "Default");
+            _unit = ResolveField("Panther.Unit", "Default");
 
             var objectType = _knownTypes[TypeSymbol.Any];
             _typeDef = new TypeDefinition("", "Program", TypeAttributes.Abstract | TypeAttributes.Sealed, objectType);
@@ -443,21 +438,14 @@ namespace Panther.CodeAnalysis.Emit
             }
             else
             {
-                // probably a builtin
-                // TODO: improve this
-                switch (callExpression.Method.Name)
+                // search for the method in Predef for now
+                var methodReference = ResolveMethod("Panther.Predef", callExpression.Method.Name,
+                    callExpression.Method.Parameters.Select(p => _knownTypes[p.Type].FullName).ToArray());
+
+                if (methodReference != null)
                 {
-                    // case "rnd":
-                    case "println":
-                        ilProcessor.Emit(OpCodes.Call, _consoleWriteLineReference);
-                        break;
-
-                    case "read":
-                        ilProcessor.Emit(OpCodes.Call, _consoleReadLineReference);
-                        break;
-
-                    default:
-                        throw new NotImplementedException();
+                    ilProcessor.Emit(OpCodes.Call, methodReference);
+                    return;
                 }
             }
         }

@@ -16,14 +16,14 @@
 		// Code size 18 (0x12)
 		.maxstack 2
 		.locals (
-			[0] string
+			[0] object
 		)
 
 		IL_0000: ldarg.0
 		IL_0001: call string [System.Private.CoreLib]System.Convert::ToString(int32)
 		IL_0006: stloc.0
 		IL_0007: ldloc.0
-		IL_0008: call void [System.Console]System.Console::WriteLine(string)
+		IL_0008: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_000d: ldarg.0
 		IL_000e: ldc.i4.s 12
 		IL_0010: sub

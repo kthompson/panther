@@ -1,4 +1,4 @@
 def getName(): string = {
     println("What is your name?")
-    read()
+    readLine()
 }

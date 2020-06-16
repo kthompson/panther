@@ -36,12 +36,12 @@ namespace Panther.Tests.CodeAnalysis.Lowering
 
             var builtins = new Mock<IBuiltins>(MockBehavior.Strict);
             var sequence = new MockSequence();
-            builtins.InSequence(sequence).Setup(x => x.Print("first"));
-            builtins.InSequence(sequence).Setup(x => x.Print("0"));
-            builtins.InSequence(sequence).Setup(x => x.Print("1"));
-            builtins.InSequence(sequence).Setup(x => x.Print("2"));
-            builtins.InSequence(sequence).Setup(x => x.Print("V0V1V2"));
-            builtins.InSequence(sequence).Setup(x => x.Print("last"));
+            builtins.InSequence(sequence).Setup(x => x.Println("first"));
+            builtins.InSequence(sequence).Setup(x => x.Println("0"));
+            builtins.InSequence(sequence).Setup(x => x.Println("1"));
+            builtins.InSequence(sequence).Setup(x => x.Println("2"));
+            builtins.InSequence(sequence).Setup(x => x.Println("V0V1V2"));
+            builtins.InSequence(sequence).Setup(x => x.Println("last"));
 
             string SideEffectBlock(int i) =>
                 AnnotatedText.Parse($@"{{

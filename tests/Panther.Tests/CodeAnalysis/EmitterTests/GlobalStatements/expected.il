@@ -16,7 +16,7 @@
 		.entrypoint
 		.locals (
 			[0] int32,
-			[1] string
+			[1] object
 		)
 
 		IL_0000: ldc.i4.s 12
@@ -25,7 +25,7 @@
 		IL_0004: call string [System.Private.CoreLib]System.Convert::ToString(int32)
 		IL_0009: stloc.1
 		IL_000a: ldloc.1
-		IL_000b: call void [System.Console]System.Console::WriteLine(string)
+		IL_000b: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_0010: ret
 	} // end of method Program::main
 

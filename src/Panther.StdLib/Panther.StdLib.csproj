@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>latestmajor</LangVersion>
+    <RootNamespace>Panther</RootNamespace>
   </PropertyGroup>
 
 </Project>

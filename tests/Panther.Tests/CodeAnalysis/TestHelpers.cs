@@ -4,7 +4,6 @@ using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
-using Panther.StdLib;
 using Xunit;
 
 namespace Panther.Tests.CodeAnalysis
@@ -15,9 +14,17 @@ namespace Panther.Tests.CodeAnalysis
 
         private class TestBuiltins : IBuiltins
         {
-            public string Read()
+            public string ReadLine()
             {
                 return "";
+            }
+
+            public void Print(object message)
+            {
+            }
+
+            public void Println(object message)
+            {
             }
 
             public void Print(string message)

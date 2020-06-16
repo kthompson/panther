@@ -17,10 +17,10 @@
 		.locals (
 			[0] int32,
 			[1] int32,
-			[2] string,
+			[2] object,
 			[3] int32,
 			[4] int32,
-			[5] string
+			[5] object
 		)
 
 		IL_0000: ldc.i4.1
@@ -33,7 +33,7 @@
 		IL_000b: call string [System.Private.CoreLib]System.Convert::ToString(int32)
 		IL_0010: stloc.2
 		IL_0011: ldloc.2
-		IL_0012: call void [System.Console]System.Console::WriteLine(string)
+		IL_0012: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_0017: ldc.i4.2
 		IL_0018: stloc.3
 		IL_0019: ldc.i4.s 18
@@ -44,7 +44,7 @@
 		IL_0025: call string [System.Private.CoreLib]System.Convert::ToString(int32)
 		IL_002a: stloc.s 5
 		IL_002c: ldloc.s 5
-		IL_002e: call void [System.Console]System.Console::WriteLine(string)
+		IL_002e: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_0033: ret
 	} // end of method Program::main
 

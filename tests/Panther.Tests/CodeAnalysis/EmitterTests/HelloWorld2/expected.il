@@ -14,14 +14,14 @@
 		// Code size 18 (0x12)
 		.maxstack 1
 		.locals (
-			[0] string
+			[0] object
 		)
 
 		IL_0000: ldstr "What is your name?"
 		IL_0005: stloc.0
 		IL_0006: ldloc.0
-		IL_0007: call void [System.Console]System.Console::WriteLine(string)
-		IL_000c: call string [System.Console]System.Console::ReadLine()
+		IL_0007: call void [Panther.StdLib]Panther.Predef::println(object)
+		IL_000c: call string [Panther.StdLib]Panther.Predef::readLine()
 		IL_0011: ret
 	} // end of method Program::getName
 
@@ -34,7 +34,7 @@
 		.entrypoint
 		.locals (
 			[0] string,
-			[1] string
+			[1] object
 		)
 
 		IL_0000: call string Program::getName()
@@ -46,7 +46,7 @@
 		IL_0016: call string [System.Private.CoreLib]System.String::Concat(string, string)
 		IL_001b: stloc.1
 		IL_001c: ldloc.1
-		IL_001d: call void [System.Console]System.Console::WriteLine(string)
+		IL_001d: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_0022: ret
 	} // end of method Program::main
 
