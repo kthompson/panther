@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Mono.Cecil;
 using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
@@ -14,11 +15,13 @@ namespace Panther.CodeAnalysis.Binding
         public ImmutableArray<MethodSymbol> Functions { get; }
         public ImmutableArray<VariableSymbol> Variables { get; }
         public ImmutableArray<BoundStatement> Statements { get; }
+        public ImmutableArray<AssemblyDefinition> References  { get; }
 
         public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics,
             MethodSymbol? mainFunction, MethodSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,
             ImmutableArray<TypeSymbol> types,
-            ImmutableArray<MethodSymbol> functions, ImmutableArray<BoundStatement> statements)
+            ImmutableArray<MethodSymbol> functions, ImmutableArray<BoundStatement> statements,
+            ImmutableArray<AssemblyDefinition> references)
         {
             Previous = previous;
             Diagnostics = diagnostics;
@@ -26,6 +29,7 @@ namespace Panther.CodeAnalysis.Binding
             ScriptFunction = scriptFunction;
             Variables = variables;
             Statements = statements;
+            References = references;
             Types = types;
             Functions = functions;
         }

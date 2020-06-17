@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks.Sources;
+using Mono.Cecil;
 using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -20,7 +21,7 @@ namespace Panther.CodeAnalysis.Binding
             _isScript = isScript;
         }
 
-        public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees)
+        public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
             var parentScope = CreateParentScope(previous);
             var scope = new BoundScope(parentScope, function: null);
@@ -59,7 +60,7 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             return new BoundGlobalScope(previous, diagnostics, mainFunction, scriptFunction, variables,
-                ImmutableArray<TypeSymbol>.Empty, functions, statements);
+                ImmutableArray<TypeSymbol>.Empty, functions, statements, references);
         }
 
         private static (MethodSymbol? mainFunction, MethodSymbol? scriptFunction) BindMainFunctions(bool isScript,
@@ -177,7 +178,8 @@ namespace Panther.CodeAnalysis.Binding
                 functionBodies.Add(globalScope.ScriptFunction, body);
             }
 
-            return new BoundProgram(previous, diagnostics.ToImmutableArray(), globalScope.MainFunction, globalScope.ScriptFunction, functionBodies.ToImmutable());
+            return new BoundProgram(previous, diagnostics.ToImmutableArray(), globalScope.MainFunction,
+                globalScope.ScriptFunction, functionBodies.ToImmutable(), globalScope.References);
         }
 
         private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax, IReadOnlyCollection<BoundStatement> statements)

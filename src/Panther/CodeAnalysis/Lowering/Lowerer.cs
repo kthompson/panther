@@ -45,7 +45,7 @@ namespace Panther.CodeAnalysis.Lowering
 
         public static BoundBlockExpression Lower(BoundStatement statement)
         {
-            var debug = true;
+            var debug = false;
             if (debug)
             {
                 Console.WriteLine("==== Original Code ===");

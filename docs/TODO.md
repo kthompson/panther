@@ -1,8 +1,8 @@
 # TODO:
 
 - convert interpreter to use emitter
-    - move references to Compilation ctor
     - Create Test StdLib with Faked IO
+    - support continuation in an assembly
     - Remove "Builtins"
 - debugging support
 - qualified names

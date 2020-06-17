@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Mono.Cecil;
 using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
@@ -10,15 +11,17 @@ namespace Panther.CodeAnalysis.Binding
         public MethodSymbol? MainFunction { get; }
         public MethodSymbol? ScriptFunction { get; }
         public ImmutableDictionary<MethodSymbol, BoundBlockExpression> Functions { get; }
+        public ImmutableArray<AssemblyDefinition> References { get; }
 
         public BoundProgram(BoundProgram? previous, ImmutableArray<Diagnostic> diagnostics, MethodSymbol? mainFunction, MethodSymbol? scriptFunction,
-            ImmutableDictionary<MethodSymbol, BoundBlockExpression> functions)
+            ImmutableDictionary<MethodSymbol, BoundBlockExpression> functions, ImmutableArray<AssemblyDefinition> references)
         {
             Previous = previous;
             Diagnostics = diagnostics;
             MainFunction = mainFunction;
             ScriptFunction = scriptFunction;
             Functions = functions;
+            References = references;
         }
     }
 }

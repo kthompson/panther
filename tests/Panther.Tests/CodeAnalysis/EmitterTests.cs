@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -30,19 +31,24 @@ namespace Panther.Tests.CodeAnalysis
 
             var moduleName = Path.GetFileName(testDirectory);
             Assert.NotNull(moduleName);
-            var compilation = Compilation.Create(trees);
+            var references = new[]
+            {
+                typeof(object).Assembly.Location,
+                typeof(Console).Assembly.Location,
+                typeof(Unit).Assembly.Location // TODO use the testlib here
+            };
+
+            var (diagnostics, compilation) = Compilation.Create(references, trees);
+            Assert.Empty(diagnostics);
+            Assert.NotNull(compilation); Debug.Assert(compilation != null);
+
             var outputDirectory = Path.Combine(Path.GetTempPath(), "Panther", "EmitterTests", moduleName);
 
             Directory.CreateDirectory(outputDirectory);
             var assemblyLocation = Path.Combine(outputDirectory, moduleName + ".dll");
             var results = compilation.Emit(
                 moduleName,
-                new[]
-                {
-                    typeof(object).Assembly.Location,
-                    typeof(Console).Assembly.Location,
-                    typeof(Unit).Assembly.Location
-                },
+
                 assemblyLocation);
 
             Assert.Empty(results);

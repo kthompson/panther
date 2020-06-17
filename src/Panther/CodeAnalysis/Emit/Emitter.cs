@@ -19,7 +19,7 @@ namespace Panther.CodeAnalysis.Emit
 
         private readonly Dictionary<MethodSymbol, MethodDefinition> _methods = new Dictionary<MethodSymbol, MethodDefinition>();
         private readonly AssemblyDefinition _assemblyDefinition;
-        private readonly List<AssemblyDefinition> _assemblies = new List<AssemblyDefinition>();
+        private readonly ImmutableArray<AssemblyDefinition> _assemblies;
         private TypeDefinition _typeDef;
 
         private readonly TypeReference? _voidType;
@@ -35,20 +35,12 @@ namespace Panther.CodeAnalysis.Emit
         private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
         private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch = new List<(int InstructionIndex, BoundLabel Target)>();
 
-        private Emitter(string moduleName, string[] references)
+        private Emitter(string moduleName, ImmutableArray<AssemblyDefinition> references)
         {
-            foreach (var reference in references)
-            {
-                try
-                {
-                    var asm = AssemblyDefinition.ReadAssembly(reference);
-                    _assemblies.Add(asm);
-                }
-                catch (BadImageFormatException)
-                {
-                    _diagnostics.ReportInvalidReference(reference);
-                }
-            }
+            _assemblies = references;
+
+            var assemblyName = new AssemblyNameDefinition(moduleName, new Version(1, 0));
+            _assemblyDefinition = AssemblyDefinition.CreateAssembly(assemblyName, moduleName, ModuleKind.Console);
 
             var builtinTypes = new List<(TypeSymbol tyoe, string? MetadataType)>
             {
@@ -58,10 +50,6 @@ namespace Panther.CodeAnalysis.Emit
                 (TypeSymbol.String, typeof(string).FullName),
                 (TypeSymbol.Unit, typeof(Unit).FullName),
             };
-
-            var assemblyName = new AssemblyNameDefinition(moduleName, new Version(1, 0));
-            _assemblyDefinition = AssemblyDefinition.CreateAssembly(assemblyName, moduleName, ModuleKind.Console);
-
             foreach (var (typeSymbol, metadataType) in builtinTypes)
             {
                 if (metadataType == null)
@@ -88,13 +76,12 @@ namespace Panther.CodeAnalysis.Emit
             _typeDef = new TypeDefinition("", "Program", TypeAttributes.Abstract | TypeAttributes.Sealed, objectType);
         }
 
-        public static ImmutableArray<Diagnostic> Emit(BoundProgram program, string moduleName, string[] references,
-            string outputPath)
+        public static ImmutableArray<Diagnostic> Emit(BoundProgram program, string moduleName, string outputPath)
         {
             if (program.Diagnostics.Any())
                 return program.Diagnostics;
 
-            var emitter = new Emitter(moduleName, references);
+            var emitter = new Emitter(moduleName, program.References);
             return emitter.Emit(program, outputPath);
         }
 

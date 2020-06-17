@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Mono.Cecil;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Emit;
 using Panther.CodeAnalysis.Lowering;
@@ -19,6 +20,7 @@ namespace Panther.CodeAnalysis
         public bool IsScript { get; }
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+        public ImmutableArray<AssemblyDefinition> References { get; }
         public MethodSymbol? MainFunction => GlobalScope.MainFunction;
         public ImmutableArray<MethodSymbol> Functions => GlobalScope.Functions;
         public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
@@ -31,7 +33,7 @@ namespace Panther.CodeAnalysis
             {
                 if (_globalScope == null)
                 {
-                    var globalScope = Binder.BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees);
+                    var globalScope = Binder.BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees, References);
                     Interlocked.CompareExchange(ref _globalScope, globalScope, null);
                 }
 
@@ -39,25 +41,51 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        private Compilation(bool isScript, Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees)
+        private Compilation(ImmutableArray<AssemblyDefinition> references, bool isScript, Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees)
         {
             _builtins = builtins ?? Builtins.Default;
+            References = references;
             IsScript = isScript;
             Previous = previous;
             SyntaxTrees = syntaxTrees.ToImmutableArray();
         }
 
-        public static Compilation Create(params SyntaxTree[] syntaxTrees) =>
-            Create(null, syntaxTrees);
+        public static (ImmutableArray<Diagnostic> diagnostics, Compilation? compilation) Create(string[] references, params SyntaxTree[] syntaxTrees)
+        {
+            var bag = new DiagnosticBag();
+            var assemblies = ImmutableArray.CreateBuilder<AssemblyDefinition>();
+            foreach (var reference in references)
+            {
+                try
+                {
+                    var asm = AssemblyDefinition.ReadAssembly(reference);
+                    assemblies.Add(asm);
+                }
+                catch (BadImageFormatException)
+                {
+                    bag.ReportInvalidReference(reference);
+                }
+            }
 
-        public static Compilation Create(IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
-            new Compilation(false, null, null, syntaxTrees);
+            if (bag.Any())
+            {
+                return (bag.ToImmutableArray(), null);
+            }
+
+            return (ImmutableArray<Diagnostic>.Empty,  Create(assemblies.ToImmutable(), syntaxTrees));
+        }
+
+        public static Compilation Create(ImmutableArray<AssemblyDefinition> references, params SyntaxTree[] syntaxTrees) =>
+            Create(references, null, syntaxTrees);
+
+        public static Compilation Create(ImmutableArray<AssemblyDefinition> references, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
+            new Compilation(references, false, null, null, syntaxTrees);
 
         public static Compilation CreateScript(Compilation? previous, params SyntaxTree[] syntaxTrees) =>
             CreateScript(previous, previous?._builtins, syntaxTrees);
 
         public static Compilation CreateScript(Compilation? previous, IBuiltins? builtins, params SyntaxTree[] syntaxTrees) =>
-            new Compilation(isScript: true, previous, builtins, syntaxTrees);
+            new Compilation(ImmutableArray<AssemblyDefinition>.Empty, isScript: true, previous, builtins, syntaxTrees);
 
         public IEnumerable<Symbol> GetSymbols()
         {
@@ -164,13 +192,12 @@ namespace Panther.CodeAnalysis
             }
 
             method.WriteTo(writer);
-
         }
 
-        public ImmutableArray<Diagnostic> Emit(string moduleName, string[] references, string outputPath)
+        public ImmutableArray<Diagnostic> Emit(string moduleName, string outputPath)
         {
             var program = GetProgram();
-            return Emitter.Emit(program, moduleName, references, outputPath);
+            return Emitter.Emit(program, moduleName, outputPath);
         }
     }
 }

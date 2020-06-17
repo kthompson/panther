@@ -40,10 +40,16 @@ namespace Panther.Compiler
                     }
 
                     var syntaxTrees = sources.Select(source => SyntaxTree.LoadFile(source.FullName)).ToArray();
-                    var compilation = Compilation.Create(syntaxTrees);
+                    var references = reference.Select(x => x.FullName).ToArray();
+                    var (referenceDiags, compilation) = Compilation.Create(references, syntaxTrees);
 
-                    var diagnostics = compilation.Emit(module, reference.Select(x => x.FullName).ToArray(), output.FullName);
+                    if (referenceDiags.Any() || compilation == null)
+                    {
+                        Console.Error.WriteDiagnostics(referenceDiags);
+                        return 1;
+                    }
 
+                    var diagnostics = compilation.Emit(module, output.FullName);
                     if (diagnostics.Any())
                     {
                         Console.Error.WriteDiagnostics(diagnostics);
