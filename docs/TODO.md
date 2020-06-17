@@ -1,12 +1,13 @@
 # TODO:
 
-- Create Test StdLib with Faked IO, Remove "Builtins"
-- Add SyntaxFactory for nicer API. Make ctors private. use source generators
 - convert interpreter to use emitter
-- move references to Compilation ctor
+    - move references to Compilation ctor
+    - Create Test StdLib with Faked IO
+    - Remove "Builtins"
 - debugging support
-- object definitions
 - qualified names
+- object definitions
+- Add SyntaxFactory for nicer API. Make ctors private. use source generators
 - ANSI console support
 
 # Notes
