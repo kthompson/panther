@@ -8,5 +8,8 @@ namespace Panther
         public static void println(object value) => Console.WriteLine(value);
 
         public static string readLine() => Console.ReadLine();
+
+        private static Random _random = new Random();
+        public static int rnd(int max) => _random.Next(max);
     }
 }

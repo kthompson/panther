@@ -1,3 +1,6 @@
+# Bugs:
+- REPL: page up is broken 
+
 # TODO:
 
 - convert interpreter to use emitter

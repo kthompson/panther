@@ -35,6 +35,5 @@ def main() = {
 # Road map
 
 - type aliases (u8 = System.Byte, ...)
-- replace evaluator with emitter?
 - optimize programs before emitting
 - floats?

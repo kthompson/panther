@@ -61,7 +61,6 @@ namespace Panther.Tests.CodeAnalysis
                 Unary operator '+' is not defined for type 'bool'
             ";
 
-            // TODO: assignment is becoming `val x = true - x`
             AssertHasDiagnostics(text, diagnostic);
         }
 
