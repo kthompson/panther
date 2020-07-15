@@ -5,6 +5,7 @@ using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis
 {
+    [Properties(MaxTest = 10)]
     public class DiagnosticsTests
     {
         [Property]

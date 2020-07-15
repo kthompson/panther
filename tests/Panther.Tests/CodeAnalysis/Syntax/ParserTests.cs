@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Panther.Tests.CodeAnalysis.Syntax
 {
-    [Properties(Arbitrary = new[] { typeof(TokenGenerators) })]
+    [Properties(Arbitrary = new[] { typeof(TokenGenerators) }, MaxTest = 10)]
     public class ParserTests
     {
         [Property]
@@ -216,8 +216,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
 
-
-
         [Fact]
         public void ParseLineCommentOnly()
         {
@@ -233,7 +231,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertTrivia(SyntaxKind.LineCommentTrivia, "// taco");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
-
 
         [Fact]
         public void ParseForExpression()

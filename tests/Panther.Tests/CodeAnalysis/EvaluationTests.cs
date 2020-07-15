@@ -14,6 +14,7 @@ namespace Panther.Tests.CodeAnalysis
 {
     extern alias StdLib;
 
+    [Properties(MaxTest = 10)]
     public class EvaluationTests
     {
         [Property]

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Panther.Tests.CodeAnalysis.Syntax
 {
-    [Properties(Arbitrary = new[] { typeof(TokenGenerators) })]
+    [Properties(Arbitrary = new[] { typeof(TokenGenerators) }, MaxTest = 20)]
     public class LexerTests
     {
         [Property]
