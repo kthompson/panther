@@ -39,17 +39,17 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertNode(SyntaxKind.ExpressionStatement);
                 e.AssertNode(SyntaxKind.BinaryExpression);
                 e.AssertNode(SyntaxKind.BinaryExpression);
-                e.AssertNode(SyntaxKind.NameExpression);
+                e.AssertNode(SyntaxKind.IdentifierName);
                 e.AssertToken(SyntaxKind.IdentifierToken, "a");
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op1.Kind, op1Text);
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
-                e.AssertNode(SyntaxKind.NameExpression);
+                e.AssertNode(SyntaxKind.IdentifierName);
                 e.AssertToken(SyntaxKind.IdentifierToken, "b");
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op2.Kind, op2Text);
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
-                e.AssertNode(SyntaxKind.NameExpression);
+                e.AssertNode(SyntaxKind.IdentifierName);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
                 e.AssertToken(SyntaxKind.EndOfInputToken, "");
             }
@@ -71,18 +71,18 @@ namespace Panther.Tests.CodeAnalysis.Syntax
                 e.AssertNode(SyntaxKind.GlobalStatement);
                 e.AssertNode(SyntaxKind.ExpressionStatement);
                 e.AssertNode(SyntaxKind.BinaryExpression);
-                e.AssertNode(SyntaxKind.NameExpression);
+                e.AssertNode(SyntaxKind.IdentifierName);
                 e.AssertToken(SyntaxKind.IdentifierToken, "a");
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op1.Kind, op1Text);
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertNode(SyntaxKind.BinaryExpression);
-                e.AssertNode(SyntaxKind.NameExpression);
+                e.AssertNode(SyntaxKind.IdentifierName);
                 e.AssertToken(SyntaxKind.IdentifierToken, "b");
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
                 e.AssertToken(op2.Kind, op2Text);
                 e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
-                e.AssertNode(SyntaxKind.NameExpression);
+                e.AssertNode(SyntaxKind.IdentifierName);
                 e.AssertToken(SyntaxKind.IdentifierToken, "c");
                 e.AssertToken(SyntaxKind.EndOfInputToken, "");
             }
@@ -118,12 +118,12 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.UnaryExpression);
             e.AssertToken(op1.Kind, unaryText);
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
-            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertNode(SyntaxKind.IdentifierName);
             e.AssertToken(SyntaxKind.IdentifierToken, "a");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(op2.Kind, binaryText);
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
-            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertNode(SyntaxKind.IdentifierName);
             e.AssertToken(SyntaxKind.IdentifierToken, "b");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
@@ -281,7 +281,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.NumberToken, "5");
             e.AssertToken(SyntaxKind.CloseParenToken, ")");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
-            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertNode(SyntaxKind.IdentifierName);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
@@ -324,7 +324,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertNode(SyntaxKind.UnaryExpression);
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "    ");
             e.AssertToken(SyntaxKind.DashToken, "-");
-            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertNode(SyntaxKind.IdentifierName);
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
             e.AssertToken(SyntaxKind.CloseBraceToken, "}");
@@ -428,7 +428,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.NumberToken, "5");
             e.AssertToken(SyntaxKind.CloseParenToken, ")");
             e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
-            e.AssertNode(SyntaxKind.NameExpression);
+            e.AssertNode(SyntaxKind.IdentifierName);
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, "    ");
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertToken(SyntaxKind.EndOfInputToken, "");

@@ -27,34 +27,43 @@ namespace Panther.CodeAnalysis.Syntax
         {
             switch (kind)
             {
-                case SyntaxKind.PipeToken:
-                case SyntaxKind.PipePipeToken:
+                case SyntaxKind.EqualsToken:
                     return (OperatorPrecedence)1;
 
+                case SyntaxKind.PipeToken:
+                case SyntaxKind.PipePipeToken:
+                    return (OperatorPrecedence)2;
+
                 case SyntaxKind.CaretToken:
-                    return (OperatorPrecedence)1;
+                    return (OperatorPrecedence)3;
 
                 case SyntaxKind.AmpersandToken:
                 case SyntaxKind.AmpersandAmpersandToken:
-                    return (OperatorPrecedence)3;
+                    return (OperatorPrecedence)4;
 
                 case SyntaxKind.EqualsEqualsToken:
                 case SyntaxKind.BangEqualsToken:
-                    return (OperatorPrecedence)4;
+                    return (OperatorPrecedence)5;
 
                 case SyntaxKind.LessThanToken:
                 case SyntaxKind.LessThanEqualsToken:
                 case SyntaxKind.GreaterThanToken:
                 case SyntaxKind.GreaterThanEqualsToken:
-                    return (OperatorPrecedence)5;
+                    return (OperatorPrecedence)6;
 
                 case SyntaxKind.PlusToken:
                 case SyntaxKind.DashToken:
-                    return (OperatorPrecedence)6;
+                    return (OperatorPrecedence)7;
 
                 case SyntaxKind.StarToken:
                 case SyntaxKind.SlashToken:
-                    return (OperatorPrecedence)7;
+                    return (OperatorPrecedence)8;
+
+                case SyntaxKind.OpenParenToken:
+                    return (OperatorPrecedence)9;
+
+                case SyntaxKind.DotToken:
+                    return (OperatorPrecedence)10;
 
                 default:
                     return null;
@@ -95,6 +104,7 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.ColonToken => ":",
                 SyntaxKind.CommaToken => ",",
                 SyntaxKind.ContinueKeyword => "continue",
+                SyntaxKind.DotToken => ".",
                 SyntaxKind.DashToken => "-",
                 SyntaxKind.DefKeyword => "def",
                 SyntaxKind.ElseKeyword => "else",
@@ -133,7 +143,9 @@ namespace Panther.CodeAnalysis.Syntax
 
         public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
             Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
-                .Where(kind => GetBinaryOperatorPrecedence(kind) > 0);
+                .Where(kind =>
+                    kind != SyntaxKind.EqualsToken && kind != SyntaxKind.OpenParenToken &&
+                    kind != SyntaxKind.DotToken && GetBinaryOperatorPrecedence(kind) > 0);
 
         public static bool IsTrivia(this SyntaxKind kind) =>
             kind switch

@@ -173,6 +173,18 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
+        public void ReportNoFieldDefinition()
+        {
+            var text = @"[1.name] = 12";
+
+            var diagnostic = @"
+                'int' does not contain a definition for 'name'
+            ";
+
+            AssertHasDiagnostics(text, diagnostic);
+        }
+
+        [Fact]
         public void ReportInvalidIfCondition()
         {
             var text = @"{

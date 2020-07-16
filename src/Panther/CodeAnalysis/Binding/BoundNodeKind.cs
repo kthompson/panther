@@ -9,21 +9,25 @@ namespace Panther.CodeAnalysis.Binding
         BlockExpression,
         CallExpression,
         ConversionExpression,
+        ErrorExpression,
+        FieldExpression,
         ForExpression,
         IfExpression,
         LiteralExpression,
+        MemberAssignmentExpression,
+        MethodExpression,
         UnaryExpression,
         UnitExpression,
         VariableExpression,
         WhileExpression,
-        ErrorExpression,
 
         AssignmentStatement,
         ConditionalGotoStatement,
         ExpressionStatement,
         GotoStatement,
         LabelStatement,
+        MemberAssignmentStatement,
         NopStatement,
-        VariableDeclarationStatement,
+        VariableDeclarationStatement
     }
 }

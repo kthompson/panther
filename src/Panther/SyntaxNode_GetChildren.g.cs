@@ -9,7 +9,7 @@ namespace Panther.CodeAnalysis.Syntax
         
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return IdentifierToken;
+            yield return Name;
             yield return EqualsToken;
             yield return Expression;
         }
@@ -57,7 +57,7 @@ namespace Panther.CodeAnalysis.Syntax
         
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return IdentifierToken;
+            yield return Expression;
             yield return OpenParenToken;
             foreach (var child in Arguments.GetWithSeparators())
                 yield return child;
@@ -158,6 +158,16 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
     
+    partial class IdentifierNameSyntax
+    {
+        public override SyntaxKind Kind => SyntaxKind.IdentifierName;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Identifier;
+        }
+    }
+    
     partial class IfExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.IfExpression;
@@ -187,13 +197,15 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
     
-    partial class NameExpressionSyntax
+    partial class MemberAccessExpressionSyntax
     {
-        public override SyntaxKind Kind => SyntaxKind.NameExpression;
+        public override SyntaxKind Kind => SyntaxKind.MemberAccessExpression;
         
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return IdentifierToken;
+            yield return Expression;
+            yield return DotToken;
+            yield return Name;
         }
     }
     

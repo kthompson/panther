@@ -2,11 +2,11 @@
 - REPL: page up is broken 
 
 # TODO:
-
+- create or import TypeSymbols that have Method/Field symbols
 - Remove "Builtins"/Support detecting Predef methods
+- object definitions
 - debugging support
 - qualified names
-- object definitions
 - Add SyntaxFactory for nicer API. Make ctors private. use source generators
 - ANSI console support
 

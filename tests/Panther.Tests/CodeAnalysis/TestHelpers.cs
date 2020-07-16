@@ -71,7 +71,8 @@ namespace Panther.Tests.CodeAnalysis
 
             for (var i = 0; i < expectedDiagnosticMessages.Length; i++)
             {
-                Assert.True(expectedDiagnostics.Length > i, $"Expected more diagnostics ({expectedDiagnosticMessages.Length}) than actual {expectedDiagnostics.Length}");
+                Assert.True(i < expectedDiagnostics.Length, $"Expected at least {i + 1} expected diagnostics only found {expectedDiagnostics.Length}");
+                Assert.True(i < actualDiagnostics.Length, $"Expected at least {i + 1} actual diagnostics only found {actualDiagnostics.Length}");
 
                 var expectedMessage = expectedDiagnostics[i].Message;
                 var actualMessage = actualDiagnostics[i].Message;

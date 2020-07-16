@@ -230,10 +230,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var function = new MethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
-            if (!scope.TryDeclareFunction(function))
-            {
-                Diagnostics.ReportFunctionAlreadyDeclared(syntax.Identifier.Location, function.Name);
-            }
+            scope.DeclareFunction(function);
         }
 
         private BoundStatement BindGlobalStatement(StatementSyntax syntax, BoundScope scope) =>
@@ -389,38 +386,60 @@ namespace Panther.CodeAnalysis.Binding
                 BinaryExpressionSyntax binaryExpressionSyntax => BindBinaryExpression(binaryExpressionSyntax, scope),
                 UnaryExpressionSyntax unaryExpressionSyntax => BindUnaryExpression(unaryExpressionSyntax, scope),
                 GroupExpressionSyntax groupExpressionSyntax => BindGroupExpression(groupExpressionSyntax, scope),
-                NameExpressionSyntax nameExpressionSyntax => BindNameExpression(nameExpressionSyntax, scope),
+                NameSyntax nameExpressionSyntax => BindNameExpression(nameExpressionSyntax, scope),
                 BlockExpressionSyntax blockExpressionSyntax => BindBlockExpression(blockExpressionSyntax, scope),
                 IfExpressionSyntax ifExpressionSyntax => BindIfExpression(ifExpressionSyntax, scope),
                 WhileExpressionSyntax whileExpressionSyntax => BindWhileExpression(whileExpressionSyntax, scope),
                 ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
                 CallExpressionSyntax callExpressionSyntax => BindCallExpression(callExpressionSyntax, scope),
+                MemberAccessExpressionSyntax memberAccessExpressionSyntax => BindMemberAccessExpression(memberAccessExpressionSyntax, scope),
                 UnitExpressionSyntax unit => BindUnitExpression(unit),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
 
+        private BoundExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax, BoundScope scope)
+        {
+            var expr = BindExpression(syntax.Expression, scope);
+            var type = expr.Type;
+            var name = syntax.Name.Identifier.Text;
+            var field = type.Fields.FirstOrDefault(f => f.Name == name);
+            if (field != null)
+            {
+                return new BoundFieldExpression(syntax, name, field);
+            }
+
+            // TODO properties
+
+            Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
+            return new BoundErrorExpression(syntax);
+        }
+
         private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope)
         {
-            var boundExpression = BindExpression(syntax.Expression, scope);
+            // TODO support member access
+            var boundLHS = BindExpression(syntax.Name, scope);
+            if (boundLHS is BoundErrorExpression)
+                return boundLHS;
 
-            var variable = scope.TryLookupVariable(syntax.IdentifierToken.Text);
-            if (variable == null)
+            if (boundLHS is BoundVariableExpression variableExpression)
             {
-                Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
+                var variable = variableExpression.Variable;
+                if (variable.IsReadOnly)
+                {
+                    Diagnostics.ReportReassignmentToVal(syntax.Name.Location, variable.Name);
 
-                return new BoundErrorExpression(syntax);
+                    return new BoundErrorExpression(syntax);
+                }
+
+                var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
+
+                var convertedExpression = BindConversion(syntax.Expression.Location, boundRHS, variable.Type);
+
+                return new BoundAssignmentExpression(syntax, variable, convertedExpression);
             }
 
-            if (variable.IsReadOnly)
-            {
-                Diagnostics.ReportReassignmentToVal(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-
-                return new BoundErrorExpression(syntax);
-            }
-
-            var convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
-
-            return new BoundAssignmentExpression(syntax, variable, convertedExpression);
+            Diagnostics.ReportNotAssignable(syntax.Name.Location);
+            return new BoundErrorExpression(syntax);
         }
 
         // hack to convert a statement into an expression
@@ -458,42 +477,112 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
+        private BoundExpression BindMethodExpression(ExpressionSyntax syntax, BoundScope scope)
+        {
+            switch (syntax)
+            {
+                case IdentifierNameSyntax identifierNameSyntax:
+                    return BindMethod(identifierNameSyntax, scope);
+
+                case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
+                    return BindMemberMethodAccess(memberAccessExpressionSyntax, scope);
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(syntax));
+            }
+        }
+
+        private BoundExpression BindMemberMethodAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
+        {
+            var expr = BindExpression(syntax.Expression, scope);
+            var type = expr.Type;
+            var name = syntax.Name.Identifier.Text;
+            var methods = type.Methods.Where(m => m.Name == name).ToImmutableArray();
+            if (methods.Length > 0)
+            {
+                return new BoundMethodExpression(syntax, name, methods);
+            }
+
+            Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
+            return new BoundErrorExpression(syntax);
+        }
+
+        private BoundExpression BindMethod(IdentifierNameSyntax syntax, BoundScope scope)
+        {
+            var name = syntax.ToText();
+            var symbols = scope.LookupMethod(name);
+            if (symbols.Length != 0)
+                return new BoundMethodExpression(syntax, name, symbols);
+
+            var variable = scope.TryLookupVariable(name);
+            if (variable != null)
+            {
+                Diagnostics.ReportNotAFunction(syntax.Location, name);
+            }
+            else
+            {
+                Diagnostics.ReportUndefinedFunction(syntax.Location, name);
+            }
+
+            return new BoundErrorExpression(syntax);
+
+        }
+
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
         {
-            if (syntax.Arguments.Count == 1 && LookupType(syntax.IdentifierToken.Text) is { } type)
-                return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
-
-            var symbol = scope.TryGetSymbol(syntax.IdentifierToken.Text);
-            if (symbol == null)
+            // Bind Conversion
+            if (syntax.Arguments.Count == 1 && syntax.Expression is IdentifierNameSyntax identifierNameSyntax)
             {
-                Diagnostics.ReportUndefinedFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-                return new BoundErrorExpression(syntax);
+                var type = LookupType(identifierNameSyntax.Identifier.Text);
+                if (type != null)
+                {
+                    return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
+                }
             }
 
-            if (!(symbol is MethodSymbol function))
+            // bind regular functions
+            var expression = BindMethodExpression(syntax.Expression, scope);
+            if (expression is BoundErrorExpression)
+                return expression;
+
+            if (expression is BoundMethodExpression boundMethodExpression)
             {
-                Diagnostics.ReportNotAFunction(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text);
-                return new BoundErrorExpression(syntax);
+                var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
+                var methods = boundMethodExpression.Methods.Where(x => x.Parameters.Length == boundArguments.Count)
+                    .ToImmutableArray();
+
+                if (methods.Length == 0)
+                {
+                    Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
+                        boundArguments.Select(arg => arg.Type.Name).ToImmutableArray());
+
+                    return new BoundErrorExpression(syntax);
+                }
+
+
+                if (methods.Length > 1)
+                {
+                    // TODO: improve type detection and binding when multiple valid methods exist
+                    Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
+                        boundArguments.Select(arg => arg.Type.Name).ToImmutableArray());
+
+                    return new BoundErrorExpression(syntax);
+                }
+
+                var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
+                for (int i = 0; i < syntax.Arguments.Count; i++)
+                {
+                    var argument = boundArguments[i];
+                    var parameter = methods[0].Parameters[i];
+                    var convertedArgument = BindConversion(syntax.Arguments[i].Location, argument, parameter.Type);
+                    convertedArgs.Add(convertedArgument);
+                }
+
+                return new BoundCallExpression(syntax, methods[0], convertedArgs.ToImmutable());
             }
 
-            var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
-            if (syntax.Arguments.Count != function.Parameters.Length)
-            {
-                var argTypes = boundArguments.Select(argument => argument.Type).ToImmutableArray();
-                Diagnostics.ReportNoOverloads(syntax.IdentifierToken.Location, syntax.IdentifierToken.Text, argTypes.Select(arg => arg.Name).ToImmutableArray());
-                return new BoundErrorExpression(syntax);
-            }
-
-            var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
-            for (int i = 0; i < syntax.Arguments.Count; i++)
-            {
-                var argument = boundArguments[i];
-                var parameter = function.Parameters[i];
-                var convertedArgument = BindConversion(syntax.Arguments[i].Location, argument, parameter.Type);
-                convertedArgs.Add(convertedArgument);
-            }
-
-            return new BoundCallExpression(syntax, function, convertedArgs.ToImmutable());
+            Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
+            return new BoundErrorExpression(syntax);
         }
 
         private TypeSymbol? LookupType(string text)
@@ -606,7 +695,7 @@ namespace Panther.CodeAnalysis.Binding
                     scope.TryDeclareVariable(v);
 
                 foreach (var v in previous.Functions)
-                    scope.TryDeclareFunction(v);
+                    scope.DeclareFunction(v);
 
                 parent = scope;
             }
@@ -618,25 +707,32 @@ namespace Panther.CodeAnalysis.Binding
         {
             var result = new BoundScope(null);
             foreach (var symbol in BuiltinFunctions.GetAll())
-                result.TryDeclareFunction(symbol);
+                result.DeclareFunction(symbol);
 
             return result;
         }
 
-        private BoundExpression BindNameExpression(NameExpressionSyntax syntax, BoundScope scope)
+        private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)
         {
-            if (syntax.IdentifierToken.IsInsertedToken)
+            if (syntax is IdentifierNameSyntax simpleName)
             {
+                var ident = simpleName.Identifier;
+                if (ident.IsInsertedToken)
+                {
+                    return new BoundErrorExpression(syntax);
+                }
+
+                var name = ident.Text;
+
+                var variable = scope.TryLookupVariable(name);
+                if (variable != null)
+                    return new BoundVariableExpression(syntax, variable);
+
+                Diagnostics.ReportUndefinedName(ident.Location, name);
                 return new BoundErrorExpression(syntax);
             }
 
-            var name = syntax.IdentifierToken.Text;
-
-            var variable = scope.TryLookupVariable(name);
-            if (variable != null)
-                return new BoundVariableExpression(syntax, variable);
-
-            Diagnostics.ReportUndefinedName(syntax.IdentifierToken.Location, name);
+            Diagnostics.ReportUnsupportedFieldAccess(syntax.Location, "<err>");
             return new BoundErrorExpression(syntax);
         }
 

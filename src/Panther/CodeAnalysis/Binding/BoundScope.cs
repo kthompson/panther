@@ -9,7 +9,7 @@ namespace Panther.CodeAnalysis.Binding
     internal sealed class BoundScope
     {
         private readonly MethodSymbol? _function;
-        private readonly Dictionary<string, Symbol> _symbols = new Dictionary<string, Symbol>();
+        private readonly Dictionary<string, ImmutableArray<Symbol>> _symbols = new Dictionary<string, ImmutableArray<Symbol>>();
         private readonly Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _breakContinueLabels = new Stack<(BoundLabel, BoundLabel)>();
         private int _labelCounter = 0;
 
@@ -36,42 +36,49 @@ namespace Panther.CodeAnalysis.Binding
 
         public bool IsGlobalScope => _function == null;
 
-        public bool TryDeclareVariable(VariableSymbol variable) =>
-            TryDeclare(variable);
-
-        public bool TryDeclareFunction(MethodSymbol method) =>
-            TryDeclare(method);
-
-        private bool TryDeclare(Symbol variable)
+        public bool TryDeclareVariable(VariableSymbol variable)
         {
             if (_symbols.ContainsKey(variable.Name))
                 return false;
 
-            _symbols.Add(variable.Name, variable);
+            _symbols.Add(variable.Name, ImmutableArray.Create<Symbol>(variable));
             return true;
+        }
+
+        public void DeclareFunction(MethodSymbol method)
+        {
+            if(_symbols.TryGetValue(method.Name, out var methods))
+            {
+                _symbols[method.Name] = methods.Add(method);
+                return;
+            }
+
+            _symbols.Add(method.Name, ImmutableArray.Create<Symbol>(method));
         }
 
         public VariableSymbol? TryLookupVariable(string name)
         {
-            if (_symbols.TryGetValue(name, out var existingSymbol))
+            if (_symbols.TryGetValue(name, out var existingSymbols))
             {
-                if (existingSymbol is VariableSymbol outSymbol)
-                {
-                    return outSymbol;
-                }
-
-                return null;
+                return existingSymbols.OfType<VariableSymbol>().FirstOrDefault();
             }
 
             return Parent?.TryLookupVariable(name);
         }
 
-        public Symbol? TryGetSymbol(string name) =>
-            _symbols.TryGetValue(name, out var sym) ? sym : Parent?.TryGetSymbol(name);
+        public ImmutableArray<MethodSymbol> LookupMethod(string name)
+        {
+            if (_symbols.TryGetValue(name, out var symbols))
+            {
+                return symbols.OfType<MethodSymbol>().ToImmutableArray();
+            }
 
-        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.OfType<VariableSymbol>().ToImmutableArray();
+            return Parent?.LookupMethod(name) ?? ImmutableArray<MethodSymbol>.Empty;
+        }
 
-        public ImmutableArray<MethodSymbol> GetDeclaredFunctions() => _symbols.Values.OfType<MethodSymbol>().ToImmutableArray();
+        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.SelectMany(symbols => symbols).OfType<VariableSymbol>().ToImmutableArray();
+
+        public ImmutableArray<MethodSymbol> GetDeclaredFunctions() => _symbols.Values.SelectMany(symbols => symbols).OfType<MethodSymbol>().ToImmutableArray();
 
         public void DeclareLoop(out BoundLabel breakLabel, out BoundLabel continueLabel)
         {

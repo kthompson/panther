@@ -76,6 +76,9 @@ namespace Panther.CodeAnalysis
         public void ReportNoOverloads(TextLocation location, string name, ImmutableArray<string> argumentTypes) =>
             Report(location, $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
 
+        public void ReportAmbiguousMethod(TextLocation location, string name, ImmutableArray<string> argumentTypes) =>
+            Report(location, $"Ambiguous method '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
+
         public void ReportCannotConvert(TextLocation location, TypeSymbol fromType, TypeSymbol toType) =>
             Report(location, $"Cannot convert from '{fromType}' to '{toType}'");
 
@@ -87,9 +90,6 @@ namespace Panther.CodeAnalysis
 
         public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName) =>
             Report(location, $"Function parameter '{parameterName}' was already declared");
-
-        public void ReportFunctionAlreadyDeclared(TextLocation location, string functionName) =>
-            Report(location, $"Function '{functionName}' was already declared");
 
         public void ReportInvalidBreakOrContinue(TextLocation location, string keyword) =>
             Report(location, $"{keyword} not valid in this context");
@@ -112,8 +112,20 @@ namespace Panther.CodeAnalysis
         public void ReportGlobalStatementsCanOnlyExistInOneFile(TextLocation location) =>
             Report(location, "Global statements can only exist in one file");
 
+        public void ReportUnsupportedFieldAccess(TextLocation location, string fieldAssigment) =>
+            Report(location, $"Unsupported field access: {fieldAssigment}");
+
+        public void ReportUnsupportedFunctionCall(TextLocation location) =>
+            Report(location, $"Unsupported function call");
+
         public void ReportUnterminatedBlockComment(TextLocation location) =>
             Report(location, "Unterminated block comment");
+
+        public void ReportNotAssignable(TextLocation location) =>
+            Report(location, "Left hand side of expression is not assignable");
+
+        public void ReportMissingDefinition(TextLocation location, TypeSymbol type, string name) =>
+            Report(location, $"'{type.Name}' does not contain a definition for '{name}'");
 
         public void ReportInvalidReference(string reference) =>
             Report(null, $"The specified reference is not valid: {reference}");

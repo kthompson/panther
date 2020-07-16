@@ -40,6 +40,7 @@
         CaretToken,
         ColonToken,
         DashToken,
+        DotToken,
         EqualsEqualsToken,
         EqualsToken,
         GreaterThanEqualsToken,
@@ -69,9 +70,11 @@
         ContinueExpression,
         ForExpression,
         GroupExpression,
+        IdentifierName,
         IfExpression,
         LiteralExpression,
-        NameExpression,
+        MemberAccessExpression,
+        QualifiedName,
         UnaryExpression,
         UnitExpression,
         WhileExpression,
@@ -87,6 +90,6 @@
 
         // Members
         FunctionDeclaration,
-        GlobalStatement
+        GlobalStatement,
     }
 }

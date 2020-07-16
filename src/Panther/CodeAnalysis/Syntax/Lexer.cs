@@ -26,25 +26,26 @@ namespace Panther.CodeAnalysis.Syntax
         private void InitializeLexFunctions()
         {
             _lexFunctions['\0'] = ReturnEndOfInput;
-            _lexFunctions['+'] = ReturnPlusToken;
-            _lexFunctions['-'] = ReturnDashToken;
-            _lexFunctions['/'] = ReturnSlashToken;
-            _lexFunctions['*'] = ReturnStarToken;
+            _lexFunctions['!'] = ReturnBangToken;
+            _lexFunctions['"'] = ParseStringToken;
+            _lexFunctions['&'] = ReturnAmpersandToken;
             _lexFunctions['('] = ReturnOpenParenToken;
             _lexFunctions[')'] = ReturnCloseParenToken;
-            _lexFunctions['{'] = ReturnOpenBraceToken;
-            _lexFunctions['}'] = ReturnCloseBraceToken;
-            _lexFunctions['^'] = ReturnCaretToken;
-            _lexFunctions['~'] = ReturnTildeToken;
+            _lexFunctions['*'] = ReturnStarToken;
+            _lexFunctions['+'] = ReturnPlusToken;
             _lexFunctions[','] = ReturnCommaToken;
+            _lexFunctions['-'] = ReturnDashToken;
+            _lexFunctions['.'] = ReturnDotToken;
+            _lexFunctions['/'] = ReturnSlashToken;
             _lexFunctions[':'] = ReturnColonToken;
-            _lexFunctions['>'] = ReturnGreaterThanToken;
             _lexFunctions['<'] = ReturnLessThanToken;
-            _lexFunctions['!'] = ReturnBangToken;
-            _lexFunctions['&'] = ReturnAmpersandToken;
-            _lexFunctions['|'] = ReturnPipeToken;
             _lexFunctions['='] = ReturnEqualsToken;
-            _lexFunctions['"'] = ParseStringToken;
+            _lexFunctions['>'] = ReturnGreaterThanToken;
+            _lexFunctions['^'] = ReturnCaretToken;
+            _lexFunctions['{'] = ReturnOpenBraceToken;
+            _lexFunctions['|'] = ReturnPipeToken;
+            _lexFunctions['}'] = ReturnCloseBraceToken;
+            _lexFunctions['~'] = ReturnTildeToken;
 
             for (var i = '0'; i <= '9'; i++)
                 _lexFunctions[i] = ParseNumber;
@@ -252,6 +253,7 @@ namespace Panther.CodeAnalysis.Syntax
         private (SyntaxKind kind, int start, string text, object? value) ReturnSlashToken() => ReturnKindOneChar(SyntaxKind.SlashToken);
 
         private (SyntaxKind kind, int start, string text, object? value) ReturnDashToken() => ReturnKindOneChar(SyntaxKind.DashToken);
+        private (SyntaxKind kind, int start, string text, object? value) ReturnDotToken() => ReturnKindOneChar(SyntaxKind.DotToken);
 
         private (SyntaxKind kind, int start, string text, object? value) ReturnPlusToken() => ReturnKindOneChar(SyntaxKind.PlusToken);
 
