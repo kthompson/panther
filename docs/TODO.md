@@ -2,8 +2,8 @@
 - REPL: page up is broken 
 
 # TODO:
+- using directive to tell us what symbols to import
 - create or import TypeSymbols that have Method/Field symbols
-- Remove "Builtins"/Support detecting Predef methods
 - object definitions
 - debugging support
 - qualified names

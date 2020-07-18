@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Linq.Expressions;
 using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
@@ -47,7 +46,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public void DeclareFunction(MethodSymbol method)
         {
-            if(_symbols.TryGetValue(method.Name, out var methods))
+            if (_symbols.TryGetValue(method.Name, out var methods))
             {
                 _symbols[method.Name] = methods.Add(method);
                 return;

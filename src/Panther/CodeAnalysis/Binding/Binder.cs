@@ -21,11 +21,48 @@ namespace Panther.CodeAnalysis.Binding
             _isScript = isScript;
         }
 
+        private static TypeSymbol? LookupTypeByMetadataName(string name)
+        {
+            if (name == typeof(object).FullName)
+                return TypeSymbol.Any;
+
+            if (name == typeof(int).FullName)
+                return TypeSymbol.Int;
+
+            if (name == typeof(bool).FullName)
+                return TypeSymbol.Bool;
+
+            if (name == typeof(string).FullName)
+                return TypeSymbol.String;
+
+            if (name == typeof(void).FullName)
+                return TypeSymbol.Unit;
+
+            return null;
+        }
+
         public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
             var parentScope = CreateParentScope(previous);
             var scope = new BoundScope(parentScope, function: null);
             var binder = new Binder(isScript);
+
+            // find Predef and add its functions
+            var importedMethods =
+                from assemblyDefinition in references
+                from module in assemblyDefinition.Modules
+                let predef = module.GetType("Panther.Predef")
+                where predef != null
+                from methodDefinition in predef.Methods
+                where methodDefinition.IsPublic && methodDefinition.IsStatic
+                select ImportMethodDefinition(methodDefinition);
+
+            foreach (var importedMethod in importedMethods)
+            {
+                if (importedMethod == null) continue;
+
+                scope.DeclareFunction(importedMethod);
+            }
 
             var functionDeclarations =
                 from tree in syntaxTrees
@@ -65,6 +102,32 @@ namespace Panther.CodeAnalysis.Binding
                 ImmutableArray<TypeSymbol>.Empty, functions, statements, references);
         }
 
+        private static MethodSymbol? ImportMethodDefinition(MethodDefinition methodDefinition)
+        {
+            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+
+            for (int i = 0; i < methodDefinition.Parameters.Count; i++)
+            {
+                var p = methodDefinition.Parameters[i];
+                // TODO: update handling for failure
+                var pType = LookupTypeByMetadataName(p.ParameterType.FullName);
+                if (pType == null)
+                    return null;
+
+                parameters.Add(new ParameterSymbol(p.Name, pType, i));
+            }
+
+            var returnType = LookupTypeByMetadataName(methodDefinition.ReturnType.FullName);
+            if (returnType == null)
+                return null;
+
+            return new ImportedMethodSymbol(
+                methodDefinition.Name,
+                parameters.ToImmutableArray(),
+                returnType
+            );
+        }
+
         private static (MethodSymbol? mainFunction, MethodSymbol? scriptFunction) BindMainFunctions(bool isScript,
             ImmutableArray<SyntaxTree> syntaxTrees,
             ImmutableArray<TypeSymbol> types, ImmutableArray<GlobalStatementSyntax> globalStatements,
@@ -74,7 +137,7 @@ namespace Panther.CodeAnalysis.Binding
             if (isScript)
             {
                 var scriptFunction = hasGlobalStatements
-                    ? new MethodSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
+                    ? new ImportedMethodSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
                     : null;
 
                 return (null, scriptFunction);
@@ -100,20 +163,25 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                return (new MethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit), null);
+                return (new ImportedMethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit), null);
             }
 
             // main function signature should be correct
             if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
             {
-                binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Declaration?.Identifier.Location);
+                var location = (mainFunction as SourceMethodSymbol)?.Declaration.Identifier.Location;
+                binder.Diagnostics.ReportMainMustHaveCorrectSignature(location);
             }
 
             // if a main function exists, global statements cannot
             if (!hasGlobalStatements)
                 return (mainFunction, null);
 
-            binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Declaration?.Identifier.Location);
+
+            {
+                var location = (mainFunction as SourceMethodSymbol)?.Declaration.Identifier.Location;
+                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(location);
+            }
 
             foreach (var firstStatement1 in firstStatementPerSyntaxTree)
             {
@@ -133,22 +201,19 @@ namespace Panther.CodeAnalysis.Binding
 
             foreach (var function in globalScope.Functions)
             {
+                if (!(function is SourceMethodSymbol sourceFunction))
+                    continue;
+
                 var binder = new Binder(isScript);
                 var functionScope = new BoundScope(parentScope, function);
 
-                if (function.Declaration == null)
-                {
-                    // TODO create a distinction of a Method Reference and a Method definition
-                    throw new Exception("this shouldn't happen");
-                }
-
-                var body = binder.BindExpression(function.Declaration.Body, functionScope);
+                var body = binder.BindExpression(sourceFunction.Declaration.Body, functionScope);
 
                 var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
 
                 if (function.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
                 {
-                    binder.Diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
+                    binder.Diagnostics.ReportAllPathsMustReturn(sourceFunction.Declaration.Identifier.Location);
                 }
 
                 functionBodies.Add(function, loweredBody);
@@ -222,13 +287,13 @@ namespace Panther.CodeAnalysis.Binding
             if (type == null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
-                var tempFunction = new MethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
+                var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
                 var functionScope = new BoundScope(scope, tempFunction);
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
             }
 
-            var function = new MethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+            var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
             scope.DeclareFunction(function);
         }
@@ -408,7 +473,7 @@ namespace Panther.CodeAnalysis.Binding
                 return new BoundFieldExpression(syntax, name, field);
             }
 
-            // TODO properties
+            // TODO add property support
 
             Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
             return new BoundErrorExpression(syntax);
@@ -705,11 +770,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private static BoundScope CreateRootScope()
         {
-            var result = new BoundScope(null);
-            foreach (var symbol in BuiltinFunctions.GetAll())
-                result.DeclareFunction(symbol);
-
-            return result;
+            return new BoundScope(null);
         }
 
         private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)
