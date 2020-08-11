@@ -6,6 +6,6 @@ namespace Panther.CodeAnalysis.Syntax
     {
         Lowest = 0,
 
-        Prefix = byte.MaxValue,
+        Prefix = 9,
     }
 }

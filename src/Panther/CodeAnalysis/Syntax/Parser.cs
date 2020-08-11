@@ -98,42 +98,14 @@ namespace Panther.CodeAnalysis.Syntax
             _infixParseFunctions[SyntaxKind.StarToken] = ParseInfixExpression;
         }
 
-        private SyntaxToken CurrentToken
-        {
-            get
-            {
-                var pos = _tokenPosition;
-                return TokenFromPosition(ref pos);
-            }
-        }
+        private SyntaxToken CurrentToken => TokenFromPosition(_tokenPosition);
 
-        private SyntaxToken TokenFromPosition(ref int pos)
-        {
-            while (true)
-            {
-                if (pos > _tokens.Length - 1)
-                    return _tokens[^1];
-
-                var token = _tokens[pos];
-
-                if (token.Kind == SyntaxKind.WhitespaceTrivia || token.Kind == SyntaxKind.InvalidTokenTrivia)
-                {
-                    pos++;
-                    continue;
-                }
-
-                return token;
-            }
-        }
+        private SyntaxToken TokenFromPosition(int pos) =>
+            pos > _tokens.Length - 1 ? _tokens[^1] : _tokens[pos];
 
         private void NextToken()
         {
-            // get position of current token
-            var pos = _tokenPosition;
-            TokenFromPosition(ref pos);
-
-            // set next position to pos + 1
-            _tokenPosition = pos + 1;
+            _tokenPosition += 1;
         }
 
         private SyntaxToken Accept()

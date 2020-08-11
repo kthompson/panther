@@ -59,11 +59,12 @@ namespace Panther.CodeAnalysis.Syntax
                 case SyntaxKind.SlashToken:
                     return (OperatorPrecedence)8;
 
+                // Unary/Prefix expressions are 9
                 case SyntaxKind.OpenParenToken:
-                    return (OperatorPrecedence)9;
+                    return (OperatorPrecedence)10;
 
                 case SyntaxKind.DotToken:
-                    return (OperatorPrecedence)10;
+                    return (OperatorPrecedence)11;
 
                 default:
                     return null;

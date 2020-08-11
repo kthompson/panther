@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using FsCheck.Xunit;
 using Panther.CodeAnalysis.Syntax;
@@ -99,7 +100,6 @@ namespace Panther.Tests.CodeAnalysis.Syntax
 
             var text = $"{unaryText} a {binaryText} b";
             var expression = SyntaxTree.Parse(text).Root;
-
             using var e = new AssertingEnumerator(expression);
 
             // └──BinaryExpression
