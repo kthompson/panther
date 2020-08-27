@@ -2,31 +2,47 @@
 
 namespace Panther.CodeAnalysis.Symbols
 {
-    public sealed class TypeSymbol : Symbol
+    public sealed class TypeSymbol : TypeOrNamespaceSymbol
     {
         public string Namespace { get; }
-        public ImmutableArray<MethodSymbol> Methods { get; }
-        public ImmutableArray<FieldSymbol> Fields { get; }
 
         public override SymbolKind Kind => SymbolKind.Type;
 
-        public TypeSymbol(string ns, string name, ImmutableArray<MethodSymbol> methods,
-            ImmutableArray<FieldSymbol> fields) : base(name)
+        public TypeSymbol(string ns, string name) : base(name)
         {
-            Methods = methods;
-            Fields = fields;
             Namespace = ns;
         }
 
         public override string ToString() => this.Name;
 
 
-        public static readonly TypeSymbol Error = new TypeSymbol("", "err", ImmutableArray<MethodSymbol>.Empty, ImmutableArray<FieldSymbol>.Empty);
-        public static readonly TypeSymbol Any = new TypeSymbol("", "any", ImmutableArray<MethodSymbol>.Empty, ImmutableArray<FieldSymbol>.Empty);
-        public static readonly TypeSymbol Unit = new TypeSymbol("", "unit", ImmutableArray<MethodSymbol>.Empty, ImmutableArray<FieldSymbol>.Empty);
+        public static readonly TypeSymbol Error = new TypeSymbol("", "err");
+        public static readonly TypeSymbol Any = new TypeSymbol("", "any");
+        public static readonly TypeSymbol Unit = new TypeSymbol("", "unit");
 
-        public static readonly TypeSymbol Bool = new TypeSymbol("", "bool", ImmutableArray<MethodSymbol>.Empty, ImmutableArray<FieldSymbol>.Empty);
-        public static readonly TypeSymbol Int = new TypeSymbol("", "int", ImmutableArray<MethodSymbol>.Empty, ImmutableArray<FieldSymbol>.Empty);
-        public static readonly TypeSymbol String = new TypeSymbol("", "string", ImmutableArray<MethodSymbol>.Empty, ImmutableArray<FieldSymbol>.Empty);
+        public static readonly TypeSymbol Bool = new TypeSymbol("", "bool");
+        public static readonly TypeSymbol Int = new TypeSymbol("", "int");
+        public static readonly TypeSymbol String = new TypeSymbol("", "string");
+        public override ImmutableArray<Symbol> GetMembers()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ImmutableArray<Symbol> GetMembers(string name)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ImmutableArray<TypeSymbol> GetTypeMembers()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override ImmutableArray<TypeSymbol> GetTypeMembers(string name)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override bool IsType => true;
     }
 }

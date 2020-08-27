@@ -1,4 +1,6 @@
-﻿namespace Panther.CodeAnalysis.Syntax
+﻿using System.Collections.Generic;
+
+namespace Panther.CodeAnalysis.Syntax
 {
     public abstract class MemberSyntax : SyntaxNode
     {

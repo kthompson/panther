@@ -375,6 +375,57 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
 
+        [Fact]
+        public void ParseUsingDirectives()
+        {
+            var text = AnnotatedText.Parse(@"
+                using System
+                using System.Collections.Immutable
+                using System.Diagnostics
+            ");
+            var tree = SyntaxTree.Parse(text.Text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root;
+
+            using var e = new AssertingEnumerator(expression);
+
+            e.AssertNode(SyntaxKind.CompilationUnit);
+
+            e.AssertNode(SyntaxKind.UsingDirective);
+            e.AssertToken(SyntaxKind.UsingKeyword, "using");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia);
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "System");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+
+            e.AssertNode(SyntaxKind.UsingDirective);
+            e.AssertToken(SyntaxKind.UsingKeyword, "using");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia);
+            e.AssertNode(SyntaxKind.QualifiedName);
+            e.AssertNode(SyntaxKind.QualifiedName);
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "System");
+            e.AssertToken(SyntaxKind.DotToken, ".");
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "Collections");
+            e.AssertToken(SyntaxKind.DotToken, ".");
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "Immutable");
+            e.AssertTrivia(SyntaxKind.EndOfLineTrivia);
+
+            e.AssertNode(SyntaxKind.UsingDirective);
+            e.AssertToken(SyntaxKind.UsingKeyword, "using");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia);
+            e.AssertNode(SyntaxKind.QualifiedName);
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "System");
+            e.AssertToken(SyntaxKind.DotToken, ".");
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "Diagnostics");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
+
 
         [Fact]
         public void ParseForExpressionWithLineBreaks()

@@ -26,8 +26,10 @@
         FalseKeyword,
         ForKeyword,
         IfKeyword,
+        ImplicitKeyword,
         ToKeyword,
         TrueKeyword,
+        UsingKeyword,
         ValKeyword,
         VarKeyword,
         WhileKeyword,
@@ -90,6 +92,7 @@
 
         // Members
         FunctionDeclaration,
+        UsingDirective,
         GlobalStatement,
     }
 }

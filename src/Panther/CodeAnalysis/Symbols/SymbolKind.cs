@@ -7,6 +7,7 @@
         Type,
         GlobalVariable,
         LocalVariable,
-        Field
+        Field,
+        Namespace
     }
 }

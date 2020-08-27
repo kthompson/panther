@@ -64,6 +64,7 @@ namespace Panther.CodeAnalysis.Binding
                 scope.DeclareFunction(importedMethod);
             }
 
+            // TODO do something with using directives
             var functionDeclarations =
                 from tree in syntaxTrees
                 from function in tree.Root.Members.OfType<FunctionDeclarationSyntax>()
@@ -464,10 +465,11 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax, BoundScope scope)
         {
+            // TODO: combine with BindMemberMethodAccess?
             var expr = BindExpression(syntax.Expression, scope);
             var type = expr.Type;
             var name = syntax.Name.Identifier.Text;
-            var field = type.Fields.FirstOrDefault(f => f.Name == name);
+            var field = type.GetMembers(name).OfType<FieldSymbol>().FirstOrDefault();
             if (field != null)
             {
                 return new BoundFieldExpression(syntax, name, field);
@@ -559,10 +561,11 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindMemberMethodAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
         {
+            // TODO: combine with BindMemberAccessExpression?
             var expr = BindExpression(syntax.Expression, scope);
             var type = expr.Type;
             var name = syntax.Name.Identifier.Text;
-            var methods = type.Methods.Where(m => m.Name == name).ToImmutableArray();
+            var methods = type.GetMembers(name).OfType<MethodSymbol>().ToImmutableArray();
             if (methods.Length > 0)
             {
                 return new BoundMethodExpression(syntax, name, methods);

@@ -220,6 +220,18 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
     
+    partial class QualifiedNameSyntax
+    {
+        public override SyntaxKind Kind => SyntaxKind.QualifiedName;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Left;
+            yield return DotToken;
+            yield return Right;
+        }
+    }
+    
     partial class TypeAnnotationSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.TypeAnnotation;
@@ -250,6 +262,17 @@ namespace Panther.CodeAnalysis.Syntax
         {
             yield return OpenParenToken;
             yield return CloseParenToken;
+        }
+    }
+    
+    partial class UsingDirectiveSyntax
+    {
+        public override SyntaxKind Kind => SyntaxKind.UsingDirective;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return UsingKeyword;
+            yield return Name;
         }
     }
     
