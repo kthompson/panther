@@ -23,25 +23,10 @@ namespace Panther.CodeAnalysis.Symbols
         public static readonly TypeSymbol Bool = new TypeSymbol("", "bool");
         public static readonly TypeSymbol Int = new TypeSymbol("", "int");
         public static readonly TypeSymbol String = new TypeSymbol("", "string");
-        public override ImmutableArray<Symbol> GetMembers()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override ImmutableArray<Symbol> GetMembers(string name)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override ImmutableArray<TypeSymbol> GetTypeMembers()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override ImmutableArray<TypeSymbol> GetTypeMembers(string name)
-        {
-            throw new System.NotImplementedException();
-        }
+        public override ImmutableArray<Symbol> GetMembers()=> ImmutableArray<Symbol>.Empty;
+        public override ImmutableArray<Symbol> GetMembers(string name) => ImmutableArray<Symbol>.Empty;
+        public override ImmutableArray<TypeSymbol> GetTypeMembers() => ImmutableArray<TypeSymbol>.Empty;
+        public override ImmutableArray<TypeSymbol> GetTypeMembers(string name) => ImmutableArray<TypeSymbol>.Empty;
 
         public override bool IsType => true;
     }
