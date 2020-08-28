@@ -47,7 +47,7 @@ namespace Panther.Generators
                 var kind = name.EndsWith("Syntax") ? name.Substring(0, name.LastIndexOf("Syntax")) : name;
 
                 indentedTextWriter.WriteLine($"public override SyntaxKind Kind => SyntaxKind.{kind};");
-                indentedTextWriter.WriteLine();
+                writer.WriteLine();
                 indentedTextWriter.WriteLine("public override IEnumerable<SyntaxNode> GetChildren()");
                 indentedTextWriter.WriteLine("{");
                 indentedTextWriter.Indent++;
@@ -97,7 +97,7 @@ namespace Panther.Generators
                 indentedTextWriter.WriteLine("}");
                 indentedTextWriter.Indent--;
                 indentedTextWriter.WriteLine("}");
-                indentedTextWriter.WriteLine();
+                writer.WriteLine();
 
             }
 

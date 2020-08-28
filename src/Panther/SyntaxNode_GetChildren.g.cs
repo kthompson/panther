@@ -6,7 +6,7 @@ namespace Panther.CodeAnalysis.Syntax
     partial class AssignmentExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Name;
@@ -14,11 +14,11 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Expression;
         }
     }
-    
+
     partial class BinaryExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.BinaryExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Left;
@@ -26,11 +26,11 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Right;
         }
     }
-    
+
     partial class BlockExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.BlockExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return OpenBraceToken;
@@ -40,21 +40,21 @@ namespace Panther.CodeAnalysis.Syntax
             yield return CloseBraceToken;
         }
     }
-    
+
     partial class BreakExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.BreakExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return BreakKeyword;
         }
     }
-    
+
     partial class CallExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.CallExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Expression;
@@ -64,11 +64,11 @@ namespace Panther.CodeAnalysis.Syntax
             yield return CloseParenToken;
         }
     }
-    
+
     partial class CompilationUnitSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.CompilationUnit;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             foreach (var child in Members)
@@ -76,31 +76,31 @@ namespace Panther.CodeAnalysis.Syntax
             yield return EndOfFileToken;
         }
     }
-    
+
     partial class ContinueExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.ContinueExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ContinueKeyword;
         }
     }
-    
+
     partial class ExpressionStatementSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.ExpressionStatement;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Expression;
         }
     }
-    
+
     partial class ForExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.ForExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ForKeyword;
@@ -114,11 +114,11 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Body;
         }
     }
-    
+
     partial class FunctionDeclarationSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return DefKeyword;
@@ -135,21 +135,21 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Body;
         }
     }
-    
+
     partial class GlobalStatementSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.GlobalStatement;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Statement;
         }
     }
-    
+
     partial class GroupExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.GroupExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return OpenParenToken;
@@ -157,21 +157,21 @@ namespace Panther.CodeAnalysis.Syntax
             yield return CloseParenToken;
         }
     }
-    
+
     partial class IdentifierNameSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.IdentifierName;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Identifier;
         }
     }
-    
+
     partial class IfExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.IfExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return IfKeyword;
@@ -183,11 +183,11 @@ namespace Panther.CodeAnalysis.Syntax
             yield return ElseExpression;
         }
     }
-    
+
     partial class LiteralExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return LiteralToken;
@@ -196,11 +196,11 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
     }
-    
+
     partial class MemberAccessExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.MemberAccessExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Expression;
@@ -208,11 +208,22 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Name;
         }
     }
-    
+
+    partial class NamespaceDirectiveSyntax
+    {
+        public override SyntaxKind Kind => SyntaxKind.NamespaceDirective;
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return NamespaceKeyword;
+            yield return Name;
+        }
+    }
+
     partial class ObjectDeclarationSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.ObjectDeclaration;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ObjectKeyword;
@@ -223,22 +234,22 @@ namespace Panther.CodeAnalysis.Syntax
             yield return CloseBrace;
         }
     }
-    
+
     partial class ParameterSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.Parameter;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Identifier;
             yield return TypeAnnotation;
         }
     }
-    
+
     partial class QualifiedNameSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.QualifiedName;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Left;
@@ -246,55 +257,55 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Right;
         }
     }
-    
+
     partial class TypeAnnotationSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.TypeAnnotation;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ColonToken;
             yield return IdentifierToken;
         }
     }
-    
+
     partial class UnaryExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.UnaryExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return OperatorToken;
             yield return Operand;
         }
     }
-    
+
     partial class UnitExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.UnitExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return OpenParenToken;
             yield return CloseParenToken;
         }
     }
-    
+
     partial class UsingDirectiveSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.UsingDirective;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return UsingKeyword;
             yield return Name;
         }
     }
-    
+
     partial class VariableDeclarationStatementSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ValOrVarToken;
@@ -307,11 +318,11 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Expression;
         }
     }
-    
+
     partial class WhileExpressionSyntax
     {
         public override SyntaxKind Kind => SyntaxKind.WhileExpression;
-        
+
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return WhileKeyword;
@@ -321,5 +332,5 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Body;
         }
     }
-    
+
 }

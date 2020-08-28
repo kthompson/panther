@@ -166,6 +166,7 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 SyntaxKind.DefKeyword => ParseFunctionDeclaration(),
                 SyntaxKind.UsingKeyword => ParseUsingDirective(),
+                SyntaxKind.NamespaceKeyword => ParseNamespaceDirective(),
                 SyntaxKind.ObjectKeyword => ParseObjectDeclaration(),
                 _ => ParseGlobalStatement()
             };
@@ -187,6 +188,14 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var statement = ParseStatement();
             return new GlobalStatementSyntax(_syntaxTree, statement);
+        }
+
+        private MemberSyntax ParseNamespaceDirective()
+        {
+            var namespaceKeyword = Accept();
+            var name = ParseNameSyntax();
+
+            return new NamespaceDirectiveSyntax(_syntaxTree, namespaceKeyword, name);
         }
 
         private MemberSyntax ParseUsingDirective()

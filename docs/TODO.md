@@ -2,7 +2,8 @@
 - REPL: page up is broken 
 
 # TODO:
-- using directive to tell us what symbols to import
+- update using directive to tell us what symbols to import
+- BoundProgram -> BoundType -> BoundAssembly 
 - symbols and binder for object definitions
 - create or import TypeSymbols that have Method/Field symbols
 - debugging support
