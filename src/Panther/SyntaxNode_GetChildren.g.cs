@@ -71,6 +71,12 @@ namespace Panther.CodeAnalysis.Syntax
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
+            foreach (var child in NamespaceDirectives)
+                yield return child;
+            foreach (var child in Usings)
+                yield return child;
+            foreach (var child in Statements)
+                yield return child;
             foreach (var child in Members)
                 yield return child;
             yield return EndOfFileToken;

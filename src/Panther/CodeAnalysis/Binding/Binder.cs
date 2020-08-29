@@ -76,7 +76,7 @@ namespace Panther.CodeAnalysis.Binding
             var globalStatements =
             (
                 from tree in syntaxTrees
-                from function in tree.Root.Members.OfType<GlobalStatementSyntax>()
+                from function in tree.Root.Statements.OfType<GlobalStatementSyntax>()
                 select function
             ).ToImmutableArray();
 
@@ -148,7 +148,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var firstStatementPerSyntaxTree =
                 (from tree in syntaxTrees
-                 let firstStatement = tree.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault()
+                 let firstStatement = tree.Root.Statements.OfType<GlobalStatementSyntax>().FirstOrDefault()
                  where firstStatement != null
                  select firstStatement)
                 .ToImmutableArray();

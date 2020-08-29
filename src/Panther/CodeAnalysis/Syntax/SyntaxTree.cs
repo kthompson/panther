@@ -66,7 +66,11 @@ namespace Panther.CodeAnalysis.Syntax
                     var token = lexer.NextToken();
                     if (token.Kind == SyntaxKind.EndOfInputToken)
                     {
-                        root = new CompilationUnitSyntax(syntaxTree, ImmutableArray<MemberSyntax>.Empty, token);
+                        root = new CompilationUnitSyntax(
+                            syntaxTree,
+                            ImmutableArray<NamespaceDirectiveSyntax>.Empty,
+                            ImmutableArray<UsingDirectiveSyntax>.Empty,
+                            ImmutableArray<GlobalStatementSyntax>.Empty, ImmutableArray<MemberSyntax>.Empty, token);
                         break;
                     }
 

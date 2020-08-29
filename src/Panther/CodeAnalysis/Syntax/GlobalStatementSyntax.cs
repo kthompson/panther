@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed partial class GlobalStatementSyntax : MemberSyntax
+    public sealed partial class GlobalStatementSyntax : SyntaxNode
     {
         public GlobalStatementSyntax(SyntaxTree syntaxTree, StatementSyntax statement) : base(syntaxTree)
         {

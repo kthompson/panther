@@ -46,20 +46,22 @@ namespace Panther.Tests.CodeAnalysis.Lowering
 
 
             var source = AnnotatedText.Parse($@"
+                                        {{
+                                          println(""first"")
+                                          println(concat({SideEffectBlock(0)}, sideEffect(""1""), {SideEffectBlock(2)})) 
+                                          println(""last"")                                        
+                                        }}
+
                                         def sideEffect(a: string): string = {{
                                             println(a)
                                             ""V"" + a
                                         }}
 
                                         def concat(a: string, b: string, c: string): string = a + b + c
-
-                                        {{
-                                          println(""first"")
-                                          println(concat({SideEffectBlock(0)}, sideEffect(""1""), {SideEffectBlock(2)})) 
-                                          println(""last"")                                        
-                                        }}").Text;
+                                        ").Text;
 
             var tree = SyntaxTree.Parse(source);
+            Assert.Empty(tree.Diagnostics);
             using var scriptHost = BuildScriptHostTestLib();
 
             scriptHost.Execute(tree);

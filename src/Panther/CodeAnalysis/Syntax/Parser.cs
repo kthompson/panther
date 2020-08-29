@@ -136,17 +136,43 @@ namespace Panther.CodeAnalysis.Syntax
 
         public CompilationUnitSyntax ParseCompilationUnit()
         {
+
+            var namespaceDirectives = ParseNamespaces();
+            var usingDirectives = ParseUsings();
+            var statements = ParseGlobalStatements();
             var members = ParseMembers();
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new CompilationUnitSyntax(_syntaxTree, members, endToken);
+            return new CompilationUnitSyntax(_syntaxTree, namespaceDirectives, usingDirectives, statements, members, endToken);
+        }
+
+        private ImmutableArray<NamespaceDirectiveSyntax> ParseNamespaces()
+        {
+            var namespaceDirectives = ImmutableArray.CreateBuilder<NamespaceDirectiveSyntax>();
+            while (CurrentKind == SyntaxKind.NamespaceDirective)
+            {
+                namespaceDirectives.Add(ParseNamespaceDirective());
+            }
+
+            return namespaceDirectives.ToImmutable();
+        }
+
+        private ImmutableArray<UsingDirectiveSyntax> ParseUsings()
+        {
+            var usingDirectives = ImmutableArray.CreateBuilder<UsingDirectiveSyntax>();
+            while (CurrentKind == SyntaxKind.UsingKeyword)
+            {
+                usingDirectives.Add(ParseUsingDirective());
+            }
+
+            return usingDirectives.ToImmutable();
         }
 
         private ImmutableArray<MemberSyntax> ParseMembers()
         {
             var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-            while (CurrentKind != SyntaxKind.EndOfInputToken && CurrentKind != SyntaxKind.CloseBraceToken)
+            while (CurrentKind == SyntaxKind.DefKeyword || CurrentKind == SyntaxKind.ObjectKeyword)
             {
                 var startToken = CurrentToken;
 
@@ -160,21 +186,16 @@ namespace Panther.CodeAnalysis.Syntax
             return members.ToImmutable();
         }
 
-        private MemberSyntax ParseMember()
-        {
-            return CurrentKind switch
+        private MemberSyntax ParseMember() =>
+            CurrentKind switch
             {
                 SyntaxKind.DefKeyword => ParseFunctionDeclaration(),
-                SyntaxKind.UsingKeyword => ParseUsingDirective(),
-                SyntaxKind.NamespaceKeyword => ParseNamespaceDirective(),
-                SyntaxKind.ObjectKeyword => ParseObjectDeclaration(),
-                _ => ParseGlobalStatement()
+                _ => ParseObjectDeclaration(),
             };
-        }
 
         private MemberSyntax ParseObjectDeclaration()
         {
-            var objectKeyword = Accept();
+            var objectKeyword = Accept(SyntaxKind.ObjectKeyword);
             var identifier = Accept(SyntaxKind.IdentifierToken);
 
             var openBraceToken = Accept(SyntaxKind.OpenBraceToken);
@@ -184,13 +205,13 @@ namespace Panther.CodeAnalysis.Syntax
             return new ObjectDeclarationSyntax(_syntaxTree, objectKeyword, identifier, openBraceToken, members, closeBraceToken);
         }
 
-        private MemberSyntax ParseGlobalStatement()
+        private GlobalStatementSyntax ParseGlobalStatement()
         {
             var statement = ParseStatement();
             return new GlobalStatementSyntax(_syntaxTree, statement);
         }
 
-        private MemberSyntax ParseNamespaceDirective()
+        private NamespaceDirectiveSyntax ParseNamespaceDirective()
         {
             var namespaceKeyword = Accept();
             var name = ParseNameSyntax();
@@ -198,7 +219,7 @@ namespace Panther.CodeAnalysis.Syntax
             return new NamespaceDirectiveSyntax(_syntaxTree, namespaceKeyword, name);
         }
 
-        private MemberSyntax ParseUsingDirective()
+        private UsingDirectiveSyntax ParseUsingDirective()
         {
             var usingKeyword = Accept();
             var name = ParseNameSyntax();
@@ -504,17 +525,24 @@ namespace Panther.CodeAnalysis.Syntax
             return new BlockExpressionSyntax(_syntaxTree, openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
         }
 
-        private StatementSyntax ParseStatement()
-        {
-            switch (CurrentKind)
+        private StatementSyntax ParseStatement() =>
+            CurrentKind switch
             {
-                case SyntaxKind.ValKeyword:
-                case SyntaxKind.VarKeyword:
-                    return ParseVariableDeclarationStatement();
+                SyntaxKind.ValKeyword => ParseVariableDeclarationStatement(),
+                SyntaxKind.VarKeyword => ParseVariableDeclarationStatement(),
+                _ => ParseExpressionStatement()
+            };
 
-                default:
-                    return ParseExpressionStatement();
+        private ImmutableArray<GlobalStatementSyntax> ParseGlobalStatements()
+        {
+            var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
+
+            while (CurrentKind != SyntaxKind.ObjectKeyword && CurrentKind != SyntaxKind.DefKeyword && CurrentKind != SyntaxKind.EndOfInputToken)
+            {
+                globalStatements.Add(ParseGlobalStatement());
             }
+
+            return globalStatements.ToImmutable();
         }
 
         private ExpressionSyntax ParseContinueExpression()

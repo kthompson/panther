@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed partial class NamespaceDirectiveSyntax : MemberSyntax
+    public sealed partial class NamespaceDirectiveSyntax : SyntaxNode
     {
         public SyntaxToken NamespaceKeyword { get; }
         public NameSyntax Name { get; }
