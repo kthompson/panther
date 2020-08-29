@@ -60,12 +60,12 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         public static Arbitrary<BoundUnitExpression> BoundUnitExpression =>
             Gen.Constant(new BoundUnitExpression(null!)).ToArbitrary();
 
-        public static Arbitrary<GlobalVariableSymbol> GlobalVariableSymbol() =>
+        public static Arbitrary<FieldSymbol> GlobalVariableSymbol() =>
         (
             from ident in Identifier()
             from type in Arb.Generate<TypeSymbol>()
             from readOnly in Arb.Generate<bool>()
-            select new GlobalVariableSymbol(ident, readOnly, type, null)
+            select new FieldSymbol(ident, readOnly, type, null)
         ).ToArbitrary();
 
         public static Gen<string> Identifier() =>
@@ -101,10 +101,10 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from expr in GenBoundExpression(typeSymbol)
             select new BoundBlockExpression(token, statements, expr);
 
-        public static Gen<MethodSymbol> GenFunctionSymbol(TypeSymbol typeSymbol) =>
+        public static Gen<MethodSymbol> GenFunctionSymbol(TypeSymbol returnType) =>
             from name in Identifier()
             from parameters in Arb.Generate<ImmutableArray<ParameterSymbol>>()
-            select (MethodSymbol)new ImportedMethodSymbol(name, parameters, typeSymbol);
+            select (MethodSymbol)new ImportedMethodSymbol(null!, name, parameters, returnType);
 
         public static Gen<LocalVariableSymbol> GenLocalVariableSymbol(TypeSymbol typeSymbol) =>
             from ident in Identifier()

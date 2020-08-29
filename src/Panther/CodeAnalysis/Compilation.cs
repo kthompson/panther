@@ -20,9 +20,7 @@ namespace Panther.CodeAnalysis
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
         public ImmutableArray<AssemblyDefinition> References { get; }
-        public MethodSymbol? MainFunction => GlobalScope.MainFunction;
-        public ImmutableArray<MethodSymbol> Functions => GlobalScope.Functions;
-        public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
+        public ImmutableArray<TypeSymbol> Types => GlobalScope.Types.OfType<TypeSymbol>().ToImmutableArray();
 
         private BoundGlobalScope? _globalScope;
 
@@ -86,79 +84,90 @@ namespace Panther.CodeAnalysis
 
             while (compilation != null)
             {
-                foreach (var function in compilation.Functions.Where(function => symbolNames.Add(function.Name)))
-                    yield return function;
+                foreach (var type in compilation.Types.Where(function => symbolNames.Add(function.Name)))
+                {
+                    yield return type;
 
-                foreach (var variable in compilation.Variables.Where(variable => symbolNames.Add(variable.Name)))
-                    yield return variable;
+                    foreach (var member in type.GetMembers())
+                    {
+                        yield return member;
+                    }
+                }
 
                 compilation = compilation.Previous;
             }
         }
 
-        private BoundProgram GetProgram()
+        private BoundAssembly GetAssembly()
         {
-            var previous = this.Previous?.GetProgram();
-            return Binder.BindProgram(IsScript, previous, GlobalScope);
+            var previous = this.Previous?.GetAssembly();
+            return Binder.BindAssembly(IsScript, previous, GlobalScope);
         }
 
         public void EmitTree(TextWriter writer)
         {
-            var mainFunction = GlobalScope.MainFunction;
-            var scriptFunction = GlobalScope.ScriptFunction;
-            foreach (var function in GlobalScope.Functions)
+            var entryPoint = GlobalScope.EntryPoint?.Symbol;
+            foreach (var type in GlobalScope.Types)
             {
-                var isMain = mainFunction == function;
-                var isScript = scriptFunction == function;
+                // TODO: print type symbol
+                foreach (var function in type.MethodDefinitions)
+                {
+                    // emit entry point last
+                    if (entryPoint == function.Key)
+                        continue;
 
-                EmitTree(function, writer);
-                writer.WriteLine();
+                    EmitTree(function.Key, function.Value, writer);
+                    writer.WriteLine();
+                }
             }
 
-            if (mainFunction != null)
+
+            if (entryPoint != null)
             {
-                EmitTree(mainFunction, writer);
-                writer.WriteLine();
-            }
-            else if (scriptFunction != null)
-            {
-                EmitTree(scriptFunction, writer);
+                EmitTree(entryPoint, writer);
                 writer.WriteLine();
             }
         }
 
         public void EmitTree(MethodSymbol method, TextWriter writer)
         {
-            BoundProgram? program = GetProgram();
+            BoundAssembly? assembly = GetAssembly();
 
-            while (program != null)
+            while (assembly != null)
             {
-                if (program.Functions.TryGetValue(method, out var block))
+                foreach (var boundType in assembly.Types)
                 {
+                    if (boundType.MethodDefinitions.TryGetValue(method, out var block))
+                    {
+                        EmitTree(method, block, writer);
 
-                    method.WriteTo(writer);
-                    writer.WritePunctuation(" = ");
-                    writer.WriteLine();
-                    block.WriteTo(writer);
-
-                    return;
+                        return;
+                    }
                 }
 
-                program = program.Previous;
+                assembly = assembly.Previous;
             }
 
             method.WriteTo(writer);
         }
 
+        private static void EmitTree(MethodSymbol method, BoundBlockExpression block, TextWriter writer)
+        {
+            method.WriteTo(writer);
+            writer.WritePunctuation(" = ");
+            writer.WriteLine();
+            block.WriteTo(writer);
+        }
+
         public EmitResult Emit(string moduleName, string outputPath)
         {
-            var program = GetProgram();
+            var program = GetAssembly();
             return Emitter.Emit(program, moduleName, outputPath);
         }
 
-        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<GlobalVariableSymbol, FieldReference> previousGlobals, Dictionary<MethodSymbol, MethodReference> previousMethods)
+        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference> previousGlobals, Dictionary<MethodSymbol, MethodReference> previousMethods)
         {
-            var program = GetProgram();
+            var program = GetAssembly();
             return Emitter.Emit(program, moduleName, outputPath, previousGlobals, previousMethods);
         }
     }

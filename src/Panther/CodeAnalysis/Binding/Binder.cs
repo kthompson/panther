@@ -43,53 +43,79 @@ namespace Panther.CodeAnalysis.Binding
 
         public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
-            var parentScope = CreateParentScope(previous);
+            var parentScope = CreateParentScope(previous, references);
             var scope = new BoundScope(parentScope, function: null);
             var binder = new Binder(isScript);
+            var defaultType = new BoundType("", "$Program");
 
-            // find Predef and add its functions
-            var importedMethods =
-                from assemblyDefinition in references
-                from module in assemblyDefinition.Modules
-                let predef = module.GetType("Panther.Predef")
-                where predef != null
-                from methodDefinition in predef.Methods
-                where methodDefinition.IsPublic && methodDefinition.IsStatic
-                select ImportMethodDefinition(methodDefinition);
+            var boundTypes = ImmutableArray.CreateBuilder<BoundType>();
+            var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
 
-            foreach (var importedMethod in importedMethods)
+            foreach (var tree in syntaxTrees)
             {
-                if (importedMethod == null) continue;
+                // TODO: global statements are not supported with a namespace
+                var compilationUnit = tree.Root;
 
-                scope.DeclareFunction(importedMethod);
+                foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
+                {
+                    var namespaceSymbol = binder.BindNamespace(namespaceDirective);
+                    scope = scope.EnterNamespace(namespaceSymbol);
+                }
+
+                foreach (var @using in compilationUnit.Usings)
+                {
+                    var namespaceOrTypeSymbol = binder.BindUsingDirective(@using);
+                    scope.ImportMembers(namespaceOrTypeSymbol);
+                }
+
+                // should only be one set of global statements
+                // otherwise there would be an error
+                globalStatements.AddRange(compilationUnit.Statements);
+
+                foreach (var member in tree.Root.Members)
+                {
+                    switch (member)
+                    {
+                        case FunctionDeclarationSyntax function:
+
+                            var symbol = binder.BindFunctionDeclaration(defaultType, function, scope);
+                            scope.Import(symbol);
+                            break;
+
+                        case ObjectDeclarationSyntax objectDeclaration:
+                            var type = binder.BindObjectDeclaration(objectDeclaration);
+                            scope.Import(type);
+                            boundTypes.Add(type);
+                            break;
+
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(member));
+                    }
+                }
             }
-
-            // TODO do something with using directives
-            var functionDeclarations =
-                from tree in syntaxTrees
-                from function in tree.Root.Members.OfType<FunctionDeclarationSyntax>()
-                select function;
-
-            foreach (var function in functionDeclarations)
-                binder.BindFunctionDeclaration(function, scope);
-
-            var globalStatements =
-            (
-                from tree in syntaxTrees
-                from function in tree.Root.Statements.OfType<GlobalStatementSyntax>()
-                select function
-            ).ToImmutableArray();
 
             var statements =
                 globalStatements
                     .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, scope))
                     .ToImmutableArray();
 
-            var functions = scope.GetDeclaredFunctions();
+            var functions = defaultType.GetMembers().OfType<MethodSymbol>().ToImmutableArray();
 
-            var (mainFunction, scriptFunction) = BindMainFunctions(isScript, syntaxTrees, ImmutableArray<TypeSymbol>.Empty, globalStatements, functions, binder);
+            var entryPoint = BindEntryPoint(defaultType, isScript, syntaxTrees, statements, functions, binder);
 
-            var variables = scope.GetDeclaredVariables();
+            // top level variables get converted to fields on the default type
+            var variables = scope.GetDeclaredVariables().OfType<FieldSymbol>();
+
+            foreach (var variable in variables)
+            {
+                defaultType.DefineField(variable);
+            }
+
+            if (defaultType.GetMembers().Any())
+            {
+                boundTypes.Add(defaultType);
+            }
+
             var diagnostics = binder.Diagnostics.ToImmutableArray();
 
             if (previous != null)
@@ -99,52 +125,39 @@ namespace Panther.CodeAnalysis.Binding
 
             diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics, (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
 
-            return new BoundGlobalScope(previous, diagnostics, mainFunction, scriptFunction, variables,
-                ImmutableArray<TypeSymbol>.Empty, functions, statements, references);
+            return new BoundGlobalScope(previous, diagnostics,
+                defaultType.GetMembers().Any() ? defaultType : null,
+                entryPoint,
+                boundTypes.ToImmutable(), references);
         }
 
-        private static MethodSymbol? ImportMethodDefinition(MethodDefinition methodDefinition)
+        private NamespaceOrTypeSymbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
         {
-            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-
-            for (int i = 0; i < methodDefinition.Parameters.Count; i++)
-            {
-                var p = methodDefinition.Parameters[i];
-                // TODO: update handling for failure
-                var pType = LookupTypeByMetadataName(p.ParameterType.FullName);
-                if (pType == null)
-                    return null;
-
-                parameters.Add(new ParameterSymbol(p.Name, pType, i));
-            }
-
-            var returnType = LookupTypeByMetadataName(methodDefinition.ReturnType.FullName);
-            if (returnType == null)
-                return null;
-
-            return new ImportedMethodSymbol(
-                methodDefinition.Name,
-                parameters.ToImmutableArray(),
-                returnType
-            );
+            throw new NotImplementedException();
         }
 
-        private static (MethodSymbol? mainFunction, MethodSymbol? scriptFunction) BindMainFunctions(bool isScript,
-            ImmutableArray<SyntaxTree> syntaxTrees,
-            ImmutableArray<TypeSymbol> types, ImmutableArray<GlobalStatementSyntax> globalStatements,
-            ImmutableArray<MethodSymbol> functions, Binder binder)
+        private BoundType BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration)
+        {
+            throw new NotImplementedException();
+        }
+
+        private NamespaceSymbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static EntryPoint? BindEntryPoint(BoundType defaultType, bool isScript,
+            ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<BoundStatement> globalStatements,
+            ImmutableArray<MethodSymbol> functions, Binder binder) =>
+            isScript
+                ? BindScriptEntryPoint(defaultType, globalStatements)
+                : BindMainEntryPoint(defaultType, syntaxTrees, globalStatements, functions, binder);
+
+        private static EntryPoint BindMainEntryPoint(BoundType defaultType, ImmutableArray<SyntaxTree> syntaxTrees,
+            ImmutableArray<BoundStatement> globalStatements, ImmutableArray<MethodSymbol> functions, Binder binder)
         {
             var hasGlobalStatements = globalStatements.Any();
-            if (isScript)
-            {
-                var scriptFunction = hasGlobalStatements
-                    ? new ImportedMethodSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any)
-                    : null;
-
-                return (null, scriptFunction);
-            }
-
-            var mainFunction = functions.FirstOrDefault(func => func.Name == "main");
+            var mainFunction = functions.OfType<SourceMethodSymbol>().FirstOrDefault(func => func.Name == "main");
 
             var firstStatementPerSyntaxTree =
                 (from tree in syntaxTrees
@@ -153,101 +166,122 @@ namespace Panther.CodeAnalysis.Binding
                  select firstStatement)
                 .ToImmutableArray();
 
-            if (mainFunction == null)
+            if (mainFunction != null)
             {
-                // Global statements can only exist in one syntax tree
-                if (firstStatementPerSyntaxTree.Length > 1)
+                // ensure main function signature is correct
+                if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
                 {
-                    foreach (var firstStatement2 in firstStatementPerSyntaxTree)
+                    binder.Diagnostics.ReportMainMustHaveCorrectSignature(
+                        mainFunction.Declaration.Identifier.Location
+                    );
+                }
+
+                // if a main function exists, global statements cannot
+                if (hasGlobalStatements)
+                {
+                    binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(
+                        mainFunction.Declaration.Identifier.Location
+                    );
+
+                    foreach (var firstStatement1 in firstStatementPerSyntaxTree)
                     {
-                        binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2.Location);
+                        binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1.Location);
                     }
                 }
 
-                return (new ImportedMethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Unit), null);
+                return new EntryPoint(false, mainFunction);
             }
 
-            // main function signature should be correct
-            if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
+            // Global statements can only exist in one syntax tree
+            if (firstStatementPerSyntaxTree.Length > 1)
             {
-                var location = (mainFunction as SourceMethodSymbol)?.Declaration.Identifier.Location;
-                binder.Diagnostics.ReportMainMustHaveCorrectSignature(location);
+                foreach (var firstStatement2 in firstStatementPerSyntaxTree)
+                {
+                    binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2.Location);
+                }
             }
 
-            // if a main function exists, global statements cannot
-            if (!hasGlobalStatements)
-                return (mainFunction, null);
+            var main = new ImportedMethodSymbol(defaultType, "main", ImmutableArray<ParameterSymbol>.Empty,
+                TypeSymbol.Unit);
+            var compilationUnit = globalStatements.First().Syntax;
+            var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
 
+            defaultType.TryDeclareFunction(main);
+            defaultType.DefineFunction(main, body);
 
-            {
-                var location = (mainFunction as SourceMethodSymbol)?.Declaration.Identifier.Location;
-                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(location);
-            }
-
-            foreach (var firstStatement1 in firstStatementPerSyntaxTree)
-            {
-                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1.Location);
-            }
-
-            return (mainFunction, null);
+            return new EntryPoint(false, main);
         }
 
-        public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
+        private static EntryPoint? BindScriptEntryPoint(BoundType defaultType, ImmutableArray<BoundStatement> globalStatements)
         {
-            var parentScope = CreateParentScope(globalScope);
+            if (!globalStatements.Any())
+                return null;
 
-            var functionBodies = ImmutableDictionary.CreateBuilder<MethodSymbol, BoundBlockExpression>();
+            var eval = new ImportedMethodSymbol(
+                defaultType,
+                "$eval",
+                ImmutableArray<ParameterSymbol>.Empty,
+                TypeSymbol.Any
+            );
+            defaultType.TryDeclareFunction(eval);
+
+            var compilationUnit = globalStatements.First().Syntax;
+            var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalStatements);
+
+            // for our script function we need to return an object. if the expression is not an object then we will
+            // create a conversion expression to convert it.
+            if (boundStatementFromStatements.Expression.Type != TypeSymbol.Any)
+            {
+                // what should we do when we have a unit expression?
+                boundStatementFromStatements = new BoundExpressionStatement(
+                    boundStatementFromStatements.Syntax,
+                    new BoundConversionExpression(
+                        boundStatementFromStatements.Syntax,
+                        TypeSymbol.Any,
+                        boundStatementFromStatements.Expression
+                    )
+                );
+            }
+
+            defaultType.DefineFunction(eval, Lowerer.Lower(boundStatementFromStatements));
+
+            return new EntryPoint(true, eval);
+        }
+
+        public static BoundAssembly BindAssembly(bool isScript, BoundAssembly? previous, BoundGlobalScope globalScope)
+        {
+            var parentScope = CreateParentScope(globalScope, globalScope.References);
             var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+
             diagnostics.AddRange(globalScope.Diagnostics);
 
-            foreach (var function in globalScope.Functions)
+            foreach (var boundType in globalScope.Types)
             {
-                if (!(function is SourceMethodSymbol sourceFunction))
-                    continue;
-
-                var binder = new Binder(isScript);
-                var functionScope = new BoundScope(parentScope, function);
-
-                var body = binder.BindExpression(sourceFunction.Declaration.Body, functionScope);
-
-                var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
-
-                if (function.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                foreach (var methodSymbol in boundType.GetMembers().OfType<SourceMethodSymbol>())
                 {
-                    binder.Diagnostics.ReportAllPathsMustReturn(sourceFunction.Declaration.Identifier.Location);
+                    var binder = new Binder(isScript);
+                    var functionScope = new BoundScope(parentScope, methodSymbol);
+
+                    var body = binder.BindExpression(methodSymbol.Declaration.Body, functionScope);
+
+                    var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
+
+                    if (methodSymbol.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                    {
+                        binder.Diagnostics.ReportAllPathsMustReturn(methodSymbol.Declaration.Identifier.Location);
+                    }
+
+                    boundType.DefineFunction(methodSymbol, loweredBody);
                 }
-
-                functionBodies.Add(function, loweredBody);
-                diagnostics.AddRange(binder.Diagnostics);
             }
 
-            var compilationUnit = globalScope.Statements.Any() ? globalScope.Statements.First().Syntax : null!;
-
-            if (globalScope.MainFunction != null && globalScope.Statements.Any())
-            {
-                var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalScope.Statements));
-                functionBodies.Add(globalScope.MainFunction, body);
-            }
-            else if (globalScope.ScriptFunction != null)
-            {
-                var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalScope.Statements);
-
-                // for our script function we need to return an object. if the expression is not an object then we will
-                // create a conversion expression to convert it.
-                if (boundStatementFromStatements.Expression.Type != TypeSymbol.Any)
-                {
-                    // what should we do when we have a unit expression?
-                    boundStatementFromStatements = new BoundExpressionStatement(boundStatementFromStatements.Syntax,
-                        new BoundConversionExpression(boundStatementFromStatements.Syntax, TypeSymbol.Any,
-                            boundStatementFromStatements.Expression));
-                }
-
-                var body = Lowerer.Lower(boundStatementFromStatements);
-                functionBodies.Add(globalScope.ScriptFunction, body);
-            }
-
-            return new BoundProgram(previous, diagnostics.ToImmutableArray(), globalScope.MainFunction,
-                globalScope.ScriptFunction, functionBodies.ToImmutable(), globalScope.References);
+            return new BoundAssembly(
+                previous,
+                diagnostics.ToImmutableArray(),
+                globalScope.EntryPoint,
+                globalScope.References,
+                globalScope.Types
+            );
         }
 
         private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax, IReadOnlyCollection<BoundStatement> statements)
@@ -261,7 +295,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundExpressionStatement(syntax, new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax)));
         }
 
-        private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
+        private SourceMethodSymbol BindFunctionDeclaration(BoundType boundType, FunctionDeclarationSyntax syntax, BoundScope scope)
         {
             var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
@@ -288,15 +322,21 @@ namespace Panther.CodeAnalysis.Binding
             if (type == null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
-                var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
+                var tempFunction = new SourceMethodSymbol(boundType, syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
                 var functionScope = new BoundScope(scope, tempFunction);
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
             }
 
-            var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+            var function = new SourceMethodSymbol(boundType, syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
-            scope.DeclareFunction(function);
+            if (!boundType.TryDeclareFunction(function))
+            {
+                Diagnostics.ReportAmbiguousMethod(syntax.Location, syntax.Identifier.Text,
+                    parameters.Select(p => p.Name).ToImmutableArray());
+            }
+
+            return function;
         }
 
         private BoundStatement BindGlobalStatement(StatementSyntax syntax, BoundScope scope) =>
@@ -424,7 +464,7 @@ namespace Panther.CodeAnalysis.Binding
             var name = identifier.Text ?? "??";
             var declare = !identifier.IsInsertedToken;
             var variable = scope.IsGlobalScope
-                ? (VariableSymbol)new GlobalVariableSymbol(name, isReadOnly, expressionType, constantValue)
+                ? (VariableSymbol)new FieldSymbol(name, isReadOnly, expressionType, constantValue)
                 : new LocalVariableSymbol(name, isReadOnly, expressionType, constantValue);
 
             if (declare && !scope.TryDeclareVariable(variable))
@@ -593,7 +633,6 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             return new BoundErrorExpression(syntax);
-
         }
 
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
@@ -626,7 +665,6 @@ namespace Panther.CodeAnalysis.Binding
 
                     return new BoundErrorExpression(syntax);
                 }
-
 
                 if (methods.Length > 1)
                 {
@@ -743,7 +781,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundBlockExpression(syntax, stmts, expr);
         }
 
-        private static BoundScope? CreateParentScope(BoundGlobalScope? previous)
+        private static BoundScope? CreateParentScope(BoundGlobalScope? previous, ImmutableArray<AssemblyDefinition> references)
         {
             var stack = new Stack<BoundGlobalScope>();
 
@@ -753,17 +791,20 @@ namespace Panther.CodeAnalysis.Binding
                 previous = previous.Previous;
             }
 
-            var parent = CreateRootScope();
+            var parent = CreateRootScope(references);
 
             while (stack.Count > 0)
             {
                 previous = stack.Pop();
                 var scope = new BoundScope(parent);
-                foreach (var v in previous.Variables)
-                    scope.TryDeclareVariable(v);
 
-                foreach (var v in previous.Functions)
-                    scope.DeclareFunction(v);
+                // import all members from the previous default type which is where top level
+
+                var declaringType = previous.DefaultType;
+                if (declaringType != null)
+                {
+                    scope.ImportMembers(declaringType);
+                }
 
                 parent = scope;
             }
@@ -771,9 +812,28 @@ namespace Panther.CodeAnalysis.Binding
             return parent;
         }
 
-        private static BoundScope CreateRootScope()
+        private static BoundScope CreateRootScope(ImmutableArray<AssemblyDefinition> references)
         {
-            return new BoundScope(null);
+            var rootScope = new BoundScope(null);
+
+            // find Predef and add its functions
+            var importedTypes =
+                from assemblyDefinition in references
+                from module in assemblyDefinition.Modules
+                let predef = module.GetType("Panther.Predef")
+                where predef != null
+                // TODO: keep track of this import so we can know we need the assembly reference
+                select new ImportedTypeSymbol("Panther", "Predef", predef);
+
+            foreach (var importedTypeSymbol in importedTypes)
+            {
+                if (importedTypeSymbol == null) continue;
+
+                rootScope.Import(importedTypeSymbol);
+                rootScope.ImportMembers(importedTypeSymbol);
+            }
+
+            return rootScope;
         }
 
         private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)

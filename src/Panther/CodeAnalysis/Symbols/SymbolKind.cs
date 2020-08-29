@@ -5,7 +5,6 @@
         Method,
         Parameter,
         Type,
-        GlobalVariable,
         LocalVariable,
         Field,
         Namespace

@@ -5,17 +5,19 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Lowering
 {
-    sealed class InlineTemporaries : BoundStatementListRewriter
+    internal sealed class InlineTemporaries : BoundStatementListRewriter
     {
         private readonly Dictionary<VariableSymbol, BoundExpression> _expressionsToInline = new Dictionary<VariableSymbol, BoundExpression>();
+
         private InlineTemporaries()
         {
         }
 
-
         protected override BoundStatement RewriteStatement(BoundStatement node)
         {
-            if (node is BoundVariableDeclarationStatement varDecl && varDecl.Variable.Name.StartsWith("temp$"))
+            if (node is BoundVariableDeclarationStatement varDecl && (varDecl.Variable.Name.StartsWith("temp$")
+                //|| varDecl.Variable.Name.StartsWith("ctemp$")
+                ))
             {
                 _expressionsToInline[varDecl.Variable] = varDecl.Expression;
                 return new BoundNopStatement(node.Syntax);
@@ -39,7 +41,6 @@ namespace Panther.CodeAnalysis.Lowering
         {
             if (node.Statements.IsEmpty)
             {
-
             }
             return base.RewriteBlockExpression(node);
         }

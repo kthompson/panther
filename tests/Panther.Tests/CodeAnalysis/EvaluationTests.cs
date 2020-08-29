@@ -341,6 +341,15 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
+        public void EvaluatesBooleanLiteral(bool literal)
+        {
+            string code = $"{b(literal)}";
+            object value = literal;
+            using var scriptHost = BuildScriptHost();
+            AssertEvaluation(code, value, scriptHost);
+        }
+
+        [Property]
         public void EvaluatesOr(bool left, bool right)
         {
             string code = $"{b(left)} || {b(right)}";

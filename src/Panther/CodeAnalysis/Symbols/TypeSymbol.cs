@@ -1,8 +1,9 @@
 ﻿using System.Collections.Immutable;
+using Panther.CodeAnalysis.Binding;
 
 namespace Panther.CodeAnalysis.Symbols
 {
-    public sealed class TypeSymbol : TypeOrNamespaceSymbol
+    public abstract class TypeSymbol : NamespaceOrTypeSymbol
     {
         public string Namespace { get; }
 
@@ -16,17 +17,17 @@ namespace Panther.CodeAnalysis.Symbols
         public override string ToString() => this.Name;
 
 
-        public static readonly TypeSymbol Error = new TypeSymbol("", "err");
-        public static readonly TypeSymbol Any = new TypeSymbol("", "any");
-        public static readonly TypeSymbol Unit = new TypeSymbol("", "unit");
+        public static readonly TypeSymbol Error = new BoundType("", "err");
 
-        public static readonly TypeSymbol Bool = new TypeSymbol("", "bool");
-        public static readonly TypeSymbol Int = new TypeSymbol("", "int");
-        public static readonly TypeSymbol String = new TypeSymbol("", "string");
-        public override ImmutableArray<Symbol> GetMembers()=> ImmutableArray<Symbol>.Empty;
-        public override ImmutableArray<Symbol> GetMembers(string name) => ImmutableArray<Symbol>.Empty;
-        public override ImmutableArray<TypeSymbol> GetTypeMembers() => ImmutableArray<TypeSymbol>.Empty;
-        public override ImmutableArray<TypeSymbol> GetTypeMembers(string name) => ImmutableArray<TypeSymbol>.Empty;
+        // HACK: these should probably be ImportedTypeSymbols and imported into the BoundScope
+        // but right now we reference them every where. Alternatively they could be something else
+        // like a BuiltinType or something. that would also cover the `err` type
+        public static readonly TypeSymbol Any = new BoundType("", "any");
+        public static readonly TypeSymbol Unit = new BoundType("", "unit");
+
+        public static readonly TypeSymbol Bool = new BoundType("", "bool");
+        public static readonly TypeSymbol Int = new BoundType("", "int");
+        public static readonly TypeSymbol String = new BoundType("", "string");
 
         public override bool IsType => true;
     }

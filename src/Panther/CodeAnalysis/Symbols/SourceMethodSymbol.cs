@@ -7,8 +7,8 @@ namespace Panther.CodeAnalysis.Symbols
     {
         public FunctionDeclarationSyntax Declaration { get; }
 
-        public SourceMethodSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType, FunctionDeclarationSyntax declaration)
-            : base(name, parameters, returnType)
+        public SourceMethodSymbol(TypeSymbol declaringType, string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType, FunctionDeclarationSyntax declaration)
+            : base(declaringType, name, parameters, returnType)
         {
             Declaration = declaration;
         }

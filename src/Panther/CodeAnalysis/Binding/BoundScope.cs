@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Panther.CodeAnalysis.Symbols;
@@ -44,15 +45,26 @@ namespace Panther.CodeAnalysis.Binding
             return true;
         }
 
-        public void DeclareFunction(MethodSymbol method)
+        public void Import(TypeSymbol symbol) => ImportSymbol(symbol);
+        public void Import(MethodSymbol symbol) => ImportSymbol(symbol);
+
+        public void ImportMembers(NamespaceOrTypeSymbol namespaceOrTypeSymbol)
         {
-            if (_symbols.TryGetValue(method.Name, out var methods))
+            foreach (var member in namespaceOrTypeSymbol.GetMembers())
             {
-                _symbols[method.Name] = methods.Add(method);
+                ImportSymbol(member);
+            }
+        }
+
+        private void ImportSymbol(Symbol symbol)
+        {
+            if (_symbols.TryGetValue(symbol.Name, out var symbols))
+            {
+                _symbols[symbol.Name] = symbols.Add(symbol);
                 return;
             }
 
-            _symbols.Add(method.Name, ImmutableArray.Create<Symbol>(method));
+            _symbols.Add(symbol.Name, ImmutableArray.Create(symbol));
         }
 
         public VariableSymbol? TryLookupVariable(string name)
@@ -63,6 +75,16 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             return Parent?.TryLookupVariable(name);
+        }
+
+        public TypeSymbol? TryLookupType(string name)
+        {
+            if (_symbols.TryGetValue(name, out var existingSymbols))
+            {
+                return existingSymbols.OfType<TypeSymbol>().FirstOrDefault();
+            }
+
+            return Parent?.TryLookupType(name);
         }
 
         public ImmutableArray<MethodSymbol> LookupMethod(string name)
@@ -76,8 +98,6 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.SelectMany(symbols => symbols).OfType<VariableSymbol>().ToImmutableArray();
-
-        public ImmutableArray<MethodSymbol> GetDeclaredFunctions() => _symbols.Values.SelectMany(symbols => symbols).OfType<MethodSymbol>().ToImmutableArray();
 
         public void DeclareLoop(out BoundLabel breakLabel, out BoundLabel continueLabel)
         {
@@ -110,6 +130,11 @@ namespace Panther.CodeAnalysis.Binding
         {
             var labels = GetLabelsStack();
             return labels.Count == 0 ? null : labels.Peek().ContinueLabel;
+        }
+
+        public BoundScope EnterNamespace(NamespaceSymbol namespaceSymbol)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

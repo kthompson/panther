@@ -1,12 +1,12 @@
-﻿namespace Panther.CodeAnalysis.Symbols
-{
-    public sealed class FieldSymbol : Symbol
-    {
-        public TypeSymbol Type { get; }
+﻿using Panther.CodeAnalysis.Binding;
 
-        public FieldSymbol(string name, TypeSymbol type) : base(name)
+namespace Panther.CodeAnalysis.Symbols
+{
+    public sealed class FieldSymbol : VariableSymbol
+    {
+        internal FieldSymbol(string name, bool isReadOnly, TypeSymbol type, BoundConstant? constantValue)
+            : base(name, isReadOnly, type, constantValue)
         {
-            Type = type;
         }
 
         public override SymbolKind Kind => SymbolKind.Field;

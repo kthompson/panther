@@ -4,34 +4,35 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
+    /// <summary>
+    /// Builds all of the syntax trees into the parts that will eventually
+    /// become a BoundAssembly
+    /// </summary>
     internal sealed class BoundGlobalScope
     {
         public BoundGlobalScope? Previous { get; }
         public ImmutableArray<Diagnostic> Diagnostics { get; }
-        public MethodSymbol? MainFunction { get; }
-        public MethodSymbol? ScriptFunction { get; }
+        public EntryPoint? EntryPoint { get; }
 
-        public ImmutableArray<TypeSymbol> Types { get; }
-        public ImmutableArray<MethodSymbol> Functions { get; }
-        public ImmutableArray<VariableSymbol> Variables { get; }
-        public ImmutableArray<BoundStatement> Statements { get; }
+        /// <summary>
+        /// The type that contains the top level statements
+        /// </summary>
+        public BoundType? DefaultType { get; }
+        public ImmutableArray<BoundType> Types { get; }
         public ImmutableArray<AssemblyDefinition> References { get; }
 
         public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics,
-            MethodSymbol? mainFunction, MethodSymbol? scriptFunction, ImmutableArray<VariableSymbol> variables,
-            ImmutableArray<TypeSymbol> types,
-            ImmutableArray<MethodSymbol> functions, ImmutableArray<BoundStatement> statements,
+            BoundType? defaultType,
+            EntryPoint? entryPoint,
+            ImmutableArray<BoundType> types,
             ImmutableArray<AssemblyDefinition> references)
         {
             Previous = previous;
             Diagnostics = diagnostics;
-            MainFunction = mainFunction;
-            ScriptFunction = scriptFunction;
-            Variables = variables;
-            Statements = statements;
+            EntryPoint = entryPoint;
             References = references;
+            DefaultType = defaultType;
             Types = types;
-            Functions = functions;
         }
     }
 }

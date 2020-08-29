@@ -17,9 +17,9 @@ namespace Panther.CodeAnalysis.Syntax
             ImmutableArray<MemberSyntax> members,
             SyntaxToken endOfFileToken) : base(syntaxTree)
         {
+            NamespaceDirectives = namespaceDirectives;
             Usings = usings;
             Statements = statements;
-            NamespaceDirectives = namespaceDirectives;
             Members = members;
             EndOfFileToken = endOfFileToken;
         }

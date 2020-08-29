@@ -2,6 +2,7 @@
 - REPL: page up is broken 
 
 # TODO:
+- support type aliases 
 - update using directive to tell us what symbols to import
 - BoundProgram -> BoundType -> BoundAssembly 
 - symbols and binder for object definitions

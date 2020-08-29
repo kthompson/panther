@@ -11,13 +11,13 @@ namespace Panther.CodeAnalysis.Symbols
             switch (symbol)
             {
                 case MethodSymbol functionSymbol:
-                    WriteFunctionSymbol(functionSymbol, writer);
+                    WriteMethodSymbol(functionSymbol, writer);
                     break;
                 case TypeSymbol typeSymbol:
                     WriteTypeSymbol(typeSymbol, writer);
                     break;
-                case GlobalVariableSymbol globalVariableSymbol:
-                    WriteGlobalVariableSymbol(globalVariableSymbol, writer);
+                case FieldSymbol globalVariableSymbol:
+                    WriteFieldSymbol(globalVariableSymbol, writer);
                     break;
                 case ParameterSymbol parameterSymbol:
                     WriteParameterSymbol(parameterSymbol, writer);
@@ -50,7 +50,7 @@ namespace Panther.CodeAnalysis.Symbols
             symbol.Type.WriteTo(writer);
         }
 
-        private static void WriteGlobalVariableSymbol(GlobalVariableSymbol symbol, TextWriter writer)
+        private static void WriteFieldSymbol(FieldSymbol symbol, TextWriter writer)
         {
             writer.WriteKeyword(symbol.IsReadOnly ? "val " : "var ");
             writer.WriteIdentifier(symbol.Name);
@@ -58,7 +58,7 @@ namespace Panther.CodeAnalysis.Symbols
             symbol.Type.WriteTo(writer);
         }
 
-        private static void WriteFunctionSymbol(MethodSymbol symbol, TextWriter writer)
+        private static void WriteMethodSymbol(MethodSymbol symbol, TextWriter writer)
         {
             writer.WriteKeyword("def ");
             writer.WriteIdentifier(symbol.Name);

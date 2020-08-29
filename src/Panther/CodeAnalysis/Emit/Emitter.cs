@@ -31,13 +31,13 @@ namespace Panther.CodeAnalysis.Emit
         private readonly FieldReference? _unit;
 
         private readonly Dictionary<LocalVariableSymbol, VariableDefinition> _locals = new Dictionary<LocalVariableSymbol, VariableDefinition>();
-        private readonly Dictionary<GlobalVariableSymbol, FieldReference> _fields;
+        private readonly Dictionary<FieldSymbol, FieldReference> _fields;
         private readonly Dictionary<MethodSymbol, MethodReference> _methodReferences;
 
         private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
         private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch = new List<(int InstructionIndex, BoundLabel Target)>();
 
-        private Emitter(string moduleName, ImmutableArray<AssemblyDefinition> references, Dictionary<GlobalVariableSymbol, FieldReference>? previousFields = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
+        private Emitter(string moduleName, ImmutableArray<AssemblyDefinition> references, Dictionary<FieldSymbol, FieldReference>? previousFields = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
         {
             _typeCache = (
                 from asm in references
@@ -71,7 +71,7 @@ namespace Panther.CodeAnalysis.Emit
             }
 
             // import fields from previous compilation
-            _fields = (previousFields ?? new Dictionary<GlobalVariableSymbol, FieldReference>()).Select(kv =>
+            _fields = (previousFields ?? new Dictionary<FieldSymbol, FieldReference>()).Select(kv =>
                     (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
                 .ToDictionary(kv => kv.Item1, kv => kv.Item2);
 
@@ -93,18 +93,18 @@ namespace Panther.CodeAnalysis.Emit
             _typeDef = new TypeDefinition("", "Program", TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
         }
 
-        public static EmitResult Emit(BoundProgram program, string moduleName, string outputPath, Dictionary<GlobalVariableSymbol, FieldReference>? previousGlobals = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
+        public static EmitResult Emit(BoundAssembly assembly, string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference>? previousGlobals = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
         {
-            if (program.Diagnostics.Any())
-                return new EmitResult(program.Diagnostics,
-                    previousGlobals ?? new Dictionary<GlobalVariableSymbol, FieldReference>(),
+            if (assembly.Diagnostics.Any())
+                return new EmitResult(assembly.Diagnostics,
+                    previousGlobals ?? new Dictionary<FieldSymbol, FieldReference>(),
                     previousMethods ?? new Dictionary<MethodSymbol, MethodReference>(), null);
 
-            var emitter = new Emitter(moduleName, program.References, previousGlobals, previousMethods);
-            return emitter.Emit(program, outputPath);
+            var emitter = new Emitter(moduleName, assembly.References, previousGlobals, previousMethods);
+            return emitter.Emit(assembly, outputPath);
         }
 
-        public EmitResult Emit(BoundProgram program, string outputPath)
+        public EmitResult Emit(BoundAssembly assembly, string outputPath)
         {
             if (_diagnostics.Any())
                 return new EmitResult(_diagnostics.ToImmutableArray(), _fields, _methodReferences, null);
@@ -113,20 +113,30 @@ namespace Panther.CodeAnalysis.Emit
 
             // ensure all functions exist first so we can reference them
             // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
-            foreach (var functionSignature in program.Functions.Keys.OrderBy(x => x.Name))
-                EmitFunctionDeclaration(functionSignature);
+            // TODO: this is probably wrong now, the functions will be in scope even though they shouldnt be
+            // unless we have an import
+            foreach (var type in assembly.Types)
+            {
+                foreach (var functionSignature in type.MethodDefinitions.Keys.OrderBy(x => x.Name))
+                {
+                    EmitFunctionDeclaration(functionSignature);
+                }
+            }
+
 
             // emit the function bodies now
-            foreach (var (functionSignature, boundBlockExpression) in program.Functions)
-                EmitFunctionBody(functionSignature, boundBlockExpression);
-
-            if (program.MainFunction != null)
+            foreach (var type in assembly.Types)
             {
-                _assemblyDefinition.EntryPoint = _methods[program.MainFunction];
+                // TODO emit full type
+                foreach (var (functionSignature, boundBlockExpression) in type.MethodDefinitions)
+                {
+                    EmitFunctionBody(functionSignature, boundBlockExpression);
+                }
             }
-            else if (program.ScriptFunction != null)
+
+            if (assembly.EntryPoint != null)
             {
-                _assemblyDefinition.EntryPoint = _methods[program.ScriptFunction];
+                _assemblyDefinition.EntryPoint = _methods[assembly.EntryPoint.Symbol];
             }
 
             _assemblyDefinition.Write(outputPath);
@@ -237,7 +247,7 @@ namespace Panther.CodeAnalysis.Emit
 
             switch (assignmentStatement.Variable)
             {
-                case GlobalVariableSymbol globalVariableSymbol:
+                case FieldSymbol globalVariableSymbol:
                     ilProcessor.Emit(OpCodes.Stsfld, _fields[globalVariableSymbol]);
                     break;
 
@@ -256,7 +266,7 @@ namespace Panther.CodeAnalysis.Emit
             var variableType = _knownTypes[pantherVar.Type];
             switch (pantherVar)
             {
-                case GlobalVariableSymbol globalVariableSymbol:
+                case FieldSymbol globalVariableSymbol:
                     // TODO: figure out reassignment in case where type changes
                     var field = _typeDef.Fields.FirstOrDefault(fld => fld.Name == globalVariableSymbol.Name);
                     if (field == null)
@@ -354,7 +364,7 @@ namespace Panther.CodeAnalysis.Emit
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(expression));
+                    throw new ArgumentOutOfRangeException(nameof(expression), expression.GetType().FullName);
             }
         }
 
@@ -610,7 +620,7 @@ namespace Panther.CodeAnalysis.Emit
         {
             switch (variableExpression.Variable)
             {
-                case GlobalVariableSymbol globalVariableSymbol:
+                case FieldSymbol globalVariableSymbol:
                     ilProcessor.Emit(OpCodes.Ldsfld, _fields[globalVariableSymbol]);
                     break;
 

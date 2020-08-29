@@ -15,7 +15,7 @@ namespace Panther.CodeAnalysis
     {
         private ImmutableArray<AssemblyDefinition> _references;
         private Compilation? _previous;
-        private Dictionary<GlobalVariableSymbol, FieldReference> _previousGlobals;
+        private Dictionary<FieldSymbol, FieldReference> _previousGlobals;
         private Dictionary<MethodSymbol, MethodReference> _previousMethods;
         private readonly string _moduleName;
         private readonly string _hostPath;
@@ -32,7 +32,7 @@ namespace Panther.CodeAnalysis
             _references = references;
             _previous = previous;
             _moduleName = moduleName;
-            _previousGlobals = new Dictionary<GlobalVariableSymbol, FieldReference>();
+            _previousGlobals = new Dictionary<FieldSymbol, FieldReference>();
             _previousMethods = new Dictionary<MethodSymbol, MethodReference>();
             var uuid = Guid.NewGuid().ToString();
             _loadContext = new AssemblyLoadContext(uuid, true);

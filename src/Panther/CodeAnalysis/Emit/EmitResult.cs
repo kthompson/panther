@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Emit
     public sealed class EmitResult
     {
         internal EmitResult(ImmutableArray<Diagnostic> diagnostics,
-            Dictionary<GlobalVariableSymbol, FieldReference> globals, Dictionary<MethodSymbol, MethodReference> methods,
+            Dictionary<FieldSymbol, FieldReference> globals, Dictionary<MethodSymbol, MethodReference> methods,
             AssemblyDefinition? assembly)
         {
             Diagnostics = diagnostics;
@@ -18,7 +18,7 @@ namespace Panther.CodeAnalysis.Emit
         }
 
         public ImmutableArray<Diagnostic> Diagnostics { get; }
-        internal Dictionary<GlobalVariableSymbol, FieldReference> Globals { get; }
+        internal Dictionary<FieldSymbol, FieldReference> Globals { get; }
         internal Dictionary<MethodSymbol, MethodReference> Methods { get; }
         internal AssemblyDefinition? Assembly { get; }
     }
