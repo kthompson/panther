@@ -222,9 +222,13 @@ namespace Panther.CodeAnalysis.Syntax
         private UsingDirectiveSyntax ParseUsingDirective()
         {
             var usingKeyword = Accept();
+            var special = (CurrentKind == SyntaxKind.ImplicitKeyword || CurrentKind == SyntaxKind.StaticKeyword)
+                ? Accept()
+                : null;
+
             var name = ParseNameSyntax();
 
-            return new UsingDirectiveSyntax(_syntaxTree, usingKeyword, name);
+            return new UsingDirectiveSyntax(_syntaxTree, special, usingKeyword, name);
         }
 
         private NameSyntax ParseNameSyntax()

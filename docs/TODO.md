@@ -2,13 +2,12 @@
 - REPL: page up is broken 
 
 # TODO:
-- support type aliases 
-- update using directive to tell us what symbols to import
-- BoundProgram -> BoundType -> BoundAssembly 
-- symbols and binder for object definitions
-- create or import TypeSymbols that have Method/Field symbols
+- using and objects
+    - finish using directive to tell us what symbols to import
+    - symbols and binder for object definitions
+    - add test coverage
+- support type aliases via Signatures
 - debugging support
-- qualified names
 - Add SyntaxFactory for nicer API. Make ctors private. use source generators
 - ANSI console support
 

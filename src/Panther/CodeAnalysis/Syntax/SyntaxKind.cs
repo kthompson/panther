@@ -29,6 +29,7 @@
         ImplicitKeyword,
         NamespaceKeyword,
         ObjectKeyword,
+        StaticKeyword,
         ToKeyword,
         TrueKeyword,
         UsingKeyword,

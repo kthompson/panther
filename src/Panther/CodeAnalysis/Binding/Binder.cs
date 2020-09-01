@@ -21,26 +21,6 @@ namespace Panther.CodeAnalysis.Binding
             _isScript = isScript;
         }
 
-        private static TypeSymbol? LookupTypeByMetadataName(string name)
-        {
-            if (name == typeof(object).FullName)
-                return TypeSymbol.Any;
-
-            if (name == typeof(int).FullName)
-                return TypeSymbol.Int;
-
-            if (name == typeof(bool).FullName)
-                return TypeSymbol.Bool;
-
-            if (name == typeof(string).FullName)
-                return TypeSymbol.String;
-
-            if (name == typeof(void).FullName)
-                return TypeSymbol.Unit;
-
-            return null;
-        }
-
         public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
             var parentScope = CreateParentScope(previous, references);
@@ -77,13 +57,12 @@ namespace Panther.CodeAnalysis.Binding
                     switch (member)
                     {
                         case FunctionDeclarationSyntax function:
-
                             var symbol = binder.BindFunctionDeclaration(defaultType, function, scope);
                             scope.Import(symbol);
                             break;
 
                         case ObjectDeclarationSyntax objectDeclaration:
-                            var type = binder.BindObjectDeclaration(objectDeclaration);
+                            var type = binder.BindObjectDeclaration(objectDeclaration, scope);
                             scope.Import(type);
                             boundTypes.Add(type);
                             break;
@@ -108,7 +87,7 @@ namespace Panther.CodeAnalysis.Binding
 
             foreach (var variable in variables)
             {
-                defaultType.DefineField(variable);
+                defaultType.DefineSymbol(variable);
             }
 
             if (defaultType.GetMembers().Any())
@@ -136,9 +115,31 @@ namespace Panther.CodeAnalysis.Binding
             throw new NotImplementedException();
         }
 
-        private BoundType BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration)
+        private BoundType BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
         {
-            throw new NotImplementedException();
+            // TODO specify namespace
+            var type = new BoundType("", objectDeclaration.Identifier.Text);
+            var scope = new BoundScope(parent);
+            foreach (var member in objectDeclaration.Members)
+            {
+                switch (member)
+                {
+                    case FunctionDeclarationSyntax functionDeclarationSyntax:
+                        var method = BindFunctionDeclaration(type, functionDeclarationSyntax, scope);
+                        scope.Import(method);
+                        type.DefineSymbol(method);
+                        break;
+                    case ObjectDeclarationSyntax childObjectDeclaration:
+                        var childObject = BindObjectDeclaration(childObjectDeclaration, scope);
+                        scope.Import(childObject);
+                        type.DefineSymbol(childObject);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(member));
+                }
+            }
+
+            return type;
         }
 
         private NamespaceSymbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
@@ -206,8 +207,8 @@ namespace Panther.CodeAnalysis.Binding
             var compilationUnit = globalStatements.First().Syntax;
             var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
 
-            defaultType.TryDeclareFunction(main);
-            defaultType.DefineFunction(main, body);
+            defaultType.DefineSymbol(main);
+            defaultType.DefineFunctionBody(main, body);
 
             return new EntryPoint(false, main);
         }
@@ -223,7 +224,7 @@ namespace Panther.CodeAnalysis.Binding
                 ImmutableArray<ParameterSymbol>.Empty,
                 TypeSymbol.Any
             );
-            defaultType.TryDeclareFunction(eval);
+            defaultType.DefineSymbol(eval);
 
             var compilationUnit = globalStatements.First().Syntax;
             var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalStatements);
@@ -243,7 +244,7 @@ namespace Panther.CodeAnalysis.Binding
                 );
             }
 
-            defaultType.DefineFunction(eval, Lowerer.Lower(boundStatementFromStatements));
+            defaultType.DefineFunctionBody(eval, Lowerer.Lower(boundStatementFromStatements));
 
             return new EntryPoint(true, eval);
         }
@@ -271,7 +272,7 @@ namespace Panther.CodeAnalysis.Binding
                         binder.Diagnostics.ReportAllPathsMustReturn(methodSymbol.Declaration.Identifier.Location);
                     }
 
-                    boundType.DefineFunction(methodSymbol, loweredBody);
+                    boundType.DefineFunctionBody(methodSymbol, loweredBody);
                 }
             }
 
@@ -330,7 +331,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var function = new SourceMethodSymbol(boundType, syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
-            if (!boundType.TryDeclareFunction(function))
+            if (!boundType.DefineSymbol(function))
             {
                 Diagnostics.ReportAmbiguousMethod(syntax.Location, syntax.Identifier.Text,
                     parameters.Select(p => p.Name).ToImmutableArray());

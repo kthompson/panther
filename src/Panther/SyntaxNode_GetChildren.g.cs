@@ -304,6 +304,10 @@ namespace Panther.CodeAnalysis.Syntax
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return UsingKeyword;
+            if (UsingStyleKeyword != null)
+            {
+                yield return UsingStyleKeyword;
+            }
             yield return Name;
         }
     }
