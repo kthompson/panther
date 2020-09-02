@@ -132,7 +132,6 @@ namespace Panther.CodeAnalysis.Binding
                     case FunctionDeclarationSyntax functionDeclarationSyntax:
                         var method = BindFunctionDeclaration(type, functionDeclarationSyntax, scope);
                         scope.Import(method);
-                        type.DefineSymbol(method);
                         break;
                     case ObjectDeclarationSyntax childObjectDeclaration:
                         var childObject = BindObjectDeclaration(childObjectDeclaration, scope);
@@ -627,7 +626,7 @@ namespace Panther.CodeAnalysis.Binding
             if (symbols.Length != 0)
                 return new BoundMethodExpression(syntax, name, symbols);
 
-            var variable = scope.TryLookupVariable(name);
+            var variable = scope.LookupVariable(name);
             if (variable != null)
             {
                 Diagnostics.ReportNotAFunction(syntax.Location, name);
@@ -811,6 +810,11 @@ namespace Panther.CodeAnalysis.Binding
                     scope.ImportMembers(declaringType);
                 }
 
+                foreach (var type in previous.Types)
+                {
+                    scope.Import(type);
+                }
+
                 parent = scope;
             }
 
@@ -853,9 +857,13 @@ namespace Panther.CodeAnalysis.Binding
 
                 var name = ident.Text;
 
-                var variable = scope.TryLookupVariable(name);
+                var variable = scope.LookupVariable(name);
                 if (variable != null)
                     return new BoundVariableExpression(syntax, variable);
+
+                var type = scope.LookupType(name);
+                if (type != null)
+                    return new BoundTypeExpression(syntax, type);
 
                 Diagnostics.ReportUndefinedName(ident.Location, name);
                 return new BoundErrorExpression(syntax);

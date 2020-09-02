@@ -31,7 +31,7 @@ namespace Panther.CodeAnalysis.Symbols
                 if (_symbols.ContainsKey(symbol.Name))
                     return false;
 
-                _symbols.Add(symbol.Name, ImmutableArray.Create<Symbol>(symbol));
+                _symbols.Add(symbol.Name, ImmutableArray.Create(symbol));
                 return true;
             }
 

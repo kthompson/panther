@@ -100,7 +100,7 @@ namespace Panther.CodeAnalysis
 
             while (compilation != null)
             {
-                foreach (var type in compilation.Types.Where(function => symbolNames.Add(function.Name)))
+                foreach (var type in compilation.Types.Where(type => symbolNames.Add(type.Name)))
                 {
                     yield return type;
 

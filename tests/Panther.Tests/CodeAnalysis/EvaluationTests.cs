@@ -445,6 +445,22 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation($"a", n, scriptHost);
         }
 
+
+        [Fact]
+        public void EvaluatesObjectMethodCallExpression()
+        {
+            using var scriptHost = BuildScriptHost();
+            string code = @"
+                SomeObject.method()
+                
+                object SomeObject {
+                    def method() = ""taco""
+                }
+            ";
+
+            AssertEvaluation(code, "taco", scriptHost);
+        }
+
         [Property]
         public void EvaluatesMethodContinuation(int n)
         {

@@ -67,24 +67,24 @@ namespace Panther.CodeAnalysis.Binding
             _symbols.Add(symbol.Name, ImmutableArray.Create(symbol));
         }
 
-        public VariableSymbol? TryLookupVariable(string name)
+        public VariableSymbol? LookupVariable(string name)
         {
             if (_symbols.TryGetValue(name, out var existingSymbols))
             {
                 return existingSymbols.OfType<VariableSymbol>().FirstOrDefault();
             }
 
-            return Parent?.TryLookupVariable(name);
+            return Parent?.LookupVariable(name);
         }
 
-        public TypeSymbol? TryLookupType(string name)
+        public TypeSymbol? LookupType(string name)
         {
             if (_symbols.TryGetValue(name, out var existingSymbols))
             {
                 return existingSymbols.OfType<TypeSymbol>().FirstOrDefault();
             }
 
-            return Parent?.TryLookupType(name);
+            return Parent?.LookupType(name);
         }
 
         public ImmutableArray<MethodSymbol> LookupMethod(string name)

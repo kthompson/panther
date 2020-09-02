@@ -16,6 +16,7 @@ namespace Panther.CodeAnalysis.Binding
         LiteralExpression,
         MemberAssignmentExpression,
         MethodExpression,
+        TypeExpression,
         UnaryExpression,
         UnitExpression,
         VariableExpression,
@@ -28,6 +29,6 @@ namespace Panther.CodeAnalysis.Binding
         LabelStatement,
         MemberAssignmentStatement,
         NopStatement,
-        VariableDeclarationStatement
+        VariableDeclarationStatement,
     }
 }

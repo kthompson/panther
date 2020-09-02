@@ -146,7 +146,7 @@ namespace Panther
             if (_previous == null)
                 return;
 
-            foreach (var symbol in _previous.GetSymbols().OrderBy(s => s.Kind).ThenBy(s => s.Name))
+            foreach (var symbol in _previous.GetSymbols())
             {
                 symbol.WriteTo(Console.Out);
                 Console.WriteLine();

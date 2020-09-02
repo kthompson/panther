@@ -49,5 +49,9 @@ namespace Panther.CodeAnalysis.Text
             return !Equals(left, right);
         }
 
+        public override string ToString()
+        {
+            return $"[{Span}]: {Text.ToString(Span)}";
+        }
     }
 }

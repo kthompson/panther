@@ -31,7 +31,6 @@ namespace Panther.CodeAnalysis.Emit
         private readonly MethodReference? _convertToInt32;
         private readonly FieldReference? _unit;
 
-
         private readonly Dictionary<FieldSymbol, FieldReference> _fields;
         private readonly Dictionary<MethodSymbol, MethodReference> _methodReferences;
 

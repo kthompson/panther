@@ -150,7 +150,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<NamespaceDirectiveSyntax> ParseNamespaces()
         {
             var namespaceDirectives = ImmutableArray.CreateBuilder<NamespaceDirectiveSyntax>();
-            while (CurrentKind == SyntaxKind.NamespaceDirective)
+            while (CurrentKind == SyntaxKind.NamespaceKeyword)
             {
                 namespaceDirectives.Add(ParseNamespaceDirective());
             }
@@ -296,8 +296,26 @@ namespace Panther.CodeAnalysis.Syntax
             return new ParameterSyntax(_syntaxTree, ident, typeAnnotation);
         }
 
+        bool HasStatementTerminator(SyntaxNode expr) => GetStatementTerminator(expr) != null;
+
+        private static SyntaxKind? GetStatementTerminator(SyntaxNode expr)
+        {
+            var nodes = expr.DescendantsAndSelf().Where(x => x.Kind != SyntaxKind.WhitespaceTrivia).ToImmutableList();
+            var lastKind = nodes.Select(x => x.Kind).LastOrDefault();
+
+            return lastKind switch
+            {
+                SyntaxKind.EndOfInputToken => SyntaxKind.EndOfInputToken,
+                SyntaxKind.EndOfLineTrivia => SyntaxKind.EndOfLineTrivia,
+                SyntaxKind.CloseBraceToken => SyntaxKind.CloseBraceToken,
+                _ => null
+            };
+        }
+
         private ExpressionSyntax ParseExpression(OperatorPrecedence precedence, bool inGroup = false)
         {
+            bool isTerminatingLine(SyntaxNode node) => !inGroup && HasStatementTerminator(node);
+
             // advance until we get to the actual current token
             var currentToken = CurrentToken;
             var prefixFunction = _prefixParseFunctions.GetValueOrDefault(currentToken.Kind);
@@ -314,11 +332,10 @@ namespace Panther.CodeAnalysis.Syntax
             var left = prefixFunction();
 
             // investigate if we can use precedence to break early
-            var isTerminatingLine = !inGroup && left.Descendants().Any(x => x.Kind == SyntaxKind.EndOfLineTrivia);
-            if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression || isTerminatingLine)
+            if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression || isTerminatingLine(left))
                 return left;
 
-            while (precedence < CurrentPrecedence())
+            while (precedence < CurrentPrecedence() && !isTerminatingLine(left))
             {
                 var infix = _infixParseFunctions.GetValueOrDefault(CurrentKind);
                 if (infix == null)

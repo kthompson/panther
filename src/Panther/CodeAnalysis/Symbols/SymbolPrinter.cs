@@ -32,6 +32,7 @@ namespace Panther.CodeAnalysis.Symbols
 
         private static void WriteTypeSymbol(TypeSymbol symbol, TextWriter writer)
         {
+            writer.WriteKeyword("object ");
             writer.WriteIdentifier(symbol.Name);
         }
 
