@@ -20,11 +20,11 @@ namespace Panther.CodeAnalysis
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
         public ImmutableArray<AssemblyDefinition> References { get; }
-        public ImmutableArray<TypeSymbol> Types => GlobalScope.Types.OfType<TypeSymbol>().ToImmutableArray();
+        public ImmutableArray<TypeSymbol> Types => BoundAssembly.Types.OfType<TypeSymbol>().ToImmutableArray();
 
         private BoundGlobalScope? _globalScope;
 
-        internal BoundGlobalScope GlobalScope
+        private BoundGlobalScope GlobalScope
         {
             get
             {
@@ -35,6 +35,22 @@ namespace Panther.CodeAnalysis
                 }
 
                 return _globalScope;
+            }
+        }
+
+        private BoundAssembly? _boundAssembly;
+        private BoundAssembly BoundAssembly
+        {
+            get
+            {
+                if (_boundAssembly == null)
+                {
+                    var previous = this.Previous?.BoundAssembly;
+                    var bindAssembly = Binder.BindAssembly(IsScript, previous, GlobalScope);
+                    Interlocked.CompareExchange(ref _boundAssembly, bindAssembly, null);
+                }
+
+                return _boundAssembly;
             }
         }
 
@@ -98,12 +114,6 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        private BoundAssembly GetAssembly()
-        {
-            var previous = this.Previous?.GetAssembly();
-            return Binder.BindAssembly(IsScript, previous, GlobalScope);
-        }
-
         public void EmitTree(TextWriter writer)
         {
             var entryPoint = GlobalScope.EntryPoint?.Symbol;
@@ -131,7 +141,7 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(MethodSymbol method, TextWriter writer)
         {
-            BoundAssembly? assembly = GetAssembly();
+            BoundAssembly? assembly = BoundAssembly;
 
             while (assembly != null)
             {
@@ -159,16 +169,10 @@ namespace Panther.CodeAnalysis
             block.WriteTo(writer);
         }
 
-        public EmitResult Emit(string moduleName, string outputPath)
-        {
-            var program = GetAssembly();
-            return Emitter.Emit(program, moduleName, outputPath);
-        }
+        public EmitResult Emit(string moduleName, string outputPath) =>
+            Emitter.Emit(BoundAssembly, moduleName, outputPath);
 
-        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference> previousGlobals, Dictionary<MethodSymbol, MethodReference> previousMethods)
-        {
-            var program = GetAssembly();
-            return Emitter.Emit(program, moduleName, outputPath, previousGlobals, previousMethods);
-        }
+        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference> previousGlobals, Dictionary<MethodSymbol, MethodReference> previousMethods) =>
+            Emitter.Emit(BoundAssembly, moduleName, outputPath, previousGlobals, previousMethods);
     }
 }

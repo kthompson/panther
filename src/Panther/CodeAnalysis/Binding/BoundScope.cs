@@ -99,6 +99,8 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.SelectMany(symbols => symbols).OfType<VariableSymbol>().ToImmutableArray();
 
+        public ImmutableArray<MethodSymbol> GetDeclaredFunctions() => _symbols.Values.SelectMany(symbols => symbols).OfType<MethodSymbol>().ToImmutableArray();
+
         public void DeclareLoop(out BoundLabel breakLabel, out BoundLabel continueLabel)
         {
             var labels = GetLabelsStack();

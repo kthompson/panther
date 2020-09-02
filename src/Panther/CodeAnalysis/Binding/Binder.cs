@@ -78,9 +78,16 @@ namespace Panther.CodeAnalysis.Binding
                     .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, scope))
                     .ToImmutableArray();
 
-            var functions = defaultType.GetMembers().OfType<MethodSymbol>().ToImmutableArray();
+            var mains = from type in boundTypes
+                from member in type.GetMembers().OfType<SourceMethodSymbol>()
+                where member.Name == "main"
+                select member;
 
-            var entryPoint = BindEntryPoint(defaultType, isScript, syntaxTrees, statements, functions, binder);
+            var mainFunction = mains.FirstOrDefault() ??
+                               scope.GetDeclaredFunctions().OfType<SourceMethodSymbol>()
+                                   .FirstOrDefault(main => main.Name == "main");
+
+            var entryPoint = BindEntryPoint(defaultType, isScript, syntaxTrees, statements, mainFunction, binder);
 
             // top level variables get converted to fields on the default type
             var variables = scope.GetDeclaredVariables().OfType<FieldSymbol>();
@@ -105,9 +112,7 @@ namespace Panther.CodeAnalysis.Binding
             diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics, (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
 
             return new BoundGlobalScope(previous, diagnostics,
-                defaultType.GetMembers().Any() ? defaultType : null,
-                entryPoint,
-                boundTypes.ToImmutable(), references);
+                defaultType, entryPoint, boundTypes.ToImmutable(), references);
         }
 
         private NamespaceOrTypeSymbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
@@ -149,16 +154,15 @@ namespace Panther.CodeAnalysis.Binding
 
         private static EntryPoint? BindEntryPoint(BoundType defaultType, bool isScript,
             ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<BoundStatement> globalStatements,
-            ImmutableArray<MethodSymbol> functions, Binder binder) =>
+            SourceMethodSymbol? mainFunction, Binder binder) =>
             isScript
                 ? BindScriptEntryPoint(defaultType, globalStatements)
-                : BindMainEntryPoint(defaultType, syntaxTrees, globalStatements, functions, binder);
+                : BindMainEntryPoint(defaultType, syntaxTrees, globalStatements, mainFunction, binder);
 
         private static EntryPoint BindMainEntryPoint(BoundType defaultType, ImmutableArray<SyntaxTree> syntaxTrees,
-            ImmutableArray<BoundStatement> globalStatements, ImmutableArray<MethodSymbol> functions, Binder binder)
+            ImmutableArray<BoundStatement> globalStatements, SourceMethodSymbol? mainFunction, Binder binder)
         {
             var hasGlobalStatements = globalStatements.Any();
-            var mainFunction = functions.OfType<SourceMethodSymbol>().FirstOrDefault(func => func.Name == "main");
 
             var firstStatementPerSyntaxTree =
                 (from tree in syntaxTrees
