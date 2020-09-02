@@ -3,7 +3,7 @@
 {
 } // end of class <Module>
 
-.class public auto ansi abstract sealed Program
+.class public auto ansi abstract sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
@@ -29,7 +29,7 @@
 		IL_0003: stloc.1
 		IL_0004: ldloc.0
 		IL_0005: ldloc.1
-		IL_0006: call int32 Program::multiply(int32, int32)
+		IL_0006: call int32 $Program::multiply(int32, int32)
 		IL_000b: call string [System.Private.CoreLib]System.Convert::ToString(int32)
 		IL_0010: stloc.2
 		IL_0011: ldloc.2
@@ -40,13 +40,13 @@
 		IL_001b: stloc.s 4
 		IL_001d: ldloc.3
 		IL_001e: ldloc.s 4
-		IL_0020: call int32 Program::multiply(int32, int32)
+		IL_0020: call int32 $Program::multiply(int32, int32)
 		IL_0025: call string [System.Private.CoreLib]System.Convert::ToString(int32)
 		IL_002a: stloc.s 5
 		IL_002c: ldloc.s 5
 		IL_002e: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_0033: ret
-	} // end of method Program::main
+	} // end of method $Program::main
 
 	.method public static
 		int32 multiply (
@@ -62,8 +62,8 @@
 		IL_0001: ldarg.1
 		IL_0002: mul
 		IL_0003: ret
-	} // end of method Program::multiply
+	} // end of method $Program::multiply
 
-} // end of class Program
+} // end of class $Program
 
 

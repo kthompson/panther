@@ -17,10 +17,11 @@ namespace Panther.CodeAnalysis.Emit
 
         private readonly Dictionary<TypeSymbol, TypeReference> _knownTypes = new Dictionary<TypeSymbol, TypeReference>();
 
+        private readonly Dictionary<TypeSymbol, TypeDefinition> _types = new Dictionary<TypeSymbol, TypeDefinition>();
         private readonly Dictionary<MethodSymbol, MethodDefinition> _methods = new Dictionary<MethodSymbol, MethodDefinition>();
+        private readonly Dictionary<LocalVariableSymbol, VariableDefinition> _locals = new Dictionary<LocalVariableSymbol, VariableDefinition>();
 
         private readonly AssemblyDefinition _assemblyDefinition;
-        private readonly TypeDefinition _typeDef;
 
         private readonly TypeReference? _voidType;
         private readonly MethodReference? _stringConcatReference;
@@ -30,7 +31,7 @@ namespace Panther.CodeAnalysis.Emit
         private readonly MethodReference? _convertToInt32;
         private readonly FieldReference? _unit;
 
-        private readonly Dictionary<LocalVariableSymbol, VariableDefinition> _locals = new Dictionary<LocalVariableSymbol, VariableDefinition>();
+
         private readonly Dictionary<FieldSymbol, FieldReference> _fields;
         private readonly Dictionary<MethodSymbol, MethodReference> _methodReferences;
 
@@ -88,9 +89,6 @@ namespace Panther.CodeAnalysis.Emit
             _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
             _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
             _unit = ResolveField("Panther.Unit", "Default");
-
-            var objectType = _knownTypes[TypeSymbol.Any];
-            _typeDef = new TypeDefinition("", "Program", TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
         }
 
         public static EmitResult Emit(BoundAssembly assembly, string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference>? previousGlobals = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
@@ -109,28 +107,22 @@ namespace Panther.CodeAnalysis.Emit
             if (_diagnostics.Any())
                 return new EmitResult(_diagnostics.ToImmutableArray(), _fields, _methodReferences, null);
 
-            _assemblyDefinition.MainModule.Types.Add(_typeDef);
-
             // ensure all functions exist first so we can reference them
             // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
-            // TODO: this is probably wrong now, the functions will be in scope even though they shouldnt be
+            // TODO: this is probably wrong now, the functions will be in scope even though they shouldn't be
             // unless we have an import
             foreach (var type in assembly.Types)
             {
-                foreach (var functionSignature in type.MethodDefinitions.Keys.OrderBy(x => x.Name))
-                {
-                    EmitFunctionDeclaration(functionSignature);
-                }
+                EmitTypeDeclaration(type);
             }
-
 
             // emit the function bodies now
             foreach (var type in assembly.Types)
             {
-                // TODO emit full type
+                var typeDef = _types[type];
                 foreach (var (functionSignature, boundBlockExpression) in type.MethodDefinitions)
                 {
-                    EmitFunctionBody(functionSignature, boundBlockExpression);
+                    EmitFunctionBody(typeDef, functionSignature, boundBlockExpression);
                 }
             }
 
@@ -144,7 +136,21 @@ namespace Panther.CodeAnalysis.Emit
             return new EmitResult(_diagnostics.ToImmutableArray(), _fields, _methodReferences, _assemblyDefinition);
         }
 
-        private void EmitFunctionDeclaration(MethodSymbol method)
+        private void EmitTypeDeclaration(BoundType type)
+        {
+            var objectType = _knownTypes[TypeSymbol.Any];
+            var typeDef = new TypeDefinition(type.Namespace, type.Name, TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
+
+            foreach (var functionSignature in type.MethodDefinitions.Keys.OrderBy(x => x.Name))
+            {
+                EmitFunctionDeclaration(typeDef, functionSignature);
+            }
+
+            _types[type] = typeDef;
+            _assemblyDefinition.MainModule.Types.Add(typeDef);
+        }
+
+        private void EmitFunctionDeclaration(TypeDefinition declaringType, MethodSymbol method)
         {
             var type = method.ReturnType;
             var returnType = type == TypeSymbol.Unit ? _voidType : _knownTypes[type];
@@ -160,10 +166,10 @@ namespace Panther.CodeAnalysis.Emit
             _methods[method] = methodDefinition;
             _methodReferences[method] = methodDefinition;
 
-            _typeDef.Methods.Add(methodDefinition);
+            declaringType.Methods.Add(methodDefinition);
         }
 
-        private void EmitFunctionBody(MethodSymbol method, BoundBlockExpression block)
+        private void EmitFunctionBody(TypeDefinition declaringType, MethodSymbol method, BoundBlockExpression block)
         {
             var methodDefinition = _methods[method];
             var ilProcessor = methodDefinition.Body.GetILProcessor();
@@ -173,7 +179,7 @@ namespace Panther.CodeAnalysis.Emit
             _branchInstructionsToPatch.Clear();
 
             foreach (var statement in block.Statements)
-                EmitStatement(ilProcessor, statement);
+                EmitStatement(declaringType, ilProcessor, statement);
 
             // only emit block's expression if its a non-unit expression or we are not void
             if (block.Expression.Kind != BoundNodeKind.UnitExpression || method.ReturnType != TypeSymbol.Unit)
@@ -199,7 +205,7 @@ namespace Panther.CodeAnalysis.Emit
             methodDefinition.Body.OptimizeMacros();
         }
 
-        private void EmitStatement(ILProcessor ilProcessor, BoundStatement statement)
+        private void EmitStatement(TypeDefinition declaringType, ILProcessor ilProcessor, BoundStatement statement)
         {
             switch (statement)
             {
@@ -220,7 +226,7 @@ namespace Panther.CodeAnalysis.Emit
                     break;
 
                 case BoundVariableDeclarationStatement variableDeclarationStatement:
-                    EmitVariableDeclarationStatement(ilProcessor, variableDeclarationStatement);
+                    EmitVariableDeclarationStatement(declaringType, ilProcessor, variableDeclarationStatement);
                     break;
 
                 case BoundAssignmentStatement assignmentStatement:
@@ -260,7 +266,7 @@ namespace Panther.CodeAnalysis.Emit
             }
         }
 
-        private void EmitVariableDeclarationStatement(ILProcessor ilProcessor, BoundVariableDeclarationStatement variableDeclarationStatement)
+        private void EmitVariableDeclarationStatement(TypeDefinition declaringType, ILProcessor ilProcessor, BoundVariableDeclarationStatement variableDeclarationStatement)
         {
             var pantherVar = variableDeclarationStatement.Variable;
             var variableType = _knownTypes[pantherVar.Type];
@@ -268,14 +274,14 @@ namespace Panther.CodeAnalysis.Emit
             {
                 case FieldSymbol globalVariableSymbol:
                     // TODO: figure out reassignment in case where type changes
-                    var field = _typeDef.Fields.FirstOrDefault(fld => fld.Name == globalVariableSymbol.Name);
+                    var field = declaringType.Fields.FirstOrDefault(fld => fld.Name == globalVariableSymbol.Name);
                     if (field == null)
                     {
                         field = new FieldDefinition(globalVariableSymbol.Name,
                             FieldAttributes.Public | FieldAttributes.Static,
                             variableType);
 
-                        _typeDef.Fields.Add(field);
+                        declaringType.Fields.Add(field);
                         _fields[globalVariableSymbol] = field;
                     }
                     EmitExpression(ilProcessor, variableDeclarationStatement.Expression);

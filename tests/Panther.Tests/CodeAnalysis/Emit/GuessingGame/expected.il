@@ -3,7 +3,7 @@
 {
 } // end of class <Module>
 
-.class public auto ansi abstract sealed Program
+.class public auto ansi abstract sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
@@ -91,8 +91,8 @@
 		// end loop
 
 		IL_0091: ret
-	} // end of method Program::main
+	} // end of method $Program::main
 
-} // end of class Program
+} // end of class $Program
 
 

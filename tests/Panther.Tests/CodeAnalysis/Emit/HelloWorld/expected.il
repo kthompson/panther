@@ -3,7 +3,7 @@
 {
 } // end of class <Module>
 
-.class public auto ansi abstract sealed Program
+.class public auto ansi abstract sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
@@ -23,8 +23,8 @@
 		IL_0006: ldloc.0
 		IL_0007: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_000c: ret
-	} // end of method Program::main
+	} // end of method $Program::main
 
-} // end of class Program
+} // end of class $Program
 
 

@@ -3,7 +3,7 @@
 {
 } // end of class <Module>
 
-.class public auto ansi abstract sealed Program
+.class public auto ansi abstract sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
@@ -23,7 +23,7 @@
 		IL_0007: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_000c: call string [Panther.StdLib]Panther.Predef::readLine()
 		IL_0011: ret
-	} // end of method Program::getName
+	} // end of method $Program::getName
 
 	.method public static
 		void main () cil managed
@@ -37,7 +37,7 @@
 			[1] object
 		)
 
-		IL_0000: call string Program::getName()
+		IL_0000: call string $Program::getName()
 		IL_0005: stloc.0
 		IL_0006: ldstr "Hello "
 		IL_000b: ldloc.0
@@ -48,8 +48,8 @@
 		IL_001c: ldloc.1
 		IL_001d: call void [Panther.StdLib]Panther.Predef::println(object)
 		IL_0022: ret
-	} // end of method Program::main
+	} // end of method $Program::main
 
-} // end of class Program
+} // end of class $Program
 
 
