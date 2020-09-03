@@ -5,7 +5,7 @@ namespace Panther.CodeAnalysis.Symbols
     public class ImportedMethodSymbol : MethodSymbol
     {
         public ImportedMethodSymbol(TypeSymbol declaringType, string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)
-            : base(declaringType, name, parameters, returnType)
+            : base(name, parameters, returnType)
         {
         }
     }

@@ -227,7 +227,6 @@ namespace Panther.CodeAnalysis.Binding
                 ImmutableArray<ParameterSymbol>.Empty,
                 TypeSymbol.Any
             );
-            defaultType.DefineSymbol(eval);
 
             var compilationUnit = globalStatements.First().Syntax;
             var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalStatements);
@@ -247,6 +246,7 @@ namespace Panther.CodeAnalysis.Binding
                 );
             }
 
+            defaultType.DefineSymbol(eval);
             defaultType.DefineFunctionBody(eval, Lowerer.Lower(boundStatementFromStatements));
 
             return new EntryPoint(true, eval);
@@ -326,13 +326,13 @@ namespace Panther.CodeAnalysis.Binding
             if (type == null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
-                var tempFunction = new SourceMethodSymbol(boundType, syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
+                var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
                 var functionScope = new BoundScope(scope, tempFunction);
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
             }
 
-            var function = new SourceMethodSymbol(boundType, syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+            var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
             if (!boundType.DefineSymbol(function))
             {
