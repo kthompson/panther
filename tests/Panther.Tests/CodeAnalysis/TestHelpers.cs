@@ -119,5 +119,17 @@ namespace Panther.Tests.CodeAnalysis
 
             return sb.ToString();
         }
+
+
+        public static Compilation Compile(string code)
+        {
+            var tree = SyntaxTree.Parse(code);
+            Assert.Empty(tree.Diagnostics);
+
+            using var host = BuildScriptHost();
+
+            var compilation = host.Compile(tree);
+            return compilation;
+        }
     }
 }
