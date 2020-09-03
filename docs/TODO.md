@@ -2,10 +2,15 @@
 - REPL: page up is broken 
 
 # TODO:
-- using and objects
-    - finish using directive to tell us what symbols to import
-    - symbols and binder for object definitions
-    - add test coverage
+
+- restructure BoundType
+    - immutable would be nice
+    - being able to rewrite an object as a class
+- convert Predef to Panther?
+    - needs namespaces
+    - needs imports/using
+- support object fields/properties
+- finish using directive to tell us what symbols to import
 - support type aliases via Signatures
 - debugging support
 - Add SyntaxFactory for nicer API. Make ctors private. use source generators

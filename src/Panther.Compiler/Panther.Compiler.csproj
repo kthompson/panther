@@ -6,6 +6,7 @@
         <AssemblyName>pantherc</AssemblyName>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <PackageId>Panther.Compiler</PackageId>
     </PropertyGroup>
 
     <ItemGroup>
