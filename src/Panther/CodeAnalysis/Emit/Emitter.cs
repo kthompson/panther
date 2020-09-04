@@ -291,10 +291,15 @@ namespace Panther.CodeAnalysis.Emit
                     break;
 
                 case LocalVariableSymbol localVariableSymbol:
-                    var variableDef = new VariableDefinition(variableType);
-                    _locals[localVariableSymbol] = variableDef;
-                    var index = ilProcessor.Body.Variables.Count;
-                    ilProcessor.Body.Variables.Add(variableDef);
+                    if (!_locals.ContainsKey(localVariableSymbol))
+                    {
+                        var variableDef = new VariableDefinition(variableType);
+                        _locals[localVariableSymbol] = variableDef;
+
+                        ilProcessor.Body.Variables.Add(variableDef);
+                    }
+
+                    var index = _locals[localVariableSymbol].Index;
 
                     EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
                     ilProcessor.Emit(OpCodes.Stloc, index);

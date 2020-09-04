@@ -62,6 +62,27 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(code, value, scriptHost);
         }
 
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(20)]
+        [InlineData(37)]
+        public void EvaluatesMutualRecursion(int number)
+        {
+            // TODO: IL is definitely wrong here.. looks like its making two locals for the if expression and then only returning one of the two
+
+            string code = $@"
+            even({number})
+
+            def even(number: int): bool = if(number == 0) true else odd(number - 1)
+            def odd(number: int): bool = if(number == 0) false else even(number - 1)
+            ";
+            object value = (number % 2) == 0;
+            using var scriptHost = BuildScriptHost();
+            AssertEvaluation(code, value, scriptHost);
+        }
+
         [Theory]
         [InlineData("\"\"", "")]
         [InlineData("\"\\u1a2d\"", "\u1a2d")]

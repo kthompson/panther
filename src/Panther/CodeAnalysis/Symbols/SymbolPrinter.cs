@@ -32,7 +32,6 @@ namespace Panther.CodeAnalysis.Symbols
 
         private static void WriteTypeSymbol(TypeSymbol symbol, TextWriter writer)
         {
-            writer.WriteKeyword("object ");
             writer.WriteIdentifier(symbol.Name);
         }
 
@@ -47,7 +46,7 @@ namespace Panther.CodeAnalysis.Symbols
         private static void WriteParameterSymbol(ParameterSymbol symbol, TextWriter writer)
         {
             writer.WriteIdentifier(symbol.Name);
-            writer.WritePunctuation(" : ");
+            writer.WritePunctuation(": ");
             symbol.Type.WriteTo(writer);
         }
 
