@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks.Sources;
 using Mono.Cecil;
@@ -358,6 +359,9 @@ namespace Panther.CodeAnalysis.Binding
 
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
+
+                if (type == TypeSymbol.Error)
+                    Debugger.Break();
             }
 
             var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
