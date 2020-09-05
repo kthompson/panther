@@ -12,16 +12,6 @@ namespace Panther.CodeAnalysis.Symbols
 
         public override SymbolKind Kind => SymbolKind.Namespace;
 
-        public override ImmutableArray<Symbol> GetMembers()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ImmutableArray<Symbol> GetMembers(string name)
-        {
-            throw new NotImplementedException();
-        }
-
         public override bool IsType => false;
     }
 }

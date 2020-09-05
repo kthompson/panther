@@ -104,7 +104,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         public static Gen<MethodSymbol> GenFunctionSymbol(TypeSymbol returnType) =>
             from name in Identifier()
             from parameters in Arb.Generate<ImmutableArray<ParameterSymbol>>()
-            select (MethodSymbol)new ImportedMethodSymbol(null!, name, parameters, returnType);
+            select (MethodSymbol)new ImportedMethodSymbol(name, parameters, returnType);
 
         public static Gen<LocalVariableSymbol> GenLocalVariableSymbol(TypeSymbol typeSymbol) =>
             from ident in Identifier()

@@ -29,11 +29,15 @@ namespace Panther.CodeAnalysis.Binding
             ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
             var parentScope = CreateParentScope(previous, references);
-            var scope = new BoundScope(parentScope, function: null);
+            var rootNamespace = new NamespaceSymbol("");
+            var scope = new BoundScope(parentScope, rootNamespace);
             var binder = new Binder(isScript);
-            var defaultType = new BoundType("", "$Program");
 
-            var boundTypes = ImmutableArray.CreateBuilder<BoundType>();
+
+            var defaultType = new BoundType("$Program");
+            var defaultTypeAddedToNamespace = false;
+            var defaultTypeScope = new BoundScope(scope, defaultType);
+
             var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
 
             foreach (var tree in syntaxTrees)
@@ -62,14 +66,13 @@ namespace Panther.CodeAnalysis.Binding
                     switch (member)
                     {
                         case FunctionDeclarationSyntax function:
-                            var symbol = binder.BindFunctionDeclaration(defaultType, function, scope);
-                            scope.Import(symbol);
+                            // put top level functions declarations into the defaultType scope
+                            binder.BindFunctionDeclaration(function, defaultTypeScope);
                             break;
 
                         case ObjectDeclarationSyntax objectDeclaration:
-                            var type = binder.BindObjectDeclaration(objectDeclaration, scope);
-                            scope.Import(type);
-                            boundTypes.Add(type);
+                            // put top level object declarations into the global scope
+                            binder.BindObjectDeclaration(objectDeclaration, scope);
                             break;
 
                         default:
@@ -80,22 +83,11 @@ namespace Panther.CodeAnalysis.Binding
 
             var statements =
                 globalStatements
-                    .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, scope))
+                    .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, defaultTypeScope))
                     .ToImmutableArray();
 
-            var mains = from type in boundTypes
-                        from member in type.GetMembers().OfType<SourceMethodSymbol>()
-                        where member.Name == "main"
-                        select member;
-
-            var mainFunction = mains.FirstOrDefault() ??
-                               scope.GetDeclaredFunctions().OfType<SourceMethodSymbol>()
-                                   .FirstOrDefault(main => main.Name == "main");
-
-            var entryPoint = BindEntryPoint(defaultType, isScript, syntaxTrees, statements, mainFunction, binder);
-
             // top level variables get converted to fields on the default type
-            var variables = scope.GetDeclaredVariables().OfType<FieldSymbol>();
+            var variables = defaultTypeScope.GetDeclaredVariables().OfType<FieldSymbol>();
 
             foreach (var variable in variables)
             {
@@ -104,7 +96,22 @@ namespace Panther.CodeAnalysis.Binding
 
             if (defaultType.GetMembers().Any())
             {
-                boundTypes.Add(defaultType);
+                rootNamespace.DefineSymbol(defaultType);
+                defaultTypeAddedToNamespace = true;
+            }
+
+            var mains = from type in rootNamespace.GetTypeMembers()
+                        from member in type.GetMembers().OfType<SourceMethodSymbol>()
+                        where member.Name == "main"
+                        select member;
+
+            var mainFunction = mains.FirstOrDefault();
+
+            var entryPoint = BindEntryPoint(defaultTypeScope, isScript, syntaxTrees, statements, mainFunction, binder);
+
+            if (!defaultTypeAddedToNamespace && defaultType.GetMembers().Any())
+            {
+                rootNamespace.DefineSymbol(defaultType);
             }
 
             var diagnostics = binder.Diagnostics.ToImmutableArray();
@@ -118,7 +125,11 @@ namespace Panther.CodeAnalysis.Binding
                 (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
 
             return new BoundGlobalScope(previous, diagnostics,
-                defaultType, entryPoint, boundTypes.ToImmutable(), references);
+                defaultType,
+                entryPoint,
+                rootNamespace,
+                references
+            );
         }
 
         private NamespaceOrTypeSymbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
@@ -126,30 +137,31 @@ namespace Panther.CodeAnalysis.Binding
             throw new NotImplementedException();
         }
 
-        private BoundType BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
+        private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
         {
-            // TODO specify namespace
-            var type = new BoundType("", objectDeclaration.Identifier.Text);
-            var scope = new BoundScope(parent);
+            var type = new BoundType(objectDeclaration.Identifier.Text);
+            if (!parent.DefineSymbol(type))
+            {
+                Diagnostics.ReportAmbiguousType(objectDeclaration.Location, objectDeclaration.Identifier.Text);
+            }
+
+            var scope = new BoundScope(parent, type);
             foreach (var member in objectDeclaration.Members)
             {
                 switch (member)
                 {
                     case FunctionDeclarationSyntax functionDeclarationSyntax:
-                        var method = BindFunctionDeclaration(type, functionDeclarationSyntax, scope);
-                        scope.Import(method);
+                        BindFunctionDeclaration(functionDeclarationSyntax, scope);
+
                         break;
                     case ObjectDeclarationSyntax childObjectDeclaration:
-                        var childObject = BindObjectDeclaration(childObjectDeclaration, scope);
-                        scope.Import(childObject);
-                        type.DefineSymbol(childObject);
+                        BindObjectDeclaration(childObjectDeclaration, scope);
+
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(member));
                 }
             }
-
-            return type;
         }
 
         private NamespaceSymbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
@@ -157,14 +169,14 @@ namespace Panther.CodeAnalysis.Binding
             throw new NotImplementedException();
         }
 
-        private static EntryPoint? BindEntryPoint(BoundType defaultType, bool isScript,
+        private static EntryPoint? BindEntryPoint(BoundScope boundScope, bool isScript,
             ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<BoundStatement> globalStatements,
             SourceMethodSymbol? mainFunction, Binder binder) =>
             isScript
-                ? BindScriptEntryPoint(defaultType, globalStatements)
-                : BindMainEntryPoint(defaultType, syntaxTrees, globalStatements, mainFunction, binder);
+                ? BindScriptEntryPoint(boundScope, globalStatements)
+                : BindMainEntryPoint(boundScope, syntaxTrees, globalStatements, mainFunction, binder);
 
-        private static EntryPoint BindMainEntryPoint(BoundType defaultType, ImmutableArray<SyntaxTree> syntaxTrees,
+        private static EntryPoint BindMainEntryPoint(BoundScope boundScope, ImmutableArray<SyntaxTree> syntaxTrees,
             ImmutableArray<BoundStatement> globalStatements, SourceMethodSymbol? mainFunction, Binder binder)
         {
             var hasGlobalStatements = globalStatements.Any();
@@ -199,7 +211,7 @@ namespace Panther.CodeAnalysis.Binding
                     }
                 }
 
-                return new EntryPoint(false, mainFunction);
+                return new EntryPoint(false, mainFunction, null);
             }
 
             // Global statements can only exist in one syntax tree
@@ -211,26 +223,22 @@ namespace Panther.CodeAnalysis.Binding
                 }
             }
 
-            var main = new ImportedMethodSymbol(defaultType, "main", ImmutableArray<ParameterSymbol>.Empty,
+            var main = new ImportedMethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty,
                 TypeSymbol.Unit);
             var compilationUnit = globalStatements.First().Syntax;
             var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
 
-            defaultType.DefineSymbol(main);
-            defaultType.DefineFunctionBody(main, body);
+            boundScope.DefineSymbol(main);
 
-            return new EntryPoint(false, main);
+            return new EntryPoint(false, main, body);
         }
 
-        private static EntryPoint? BindScriptEntryPoint(BoundType defaultType,
-            ImmutableArray<BoundStatement> globalStatements)
+        private static EntryPoint? BindScriptEntryPoint(BoundScope boundScope, ImmutableArray<BoundStatement> globalStatements)
         {
             if (!globalStatements.Any())
                 return null;
 
-            var eval = new ImportedMethodSymbol(
-                defaultType,
-                "$eval",
+            var eval = new ImportedMethodSymbol("$eval",
                 ImmutableArray<ParameterSymbol>.Empty,
                 TypeSymbol.Any
             );
@@ -253,10 +261,9 @@ namespace Panther.CodeAnalysis.Binding
                 );
             }
 
-            defaultType.DefineSymbol(eval);
-            defaultType.DefineFunctionBody(eval, Lowerer.Lower(boundStatementFromStatements));
+            boundScope.DefineSymbol(eval);
 
-            return new EntryPoint(true, eval);
+            return new EntryPoint(true, eval, Lowerer.Lower(boundStatementFromStatements));
         }
 
         public static BoundAssembly BindAssembly(bool isScript, BoundAssembly? previous, BoundGlobalScope globalScope)
@@ -286,6 +293,12 @@ namespace Panther.CodeAnalysis.Binding
                 }
             }
 
+            // define entry point
+            if (globalScope.DefaultType != null && globalScope.EntryPoint != null && globalScope.EntryPoint.Body != null)
+            {
+                globalScope.DefaultType.DefineFunctionBody(globalScope.EntryPoint.Symbol, globalScope.EntryPoint.Body);
+            }
+
             return new BoundAssembly(
                 previous,
                 diagnostics.ToImmutableArray(),
@@ -308,8 +321,7 @@ namespace Panther.CodeAnalysis.Binding
                 new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax)));
         }
 
-        private SourceMethodSymbol BindFunctionDeclaration(BoundType boundType, FunctionDeclarationSyntax syntax,
-            BoundScope scope)
+        private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
         {
             var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
@@ -336,22 +348,25 @@ namespace Panther.CodeAnalysis.Binding
             if (type == null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
-                var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
-                    TypeSymbol.Unit, syntax);
-                var functionScope = new BoundScope(scope, tempFunction);
+                // var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
+                //     TypeSymbol.Unit, syntax);
+                var functionScope = new BoundScope(scope, new BoundType("<temp>"));
+                foreach (var parameterSymbol in parameters)
+                {
+                    functionScope.DefineSymbol(parameterSymbol);
+                }
+
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
             }
 
             var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
 
-            if (!boundType.DefineSymbol(function))
+            if (!scope.DefineSymbol(function))
             {
                 Diagnostics.ReportAmbiguousMethod(syntax.Location, syntax.Identifier.Text,
                     parameters.Select(p => p.Name).ToImmutableArray());
             }
-
-            return function;
         }
 
         private BoundStatement BindGlobalStatement(StatementSyntax syntax, BoundScope scope) =>
@@ -493,7 +508,7 @@ namespace Panther.CodeAnalysis.Binding
                 ? (VariableSymbol)new FieldSymbol(name, isReadOnly, expressionType, constantValue)
                 : new LocalVariableSymbol(name, isReadOnly, expressionType, constantValue);
 
-            if (declare && !scope.TryDeclareVariable(variable))
+            if (declare && !scope.DefineSymbol(variable))
             {
                 Diagnostics.ReportVariableAlreadyDefined(identifier.Location, name);
             }
@@ -875,12 +890,12 @@ namespace Panther.CodeAnalysis.Binding
                 let predef = module.GetType("Panther.Predef")
                 where predef != null
                 // TODO: keep track of this import so we can know we need the assembly reference
-                select new ImportedTypeSymbol("Panther", "Predef", predef);
+                // TODO: this should be imported into the `Panther` namespace
+                select new ImportedTypeSymbol("Predef", predef);
 
-            foreach (var importedTypeSymbol in importedTypes)
+            var importedTypeSymbol = importedTypes.FirstOrDefault();
+            if (importedTypeSymbol != null)
             {
-                if (importedTypeSymbol == null) continue;
-
                 rootScope.Import(importedTypeSymbol);
                 rootScope.ImportMembers(importedTypeSymbol);
             }

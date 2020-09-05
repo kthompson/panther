@@ -14,8 +14,8 @@ namespace Panther.CodeAnalysis.Symbols
         private readonly Lazy<ImmutableArray<Symbol>> _members;
         private readonly Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>> _membersByName;
 
-        public ImportedTypeSymbol(string ns, string name, TypeDefinition typeDefinition)
-            : base(ns, name)
+        public ImportedTypeSymbol(string name, TypeDefinition typeDefinition)
+            : base(name)
         {
             _typeDefinition = typeDefinition;
             _members = new Lazy<ImmutableArray<Symbol>>(() =>
@@ -72,9 +72,7 @@ namespace Panther.CodeAnalysis.Symbols
             if (returnType == null)
                 return null;
 
-            return new ImportedMethodSymbol(
-                this,
-                methodDefinition.Name,
+            return new ImportedMethodSymbol(methodDefinition.Name,
                 parameters.ToImmutableArray(),
                 returnType
             );

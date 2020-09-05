@@ -25,7 +25,7 @@ namespace Panther.CodeAnalysis.Symbols
 
         public bool DefineSymbol(Symbol symbol)
         {
-            // only one field symbol
+            // only one field symbol per name
             if (symbol is FieldSymbol)
             {
                 if (_symbols.ContainsKey(symbol.Name))

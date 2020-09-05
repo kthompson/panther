@@ -2,50 +2,47 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundScope
     {
-        private readonly MethodSymbol? _function;
+        private readonly NamespaceOrTypeSymbol? _containingSymbol;
+
+        // symbols that have not been defined but are needed in scope for resolving types etc
         private readonly Dictionary<string, ImmutableArray<Symbol>> _importedSymbols = new Dictionary<string, ImmutableArray<Symbol>>();
-        private readonly Dictionary<string, ImmutableArray<Symbol>> _symbols = new Dictionary<string, ImmutableArray<Symbol>>();
 
         public BoundScope? Parent { get; }
 
         public BoundScope(BoundScope? parent)
-            : this(parent, parent?._function)
+            : this(parent, parent?._containingSymbol)
         {
         }
 
-        public BoundScope(BoundScope? parent, MethodSymbol? function)
+        public BoundScope(BoundScope? parent, NamespaceOrTypeSymbol? container)
         {
-            _function = function;
+            _containingSymbol = container;
             Parent = parent;
+        }
 
-            if (function == null)
-                return;
+        public BoundScope(BoundScope? parent, MethodSymbol function)
+        {
+            _containingSymbol = null;
+            Parent = parent;
 
             foreach (var parameter in function.Parameters)
             {
-                TryDeclareVariable(parameter);
+                DefineSymbol(parameter);
             }
         }
 
-        public bool IsGlobalScope => _function == null;
-
-        public bool TryDeclareVariable(VariableSymbol variable)
-        {
-            if (_symbols.ContainsKey(variable.Name))
-                return false;
-
-            _symbols.Add(variable.Name, ImmutableArray.Create<Symbol>(variable));
-            return true;
-        }
+        public bool IsGlobalScope => _containingSymbol != null &&
+                                     _containingSymbol.Name == "$Program" &&
+                                     _containingSymbol.IsType;
 
         public void Import(TypeSymbol symbol) => ImportSymbol(symbol);
-        public void Import(MethodSymbol symbol) => ImportSymbol(symbol);
 
         public void ImportMembers(NamespaceOrTypeSymbol namespaceOrTypeSymbol)
         {
@@ -57,20 +54,33 @@ namespace Panther.CodeAnalysis.Binding
 
         private void ImportSymbol(Symbol symbol)
         {
-            if (_symbols.TryGetValue(symbol.Name, out var symbols))
+            if (_importedSymbols.TryGetValue(symbol.Name, out var symbols))
             {
-                _symbols[symbol.Name] = symbols.Add(symbol);
+                _importedSymbols[symbol.Name] = symbols.Add(symbol);
                 return;
             }
 
-            _symbols.Add(symbol.Name, ImmutableArray.Create(symbol));
+            _importedSymbols.Add(symbol.Name, ImmutableArray.Create(symbol));
+        }
+
+        public bool DefineSymbol(Symbol symbol)
+        {
+            if (_containingSymbol != null)
+                return _containingSymbol.DefineSymbol(symbol);
+
+            ImportSymbol(symbol);
+            return true;
         }
 
         public VariableSymbol? LookupVariable(string name)
         {
-            if (_symbols.TryGetValue(name, out var existingSymbols))
+            var variable = _containingSymbol?.GetMembers(name).OfType<VariableSymbol>().FirstOrDefault();
+            if (variable != null)
+                return variable;
+
+            if (_importedSymbols.TryGetValue(name, out var importedSymbols))
             {
-                return existingSymbols.OfType<VariableSymbol>().FirstOrDefault();
+                return importedSymbols.OfType<VariableSymbol>().FirstOrDefault();
             }
 
             return Parent?.LookupVariable(name);
@@ -78,9 +88,13 @@ namespace Panther.CodeAnalysis.Binding
 
         public TypeSymbol? LookupType(string name)
         {
-            if (_symbols.TryGetValue(name, out var existingSymbols))
+            var type = _containingSymbol?.GetTypeMembers(name).FirstOrDefault();
+            if (type != null)
+                return type;
+
+            if (_importedSymbols.TryGetValue(name, out var importedSymbols))
             {
-                return existingSymbols.OfType<TypeSymbol>().FirstOrDefault();
+                return importedSymbols.OfType<TypeSymbol>().FirstOrDefault();
             }
 
             return Parent?.LookupType(name);
@@ -88,7 +102,12 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<MethodSymbol> LookupMethod(string name)
         {
-            if (_symbols.TryGetValue(name, out var symbols))
+            var methods = _containingSymbol?.GetMembers(name).OfType<MethodSymbol>().ToImmutableArray();
+
+            if (methods != null && methods.Value.Any())
+                return methods.Value;
+
+            if (_importedSymbols.TryGetValue(name, out var symbols))
             {
                 return symbols.OfType<MethodSymbol>().ToImmutableArray();
             }
@@ -96,9 +115,19 @@ namespace Panther.CodeAnalysis.Binding
             return Parent?.LookupMethod(name) ?? ImmutableArray<MethodSymbol>.Empty;
         }
 
-        public ImmutableArray<VariableSymbol> GetDeclaredVariables() => _symbols.Values.SelectMany(symbols => symbols).OfType<VariableSymbol>().ToImmutableArray();
+        public ImmutableArray<VariableSymbol> GetDeclaredVariables()
+        {
+            // TODO. do we even need this if we have the container type?
+            // return _ownedSymbols.Values.SelectMany(symbols => symbols).OfType<VariableSymbol>().ToImmutableArray();
+            return ImmutableArray<VariableSymbol>.Empty;
+        }
 
-        public ImmutableArray<MethodSymbol> GetDeclaredFunctions() => _symbols.Values.SelectMany(symbols => symbols).OfType<MethodSymbol>().ToImmutableArray();
+        public ImmutableArray<MethodSymbol> GetDeclaredMethods()
+        {
+            // TODO. do we even need this if we have the container type?
+            // return _ownedSymbols.Values.SelectMany(symbols => symbols).OfType<MethodSymbol>().ToImmutableArray();
+            return ImmutableArray<MethodSymbol>.Empty;
+        }
 
         public BoundScope EnterNamespace(NamespaceSymbol namespaceSymbol)
         {
