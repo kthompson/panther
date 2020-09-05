@@ -10,8 +10,8 @@ namespace Panther.CodeAnalysis.Symbols
 
         public virtual ImmutableArray<Symbol> GetMembers() =>
             (from symbolList in _symbols.Values
-                from symbol in symbolList
-                select symbol).ToImmutableArray();
+             from symbol in symbolList
+             select symbol).ToImmutableArray();
 
         public virtual ImmutableArray<Symbol> GetMembers(string name) =>
             _symbols.TryGetValue(name, out var symbols)
