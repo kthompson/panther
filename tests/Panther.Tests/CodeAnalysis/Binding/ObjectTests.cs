@@ -1,5 +1,6 @@
 ﻿using Panther.CodeAnalysis.Symbols;
 using Xunit;
+using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis.Binding
 {
@@ -14,7 +15,7 @@ namespace Panther.Tests.CodeAnalysis.Binding
                     def main() = println(""Hello World"")
                 }"
             );
-            var compilation = TestHelpers.Compile(code.Text);
+            var compilation = Compile(code.Text);
 
             Assert.Collection(compilation.Types, symbol =>
             {
@@ -33,7 +34,7 @@ namespace Panther.Tests.CodeAnalysis.Binding
                     }
                 }"
             );
-            var compilation = TestHelpers.Compile(code.Text);
+            var compilation = Compile(code.Text);
 
             Assert.Collection(compilation.Types, hello =>
             {
@@ -54,7 +55,7 @@ namespace Panther.Tests.CodeAnalysis.Binding
                     def world() = println(""Hello World"")
                 }"
             );
-            var compilation = TestHelpers.Compile(code.Text);
+            var compilation = Compile(code.Text);
 
             Assert.Collection(compilation.Types,
                 symbol => Assert.Collection(symbol.GetMembers().OfType<MethodSymbol>(),
@@ -69,7 +70,7 @@ namespace Panther.Tests.CodeAnalysis.Binding
                     def world() = println(""Hello World"")
                 }"
             );
-            var compilation = TestHelpers.Compile(code.Text);
+            var compilation = Compile(code.Text);
 
             Assert.Collection(compilation.Types,
                 symbol => Assert.Collection(symbol.GetMembers().OfType<MethodSymbol>(),

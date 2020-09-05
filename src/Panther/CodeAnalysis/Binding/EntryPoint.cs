@@ -6,11 +6,13 @@ namespace Panther.CodeAnalysis.Binding
     {
         public bool IsScript { get; }
         public MethodSymbol Symbol { get; }
+        public BoundBlockExpression? Body { get; }
 
-        public EntryPoint(bool isScript, MethodSymbol symbol)
+        public EntryPoint(bool isScript, MethodSymbol symbol, BoundBlockExpression? body)
         {
             IsScript = isScript;
             Symbol = symbol;
+            Body = body;
         }
     }
 }

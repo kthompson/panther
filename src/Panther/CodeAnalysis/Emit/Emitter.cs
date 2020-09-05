@@ -138,7 +138,9 @@ namespace Panther.CodeAnalysis.Emit
         private void EmitTypeDeclaration(BoundType type)
         {
             var objectType = _knownTypes[TypeSymbol.Any];
-            var typeDef = new TypeDefinition(type.Namespace, type.Name, TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
+
+            // TODO keep track of current namespace
+            var typeDef = new TypeDefinition("", type.Name, TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
 
             foreach (var functionSignature in type.MethodDefinitions.Keys.OrderBy(x => x.Name))
             {

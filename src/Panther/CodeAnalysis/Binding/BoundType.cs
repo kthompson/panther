@@ -12,8 +12,8 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableDictionary<MethodSymbol, BoundBlockExpression> MethodDefinitions => _methodDefinitions.ToImmutableDictionary();
 
-        public BoundType(string ns, string name)
-            : base(ns, name)
+        public BoundType(string name)
+            : base(name)
         {
         }
 

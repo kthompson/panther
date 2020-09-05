@@ -124,6 +124,9 @@ namespace Panther.CodeAnalysis
         public void ReportNotAssignable(TextLocation location) =>
             Report(location, "Left hand side of expression is not assignable");
 
+        public void ReportAmbiguousType(TextLocation location, string typeName) =>
+            Report(location, $"Duplicate type '{typeName}' detected");
+
         public void ReportMissingDefinition(TextLocation location, TypeSymbol type, string name) =>
             Report(location, $"'{type.Name}' does not contain a definition for '{name}'");
 
@@ -147,6 +150,7 @@ namespace Panther.CodeAnalysis
 
             Report(null, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
         }
+
 
         public void ReportAmbiguousType(string typeName, ImmutableArray<TypeDefinition> foundTypes)
         {
