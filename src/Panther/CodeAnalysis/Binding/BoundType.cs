@@ -6,7 +6,7 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal sealed class BoundType: TypeSymbol
+    internal sealed class BoundType : TypeSymbol
     {
         private readonly Dictionary<MethodSymbol, BoundBlockExpression> _methodDefinitions = new Dictionary<MethodSymbol, BoundBlockExpression>();
 

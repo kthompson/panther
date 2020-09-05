@@ -15,13 +15,18 @@ namespace Panther.CodeAnalysis.Binding
     {
         private readonly bool _isScript;
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
+        private int _labelCounter = 0;
+
+        private readonly Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _breakContinueLabels =
+            new Stack<(BoundLabel, BoundLabel)>();
 
         public Binder(bool isScript)
         {
             _isScript = isScript;
         }
 
-        public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
+        public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous,
+            ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
             var parentScope = CreateParentScope(previous, references);
             var scope = new BoundScope(parentScope, function: null);
@@ -79,9 +84,9 @@ namespace Panther.CodeAnalysis.Binding
                     .ToImmutableArray();
 
             var mains = from type in boundTypes
-                from member in type.GetMembers().OfType<SourceMethodSymbol>()
-                where member.Name == "main"
-                select member;
+                        from member in type.GetMembers().OfType<SourceMethodSymbol>()
+                        where member.Name == "main"
+                        select member;
 
             var mainFunction = mains.FirstOrDefault() ??
                                scope.GetDeclaredFunctions().OfType<SourceMethodSymbol>()
@@ -109,7 +114,8 @@ namespace Panther.CodeAnalysis.Binding
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
             }
 
-            diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics, (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
+            diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics,
+                (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
 
             return new BoundGlobalScope(previous, diagnostics,
                 defaultType, entryPoint, boundTypes.ToImmutable(), references);
@@ -216,7 +222,8 @@ namespace Panther.CodeAnalysis.Binding
             return new EntryPoint(false, main);
         }
 
-        private static EntryPoint? BindScriptEntryPoint(BoundType defaultType, ImmutableArray<BoundStatement> globalStatements)
+        private static EntryPoint? BindScriptEntryPoint(BoundType defaultType,
+            ImmutableArray<BoundStatement> globalStatements)
         {
             if (!globalStatements.Any())
                 return null;
@@ -288,7 +295,8 @@ namespace Panther.CodeAnalysis.Binding
             );
         }
 
-        private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax, IReadOnlyCollection<BoundStatement> statements)
+        private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax,
+            IReadOnlyCollection<BoundStatement> statements)
         {
             var expr = (statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
             var stmts = expr == null
@@ -296,10 +304,12 @@ namespace Panther.CodeAnalysis.Binding
                 : statements.Take(statements.Count - 1).ToImmutableArray();
 
             // this doesnt really feel like the correct syntax as we should have something that encompasses all of the statements
-            return new BoundExpressionStatement(syntax, new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax)));
+            return new BoundExpressionStatement(syntax,
+                new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax)));
         }
 
-        private SourceMethodSymbol BindFunctionDeclaration(BoundType boundType, FunctionDeclarationSyntax syntax, BoundScope scope)
+        private SourceMethodSymbol BindFunctionDeclaration(BoundType boundType, FunctionDeclarationSyntax syntax,
+            BoundScope scope)
         {
             var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
@@ -326,7 +336,8 @@ namespace Panther.CodeAnalysis.Binding
             if (type == null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
-                var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), TypeSymbol.Unit, syntax);
+                var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
+                    TypeSymbol.Unit, syntax);
                 var functionScope = new BoundScope(scope, tempFunction);
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
@@ -404,14 +415,16 @@ namespace Panther.CodeAnalysis.Binding
         private BoundStatement BindStatementInternal(StatementSyntax syntax, BoundScope scope) =>
             syntax switch
             {
-                ExpressionStatementSyntax expressionStatementSyntax => BindExpressionStatement(expressionStatementSyntax, scope),
-                VariableDeclarationStatementSyntax variableDeclarationStatementSyntax => BindVariableDeclarationStatement(variableDeclarationStatementSyntax, scope),
+                ExpressionStatementSyntax expressionStatementSyntax => BindExpressionStatement(
+                    expressionStatementSyntax, scope),
+                VariableDeclarationStatementSyntax variableDeclarationStatementSyntax =>
+                    BindVariableDeclarationStatement(variableDeclarationStatementSyntax, scope),
                 _ => throw new ArgumentOutOfRangeException(nameof(syntax))
             };
 
-        private BoundStatement BindContinueStatement(ContinueExpressionSyntax syntax, BoundScope scope)
+        private BoundStatement BindContinueStatement(ContinueExpressionSyntax syntax)
         {
-            var label = scope.GetContinueLabel();
+            var label = GetContinueLabel();
             if (label == null)
             {
                 Diagnostics.ReportInvalidBreakOrContinue(syntax.ContinueKeyword.Location, syntax.ContinueKeyword.Text);
@@ -421,9 +434,9 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundGotoStatement(syntax, label);
         }
 
-        private BoundStatement BindBreakStatement(BreakExpressionSyntax syntax, BoundScope scope)
+        private BoundStatement BindBreakStatement(BreakExpressionSyntax syntax)
         {
-            var label = scope.GetBreakLabel();
+            var label = GetBreakLabel();
             if (label == null)
             {
                 Diagnostics.ReportInvalidBreakOrContinue(syntax.BreakKeyword.Location, syntax.BreakKeyword.Text);
@@ -433,7 +446,14 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundGotoStatement(syntax, label);
         }
 
-        private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax, BoundScope scope)
+        public BoundLabel? GetBreakLabel() =>
+            _breakContinueLabels.Count == 0 ? null : _breakContinueLabels.Peek().BreakLabel;
+
+        public BoundLabel? GetContinueLabel() =>
+            _breakContinueLabels.Count == 0 ? null : _breakContinueLabels.Peek().ContinueLabel;
+
+        private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax,
+            BoundScope scope)
         {
             var isReadOnly = syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword;
             var boundExpression = BindExpression(syntax.Expression, scope);
@@ -441,7 +461,8 @@ namespace Panther.CodeAnalysis.Binding
             var expressionType = type ?? boundExpression.Type;
 
             var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
-            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, boundExpression.ConstantValue, scope);
+            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly,
+                boundExpression.ConstantValue, scope);
 
             return new BoundVariableDeclarationStatement(syntax, variable, converted);
         }
@@ -451,7 +472,8 @@ namespace Panther.CodeAnalysis.Binding
             var type = LookupType(syntaxTypeClause.IdentifierToken.Text);
             if (type == null)
             {
-                Diagnostics.ReportUndefinedType(syntaxTypeClause.IdentifierToken.Location, syntaxTypeClause.IdentifierToken.Text);
+                Diagnostics.ReportUndefinedType(syntaxTypeClause.IdentifierToken.Location,
+                    syntaxTypeClause.IdentifierToken.Text);
                 return TypeSymbol.Error;
             }
 
@@ -483,16 +505,20 @@ namespace Panther.CodeAnalysis.Binding
         {
             var expression = BindExpression(syntax.Expression, scope);
 
-            return new BoundExpressionStatement(syntax, expression.Type == TypeSymbol.Error ? new BoundErrorExpression(syntax) : expression);
+            return new BoundExpressionStatement(syntax,
+                expression.Type == TypeSymbol.Error ? new BoundErrorExpression(syntax) : expression);
         }
 
         private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope) =>
             syntax switch
             {
-                BreakExpressionSyntax breakStatementSyntax => BindStatementToExpression(BindBreakStatement(breakStatementSyntax, scope)),
-                ContinueExpressionSyntax continueStatementSyntax => BindStatementToExpression(BindContinueStatement(continueStatementSyntax, scope)),
+                BreakExpressionSyntax breakStatementSyntax => BindStatementToExpression(
+                    BindBreakStatement(breakStatementSyntax)),
+                ContinueExpressionSyntax continueStatementSyntax => BindStatementToExpression(
+                    BindContinueStatement(continueStatementSyntax)),
                 LiteralExpressionSyntax literalExpressionSyntax => BindLiteralExpression(literalExpressionSyntax),
-                AssignmentExpressionSyntax assignmentExpressionSyntax => BindAssignmentExpression(assignmentExpressionSyntax, scope),
+                AssignmentExpressionSyntax assignmentExpressionSyntax => BindAssignmentExpression(
+                    assignmentExpressionSyntax, scope),
                 BinaryExpressionSyntax binaryExpressionSyntax => BindBinaryExpression(binaryExpressionSyntax, scope),
                 UnaryExpressionSyntax unaryExpressionSyntax => BindUnaryExpression(unaryExpressionSyntax, scope),
                 GroupExpressionSyntax groupExpressionSyntax => BindGroupExpression(groupExpressionSyntax, scope),
@@ -502,7 +528,8 @@ namespace Panther.CodeAnalysis.Binding
                 WhileExpressionSyntax whileExpressionSyntax => BindWhileExpression(whileExpressionSyntax, scope),
                 ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
                 CallExpressionSyntax callExpressionSyntax => BindCallExpression(callExpressionSyntax, scope),
-                MemberAccessExpressionSyntax memberAccessExpressionSyntax => BindMemberAccessExpression(memberAccessExpressionSyntax, scope),
+                MemberAccessExpressionSyntax memberAccessExpressionSyntax => BindMemberAccessExpression(
+                    memberAccessExpressionSyntax, scope),
                 UnitExpressionSyntax unit => BindUnitExpression(unit),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
@@ -555,15 +582,18 @@ namespace Panther.CodeAnalysis.Binding
 
         // hack to convert a statement into an expression
         private static BoundBlockExpression BindStatementToExpression(BoundStatement bindBreakStatement) =>
-            new BoundBlockExpression(bindBreakStatement.Syntax, ImmutableArray.Create(bindBreakStatement), new BoundUnitExpression(bindBreakStatement.Syntax));
+            new BoundBlockExpression(bindBreakStatement.Syntax, ImmutableArray.Create(bindBreakStatement),
+                new BoundUnitExpression(bindBreakStatement.Syntax));
 
-        private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol type, BoundScope scope, bool allowExplicit = false)
+        private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol type, BoundScope scope,
+            bool allowExplicit = false)
         {
             var expression = BindExpression(syntax, scope);
             return BindConversion(syntax.Location, expression, type, allowExplicit);
         }
 
-        private BoundExpression BindConversion(TextLocation location, BoundExpression expression, TypeSymbol type, bool allowExplicit = false)
+        private BoundExpression BindConversion(TextLocation location, BoundExpression expression, TypeSymbol type,
+            bool allowExplicit = false)
         {
             var conversion = Conversion.Classify(expression.Type, type);
 
@@ -745,8 +775,20 @@ namespace Panther.CodeAnalysis.Binding
         private BoundExpression BindLoopBody(ExpressionSyntax syntax, BoundScope scope, out BoundLabel breakLabel,
             out BoundLabel continueLabel)
         {
-            scope.DeclareLoop(out breakLabel, out continueLabel);
-            return BindExpression(syntax, scope);
+            _labelCounter++;
+            breakLabel = new BoundLabel($"break{_labelCounter}");
+            continueLabel = new BoundLabel($"continue{_labelCounter}");
+
+            _breakContinueLabels.Push((breakLabel, continueLabel));
+
+            try
+            {
+                return BindExpression(syntax, scope);
+            }
+            finally
+            {
+                _breakContinueLabels.Pop();
+            }
         }
 
         private BoundExpression BindIfExpression(IfExpressionSyntax syntax, BoundScope scope)
@@ -755,7 +797,8 @@ namespace Panther.CodeAnalysis.Binding
             var then = BindExpression(syntax.ThenExpression, scope);
             var elseExpr = BindExpression(syntax.ElseExpression, scope);
 
-            if (condition.Type == TypeSymbol.Error || then.Type == TypeSymbol.Error || elseExpr.Type == TypeSymbol.Error)
+            if (condition.Type == TypeSymbol.Error || then.Type == TypeSymbol.Error ||
+                elseExpr.Type == TypeSymbol.Error)
                 return new BoundErrorExpression(syntax);
 
             if (then.Type != elseExpr.Type)
@@ -886,7 +929,8 @@ namespace Panther.CodeAnalysis.Binding
 
             if (boundOperator == null)
             {
-                Diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, boundOperand.Type);
+                Diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text,
+                    boundOperand.Type);
                 return new BoundErrorExpression(syntax);
             }
 
@@ -904,16 +948,20 @@ namespace Panther.CodeAnalysis.Binding
 
             if (boundOperator == null)
             {
-                Diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, left.Type, right.Type);
+                Diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text,
+                    left.Type, right.Type);
                 return new BoundErrorExpression(syntax);
             }
+
             return new BoundBinaryExpression(syntax, left, boundOperator, right);
         }
 
         private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
         {
             var value = syntax.Value;
-            return value == null ? (BoundExpression)new BoundErrorExpression(syntax) : new BoundLiteralExpression(syntax, value);
+            return value == null
+                ? (BoundExpression)new BoundErrorExpression(syntax)
+                : new BoundLiteralExpression(syntax, value);
         }
     }
 }

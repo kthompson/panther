@@ -70,8 +70,8 @@ namespace Panther.CodeAnalysis.Syntax
                             syntaxTree,
                             ImmutableArray<NamespaceDirectiveSyntax>.Empty,
                             ImmutableArray<UsingDirectiveSyntax>.Empty,
-                            ImmutableArray<GlobalStatementSyntax>.Empty, 
-                            ImmutableArray<MemberSyntax>.Empty, 
+                            ImmutableArray<GlobalStatementSyntax>.Empty,
+                            ImmutableArray<MemberSyntax>.Empty,
                             token
                         );
                         break;
