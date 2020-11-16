@@ -89,13 +89,12 @@ namespace Panther.IO
                 else
                 {
                     var span = textLocation.Span;
-                    var text = textLocation.Text;
+                    var text = textLocation.File;
                     var fileName = textLocation.Filename ?? "";
                     var startLine = textLocation.StartLine + 1;
                     var startCharacter = textLocation.StartCharacter + 1;
                     var endLine = textLocation.EndLine + 1;
                     var endCharacter = textLocation.EndCharacter + 1;
-
 
                     writer.WriteLine();
 
@@ -104,11 +103,15 @@ namespace Panther.IO
                     writer.WriteLine(diagnostic);
                     writer.ResetColor();
 
+                    if (!(text is ScriptSourceFile sourceFile))
+                        continue;
+
                     for (int currentLine = textLocation.StartLine;
                         currentLine <= textLocation.EndLine;
                         currentLine++)
                     {
-                        var line = text.Lines[currentLine];
+
+                        var line = sourceFile.GetLine(currentLine);
                         var startInCurrentLine = text.GetLineIndex(span.Start) == currentLine;
                         var endInCurrentLine = text.GetLineIndex(span.End) == currentLine;
 

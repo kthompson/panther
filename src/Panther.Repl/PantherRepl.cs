@@ -42,16 +42,19 @@ namespace Panther
                 tree = (SyntaxTree)state;
             }
 
-            var lineSpan = tree.Text.Lines[lineIndex].Span;
-            var classifiedSpans = Classifier.Classify(tree, lineSpan);
-
-            foreach (var classifiedSpan in classifiedSpans)
+            if (tree.File is ScriptSourceFile sourceFile)
             {
-                var text = tree.Text.ToString(classifiedSpan.Span);
+                var lineSpan = sourceFile.GetLine(lineIndex).Span;
+                var classifiedSpans = Classifier.Classify(tree, lineSpan);
 
-                Console.ForegroundColor = GetClassificationColor(classifiedSpan.Classification);
-                Console.Write(text);
-                Console.ResetColor();
+                foreach (var classifiedSpan in classifiedSpans)
+                {
+                    var text = tree.File.ToString(classifiedSpan.Span);
+
+                    Console.ForegroundColor = GetClassificationColor(classifiedSpan.Classification);
+                    Console.Write(text);
+                    Console.ResetColor();
+                }
             }
 
             return tree;

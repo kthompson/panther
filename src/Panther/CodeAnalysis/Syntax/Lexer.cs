@@ -11,7 +11,7 @@ namespace Panther.CodeAnalysis.Syntax
     internal class Lexer
     {
         private readonly SyntaxTree _syntaxTree;
-        private readonly SourceText _text;
+        private readonly SourceFile _file;
         private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
         private int _position;
         private Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>> _lexFunctions = new Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>>();
@@ -19,7 +19,7 @@ namespace Panther.CodeAnalysis.Syntax
         public Lexer(SyntaxTree syntaxTree)
         {
             _syntaxTree = syntaxTree;
-            _text = syntaxTree.Text;
+            _file = syntaxTree.File;
             InitializeLexFunctions();
         }
 
@@ -56,7 +56,7 @@ namespace Panther.CodeAnalysis.Syntax
         private char Current => Peek(_position);
         private char Lookahead => Peek(_position + 1);
 
-        private char Peek(int position) => position >= _text.Length ? '\0' : _text[position];
+        private char Peek(int position) => position >= _file.Length ? '\0' : _file[position];
 
         private void Next()
         {
@@ -84,7 +84,7 @@ namespace Panther.CodeAnalysis.Syntax
                 {
                     var (start, end) = ParsePredicate(IsEndOfLine);
 
-                    var span = _text[start..end];
+                    var span = _file[start..end];
 
                     trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.EndOfLineTrivia, span, start));
                     if (!leadingTrivia)
@@ -100,7 +100,7 @@ namespace Panther.CodeAnalysis.Syntax
                 {
                     var (start, end) = ParsePredicate(IsNonNewLineWhiteSpace);
 
-                    var span = _text[start..end];
+                    var span = _file[start..end];
                     trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.WhitespaceTrivia, span, start));
                     continue;
                 }
@@ -147,15 +147,15 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 if (Current == '\0')
                 {
-                    _diagnostics.ReportUnterminatedBlockComment(new TextLocation(_text, new TextSpan(start, _position)));
-                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position], start);
+                    _diagnostics.ReportUnterminatedBlockComment(new TextLocation(_file, new TextSpan(start, _position)));
+                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _file[start.._position], start);
                 }
 
                 if (Current == '*' && Lookahead == '/')
                 {
                     Next(); // '*'
                     Next(); // '/'
-                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _text[start.._position], start);
+                    return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _file[start.._position], start);
                 }
 
                 Next();
@@ -195,7 +195,7 @@ namespace Panther.CodeAnalysis.Syntax
 
         private (SyntaxKind kind, int start, string text, object? value) ReturnInvalidTokenTrivia()
         {
-            _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
+            _diagnostics.ReportBadCharacter(new TextLocation(_file, new TextSpan(_position, 1)), Current);
             return ReturnKindOneChar(SyntaxKind.InvalidTokenTrivia);
         }
 
@@ -268,7 +268,7 @@ namespace Panther.CodeAnalysis.Syntax
                 Next();
             }
 
-            var span = _text[start.._position];
+            var span = _file[start.._position];
 
             var kind = SyntaxFacts.GetKeywordKind(span);
 
@@ -280,11 +280,11 @@ namespace Panther.CodeAnalysis.Syntax
             var start = _position;
             ParsePredicate(char.IsDigit);
 
-            var span = _text[start.._position];
+            var span = _file[start.._position];
 
             if (!int.TryParse(span, out var value))
                 _diagnostics.ReportInvalidNumber(
-                    new TextLocation(_text, new TextSpan(start, _position - start)),
+                    new TextLocation(_file, new TextSpan(start, _position - start)),
                     span.AsSpan().ToString(),
                     TypeSymbol.Int);
 
@@ -302,7 +302,7 @@ namespace Panther.CodeAnalysis.Syntax
                 Next();
             }
 
-            return new SyntaxTrivia(_syntaxTree, SyntaxKind.LineCommentTrivia, _text[start.._position], start);
+            return new SyntaxTrivia(_syntaxTree, SyntaxKind.LineCommentTrivia, _file[start.._position], start);
         }
 
         private (SyntaxKind kind, int start, string text, object value) ParseStringToken()
@@ -327,7 +327,7 @@ namespace Panther.CodeAnalysis.Syntax
                     case '\n':
                     case '\r':
                     case '\0':
-                        _diagnostics.ReportUnterminatedString(new TextLocation(_text, new TextSpan(start, 1)));
+                        _diagnostics.ReportUnterminatedString(new TextLocation(_file, new TextSpan(start, 1)));
                         break;
 
                     default:
@@ -339,7 +339,7 @@ namespace Panther.CodeAnalysis.Syntax
                 break;
             }
 
-            var span = _text[start.._position];
+            var span = _file[start.._position];
 
             return (SyntaxKind.StringToken, start, span, sb.ToString());
         }
@@ -380,7 +380,7 @@ namespace Panther.CodeAnalysis.Syntax
 
                 default:
                     _diagnostics.ReportInvalidEscapeSequence(
-                        new TextLocation(_text, new TextSpan(escapeStart, _position)), Current);
+                        new TextLocation(_file, new TextSpan(escapeStart, _position)), Current);
                     return null;
             }
         }
@@ -392,7 +392,7 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 if (!HexValue(out var hexValue))
                 {
-                    _diagnostics.ReportInvalidEscapeSequence(new TextLocation(_text, new TextSpan(escapeStart, _position)), Current);
+                    _diagnostics.ReportInvalidEscapeSequence(new TextLocation(_file, new TextSpan(escapeStart, _position)), Current);
                     return null;
                 }
 
@@ -420,7 +420,7 @@ namespace Panther.CodeAnalysis.Syntax
         private (SyntaxKind kind, int start, string text, object? value) ReturnKindTwoChar(SyntaxKind kind)
         {
             var start = _position;
-            var text = _text[_position..(_position + 2)];
+            var text = _file[_position..(_position + 2)];
             _position += 2;
             return (kind, start, text, null);
         }
@@ -428,7 +428,7 @@ namespace Panther.CodeAnalysis.Syntax
         private (SyntaxKind kind, int start, string text, object? value) ReturnKindOneChar(SyntaxKind kind)
         {
             var start = _position;
-            var text = _text[_position..(_position + 1)];
+            var text = _file[_position..(_position + 1)];
             _position++;
             return (kind, start, text, null);
         }

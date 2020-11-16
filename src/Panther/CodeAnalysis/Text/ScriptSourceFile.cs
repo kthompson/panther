@@ -1,28 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
+﻿using System.Collections.Generic;
 
 namespace Panther.CodeAnalysis.Text
 {
-    public sealed class SourceText
+    public sealed class ScriptSourceFile : SourceFile
     {
-        public string FileName { get; }
-        private readonly string _text;
-        public IReadOnlyList<TextLine> Lines { get; }
+        public override int LineCount => Lines.Count;
+        private IReadOnlyList<TextLine> Lines { get; }
 
-        private SourceText(string text, string fileName)
+        internal ScriptSourceFile(string text, string fileName)
+            : base(fileName, text)
         {
-            FileName = fileName;
-            _text = text;
             Lines = ParseLines(this, text);
         }
 
-        public string this[Range range] => _text[range];
-        public char this[int index] => _text[index];
-        public int Length => _text.Length;
+        public override int LineToOffset(int index) => Lines[index].Start;
 
-        public int GetLineIndex(int position)
+        public override int GetLineIndex(int position)
         {
             var lower = 0;
             var upper = Lines.Count - 1;
@@ -48,7 +41,9 @@ namespace Panther.CodeAnalysis.Text
             return lower - 1;
         }
 
-        private static IReadOnlyList<TextLine> ParseLines(SourceText sourceText, string text)
+        public TextLine GetLine(int index) => this.Lines[index];
+
+        private static IReadOnlyList<TextLine> ParseLines(SourceFile sourceFile, string text)
         {
             var list = new List<TextLine>();
             var position = 0;
@@ -63,7 +58,7 @@ namespace Panther.CodeAnalysis.Text
                 }
                 else
                 {
-                    AddLine(list, sourceText, position, lineStart, lineBreakWidth);
+                    AddLine(list, sourceFile, position, lineStart, lineBreakWidth);
 
                     position += lineBreakWidth;
                     lineStart = position;
@@ -72,17 +67,17 @@ namespace Panther.CodeAnalysis.Text
 
             if (position >= lineStart)
             {
-                AddLine(list, sourceText, position, lineStart, 0);
+                AddLine(list, sourceFile, position, lineStart, 0);
             }
 
             return list;
         }
 
-        private static void AddLine(ICollection<TextLine> list, SourceText sourceText, in int position, in int lineStart, in int lineBreakWidth)
+        private static void AddLine(ICollection<TextLine> list, SourceFile sourceFile, in int position, in int lineStart, in int lineBreakWidth)
         {
             var lineLength = position - lineStart;
             var lineLengthIncludingLineBreak = lineStart + lineBreakWidth;
-            var line = new TextLine(sourceText, lineStart, lineLength, lineLengthIncludingLineBreak);
+            var line = new TextLine(sourceFile, lineStart, lineLength, lineLengthIncludingLineBreak);
             list.Add(line);
         }
 
@@ -100,12 +95,6 @@ namespace Panther.CodeAnalysis.Text
             return 0;
         }
 
-        public static SourceText From(string text, string fileName = "") => new SourceText(text, fileName);
-
-        public override string ToString() => _text;
-
-        public string ToString(int start, int length) => _text.Substring(start, length);
-
-        public string ToString(TextSpan span) => ToString(span.Start, span.Length);
+        public override string ToString() => this.Content;
     }
 }

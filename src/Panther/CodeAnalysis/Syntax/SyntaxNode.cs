@@ -42,7 +42,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
-        public TextLocation Location => new TextLocation(SyntaxTree.Text, Span);
+        public TextLocation Location => new TextLocation(SyntaxTree.File, Span);
 
         public abstract IEnumerable<SyntaxNode> GetChildren();
 
