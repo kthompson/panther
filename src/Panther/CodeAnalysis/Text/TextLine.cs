@@ -2,7 +2,7 @@
 {
     public sealed class TextLine
     {
-        public SourceText Text { get; }
+        public SourceFile File { get; }
         public int Start { get; }
         public int Length { get; }
         public int LengthIncludingLineBreaks { get; }
@@ -10,14 +10,14 @@
         public TextSpan Span => new TextSpan(Start, Length);
         public TextSpan SpanIncludingLineBreak => new TextSpan(Start, LengthIncludingLineBreaks);
 
-        public TextLine(SourceText text, int start, int length, int lengthIncludingLineBreaks)
+        public TextLine(SourceFile file, int start, int length, int lengthIncludingLineBreaks)
         {
-            Text = text;
+            File = file;
             Start = start;
             Length = length;
             LengthIncludingLineBreaks = lengthIncludingLineBreaks;
         }
 
-        public override string ToString() => Text.ToString(Span);
+        public override string ToString() => File.ToString(Span);
     }
 }

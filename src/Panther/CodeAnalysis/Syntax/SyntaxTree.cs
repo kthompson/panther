@@ -13,12 +13,12 @@ namespace Panther.CodeAnalysis.Syntax
             out ImmutableArray<Diagnostic> diagnostics);
 
         public ImmutableArray<Diagnostic> Diagnostics { get; }
-        public SourceText Text { get; }
+        public SourceFile File { get; }
         public CompilationUnitSyntax Root { get; }
 
-        private SyntaxTree(SourceText text, ParseHandler handler)
+        private SyntaxTree(SourceFile file, ParseHandler handler)
         {
-            Text = text;
+            File = file;
 
             handler(this, out var root, out var diagnostics);
 
@@ -28,8 +28,8 @@ namespace Panther.CodeAnalysis.Syntax
 
         public static SyntaxTree LoadFile(string fileName)
         {
-            var text = File.ReadAllText(fileName);
-            var sourceText = SourceText.From(text, fileName);
+            var text = System.IO.File.ReadAllText(fileName);
+            var sourceText = SourceFile.From(text, fileName);
             return Parse(sourceText);
         }
 
@@ -42,16 +42,16 @@ namespace Panther.CodeAnalysis.Syntax
             diagnostics = parser.Diagnostics.ToImmutableArray();
         }
 
-        public static SyntaxTree Parse(string source) => Parse(SourceText.From(source));
+        public static SyntaxTree Parse(string source) => Parse(SourceFile.From(source));
 
-        public static SyntaxTree Parse(SourceText source) => new SyntaxTree(source, Parse);
+        public static SyntaxTree Parse(SourceFile source) => new SyntaxTree(source, Parse);
 
-        public static IEnumerable<SyntaxToken> ParseTokens(string source) => ParseTokens(SourceText.From(source));
+        public static IEnumerable<SyntaxToken> ParseTokens(string source) => ParseTokens(SourceFile.From(source));
 
-        public static IEnumerable<SyntaxToken> ParseTokens(SourceText sourceText) =>
-            ParseTokens(sourceText, out var _);
+        public static IEnumerable<SyntaxToken> ParseTokens(SourceFile sourceFile) =>
+            ParseTokens(sourceFile, out var _);
 
-        public static IEnumerable<SyntaxToken> ParseTokens(SourceText sourceText, out ImmutableArray<Diagnostic> diagnostics)
+        public static IEnumerable<SyntaxToken> ParseTokens(SourceFile sourceFile, out ImmutableArray<Diagnostic> diagnostics)
         {
             var tokens = new List<SyntaxToken>();
 
@@ -84,7 +84,7 @@ namespace Panther.CodeAnalysis.Syntax
             }
 
             // Creating the SyntaxTree has a side-effect of running the code above
-            var tree = new SyntaxTree(sourceText, ParseTokens);
+            var tree = new SyntaxTree(sourceFile, ParseTokens);
             diagnostics = tree.Diagnostics;
             return tokens;
         }

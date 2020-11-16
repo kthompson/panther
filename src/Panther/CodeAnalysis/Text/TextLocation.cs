@@ -4,18 +4,33 @@ namespace Panther.CodeAnalysis.Text
 {
     public class TextLocation : IEquatable<TextLocation>
     {
-        public SourceText Text { get; }
+        public SourceFile File { get; }
         public TextSpan Span { get; }
 
-        public string Filename => Text.FileName;
-        public int StartLine => Text.GetLineIndex(Span.Start);
-        public int StartCharacter => Span.Start - Text.Lines[StartLine].Start;
-        public int EndLine => Text.GetLineIndex(Span.End);
-        public int EndCharacter => Span.End - Text.Lines[StartLine].Start;
-
-        public TextLocation(SourceText text, TextSpan span)
+        public string Filename => File.FileName;
+        public int StartLine => File.GetLineIndex(Span.Start);
+        public int StartCharacter
         {
-            Text = text;
+            get
+            {
+                var offset = File.LineToOffset(StartLine);
+                return offset == -1 ? -1 : Span.Start - offset;
+            }
+        }
+
+        public int EndLine => File.GetLineIndex(Span.End);
+        public int EndCharacter
+        {
+            get
+            {
+                var offset = File.LineToOffset(StartLine);
+                return offset == -1 ? -1 : Span.End - offset;
+            }
+        }
+
+        public TextLocation(SourceFile file, TextSpan span)
+        {
+            File = file;
             Span = span;
         }
 
@@ -23,7 +38,7 @@ namespace Panther.CodeAnalysis.Text
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Text.Equals(other.Text) && Span.Equals(other.Span);
+            return File.Equals(other.File) && Span.Equals(other.Span);
         }
 
         public override bool Equals(object? obj)
@@ -36,7 +51,7 @@ namespace Panther.CodeAnalysis.Text
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Text, Span);
+            return HashCode.Combine(File, Span);
         }
 
         public static bool operator ==(TextLocation? left, TextLocation? right)
@@ -51,7 +66,7 @@ namespace Panther.CodeAnalysis.Text
 
         public override string ToString()
         {
-            return $"[{Span}]: {Text.ToString(Span)}";
+            return $"[{Span}]: {File.ToString(Span)}";
         }
     }
 }
