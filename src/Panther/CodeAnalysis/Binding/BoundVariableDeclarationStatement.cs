@@ -4,7 +4,7 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal class BoundVariableDeclarationStatement : BoundStatement
+    internal record BoundVariableDeclarationStatement : BoundStatement
     {
         public VariableSymbol Variable { get; }
         public BoundExpression Expression { get; }

@@ -2,11 +2,6 @@
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal abstract class BoundStatement : BoundNode
-    {
-        protected BoundStatement(SyntaxNode syntax)
-            : base(syntax)
-        {
-        }
-    }
+    internal abstract record BoundStatement(SyntaxNode Syntax)
+        : BoundNode(Syntax);
 }

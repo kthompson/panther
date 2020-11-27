@@ -4,7 +4,7 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal sealed class BoundLiteralExpression : BoundExpression
+    internal sealed record BoundLiteralExpression : BoundExpression
     {
         public BoundLiteralExpression(SyntaxNode syntax, object value) : base(syntax)
         {
@@ -22,7 +22,7 @@ namespace Panther.CodeAnalysis.Binding
         public object Value => ConstantValue.Value;
 
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
-        public override TypeSymbol Type { get; }
+        public override TypeSymbol Type { get ; init; }
         public override BoundConstant ConstantValue { get; }
     }
 }

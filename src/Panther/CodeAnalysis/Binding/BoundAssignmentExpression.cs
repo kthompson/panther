@@ -4,18 +4,10 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal class BoundAssignmentExpression : BoundExpression
+    internal record BoundAssignmentExpression(SyntaxNode Syntax, VariableSymbol Variable, BoundExpression Expression)
+        : BoundExpression(Syntax)
     {
-        public VariableSymbol Variable { get; }
-        public BoundExpression Expression { get; }
         public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
-
-        public override TypeSymbol Type => TypeSymbol.Unit;
-
-        public BoundAssignmentExpression(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression) : base(syntax)
-        {
-            Variable = variable;
-            Expression = expression;
-        }
+        public override TypeSymbol Type { get ; init; } = TypeSymbol.Unit;
     }
 }

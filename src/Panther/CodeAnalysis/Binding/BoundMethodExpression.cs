@@ -4,7 +4,7 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    sealed class BoundMethodExpression : BoundExpression
+    sealed record BoundMethodExpression : BoundNode
     {
         public BoundMethodExpression(SyntaxNode syntax, string name, ImmutableArray<MethodSymbol> methods)
             : base(syntax)
@@ -17,6 +17,5 @@ namespace Panther.CodeAnalysis.Binding
         public ImmutableArray<MethodSymbol> Methods { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.MethodExpression;
-        public override TypeSymbol Type => null!;
     }
 }

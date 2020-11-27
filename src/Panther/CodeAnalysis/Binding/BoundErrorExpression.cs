@@ -3,7 +3,7 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal sealed class BoundErrorExpression : BoundExpression
+    internal sealed record BoundErrorExpression : BoundExpression
     {
         public BoundErrorExpression(SyntaxNode syntax)
             : base(syntax)
@@ -11,6 +11,6 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.ErrorExpression;
-        public override TypeSymbol Type => TypeSymbol.Error;
+        public override TypeSymbol Type { get ; init; } = TypeSymbol.Error;
     }
 }

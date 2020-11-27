@@ -29,6 +29,13 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 Arb.Generate<BoundVariableDeclarationStatement>().Select(x => (BoundStatement)x)
             ).ToArbitrary();
 
+        public static Arbitrary<BoundGotoStatement> BoundGotoStatement() =>
+        (
+            from token in Arb.Generate<SyntaxNode>()
+            from label in Arb.Generate<BoundLabel>()
+            select new BoundGotoStatement(token, label)
+        ).ToArbitrary();
+
         public static Arbitrary<BoundConditionalGotoStatement> BoundConditionalGotoStatement() =>
         (
             from token in Arb.Generate<SyntaxNode>()
