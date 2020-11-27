@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>latestmajor</LangVersion>
+    <LangVersion>9</LangVersion>
     <RootNamespace>Panther</RootNamespace>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
 </Project>
