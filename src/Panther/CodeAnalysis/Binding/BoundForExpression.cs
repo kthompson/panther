@@ -4,7 +4,7 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal sealed class BoundForExpression : BoundLoopExpression
+    internal sealed record BoundForExpression : BoundLoopExpression
     {
         public VariableSymbol Variable { get; }
         public BoundExpression LowerBound { get; }
@@ -23,6 +23,6 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.ForExpression;
-        public override TypeSymbol Type => TypeSymbol.Unit;
+        public override TypeSymbol Type { get ; init; } = TypeSymbol.Unit;
     }
 }

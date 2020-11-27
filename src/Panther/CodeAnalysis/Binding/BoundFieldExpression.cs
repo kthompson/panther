@@ -3,19 +3,9 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    sealed class BoundFieldExpression : BoundExpression
+    sealed record BoundFieldExpression(SyntaxNode Syntax, string Name, FieldSymbol Field) : BoundExpression(Syntax)
     {
-        public BoundFieldExpression(SyntaxNode syntax, string name, FieldSymbol field)
-            : base(syntax)
-        {
-            Name = name;
-            Field = field;
-        }
-
-        public string Name { get; }
-        public FieldSymbol Field { get; }
-
         public override BoundNodeKind Kind => BoundNodeKind.FieldExpression;
-        public override TypeSymbol Type => Field.Type;
+        public override TypeSymbol Type { get ; init; } = Field.Type;
     }
 }

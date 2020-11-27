@@ -3,22 +3,11 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal sealed class BoundUnaryExpression : BoundExpression
+    internal sealed record BoundUnaryExpression(SyntaxNode Syntax, BoundUnaryOperator Operator, BoundExpression Operand)
+        : BoundExpression(Syntax)
     {
-        public BoundUnaryExpression(SyntaxNode syntax, BoundUnaryOperator @operator, BoundExpression operand)
-            : base(syntax)
-        {
-            Operator = @operator;
-            Operand = operand;
-            ConstantValue = ConstantFolding.ComputeConstant(@operator, operand);
-        }
-
-        public BoundUnaryOperator Operator { get; }
-
-        public BoundExpression Operand { get; }
-
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
-        public override TypeSymbol Type => Operator.Type;
-        public override BoundConstant? ConstantValue { get; }
+        public override TypeSymbol Type { get ; init; } = Operator.Type;
+        public override BoundConstant? ConstantValue { get; } = ConstantFolding.ComputeConstant(Operator, Operand);
     }
 }

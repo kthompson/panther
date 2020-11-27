@@ -4,9 +4,9 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal abstract class BoundExpression : BoundNode
+    internal abstract record BoundExpression : BoundNode
     {
-        public abstract TypeSymbol Type { get; }
+        public abstract TypeSymbol Type { get; init; }
         public virtual BoundConstant? ConstantValue { get; }
 
         protected BoundExpression(SyntaxNode syntax)

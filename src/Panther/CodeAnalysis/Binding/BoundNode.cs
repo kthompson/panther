@@ -6,15 +6,9 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal abstract class BoundNode
+    internal abstract record BoundNode(SyntaxNode Syntax)
     {
-        public SyntaxNode Syntax { get; }
         public abstract BoundNodeKind Kind { get; }
-
-        public BoundNode(SyntaxNode syntax)
-        {
-            Syntax = syntax;
-        }
 
         public override string ToString()
         {

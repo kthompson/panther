@@ -303,8 +303,8 @@ namespace Panther.CodeAnalysis.Binding
                 previous,
                 diagnostics.ToImmutableArray(),
                 globalScope.EntryPoint,
-                globalScope.References,
-                globalScope.Types
+                globalScope.Types,
+                globalScope.References
             );
         }
 
@@ -636,7 +636,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
-        private BoundExpression BindMethodExpression(ExpressionSyntax syntax, BoundScope scope)
+        private BoundNode BindMethodExpression(ExpressionSyntax syntax, BoundScope scope)
         {
             switch (syntax)
             {
@@ -651,7 +651,7 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private BoundExpression BindMemberMethodAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
+        private BoundNode BindMemberMethodAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
         {
             // TODO: combine with BindMemberAccessExpression?
             var expr = BindExpression(syntax.Expression, scope);
@@ -667,7 +667,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundErrorExpression(syntax);
         }
 
-        private BoundExpression BindMethod(IdentifierNameSyntax syntax, BoundScope scope)
+        private BoundNode BindMethod(IdentifierNameSyntax syntax, BoundScope scope)
         {
             var name = syntax.ToText();
             var symbols = scope.LookupMethod(name);
@@ -701,8 +701,8 @@ namespace Panther.CodeAnalysis.Binding
 
             // bind regular functions
             var expression = BindMethodExpression(syntax.Expression, scope);
-            if (expression is BoundErrorExpression)
-                return expression;
+            if (expression is BoundErrorExpression errorExpression)
+                return errorExpression;
 
             if (expression is BoundMethodExpression boundMethodExpression)
             {

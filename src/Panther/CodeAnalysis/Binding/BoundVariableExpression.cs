@@ -7,16 +7,10 @@ namespace Panther.CodeAnalysis.Binding
     /// <summary>
     /// Access a local variable
     /// </summary>
-    internal class BoundVariableExpression : BoundExpression
+    internal record BoundVariableExpression(SyntaxNode Syntax, VariableSymbol Variable)
+        : BoundExpression(Syntax)
     {
-        public VariableSymbol Variable { get; }
-        public override TypeSymbol Type => Variable.Type;
+        public override TypeSymbol Type { get; init; } = Variable.Type;
         public override BoundNodeKind Kind => BoundNodeKind.VariableExpression;
-
-        public BoundVariableExpression(SyntaxNode syntax, VariableSymbol variable)
-            : base(syntax)
-        {
-            Variable = variable;
-        }
     }
 }

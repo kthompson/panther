@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal sealed class BoundNopStatement : BoundStatement
+    internal sealed record BoundNopStatement : BoundStatement
     {
         public override BoundNodeKind Kind => BoundNodeKind.NopStatement;
 

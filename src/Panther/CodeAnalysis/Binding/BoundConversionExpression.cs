@@ -3,17 +3,8 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal class BoundConversionExpression : BoundExpression
+    internal record BoundConversionExpression(SyntaxNode Syntax, TypeSymbol Type, BoundExpression Expression) : BoundExpression(Syntax)
     {
-        public BoundExpression Expression { get; }
         public override BoundNodeKind Kind => BoundNodeKind.ConversionExpression;
-        public override TypeSymbol Type { get; }
-
-        public BoundConversionExpression(SyntaxNode syntax, TypeSymbol type, BoundExpression expression)
-            : base(syntax)
-        {
-            Type = type;
-            Expression = expression;
-        }
     }
 }

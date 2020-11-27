@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal class BoundExpressionStatement : BoundStatement
+    internal record BoundExpressionStatement : BoundStatement
     {
         public BoundExpression Expression { get; }
 

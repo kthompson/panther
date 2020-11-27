@@ -5,18 +5,10 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal class BoundBlockExpression : BoundExpression
+    internal record BoundBlockExpression(SyntaxNode Syntax, ImmutableArray<BoundStatement> Statements, BoundExpression Expression)
+        : BoundExpression(Syntax)
     {
-        public ImmutableArray<BoundStatement> Statements { get; }
-        public BoundExpression Expression { get; }
         public override BoundNodeKind Kind => BoundNodeKind.BlockExpression;
-        public override TypeSymbol Type => Expression.Type;
-
-        public BoundBlockExpression(SyntaxNode syntax, ImmutableArray<BoundStatement> statements, BoundExpression expression)
-            : base(syntax)
-        {
-            Statements = statements;
-            Expression = expression;
-        }
+        public override TypeSymbol Type { get ; init; } = Expression.Type;
     }
 }

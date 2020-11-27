@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Binding
 {
-    sealed class BoundLabelStatement : BoundStatement
+    sealed record BoundLabelStatement : BoundStatement
     {
         public BoundLabel BoundLabel { get; }
 
