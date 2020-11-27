@@ -3,7 +3,7 @@
     <Target Name="CreateManifestResourceNames" />
 
     <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-        <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)\..\src\Panther.Compiler\Panther.Compiler.csproj&quot; -- @(Compile->'&quot;%(Identity)&quot;', ' ') /o &quot;@(IntermediateAssembly)&quot; @(ReferencePath->'/r &quot;%(Identity)&quot;', ' ')"
+        <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)\..\src\Panther.Compiler\Panther.Compiler.csproj&quot; -- @(Compile->'&quot;%(Identity)&quot;', ' ') /o &quot;@(IntermediateRefAssembly)&quot; @(ReferencePath->'/r &quot;%(Identity)&quot;', ' ')"
               WorkingDirectory="$(MSBuildProjectDirectory)" />
     </Target>
 

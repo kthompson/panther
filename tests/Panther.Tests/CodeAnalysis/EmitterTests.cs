@@ -97,15 +97,15 @@ namespace Panther.Tests.CodeAnalysis
             // create runtimeconfig.json
 
             var runtimeConfig = assemblyLocation.Substring(0, assemblyLocation.Length - 3) + "runtimeconfig.json";
-            File.WriteAllText(runtimeConfig, @"{
-  ""runtimeOptions"": {
-    ""tfm"": ""netcoreapp3.0"",
-    ""framework"": {
+            File.WriteAllText(runtimeConfig, $@"{{
+  ""runtimeOptions"": {{
+    ""tfm"": ""net5.0"",
+    ""framework"": {{
       ""name"": ""Microsoft.NETCore.App"",
-      ""version"": ""3.0.0""
-    }
-  }
-}");
+      ""version"": ""{Environment.Version}""
+    }}
+  }}
+}}");
 
             // Run emitted assembly
             var actualOutputTxt = Dotnet.Invoke(assemblyLocation);
@@ -146,7 +146,7 @@ namespace Panther.Tests.CodeAnalysis
             disassembler.WriteModuleContents(module);
         }
 
-        public static IEnumerable<object[]> GetEmitterTests()
+        public static IEnumerable<object?[]> GetEmitterTests()
         {
             foreach (var directory in Directory.GetDirectories(OutputPath))
             {
@@ -156,7 +156,7 @@ namespace Panther.Tests.CodeAnalysis
                 var sources = Directory.GetFiles(directory, "*.pn").OrderBy(x => x).ToArray();
 
                 var expected = Directory.GetFiles(directory, "*.il").SingleOrDefault();
-                yield return new object[] { directory, sources, expected };
+                yield return new object?[] { directory, sources, expected };
             }
         }
     }

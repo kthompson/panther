@@ -207,7 +207,7 @@ namespace Panther.CodeAnalysis.Binding
 
                     foreach (var firstStatement1 in firstStatementPerSyntaxTree)
                     {
-                        binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1.Location);
+                        binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
                     }
                 }
 
@@ -219,7 +219,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 foreach (var firstStatement2 in firstStatementPerSyntaxTree)
                 {
-                    binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2.Location);
+                    binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2!.Location);
                 }
             }
 

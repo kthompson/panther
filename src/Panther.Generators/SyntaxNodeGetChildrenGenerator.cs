@@ -33,7 +33,7 @@ namespace Panther.Generators
             var compilation = context.Compilation;
 
             var immutableArrayType = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableArray`1");
-            var syntaxNodeType = compilation.GetTypeByMetadataName("Panther.CodeAnalysis.Syntax.SyntaxNode");
+            var syntaxNodeType = compilation.GetTypeByMetadataName("Panther.CodeAnalysis.Syntax.SyntaxNode")!;
             var separatedSyntaxListType = compilation.GetTypeByMetadataName("Panther.CodeAnalysis.Syntax.SeparatedSyntaxList`1");
             var allTypes = GetAllTypes(compilation.Assembly);
             var syntaxNodeTypes = allTypes.Where(type => !type.IsAbstract && IsDerivedFrom(type, syntaxNodeType) && IsPartial(type));

@@ -78,7 +78,7 @@ namespace Panther
                 Render();
             }
 
-            private void SubmissionDocumentChanged(object sender, NotifyCollectionChangedEventArgs e)
+            private void SubmissionDocumentChanged(object? sender, NotifyCollectionChangedEventArgs e)
             {
                 Render();
             }

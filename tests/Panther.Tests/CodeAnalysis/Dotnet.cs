@@ -22,6 +22,9 @@ namespace Panther.Tests.CodeAnalysis
             });
             var errorOutput = new List<string>();
             var output = new List<string>();
+            if(proc == null)
+                throw new XunitException("Failed to run dotnet command");
+
             proc.ErrorDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
