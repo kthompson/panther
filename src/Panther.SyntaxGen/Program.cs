@@ -6,6 +6,8 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 
+#nullable disable
+
 namespace Panther.SyntaxGen
 {
 

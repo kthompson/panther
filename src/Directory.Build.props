@@ -1,0 +1,8 @@
+﻿<Project>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <LangVersion>9</LangVersion>
+    </PropertyGroup>
+</Project>
