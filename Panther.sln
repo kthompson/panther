@@ -41,6 +41,8 @@ ProjectSection(SolutionItems) = preProject
 	samples\Directory.Build.targets = samples\Directory.Build.targets
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.SyntaxGen", "src\Panther.SyntaxGen\Panther.SyntaxGen.csproj", "{898E175B-F2B0-401D-9148-B436FE3D6374}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{3D577B7A-B3B2-426A-B891-ED3DA62F3BE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D577B7A-B3B2-426A-B891-ED3DA62F3BE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D577B7A-B3B2-426A-B891-ED3DA62F3BE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{898E175B-F2B0-401D-9148-B436FE3D6374}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{898E175B-F2B0-401D-9148-B436FE3D6374}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{898E175B-F2B0-401D-9148-B436FE3D6374}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{898E175B-F2B0-401D-9148-B436FE3D6374}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -94,6 +100,7 @@ Global
 		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 		{3D577B7A-B3B2-426A-B891-ED3DA62F3BE1} = {DE9991AB-E783-4C47-B224-BFE5493F2A9B}
 		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E} = {836A8433-7F1F-4509-9E1D-4E4BC93A7D01}
+		{898E175B-F2B0-401D-9148-B436FE3D6374} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685AA9B0-62DB-4F96-984D-2922750366A4}

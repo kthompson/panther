@@ -4,7 +4,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class SyntaxTrivia : SyntaxNode
+    public sealed record SyntaxTrivia : SyntaxNode
     {
         public SyntaxTrivia(SyntaxTree syntaxTree, SyntaxKind kind, string text, int position)
             : base(syntaxTree)

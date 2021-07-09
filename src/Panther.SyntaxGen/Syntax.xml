@@ -1,0 +1,226 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Tree Root="SyntaxNode">
+
+    <PredefinedNode Name="SyntaxToken" Base="SyntaxNode"/>
+
+    <AbstractNode Name="ExpressionSyntax" />
+
+    <Node Name="AssignmentExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="AssignmentExpression"/>
+
+        <Field Name="Name" Type="ExpressionSyntax" />
+        <Field Name="EqualsToken" Type="SyntaxToken" />
+        <Field Name="Expression" Type="ExpressionSyntax" />
+    </Node>
+
+
+    <Node Name="BinaryExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="BinaryExpression"/>
+
+        <Field Name="Left" Type="ExpressionSyntax" />
+        <Field Name="OperatorToken" Type="SyntaxToken" />
+        <Field Name="Right" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="BlockExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="BlockExpression"/>
+
+        <Field Name="OpenBraceToken" Type="SyntaxToken" />
+        <Field Name="Statements" Type="ImmutableArray&lt;StatementSyntax&gt;" />
+        <Field Name="Expression" Type="ExpressionSyntax" />
+        <Field Name="CloseBraceToken" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="BreakExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="BreakExpression"/>
+
+        <Field Name="BreakKeyword" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="ContinueExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="ContinueExpression"/>
+
+        <Field Name="ContinueKeyword" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="CallExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="CallExpression"/>
+
+        <Field Name="Expression" Type="ExpressionSyntax" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Arguments" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="ForExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="ForExpression"/>
+
+        <Field Name="ForKeyword" Type="SyntaxToken" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Variable" Type="SyntaxToken" />
+        <Field Name="LessThanDashToken" Type="SyntaxToken" />
+        <Field Name="FromExpression" Type="ExpressionSyntax" />
+        <Field Name="ToKeyword" Type="SyntaxToken" />
+        <Field Name="ToExpression" Type="ExpressionSyntax" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+        <Field Name="Body" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="GroupExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="GroupExpression"/>
+
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Expression" Type="ExpressionSyntax" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="IfExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="IfExpression"/>
+
+        <Field Name="IfKeyword" Type="SyntaxToken" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="ConditionExpression" Type="ExpressionSyntax" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+        <Field Name="ThenExpression" Type="ExpressionSyntax" />
+        <Field Name="ElseKeyword" Type="SyntaxToken" />
+        <Field Name="ElseExpression" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="MemberAccessExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="MemberAccessExpression"/>
+
+        <Field Name="Expression" Type="ExpressionSyntax" />
+        <Field Name="DotToken" Type="SyntaxToken" />
+        <Field Name="Name" Type="IdentifierNameSyntax" />
+    </Node>
+
+    <Node Name="WhileExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="WhileExpression"/>
+
+        <Field Name="WhileKeyword" Type="SyntaxToken" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="ConditionExpression" Type="ExpressionSyntax" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+        <Field Name="Body" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="UnaryExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="UnaryExpression"/>
+
+        <Field Name="OperatorToken" Type="SyntaxToken" />
+        <Field Name="Operand" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="UnitExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="UnitExpression"/>
+
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+    </Node>
+
+    <AbstractNode Name="NameSyntax" Base="ExpressionSyntax" />
+
+    <Node Name="IdentifierNameSyntax" Base="NameSyntax">
+        <Kind Name="IdentifierName"/>
+
+        <Field Name="Identifier" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="QualifiedNameSyntax" Base="NameSyntax">
+        <Kind Name="QualifiedName"/>
+
+        <Field Name="Left" Type="NameSyntax" />
+        <Field Name="DotToken" Type="SyntaxToken" />
+        <Field Name="Right" Type="IdentifierNameSyntax" />
+    </Node>
+
+    <AbstractNode Name="StatementSyntax" />
+
+    <Node Name="ExpressionStatementSyntax" Base="StatementSyntax">
+        <Kind Name="ExpressionStatement"/>
+
+        <Field Name="Expression" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="VariableDeclarationStatementSyntax" Base="StatementSyntax">
+        <Kind Name="VariableDeclarationStatement"/>
+
+        <Field Name="ValOrVarToken" Type="SyntaxToken" />
+        <Field Name="IdentifierToken" Type="SyntaxToken" />
+        <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax?" />
+        <Field Name="EqualsToken" Type="SyntaxToken" />
+        <Field Name="Expression" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="GlobalStatementSyntax">
+        <Kind Name="GlobalStatement"/>
+
+        <Field Name="Statement" Type="StatementSyntax" />
+    </Node>
+
+    <Node Name="CompilationUnitSyntax">
+        <Kind Name="CompilationUnit"/>
+
+        <Field Name="NamespaceDirectives" Type="ImmutableArray&lt;NamespaceDirectiveSyntax&gt;" />
+        <Field Name="Usings" Type="ImmutableArray&lt;UsingDirectiveSyntax&gt;" />
+        <Field Name="Statements" Type="ImmutableArray&lt;GlobalStatementSyntax&gt;" />
+        <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
+        <Field Name="EndOfFileToken" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="NamespaceDirectiveSyntax">
+        <Kind Name="NamespaceDirective"/>
+
+        <Field Name="NamespaceKeyword" Type="SyntaxToken" />
+        <Field Name="Name" Type="NameSyntax" />
+    </Node>
+
+    <Node Name="ParameterSyntax">
+        <Kind Name="Parameter"/>
+
+        <Field Name="Identifier" Type="SyntaxToken" />
+        <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax" />
+    </Node>
+
+    <Node Name="TypeAnnotationSyntax">
+        <Kind Name="TypeAnnotation"/>
+
+        <Field Name="ColonToken" Type="SyntaxToken" />
+        <Field Name="IdentifierToken" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="UsingDirectiveSyntax">
+        <Kind Name="UsingDirective"/>
+
+        <Field Name="UsingKeyword" Type="SyntaxToken" />
+        <Field Name="UsingStyleKeyword" Type="SyntaxToken?" />
+        <Field Name="Name" Type="NameSyntax" />
+    </Node>
+
+    <AbstractNode Name="MemberSyntax" />
+
+    <Node Name="FunctionDeclarationSyntax" Base="MemberSyntax">
+        <Kind Name="ObjectDeclaration"/>
+
+        <Field Name="DefKeyword" Type="SyntaxToken" />
+        <Field Name="Identifier" Type="SyntaxToken" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Parameters" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+        <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax?" />
+        <Field Name="EqualsToken" Type="SyntaxToken" />
+        <Field Name="Body" Type="ExpressionSyntax" />
+    </Node>
+
+    <Node Name="ObjectDeclarationSyntax" Base="MemberSyntax">
+        <Kind Name="ObjectDeclaration"/>
+
+        <Field Name="ObjectKeyword" Type="SyntaxToken" />
+        <Field Name="Identifier" Type="SyntaxToken" />
+        <Field Name="OpenBrace" Type="SyntaxToken" />
+        <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
+        <Field Name="CloseBrace" Type="SyntaxToken" />
+    </Node>
+
+</Tree>
