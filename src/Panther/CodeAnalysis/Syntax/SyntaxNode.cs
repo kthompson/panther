@@ -7,15 +7,8 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public abstract class SyntaxNode
+    public abstract record SyntaxNode(SyntaxTree SyntaxTree)
     {
-        public SyntaxTree SyntaxTree { get; }
-
-        protected SyntaxNode(SyntaxTree syntaxTree)
-        {
-            SyntaxTree = syntaxTree;
-        }
-
         public abstract SyntaxKind Kind { get; }
 
         public virtual TextSpan Span

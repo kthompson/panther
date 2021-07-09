@@ -2,12 +2,18 @@
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public abstract partial class NameSyntax : ExpressionSyntax
+    public abstract partial record NameSyntax
     {
-        protected NameSyntax(SyntaxTree syntaxTree) : base(syntaxTree)
-        {
-        }
-
         public abstract string ToText();
+    }
+
+    public sealed partial record QualifiedNameSyntax
+    {
+        public override string ToText() => $"{Left.ToText()}.{Right.ToText()}";
+    }
+
+    public sealed partial record IdentifierNameSyntax
+    {
+        public override string ToText() => Identifier.Text;
     }
 }

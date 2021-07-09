@@ -2,8 +2,16 @@
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    internal sealed partial class LiteralExpressionSyntax : ExpressionSyntax
+    public sealed partial record LiteralExpressionSyntax : ExpressionSyntax
     {
+        public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return LiteralToken;
+        }
+
+
         public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken)
             : this(syntaxTree, literalToken, literalToken.Value)
         {

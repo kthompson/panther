@@ -228,7 +228,7 @@ namespace Panther.CodeAnalysis.Syntax
 
             var name = ParseNameSyntax();
 
-            return new UsingDirectiveSyntax(_syntaxTree, special, usingKeyword, name);
+            return new UsingDirectiveSyntax(_syntaxTree, usingKeyword, special, name);
         }
 
         private NameSyntax ParseNameSyntax()

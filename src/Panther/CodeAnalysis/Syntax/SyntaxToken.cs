@@ -6,7 +6,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public sealed class SyntaxToken : SyntaxNode
+    public sealed record SyntaxToken : SyntaxNode
     {
         public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position, string text, object? value)
             : this(syntaxTree, kind, position, position, text, value, false, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty)
