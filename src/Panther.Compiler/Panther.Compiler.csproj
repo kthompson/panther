@@ -3,10 +3,6 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <AssemblyName>pantherc</AssemblyName>
-        <TargetFramework>net5.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <LangVersion>9</LangVersion>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <PackageId>Panther.Compiler</PackageId>
     </PropertyGroup>
 
