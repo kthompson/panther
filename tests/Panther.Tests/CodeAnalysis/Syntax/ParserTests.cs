@@ -286,6 +286,29 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertToken(SyntaxKind.EndOfInputToken, "");
         }
 
+        [Fact]
+        public void ParseSingleLineBlockExpression()
+        {
+            var text = @"{ x }";
+            var tree = SyntaxTree.Parse(text);
+            Assert.Empty(tree.Diagnostics);
+
+            var expression = tree.Root;
+
+            using var e = new AssertingEnumerator(expression);
+
+            e.AssertNode(SyntaxKind.CompilationUnit);
+            e.AssertNode(SyntaxKind.GlobalStatement);
+            e.AssertNode(SyntaxKind.ExpressionStatement);
+            e.AssertNode(SyntaxKind.BlockExpression);
+            e.AssertToken(SyntaxKind.OpenBraceToken, "{");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertNode(SyntaxKind.IdentifierName);
+            e.AssertToken(SyntaxKind.IdentifierToken, "x");
+            e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertToken(SyntaxKind.CloseBraceToken, "}");
+            e.AssertToken(SyntaxKind.EndOfInputToken, "");
+        }
 
         [Fact]
         public void ParseUnaryExpressionAfterLineBreak()

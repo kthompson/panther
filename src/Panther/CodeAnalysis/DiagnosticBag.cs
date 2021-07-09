@@ -42,8 +42,8 @@ namespace Panther.CodeAnalysis
         public void ReportUnexpectedToken(TextLocation location, SyntaxKind currentKind, SyntaxKind expectedKind) =>
             Report(location, $"Unexpected token {currentKind}, expected {expectedKind}");
 
-        public void ReportUnexpectedEndOfLineTrivia(TextLocation location, SyntaxKind currentKind) =>
-            Report(location, $"Unexpected end of line trivia: {currentKind}");
+        public void ReportUnexpectedEndOfLineTrivia(TextLocation location) =>
+            Report(location, $"Unexpected end of line trivia but none found");
 
         public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol operandType) =>
             Report(location, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");

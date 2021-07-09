@@ -332,7 +332,7 @@ namespace Panther.CodeAnalysis.Syntax
             var left = prefixFunction();
 
             // investigate if we can use precedence to break early
-            if (left.Kind == SyntaxKind.ContinueExpression || left.Kind == SyntaxKind.BreakExpression || isTerminatingLine(left))
+            if (left.Kind is SyntaxKind.ContinueExpression or SyntaxKind.BreakExpression || isTerminatingLine(left))
                 return left;
 
             while (precedence < CurrentPrecedence() && !isTerminatingLine(left))
@@ -585,14 +585,27 @@ namespace Panther.CodeAnalysis.Syntax
             return new ExpressionStatementSyntax(_syntaxTree, expr);
         }
 
+        private SyntaxKind? GetStatementTerminator(ExpressionSyntax expression)
+        {
+            var syntaxNode = expression
+                .DescendantsAndSelf()
+                .LastOrDefault(token => token.Kind != SyntaxKind.WhitespaceTrivia);
+
+            return syntaxNode?.Kind switch
+            {
+                SyntaxKind.EndOfLineTrivia => SyntaxKind.EndOfLineTrivia,
+                SyntaxKind.CloseBraceToken => SyntaxKind.CloseBraceToken,
+                SyntaxKind.EndOfInputToken => SyntaxKind.EndOfInputToken,
+                _ => null
+            };
+        }
+
         private void AssertStatementTerminator(ExpressionSyntax expr)
         {
-            var syntaxNode = expr.Descendants().Last(token => token.Kind != SyntaxKind.WhitespaceTrivia);
-            var lastKind = syntaxNode.Kind;
-
-            if (lastKind != SyntaxKind.EndOfLineTrivia && lastKind != SyntaxKind.CloseBraceToken && CurrentKind != SyntaxKind.EndOfInputToken)
+            var terminator = GetStatementTerminator(expr) ?? GetStatementTerminator(CurrentToken);
+            if (terminator == null)
             {
-                Diagnostics.ReportUnexpectedEndOfLineTrivia(syntaxNode.Location, lastKind);
+                Diagnostics.ReportUnexpectedEndOfLineTrivia(expr.Location);
             }
         }
 
