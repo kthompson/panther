@@ -9,38 +9,30 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal sealed class BoundScope
     {
-        private readonly NamespaceOrTypeSymbol? _containingSymbol;
+        public Symbol Symbol { get; }
 
         // symbols that have not been defined but are needed in scope for resolving types etc
         private readonly Dictionary<string, ImmutableArray<Symbol>> _importedSymbols = new Dictionary<string, ImmutableArray<Symbol>>();
 
         public BoundScope? Parent { get; }
 
-        public BoundScope(BoundScope? parent)
-            : this(parent, parent?._containingSymbol)
+        public BoundScope(BoundScope parent)
+            : this(parent, parent.Symbol)
         {
         }
 
-        public BoundScope(BoundScope? parent, NamespaceOrTypeSymbol? container)
+        public BoundScope(Symbol symbol)
         {
-            _containingSymbol = container;
+            this.Symbol = symbol;
+        }
+
+        public BoundScope(BoundScope? parent, Symbol container)
+        {
+            Symbol = container;
             Parent = parent;
         }
 
-        public BoundScope(BoundScope? parent, MethodSymbol function)
-        {
-            _containingSymbol = null;
-            Parent = parent;
-
-            foreach (var parameter in function.Parameters)
-            {
-                DefineSymbol(parameter);
-            }
-        }
-
-        public bool IsGlobalScope => _containingSymbol != null &&
-                                     _containingSymbol.Name == "$Program" &&
-                                     _containingSymbol.IsType;
+        public bool IsGlobalScope => Symbol.IsType && Symbol.Name == "$Program";
 
         public void Import(TypeSymbol symbol) => ImportSymbol(symbol);
 
@@ -65,16 +57,12 @@ namespace Panther.CodeAnalysis.Binding
 
         public bool DefineSymbol(Symbol symbol)
         {
-            if (_containingSymbol != null)
-                return _containingSymbol.DefineSymbol(symbol);
-
-            ImportSymbol(symbol);
-            return true;
+            return Symbol.DefineSymbol(symbol);
         }
 
         public VariableSymbol? LookupVariable(string name)
         {
-            var variable = _containingSymbol?.GetMembers(name).OfType<VariableSymbol>().FirstOrDefault();
+            var variable = Symbol?.GetMembers(name).OfType<VariableSymbol>().FirstOrDefault();
             if (variable != null)
                 return variable;
 
@@ -88,7 +76,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public TypeSymbol? LookupType(string name)
         {
-            var type = _containingSymbol?.GetTypeMembers(name).FirstOrDefault();
+            var type = Symbol?.GetTypeMembers(name).FirstOrDefault();
             if (type != null)
                 return type;
 
@@ -102,7 +90,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<MethodSymbol> LookupMethod(string name)
         {
-            var methods = _containingSymbol?.GetMembers(name).OfType<MethodSymbol>().ToImmutableArray();
+            var methods = Symbol?.GetMembers(name).OfType<MethodSymbol>().ToImmutableArray();
 
             if (methods != null && methods.Value.Any())
                 return methods.Value;

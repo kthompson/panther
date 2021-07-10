@@ -28,13 +28,14 @@ namespace Panther.CodeAnalysis.Binding
         public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous,
             ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
-            var parentScope = CreateParentScope(previous, references);
             var rootNamespace = new NamespaceSymbol("");
+            var parentScope = CreateParentScope(previous, references);
+
             var scope = new BoundScope(parentScope, rootNamespace);
             var binder = new Binder(isScript);
 
 
-            var defaultType = new BoundType("$Program");
+            var defaultType = new BoundType(rootNamespace, TextLocation.None, "$Program");
             var defaultTypeAddedToNamespace = false;
             var defaultTypeScope = new BoundScope(scope, defaultType);
 
@@ -139,7 +140,9 @@ namespace Panther.CodeAnalysis.Binding
 
         private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
         {
-            var type = new BoundType(objectDeclaration.Identifier.Text);
+            var type = new BoundType(parent.Symbol,
+                objectDeclaration.Identifier.Location,
+                objectDeclaration.Identifier.Text);
             if (!parent.DefineSymbol(type))
             {
                 Diagnostics.ReportAmbiguousType(objectDeclaration.Location, objectDeclaration.Identifier.Text);
@@ -350,7 +353,7 @@ namespace Panther.CodeAnalysis.Binding
                 // HACK: temporarily bind to body so that we can detect the type
                 // var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
                 //     TypeSymbol.Unit, syntax);
-                var functionScope = new BoundScope(scope, new BoundType("<temp>"));
+                var functionScope = new BoundScope(scope, new BoundType(Symbol.None, TextLocation.None, "<temp>"));
                 foreach (var parameterSymbol in parameters)
                 {
                     functionScope.DefineSymbol(parameterSymbol);
@@ -846,7 +849,8 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundBlockExpression(syntax, stmts, expr);
         }
 
-        private static BoundScope? CreateParentScope(BoundGlobalScope? previous, ImmutableArray<AssemblyDefinition> references)
+        private static BoundScope CreateParentScope(BoundGlobalScope? previous,
+            ImmutableArray<AssemblyDefinition> references)
         {
             var stack = new Stack<BoundGlobalScope>();
 
@@ -884,7 +888,8 @@ namespace Panther.CodeAnalysis.Binding
 
         private static BoundScope CreateRootScope(ImmutableArray<AssemblyDefinition> references)
         {
-            var rootScope = new BoundScope(null);
+            var root = Symbol.NewRoot();
+            var rootScope = new BoundScope(root);
 
             // find Predef and add its functions
             var importedTypes =

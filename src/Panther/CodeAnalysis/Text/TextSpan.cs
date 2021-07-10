@@ -43,5 +43,7 @@ namespace Panther.CodeAnalysis.Text
             if (ReferenceEquals(null, obj)) return 1;
             return obj is TextSpan other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(TextSpan)}");
         }
+
+        public static readonly TextSpan Empty = new TextSpan(-1, 0);
     }
 }

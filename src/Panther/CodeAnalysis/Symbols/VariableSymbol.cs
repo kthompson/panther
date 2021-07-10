@@ -1,5 +1,6 @@
 ﻿using System;
 using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {
@@ -10,7 +11,7 @@ namespace Panther.CodeAnalysis.Symbols
         internal BoundConstant? ConstantValue { get; }
 
         internal VariableSymbol(string name, bool isReadOnly, TypeSymbol type, BoundConstant? constantValue)
-            : base(name)
+            : base(Symbol.None, TextLocation.None, name)
         {
             IsReadOnly = isReadOnly;
             Type = type;

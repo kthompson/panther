@@ -5,6 +5,7 @@ using FsCheck;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.Tests.CodeAnalysis.Lowering
 {
@@ -63,6 +64,14 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         ).ToArbitrary();
 
         public static Arbitrary<TypeSymbol> TypeSymbol => TypeSymbolGen.ToArbitrary();
+        public static Arbitrary<ParameterSymbol> ParameterSymbol() =>
+        (
+            from ident in Identifier()
+            from readOnly in Arb.Generate<bool>()
+            from index in Gen.Choose(0, 5)
+            from typeSymbol in Arb.Generate<TypeSymbol>()
+            select new ParameterSymbol(ident, typeSymbol, index)
+        ).ToArbitrary();
 
         public static Arbitrary<BoundUnitExpression> BoundUnitExpression =>
             Gen.Constant(new BoundUnitExpression(null!)).ToArbitrary();
@@ -185,10 +194,11 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 if (typeSymbol == Panther.CodeAnalysis.Symbols.TypeSymbol.Unit)
                 {
                     return Gen.Resize(size / 2, Gen.OneOf(
-                        GenIfExpression(typeSymbol).Select(x => (BoundExpression)x),
                         // Arb.Generate<BoundVariableExpression>().Select(x => (BoundExpression) x),
                         // Arb.Generate<BoundForExpression>().Select(x => (BoundExpression) x),
                         // Arb.Generate<BoundWhileExpression>().Select(x => (BoundExpression) x)
+
+                        GenIfExpression(typeSymbol).Select(x => (BoundExpression)x),
                         GenBoundAssignmentExpression(typeSymbol).Select(x => (BoundExpression)x),
                         GenBoundBlockExpression(typeSymbol).Select(x => (BoundExpression)x),
                         GenBoundCallExpression(typeSymbol).Select(x => (BoundExpression)x),
@@ -199,9 +209,10 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 return Gen.Resize(size / 2, Gen.OneOf(
                     // Arb.Generate<BoundBinaryExpression>().Select(x => (BoundExpression) x),
                     // Arb.Generate<BoundConversionExpression>().Select(x => (BoundExpression) x),
-                    GenIfExpression(typeSymbol).Select(x => (BoundExpression)x),
                     // Arb.Generate<BoundUnaryExpression>().Select(x => (BoundExpression) x),
                     // Arb.Generate<BoundVariableExpression>().Select(x => (BoundExpression) x),
+
+                    GenIfExpression(typeSymbol).Select(x => (BoundExpression)x),
                     GenBoundBlockExpression(typeSymbol).Select(x => (BoundExpression)x),
                     GenBoundCallExpression(typeSymbol).Select(x => (BoundExpression)x),
                     GenBoundLiteralExpression(typeSymbol)

@@ -68,5 +68,7 @@ namespace Panther.CodeAnalysis.Text
         {
             return $"[{Span}]: {File.ToString(Span)}";
         }
+
+        public static readonly TextLocation None = new(SourceFile.Empty, TextSpan.Empty);
     }
 }
