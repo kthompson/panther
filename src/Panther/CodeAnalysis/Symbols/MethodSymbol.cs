@@ -7,8 +7,6 @@ namespace Panther.CodeAnalysis.Symbols
         public ImmutableArray<ParameterSymbol> Parameters { get; }
         public TypeSymbol ReturnType { get; }
 
-        public override SymbolKind Kind => SymbolKind.Method;
-
         protected MethodSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)
             : base(name)
         {

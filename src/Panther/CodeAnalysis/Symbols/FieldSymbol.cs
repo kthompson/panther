@@ -8,7 +8,5 @@ namespace Panther.CodeAnalysis.Symbols
             : base(name, isReadOnly, type, constantValue)
         {
         }
-
-        public override SymbolKind Kind => SymbolKind.Field;
     }
 }
