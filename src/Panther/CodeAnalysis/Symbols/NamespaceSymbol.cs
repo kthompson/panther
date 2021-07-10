@@ -10,8 +10,6 @@ namespace Panther.CodeAnalysis.Symbols
         {
         }
 
-        public override SymbolKind Kind => SymbolKind.Namespace;
-
         public override bool IsType => false;
     }
 }

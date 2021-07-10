@@ -5,8 +5,6 @@ namespace Panther.CodeAnalysis.Symbols
 {
     public abstract class TypeSymbol : NamespaceOrTypeSymbol
     {
-        public override SymbolKind Kind => SymbolKind.Type;
-
         public TypeSymbol(string name) : base(name)
         {
         }
