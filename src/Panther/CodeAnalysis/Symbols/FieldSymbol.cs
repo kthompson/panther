@@ -1,4 +1,5 @@
 ﻿using Panther.CodeAnalysis.Binding;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {

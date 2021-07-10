@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Lowering
 {

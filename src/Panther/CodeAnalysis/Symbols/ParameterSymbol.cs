@@ -1,4 +1,6 @@
-﻿namespace Panther.CodeAnalysis.Symbols
+﻿using Panther.CodeAnalysis.Text;
+
+namespace Panther.CodeAnalysis.Symbols
 {
     public sealed class ParameterSymbol : LocalVariableSymbol
     {

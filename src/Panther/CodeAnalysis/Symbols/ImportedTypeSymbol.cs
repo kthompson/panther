@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {
@@ -15,7 +16,7 @@ namespace Panther.CodeAnalysis.Symbols
         private readonly Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>> _membersByName;
 
         public ImportedTypeSymbol(string name, TypeDefinition typeDefinition)
-            : base(name)
+            : base(Symbol.None, TextLocation.None, name)
         {
             _typeDefinition = typeDefinition;
             _members = new Lazy<ImmutableArray<Symbol>>(() =>

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {

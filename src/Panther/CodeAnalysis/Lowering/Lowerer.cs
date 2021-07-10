@@ -6,6 +6,7 @@ using Microsoft.VisualBasic;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Lowering
 {

@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Panther.CodeAnalysis.Symbols;
-using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -12,8 +11,8 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableDictionary<MethodSymbol, BoundBlockExpression> MethodDefinitions => _methodDefinitions.ToImmutableDictionary();
 
-        public BoundType(string name)
-            : base(name)
+        public BoundType(Symbol owner, TextLocation location, string name)
+            : base(owner, location, name)
         {
         }
 
