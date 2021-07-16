@@ -24,16 +24,27 @@ using static Nuke.Common.Tools.ReportGenerator.ReportGeneratorTasks;
 
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
-[FixedAzurePipelines(
+[AzurePipelines(
+    "pr",
+    AzurePipelinesImage.UbuntuLatest,
+    AzurePipelinesImage.WindowsLatest,
+    AzurePipelinesImage.MacOsLatest,
+    InvokedTargets = new[] { nameof(Test) },
+    NonEntryTargets = new[] { nameof(Restore) },
+    ExcludedTargets = new[] { nameof(Clean) },
+    PullRequestsBranchesInclude = new []{ "main" }
+    )]
+[AzurePipelines(
     suffix: null,
     AzurePipelinesImage.UbuntuLatest,
     AzurePipelinesImage.WindowsLatest,
     AzurePipelinesImage.MacOsLatest,
     InvokedTargets = new[] { nameof(Test) },
     NonEntryTargets = new[] { nameof(Restore) },
-    ExcludedTargets = new[] { nameof(Clean) }
-    )]
-internal class Build : NukeBuild
+    ExcludedTargets = new[] { nameof(Clean) },
+    TriggerBranchesInclude = new []{ "main" }
+)]
+class Build : NukeBuild
 {
     /// Support plugins are available for:
     ///   - JetBrains ReSharper        https://nuke.build/resharper
@@ -43,13 +54,12 @@ internal class Build : NukeBuild
 
     public static int Main() => Execute<Build>(x => x.Compile);
 
-    [CI] private readonly AzurePipelines AzurePipelines;
+    [CI] readonly AzurePipelines AzurePipelines;
 
-    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    private readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")] readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    [Solution] private readonly Solution Solution;
-    [GitRepository] private readonly GitRepository GitRepository;
+    [Solution] readonly Solution Solution;
+    [GitRepository] readonly GitRepository GitRepository;
     //[GitVersion] private readonly GitVersion GitVersion;
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -59,7 +69,7 @@ internal class Build : NukeBuild
     AbsolutePath CoverageReportDirectory => ArtifactsDirectory / "coverage-report";
     AbsolutePath CoverageReportArchive => ArtifactsDirectory / "coverage-report.zip";
 
-    private Target Clean => _ => _
+    Target Clean => _ => _
          .Before(Restore)
          .Executes(() =>
          {
@@ -68,14 +78,14 @@ internal class Build : NukeBuild
              EnsureCleanDirectory(ArtifactsDirectory);
          });
 
-    private Target Restore => _ => _
+    Target Restore => _ => _
          .Executes(() =>
          {
              DotNetRestore(s => s
                  .SetProjectFile(Solution));
          });
 
-    private Target Compile => _ => _
+    Target Compile => _ => _
          .DependsOn(Restore)
          .Executes(() =>
          {
@@ -88,21 +98,19 @@ internal class Build : NukeBuild
                  .EnableNoRestore());
          });
 
-    [Partition(1)] private readonly Partition TestPartition;
+    [Partition(1)] readonly Partition TestPartition;
     IEnumerable<Project> TestProjects => TestPartition.GetCurrent(Solution.GetProjects("*.Tests"));
 
-    private Target Test => _ => _
+    Target Test => _ => _
         .DependsOn(Compile)
         .Produces(TestResultDirectory / "*.trx")
         .Produces(TestResultDirectory / "*.xml")
-        .Partition(() => TestPartition)
         .Executes(() =>
         {
             DotNetTest(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetResultsDirectory(TestResultDirectory)
-                .SetEnvironmentVariable("BUILD_SERVER", "true")
                 .When(InvokedTargets.Contains(Coverage) || IsServerBuild, _ => _
                     .EnableCollectCoverage()
                     .SetCoverletOutputFormat(CoverletOutputFormat.cobertura)
@@ -124,7 +132,7 @@ internal class Build : NukeBuild
         });
 
 
-    private Target Coverage => _ => _
+    Target Coverage => _ => _
           .DependsOn(Test)
           .TriggeredBy(Test)
           .Consumes(Test)

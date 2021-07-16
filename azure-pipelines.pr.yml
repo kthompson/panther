@@ -9,15 +9,10 @@
 #
 #     - To trigger manual generation invoke:
 #
-#         nuke --generate-configuration AzurePipelines --host AzurePipelines
+#         nuke --generate-configuration AzurePipelines_pr --host AzurePipelines
 #
 # </auto-generated>
 # ------------------------------------------------------------------------------
-
-trigger:
-  branches:
-    include:
-      - main
 
 stages:
   - stage: ubuntu_latest
