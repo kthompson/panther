@@ -13,7 +13,6 @@ using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 using Xunit.Sdk;
-using Predef = StdLib::Panther.Predef;
 using Unit = StdLib::Panther.Unit;
 
 namespace Panther.Tests.CodeAnalysis
