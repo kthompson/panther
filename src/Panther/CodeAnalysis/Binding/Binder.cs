@@ -28,14 +28,12 @@ namespace Panther.CodeAnalysis.Binding
         public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous,
             ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
         {
-            var rootNamespace = new NamespaceSymbol("");
-            var parentScope = CreateParentScope(previous, references);
-
-            var scope = new BoundScope(parentScope, rootNamespace);
+            var (root, parentScope) = CreateParentScope(previous, references);
+            var scope = new BoundScope(parentScope, root);
             var binder = new Binder(isScript);
 
 
-            var defaultType = new BoundType(rootNamespace, TextLocation.None, "$Program");
+            var defaultType = new BoundType(root, TextLocation.None, "$Program");
             var defaultTypeAddedToNamespace = false;
             var defaultTypeScope = new BoundScope(scope, defaultType);
 
@@ -97,11 +95,11 @@ namespace Panther.CodeAnalysis.Binding
 
             if (defaultType.GetMembers().Any())
             {
-                rootNamespace.DefineSymbol(defaultType);
+                root.DefineSymbol(defaultType);
                 defaultTypeAddedToNamespace = true;
             }
 
-            var mains = from type in rootNamespace.GetTypeMembers()
+            var mains = from type in root.GetTypeMembers()
                         from member in type.GetMembers().OfType<SourceMethodSymbol>()
                         where member.Name == "main"
                         select member;
@@ -112,7 +110,7 @@ namespace Panther.CodeAnalysis.Binding
 
             if (!defaultTypeAddedToNamespace && defaultType.GetMembers().Any())
             {
-                rootNamespace.DefineSymbol(defaultType);
+                root.DefineSymbol(defaultType);
             }
 
             var diagnostics = binder.Diagnostics.ToImmutableArray();
@@ -128,12 +126,12 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundGlobalScope(previous, diagnostics,
                 defaultType,
                 entryPoint,
-                rootNamespace,
+                root,
                 references
             );
         }
 
-        private NamespaceOrTypeSymbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
+        private Symbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
         {
             throw new NotImplementedException();
         }
@@ -167,7 +165,7 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private NamespaceSymbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
+        private Symbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
         {
             throw new NotImplementedException();
         }
@@ -271,7 +269,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public static BoundAssembly BindAssembly(bool isScript, BoundAssembly? previous, BoundGlobalScope globalScope)
         {
-            var parentScope = CreateParentScope(globalScope, globalScope.References);
+            var (root, parentScope) = CreateParentScope(globalScope, globalScope.References);
             var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
             diagnostics.AddRange(globalScope.Diagnostics);
@@ -849,7 +847,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundBlockExpression(syntax, stmts, expr);
         }
 
-        private static BoundScope CreateParentScope(BoundGlobalScope? previous,
+        private static (Symbol root, BoundScope parent) CreateParentScope(BoundGlobalScope? previous,
             ImmutableArray<AssemblyDefinition> references)
         {
             var stack = new Stack<BoundGlobalScope>();
@@ -860,7 +858,7 @@ namespace Panther.CodeAnalysis.Binding
                 previous = previous.Previous;
             }
 
-            var parent = CreateRootScope(references);
+            var (root, parent) = CreateRootScope(references);
 
             while (stack.Count > 0)
             {
@@ -883,10 +881,10 @@ namespace Panther.CodeAnalysis.Binding
                 parent = scope;
             }
 
-            return parent;
+            return (root, parent);
         }
 
-        private static BoundScope CreateRootScope(ImmutableArray<AssemblyDefinition> references)
+        private static (Symbol root, BoundScope rootScope) CreateRootScope(ImmutableArray<AssemblyDefinition> references)
         {
             var root = Symbol.NewRoot();
             var rootScope = new BoundScope(root);
@@ -908,7 +906,7 @@ namespace Panther.CodeAnalysis.Binding
                 rootScope.ImportMembers(importedTypeSymbol);
             }
 
-            return rootScope;
+            return (root, rootScope);
         }
 
         private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)

@@ -4,7 +4,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {
-    public abstract class TypeSymbol : NamespaceOrTypeSymbol
+    public abstract class TypeSymbol : Symbol
     {
         public TypeSymbol(Symbol owner, TextLocation location, string name) : base(owner, location, name)
         {

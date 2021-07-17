@@ -36,7 +36,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public void Import(TypeSymbol symbol) => ImportSymbol(symbol);
 
-        public void ImportMembers(NamespaceOrTypeSymbol namespaceOrTypeSymbol)
+        public void ImportMembers(Symbol namespaceOrTypeSymbol)
         {
             foreach (var member in namespaceOrTypeSymbol.GetMembers())
             {
@@ -117,7 +117,7 @@ namespace Panther.CodeAnalysis.Binding
             return ImmutableArray<MethodSymbol>.Empty;
         }
 
-        public BoundScope EnterNamespace(NamespaceSymbol namespaceSymbol)
+        public BoundScope EnterNamespace(Symbol namespaceSymbol)
         {
             throw new System.NotImplementedException();
         }

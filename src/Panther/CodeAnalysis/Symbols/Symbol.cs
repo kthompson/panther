@@ -44,7 +44,7 @@ namespace Panther.CodeAnalysis.Symbols
 
         public static Symbol NewRoot() => new RootSymbol();
         public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);
-
+        public Symbol NewNamespace(TextLocation location, string name) => new NamespaceSymbol(this, location, name);
 
         private readonly Dictionary<string, ImmutableArray<Symbol>> _symbols;
 
@@ -86,7 +86,7 @@ namespace Panther.CodeAnalysis.Symbols
                 ? symbols
                 : ImmutableArray<Symbol>.Empty;
 
-        private class RootSymbol : Symbol
+        private sealed class RootSymbol : Symbol
         {
             public override Symbol Owner => this;
             public override bool IsRoot => true;
@@ -96,11 +96,21 @@ namespace Panther.CodeAnalysis.Symbols
             }
         }
 
-        private class NoSymbol : Symbol
+        private sealed class NoSymbol : Symbol
         {
             public NoSymbol() : base(null, TextLocation.None, "<none>")
             {
             }
+        }
+
+        private sealed class NamespaceSymbol : Symbol
+        {
+            public NamespaceSymbol(Symbol owner, TextLocation location, string name)
+                : base(owner, location, name)
+            {
+            }
+
+            public override bool IsNamespace => true;
         }
     }
 

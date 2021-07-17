@@ -13,7 +13,7 @@ namespace Panther.CodeAnalysis.Binding
         public BoundGlobalScope? Previous { get; }
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public EntryPoint? EntryPoint { get; }
-        public NamespaceSymbol RootNamespace { get; }
+        public Symbol RootSymbol { get; }
 
         /// <summary>
         /// The type that contains the top level statements
@@ -26,16 +26,16 @@ namespace Panther.CodeAnalysis.Binding
         public BoundGlobalScope(BoundGlobalScope? previous, ImmutableArray<Diagnostic> diagnostics,
             BoundType? defaultType,
             EntryPoint? entryPoint,
-            NamespaceSymbol rootNamespace,
+            Symbol rootSymbol,
             ImmutableArray<AssemblyDefinition> references)
         {
             Previous = previous;
             Diagnostics = diagnostics;
             EntryPoint = entryPoint;
-            RootNamespace = rootNamespace;
+            RootSymbol = rootSymbol;
             References = references;
             DefaultType = defaultType;
-            Types =  RootNamespace.GetTypeMembers().OfType<BoundType>().ToImmutableArray();
+            Types =  RootSymbol.GetTypeMembers().OfType<BoundType>().ToImmutableArray();
         }
     }
 }
