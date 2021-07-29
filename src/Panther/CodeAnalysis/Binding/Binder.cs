@@ -33,7 +33,7 @@ namespace Panther.CodeAnalysis.Binding
             var binder = new Binder(isScript);
 
 
-            var defaultType = new BoundType(root, TextLocation.None, "$Program");
+            var defaultType = new BoundType(root, TextLocation.None, "$Program") {Flags = SymbolFlags.Object};
             var defaultTypeAddedToNamespace = false;
             var defaultTypeScope = new BoundScope(scope, defaultType);
 
@@ -60,24 +60,9 @@ namespace Panther.CodeAnalysis.Binding
                 // otherwise there would be an error
                 globalStatements.AddRange(compilationUnit.Statements);
 
-                foreach (var member in tree.Root.Members)
-                {
-                    switch (member)
-                    {
-                        case FunctionDeclarationSyntax function:
-                            // put top level functions declarations into the defaultType scope
-                            binder.BindFunctionDeclaration(function, defaultTypeScope);
-                            break;
-
-                        case ObjectDeclarationSyntax objectDeclaration:
-                            // put top level object declarations into the global scope
-                            binder.BindObjectDeclaration(objectDeclaration, scope);
-                            break;
-
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(member));
-                    }
-                }
+                // functions go into our default type scope
+                // everything else can go in our global scope
+                binder.BindMembers(tree.Root.Members, defaultTypeScope, scope);
             }
 
             var statements =
@@ -131,6 +116,29 @@ namespace Panther.CodeAnalysis.Binding
             );
         }
 
+        private void BindClassDeclaration(ClassDeclarationSyntax classDeclaration, BoundScope parent)
+        {
+            var type = new BoundType(parent.Symbol, classDeclaration.Identifier.Location, classDeclaration.Identifier.Text);
+            if (!parent.DefineSymbol(type))
+            {
+                Diagnostics.ReportAmbiguousType(classDeclaration.Location, classDeclaration.Identifier.Text);
+            }
+
+            var scope = new BoundScope(parent, type);
+
+            foreach (var field in classDeclaration.Fields)
+            {
+                var fieldType = BindTypeAnnotation(field.TypeAnnotation);
+                var fieldSymbol = new FieldSymbol(field.Identifier.Text, false, fieldType, null);
+                scope.DefineSymbol(fieldSymbol);
+            }
+
+            if (classDeclaration.Template != null)
+            {
+                BindMembers(classDeclaration.Template.Members, scope, scope);
+            }
+        }
+
         private Symbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
         {
             throw new NotImplementedException();
@@ -147,18 +155,28 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             var scope = new BoundScope(parent, type);
-            foreach (var member in objectDeclaration.Members)
+
+            BindMembers(objectDeclaration.Template.Members, scope, scope);
+        }
+
+        private void BindMembers(ImmutableArray<MemberSyntax> members, BoundScope functionScope, BoundScope scope)
+        {
+            foreach (var member in members)
             {
                 switch (member)
                 {
                     case FunctionDeclarationSyntax functionDeclarationSyntax:
-                        BindFunctionDeclaration(functionDeclarationSyntax, scope);
+                        BindFunctionDeclaration(functionDeclarationSyntax, functionScope);
 
                         break;
                     case ObjectDeclarationSyntax childObjectDeclaration:
                         BindObjectDeclaration(childObjectDeclaration, scope);
-
                         break;
+
+                    case ClassDeclarationSyntax classDeclaration:
+                        BindClassDeclaration(classDeclaration, scope);
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(member));
                 }
@@ -276,10 +294,12 @@ namespace Panther.CodeAnalysis.Binding
 
             foreach (var boundType in globalScope.Types)
             {
+                var typeScope = new BoundScope(parentScope, boundType);
+
                 foreach (var methodSymbol in boundType.GetMembers().OfType<SourceMethodSymbol>())
                 {
                     var binder = new Binder(isScript);
-                    var functionScope = new BoundScope(parentScope, methodSymbol);
+                    var functionScope = new BoundScope(typeScope, methodSymbol);
 
                     var body = binder.BindExpression(methodSymbol.Declaration.Body, functionScope);
 

@@ -8,16 +8,28 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {
+    [Flags]
+    public enum SymbolFlags
+    {
+        Namespace = 1,
+        Object = 1 << 1,
+        Class = 1 << 2,
+        Method = 1 << 3,
+    }
+
     public abstract class Symbol
     {
+        public SymbolFlags Flags { get; set; }
         public string Name { get; }
 
         public virtual bool IsRoot => false;
         public virtual bool IsType => false;
-        public virtual bool IsNamespace => false;
+        public virtual bool IsNamespace => this.Flags.HasFlag(SymbolFlags.Namespace);
+        public virtual bool IsClass => this.Flags.HasFlag(SymbolFlags.Class);
 
         public virtual Symbol Owner { get; }
         public virtual TextLocation Location { get; }
+        // public abstract Type Type { get; }
 
         protected Symbol(Symbol? owner, TextLocation location, string name)
         {
@@ -44,9 +56,12 @@ namespace Panther.CodeAnalysis.Symbols
 
         public static Symbol NewRoot() => new RootSymbol();
         public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);
-        public Symbol NewNamespace(TextLocation location, string name) => new NamespaceSymbol(this, location, name);
+        public Symbol NewNamespace(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Namespace);
+        public Symbol NewClass(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Class);
+        public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Object);
 
         private readonly Dictionary<string, ImmutableArray<Symbol>> _symbols;
+        // public virtual ImmutableArray<Symbol> Parameters => GetMembers<ParameterSymbol>();
 
         public virtual bool DefineSymbol(Symbol symbol)
         {
@@ -76,6 +91,12 @@ namespace Panther.CodeAnalysis.Symbols
         public virtual ImmutableArray<TypeSymbol> GetTypeMembers(string name) =>
             GetMembers(name).OfType<TypeSymbol>().ToImmutableArray();
 
+        public virtual ImmutableArray<FieldSymbol> GetFieldMembers() =>
+            GetMembers().OfType<FieldSymbol>().ToImmutableArray();
+
+        ImmutableArray<Symbol> GetMembers<T>() where T : Symbol =>
+            GetMembers().Where(symbol => symbol is T).ToImmutableArray();
+
         public virtual ImmutableArray<Symbol> GetMembers() =>
             (from symbolList in _symbols.Values
                 from symbol in symbolList
@@ -89,6 +110,7 @@ namespace Panther.CodeAnalysis.Symbols
         private sealed class RootSymbol : Symbol
         {
             public override Symbol Owner => this;
+            // public override Type Type => Type.NoType;
             public override bool IsRoot => true;
 
             public RootSymbol() : base(null, TextLocation.None,  "global::")
@@ -101,16 +123,26 @@ namespace Panther.CodeAnalysis.Symbols
             public NoSymbol() : base(null, TextLocation.None, "<none>")
             {
             }
+
+            // public override Type Type => Type.NoType;
         }
 
-        private sealed class NamespaceSymbol : Symbol
+        private sealed class TermSymbol : Symbol
         {
-            public NamespaceSymbol(Symbol owner, TextLocation location, string name)
+            public TermSymbol(Symbol owner, TextLocation location, string name)
                 : base(owner, location, name)
             {
             }
+            // public override Type Type => Type.NoType;
+        }
+    }
 
-            public override bool IsNamespace => true;
+    public static class SymbolExtensions
+    {
+        public static T WithFlags<T>(this T symbol, SymbolFlags flags) where T : Symbol
+        {
+            symbol.Flags = flags;
+            return symbol;
         }
     }
 

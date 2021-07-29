@@ -20,6 +20,7 @@
 
         // Keywords
         BreakKeyword,
+        ClassKeyword,
         ContinueKeyword,
         DefKeyword,
         ElseKeyword,
@@ -89,15 +90,19 @@
         VariableDeclarationStatement,
 
         //  Nodes
+        Template,
         TypeAnnotation,
         Parameter,
         CompilationUnit,
 
         // Members
+        ClassDeclaration,
         FunctionDeclaration,
+        ObjectDeclaration,
+
+        // Top level items
         UsingDirective,
         GlobalStatement,
-        ObjectDeclaration,
         NamespaceDirective,
     }
 }

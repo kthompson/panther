@@ -65,7 +65,8 @@ namespace Panther.Tests.CodeAnalysis
 
             Assert.Empty(emitResult.Diagnostics);
 
-            var actualSource = DumpIl(assemblyLocation).Split('\n');
+            var il = DumpIl(assemblyLocation);
+            var actualSource = il.Split('\n');
             AssertFileLines(expectedSource, actualSource);
 
             Assert.Equal(expectedSource.Length, actualSource.Length);

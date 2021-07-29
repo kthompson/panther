@@ -18,6 +18,9 @@
 
 # Notes
 
+new[SymbolType] is for creating symbols that belong to the parent symbol.
+BoundScope will still be for local/imported symbols
+
 ## Name/File extensions
 
      Panther source file: .pn
