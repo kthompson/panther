@@ -76,6 +76,7 @@ namespace Panther.CodeAnalysis.Syntax
             return span switch
             {
                 "break" => SyntaxKind.BreakKeyword,
+                "class" => SyntaxKind.ClassKeyword,
                 "continue" => SyntaxKind.ContinueKeyword,
                 "def" => SyntaxKind.DefKeyword,
                 "else" => SyntaxKind.ElseKeyword,
@@ -105,6 +106,7 @@ namespace Panther.CodeAnalysis.Syntax
                 SyntaxKind.BangToken => "!",
                 SyntaxKind.BreakKeyword => "break",
                 SyntaxKind.CaretToken => "^",
+                SyntaxKind.ClassKeyword => "class",
                 SyntaxKind.CloseBraceToken => "}",
                 SyntaxKind.CloseParenToken => ")",
                 SyntaxKind.ColonToken => ":",

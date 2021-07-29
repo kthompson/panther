@@ -1,0 +1,12 @@
+﻿def main() = ()
+
+class Point(X: int, Y: int)
+
+class Extent(xmin: int, xmax: int, ymin: int, ymax: int)
+{
+    def width() = xmax - xmin
+    def height() = ymax - ymin
+
+    // def min() = Point(xmin, ymin)
+    // def max() = Point(xmax, ymax)
+}

@@ -198,10 +198,18 @@
         <Field Name="Name" Type="NameSyntax" />
     </Node>
 
+    <Node Name="TemplateSyntax">
+        <Kind Name="Template"/>
+
+        <Field Name="OpenBrace" Type="SyntaxToken" />
+        <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
+        <Field Name="CloseBrace" Type="SyntaxToken" />
+    </Node>
+
     <AbstractNode Name="MemberSyntax" />
 
     <Node Name="FunctionDeclarationSyntax" Base="MemberSyntax">
-        <Kind Name="ObjectDeclaration"/>
+        <Kind Name="FunctionDeclaration"/>
 
         <Field Name="DefKeyword" Type="SyntaxToken" />
         <Field Name="Identifier" Type="SyntaxToken" />
@@ -213,14 +221,23 @@
         <Field Name="Body" Type="ExpressionSyntax" />
     </Node>
 
+    <Node Name="ClassDeclarationSyntax" Base="MemberSyntax">
+        <Kind Name="ClassDeclaration"/>
+
+        <Field Name="ClassKeyword" Type="SyntaxToken" />
+        <Field Name="Identifier" Type="SyntaxToken" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Fields" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+        <Field Name="Template" Type="TemplateSyntax?" />
+    </Node>
+
     <Node Name="ObjectDeclarationSyntax" Base="MemberSyntax">
         <Kind Name="ObjectDeclaration"/>
 
         <Field Name="ObjectKeyword" Type="SyntaxToken" />
         <Field Name="Identifier" Type="SyntaxToken" />
-        <Field Name="OpenBrace" Type="SyntaxToken" />
-        <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
-        <Field Name="CloseBrace" Type="SyntaxToken" />
+        <Field Name="Template" Type="TemplateSyntax" />
     </Node>
 
 </Tree>

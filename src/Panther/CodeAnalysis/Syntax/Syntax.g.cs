@@ -314,9 +314,23 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
 
+    public sealed partial record TemplateSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenBrace, ImmutableArray<MemberSyntax> Members, SyntaxToken CloseBrace)
+        : SyntaxNode(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.Template;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpenBrace;
+            foreach (var child in Members)
+                yield return child;
+
+            yield return CloseBrace;
+        }
+    }
+
     public sealed partial record FunctionDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken DefKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Parameters, SyntaxToken CloseParenToken, TypeAnnotationSyntax? TypeAnnotation, SyntaxToken EqualsToken, ExpressionSyntax Body)
         : MemberSyntax(SyntaxTree) {
-        public override SyntaxKind Kind => SyntaxKind.ObjectDeclaration;
+        public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
         
         public override IEnumerable<SyntaxNode> GetChildren()
         {
@@ -335,7 +349,26 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
 
-    public sealed partial record ObjectDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ObjectKeyword, SyntaxToken Identifier, SyntaxToken OpenBrace, ImmutableArray<MemberSyntax> Members, SyntaxToken CloseBrace)
+    public sealed partial record ClassDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ClassKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Fields, SyntaxToken CloseParenToken, TemplateSyntax? Template)
+        : MemberSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.ClassDeclaration;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return ClassKeyword;
+            yield return Identifier;
+            yield return OpenParenToken;
+            foreach (var child in Fields.GetWithSeparators())
+                yield return child;
+            yield return CloseParenToken;
+            if (Template != null)
+            {
+                yield return Template;
+            }
+        }
+    }
+
+    public sealed partial record ObjectDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ObjectKeyword, SyntaxToken Identifier, TemplateSyntax Template)
         : MemberSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.ObjectDeclaration;
         
@@ -343,11 +376,7 @@ namespace Panther.CodeAnalysis.Syntax
         {
             yield return ObjectKeyword;
             yield return Identifier;
-            yield return OpenBrace;
-            foreach (var child in Members)
-                yield return child;
-
-            yield return CloseBrace;
+            yield return Template;
         }
     }
 

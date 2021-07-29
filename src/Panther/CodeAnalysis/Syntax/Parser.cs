@@ -172,7 +172,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<MemberSyntax> ParseMembers()
         {
             var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-            while (CurrentKind == SyntaxKind.DefKeyword || CurrentKind == SyntaxKind.ObjectKeyword)
+            while (CurrentKind is SyntaxKind.DefKeyword or SyntaxKind.ObjectKeyword or SyntaxKind.ClassKeyword)
             {
                 var startToken = CurrentToken;
 
@@ -190,19 +190,38 @@ namespace Panther.CodeAnalysis.Syntax
             CurrentKind switch
             {
                 SyntaxKind.DefKeyword => ParseFunctionDeclaration(),
+                SyntaxKind.ClassKeyword => ParseClassDeclaration(),
                 _ => ParseObjectDeclaration(),
             };
 
-        private MemberSyntax ParseObjectDeclaration()
+        private TemplateSyntax ParseTemplate()
         {
-            var objectKeyword = Accept(SyntaxKind.ObjectKeyword);
-            var identifier = Accept(SyntaxKind.IdentifierToken);
-
             var openBraceToken = Accept(SyntaxKind.OpenBraceToken);
             var members = ParseMembers();
             var closeBraceToken = Accept(SyntaxKind.CloseBraceToken);
 
-            return new ObjectDeclarationSyntax(_syntaxTree, objectKeyword, identifier, openBraceToken, members, closeBraceToken);
+            return new TemplateSyntax(_syntaxTree, openBraceToken, members, closeBraceToken);
+        }
+
+        private MemberSyntax ParseClassDeclaration()
+        {
+            var keyword = Accept();
+            var identifier = Accept(SyntaxKind.IdentifierToken);
+            var openParenToken = Accept(SyntaxKind.OpenParenToken);
+            var parameters = ParseParameterList();
+            var closeParenToken = Accept(SyntaxKind.CloseParenToken);
+
+            var template = CurrentKind == SyntaxKind.OpenBraceToken ? ParseTemplate() : null;
+
+            return new ClassDeclarationSyntax(_syntaxTree, keyword, identifier, openParenToken, parameters, closeParenToken, template);
+        }
+        private MemberSyntax ParseObjectDeclaration()
+        {
+            var objectKeyword = Accept(SyntaxKind.ObjectKeyword);
+            var identifier = Accept(SyntaxKind.IdentifierToken);
+            var template = ParseTemplate();
+
+            return new ObjectDeclarationSyntax(_syntaxTree, objectKeyword, identifier, template);
         }
 
         private GlobalStatementSyntax ParseGlobalStatement()
@@ -558,7 +577,10 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
 
-            while (CurrentKind != SyntaxKind.ObjectKeyword && CurrentKind != SyntaxKind.DefKeyword && CurrentKind != SyntaxKind.EndOfInputToken)
+            while (CurrentKind != SyntaxKind.ObjectKeyword
+                   && CurrentKind != SyntaxKind.DefKeyword
+                   && CurrentKind != SyntaxKind.ClassKeyword
+                   && CurrentKind != SyntaxKind.EndOfInputToken)
             {
                 globalStatements.Add(ParseGlobalStatement());
             }
