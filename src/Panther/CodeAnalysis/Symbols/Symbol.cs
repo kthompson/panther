@@ -11,10 +11,12 @@ namespace Panther.CodeAnalysis.Symbols
     [Flags]
     public enum SymbolFlags
     {
+        None = 0,
         Namespace = 1,
         Object = 1 << 1,
         Class = 1 << 2,
         Method = 1 << 3,
+        Static = 1 << 4, // methods and fields
     }
 
     public abstract class Symbol
@@ -26,10 +28,10 @@ namespace Panther.CodeAnalysis.Symbols
         public virtual bool IsType => false;
         public virtual bool IsNamespace => this.Flags.HasFlag(SymbolFlags.Namespace);
         public virtual bool IsClass => this.Flags.HasFlag(SymbolFlags.Class);
+        public virtual bool IsObject => this.Flags.HasFlag(SymbolFlags.Object);
 
         public virtual Symbol Owner { get; }
         public virtual TextLocation Location { get; }
-        // public abstract Type Type { get; }
 
         protected Symbol(Symbol? owner, TextLocation location, string name)
         {

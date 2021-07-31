@@ -3,9 +3,9 @@
 
 # TODO:
 
-- restructure BoundType
-    - immutable would be nice
-    - being able to rewrite an object as a class
+- classes
+  - instantiation
+  - field access  
 - convert Predef to Panther?
     - needs namespaces
     - needs imports/using

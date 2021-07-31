@@ -181,11 +181,20 @@ namespace Panther.CodeAnalysis.Emit
         {
             var type = method.ReturnType;
             var returnType = type == TypeSymbol.Unit ? _voidType : LookupType(type);
-            var methodDefinition = new MethodDefinition(method.Name, MethodAttributes.Static | MethodAttributes.Public, returnType);
+            var isStatic = (method.Flags & SymbolFlags.Static) != 0;
+            var methodAttributes = isStatic
+                ? MethodAttributes.Static | MethodAttributes.Public
+                : MethodAttributes.Public;
+            var methodDefinition = new MethodDefinition(method.Name, methodAttributes, returnType);
             var methodParams =
                 from parameter in method.Parameters
                 let paramType = LookupType(parameter.Type)
                 select new ParameterDefinition(parameter.Name, ParameterAttributes.None, paramType);
+
+            if (!isStatic)
+            {
+                methodDefinition.HasThis = true;
+            }
 
             foreach (var p in methodParams)
                 methodDefinition.Parameters.Add(p);
@@ -276,15 +285,32 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitAssignmentStatement(ILProcessor ilProcessor, BoundAssignmentStatement assignmentStatement)
         {
-            EmitExpression(ilProcessor, assignmentStatement.Expression);
 
             switch (assignmentStatement.Variable)
             {
                 case FieldSymbol globalVariableSymbol:
-                    ilProcessor.Emit(OpCodes.Stsfld, _fields[globalVariableSymbol]);
+                    var fieldReference = _fields[globalVariableSymbol];
+                    var field = fieldReference.Resolve();
+                    var isStatic = (field.Attributes & FieldAttributes.Static) != 0;
+                    if (isStatic)
+                    {
+                        EmitExpression(ilProcessor, assignmentStatement.Expression);
+                        ilProcessor.Emit(OpCodes.Stsfld, fieldReference);
+                    }
+                    else
+                    {
+                        ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
+                        // load our value to assign
+                        EmitExpression(ilProcessor, assignmentStatement.Expression);
+                        // perform: this.fieldReference = value
+                        ilProcessor.Emit(OpCodes.Stfld, fieldReference);
+                    }
+
                     break;
 
                 case LocalVariableSymbol localVariableSymbol:
+                    EmitExpression(ilProcessor, assignmentStatement.Expression);
+
                     ilProcessor.Emit(OpCodes.Stloc, _locals[localVariableSymbol]);
                     break;
 
@@ -653,7 +679,9 @@ namespace Panther.CodeAnalysis.Emit
                     var fieldReference = _fields.TryGetValue(globalVariableSymbol, out var field)
                         ? field
                         : _globals[globalVariableSymbol];
-                    ilProcessor.Emit(OpCodes.Ldsfld, fieldReference);
+                    var isStatic = (globalVariableSymbol.Flags & SymbolFlags.Static) != 0;
+
+                    ilProcessor.Emit(isStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, fieldReference);
                     break;
 
                 case ParameterSymbol parameterSymbol:
