@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -68,7 +69,7 @@ namespace Panther.CodeAnalysis
 
             var asm = _loadContext?.LoadFromAssemblyPath(outputPath);
             var method = asm?.EntryPoint;
-            var result = method?.Invoke(null, new object[0]);
+            var result = method?.Invoke(null, Array.Empty<object>());
 
             return new ExecutionResult(ImmutableArray<Diagnostic>.Empty, result);
         }

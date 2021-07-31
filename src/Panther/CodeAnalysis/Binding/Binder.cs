@@ -116,26 +116,48 @@ namespace Panther.CodeAnalysis.Binding
             );
         }
 
-        private void BindClassDeclaration(ClassDeclarationSyntax classDeclaration, BoundScope parent)
+        private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope parent)
         {
-            var type = new BoundType(parent.Symbol, classDeclaration.Identifier.Location, classDeclaration.Identifier.Text);
+            var type = new BoundType(parent.Symbol, syntax.Identifier.Location, syntax.Identifier.Text);
             if (!parent.DefineSymbol(type))
             {
-                Diagnostics.ReportAmbiguousType(classDeclaration.Location, classDeclaration.Identifier.Text);
+                Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
+            }
+
+            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+            var assignments = ImmutableArray.CreateBuilder<BoundStatement>();
+            var seenFieldNames = new HashSet<string>();
+
+            for (var index = 0; index < syntax.Fields.Count; index++)
+            {
+                var field = syntax.Fields[index];
+                var fieldName = field.Identifier.Text;
+                var fieldType = BindTypeAnnotation(field.TypeAnnotation);
+                var fieldSymbol = new FieldSymbol(field.Identifier.Text, false, fieldType, null);
+                type.DefineSymbol(fieldSymbol);
+
+                if (!seenFieldNames.Add(fieldName))
+                {
+                    Diagnostics.ReportParameterAlreadyDeclared(field.Location, fieldName);
+                }
+                else
+                {
+                    var parameter = new ParameterSymbol(fieldName, fieldType, index + 1); // +1 since arg 0 is `this`
+                    parameters.Add(parameter);
+                    assignments.Add(new BoundAssignmentStatement(field, fieldSymbol,
+                        new BoundVariableExpression(field, parameter)));
+                }
             }
 
             var scope = new BoundScope(parent, type);
+            var ctor = new ImportedMethodSymbol(".ctor", parameters.ToImmutable(), TypeSymbol.Unit);
 
-            foreach (var field in classDeclaration.Fields)
-            {
-                var fieldType = BindTypeAnnotation(field.TypeAnnotation);
-                var fieldSymbol = new FieldSymbol(field.Identifier.Text, false, fieldType, null);
-                scope.DefineSymbol(fieldSymbol);
-            }
+            type.DefineSymbol(ctor);
+            type.DefineFunctionBody(ctor, new BoundBlockExpression(syntax, assignments.ToImmutable(), new BoundUnitExpression(syntax)));
 
-            if (classDeclaration.Template != null)
+            if (syntax.Template != null)
             {
-                BindMembers(classDeclaration.Template.Members, scope, scope);
+                BindMembers(syntax.Template.Members, scope, scope);
             }
         }
 
@@ -243,7 +265,7 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             var main = new ImportedMethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty,
-                TypeSymbol.Unit);
+                TypeSymbol.Unit).WithFlags(SymbolFlags.Static);
             var compilationUnit = globalStatements.First().Syntax;
             var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
 
@@ -260,7 +282,7 @@ namespace Panther.CodeAnalysis.Binding
             var eval = new ImportedMethodSymbol("$eval",
                 ImmutableArray<ParameterSymbol>.Empty,
                 TypeSymbol.Any
-            );
+            ).WithFlags(SymbolFlags.Static);
 
             var compilationUnit = globalStatements.First().Syntax;
             var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalStatements);
@@ -384,7 +406,9 @@ namespace Panther.CodeAnalysis.Binding
                     Debugger.Break();
             }
 
-            var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+            var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax)
+                // TODO: determine if method should be static or not
+                .WithFlags(SymbolFlags.Static);
 
             if (!scope.DefineSymbol(function))
             {
@@ -528,9 +552,20 @@ namespace Panther.CodeAnalysis.Binding
         {
             var name = identifier.Text ?? "??";
             var declare = !identifier.IsInsertedToken;
-            var variable = scope.IsGlobalScope
-                ? (VariableSymbol)new FieldSymbol(name, isReadOnly, expressionType, constantValue)
-                : new LocalVariableSymbol(name, isReadOnly, expressionType, constantValue);
+
+            VariableSymbol variable;
+            if (scope.IsGlobalScope)
+            {
+                variable = new FieldSymbol(name, isReadOnly, expressionType, constantValue);
+                if (scope.Symbol.IsObject)
+                {
+                    variable.Flags |= SymbolFlags.Static;
+                }
+            }
+            else
+            {
+                variable = new LocalVariableSymbol(name, isReadOnly, expressionType, constantValue);
+            }
 
             if (declare && !scope.DefineSymbol(variable))
             {
