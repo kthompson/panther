@@ -1,5 +1,6 @@
 ﻿def main() = {
-    Point(10, 20)
+    val p = Point(10, 20)
+    println(p.X)
     ()
 }
 

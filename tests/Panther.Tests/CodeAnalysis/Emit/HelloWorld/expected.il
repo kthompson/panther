@@ -3,7 +3,7 @@
 {
 } // end of class <Module>
 
-.class public auto ansi abstract sealed $Program
+.class public auto ansi sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
@@ -14,7 +14,7 @@
 		// Code size 13 (0xd)
 		.maxstack 1
 		.entrypoint
-		.locals (
+		.locals init (
 			[0] object
 		)
 

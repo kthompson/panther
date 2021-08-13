@@ -31,6 +31,7 @@ namespace Panther.CodeAnalysis.Binding
         private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope scope)
         {
             var typeSymbol = scope.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
+
             if (!scope.DefineSymbol(typeSymbol))
             {
                 Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
@@ -395,10 +396,12 @@ namespace Panther.CodeAnalysis.Binding
         private Symbol BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
         {
             var seenParamNames = new HashSet<string>();
+            var function = scope.Symbol.NewMethod(syntax.Identifier.Location, syntax.Identifier.Text);
 
-            var function = scope.Symbol.NewMethod(syntax.Identifier.Location, syntax.Identifier.Text)
-                // TODO: determine if method should be static or not
-                .WithFlags(SymbolFlags.Static);
+            if (!scope.Symbol.IsClass)
+            {
+                function.Flags |= SymbolFlags.Static;
+            }
 
             for (var index = 0; index < syntax.Parameters.Count; index++)
             {
@@ -724,10 +727,10 @@ namespace Panther.CodeAnalysis.Binding
                     switch (members[0])
                     {
                         case { IsField: true } field:
-                            return new BoundFieldExpression(syntax, name, field);
+                            return new BoundFieldExpression(syntax, name, expr, field);
 
                         case MethodSymbol or { IsMethod: true }:
-                            return new BoundMethodExpression(syntax, name, members.Where(m => m.IsMethod).ToImmutableArray());
+                            return new BoundMethodExpression(syntax, name, expr, members.Where(m => m.IsMethod).ToImmutableArray());
                         default:
                             // TODO: new error message as we have members but they are not of any expected type
                             Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
@@ -744,7 +747,7 @@ namespace Panther.CodeAnalysis.Binding
                         return new BoundErrorExpression(syntax);
                     }
 
-                    return new BoundMethodExpression(syntax, name, methods);
+                    return new BoundMethodExpression(syntax, name, expr, methods);
                 }
             }
         }
@@ -760,26 +763,6 @@ namespace Panther.CodeAnalysis.Binding
 
             // TODO: fix this Type.Error put the appropriate TypeSymbol here
             Diagnostics.ReportMissingDefinition(syntax.Location, Type.Error, syntax.Name.ToText());
-            return new BoundErrorExpression(syntax);
-        }
-
-        private BoundNode BindMethod(IdentifierNameSyntax syntax, BoundScope scope)
-        {
-            var name = syntax.ToText();
-            var symbols = scope.LookupMethod(name);
-            if (symbols.Length != 0)
-                return new BoundMethodExpression(syntax, name, symbols);
-
-            var variable = scope.LookupVariable(name);
-            if (variable != null)
-            {
-                Diagnostics.ReportNotAFunction(syntax.Location, name);
-            }
-            else
-            {
-                Diagnostics.ReportUndefinedFunction(syntax.Location, name);
-            }
-
             return new BoundErrorExpression(syntax);
         }
 
@@ -823,7 +806,7 @@ namespace Panther.CodeAnalysis.Binding
                             return new BoundErrorExpression(syntax);
                         }
 
-                        return BindCallExpressionToMethodSymbol(syntax, methods[0], boundArguments);
+                        return BindCallExpressionToMethodSymbol(syntax, methods[0], boundMethodExpression.Expression, boundArguments);
                     }
 
                     Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
@@ -844,7 +827,6 @@ namespace Panther.CodeAnalysis.Binding
                 return boundExpression;
 
             // Bind method
-
             var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
 
             return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope);
@@ -874,7 +856,7 @@ namespace Panther.CodeAnalysis.Binding
                         return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope.Parent);
                     }
                 case 1:
-                    return BindCallExpressionToSymbol(syntax, symbols[0], boundArguments);
+                    return BindCallExpressionToSymbol(syntax, symbols[0], null,  boundArguments);
 
                 default:
                     // TODO: see if we have method symbols and try to prune them to the correct one
@@ -893,7 +875,7 @@ namespace Panther.CodeAnalysis.Binding
                             return new BoundErrorExpression(syntax);
 
                         case 1:
-                            return BindCallExpressionToSymbol(syntax, filteredSymbols[0], boundArguments);
+                            return BindCallExpressionToSymbol(syntax, filteredSymbols[0], null, boundArguments);
 
                         default:
                             Diagnostics.ReportAmbiguousMethod(identifierNameSyntax.Location, symbolName,
@@ -903,7 +885,8 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private BoundExpression BindCallExpressionToSymbol(CallExpressionSyntax syntax, Symbol symbol, IReadOnlyList<BoundExpression> boundArguments)
+        private BoundExpression BindCallExpressionToSymbol(CallExpressionSyntax syntax, Symbol symbol,
+            BoundExpression? expression, IReadOnlyList<BoundExpression> boundArguments)
         {
             switch (symbol)
             {
@@ -914,7 +897,7 @@ namespace Panther.CodeAnalysis.Binding
                     var ctor = symbol.LookupMethod(".ctor");
                     if (ctor != null && ctor.Parameters.Length == boundArguments.Count)
                     {
-                        return BindCallExpressionToMethodSymbol(syntax, ctor, boundArguments);
+                        return BindCallExpressionToMethodSymbol(syntax, ctor, expression, boundArguments);
                     }
 
                     // TODO: report better error
@@ -924,7 +907,7 @@ namespace Panther.CodeAnalysis.Binding
                     return new BoundErrorExpression(syntax);
                 }
                 case MethodSymbol or { IsMethod: true }:
-                    return BindCallExpressionToMethodSymbol(syntax, symbol, boundArguments);
+                    return BindCallExpressionToMethodSymbol(syntax, symbol, expression, boundArguments);
 
                 case { IsValue : true }:
                     Diagnostics.ReportNotAFunction(syntax.Expression.Location, symbol.Name);
@@ -937,7 +920,7 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private BoundExpression BindCallExpressionToMethodSymbol(CallExpressionSyntax syntax, Symbol method, IReadOnlyList<BoundExpression> boundArguments)
+        private BoundExpression BindCallExpressionToMethodSymbol(CallExpressionSyntax syntax, Symbol method, BoundExpression? expression, IReadOnlyList<BoundExpression> boundArguments)
         {
             var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
             for (var i = 0; i < syntax.Arguments.Count; i++)
@@ -948,7 +931,7 @@ namespace Panther.CodeAnalysis.Binding
                 convertedArgs.Add(convertedArgument);
             }
 
-            return new BoundCallExpression(syntax, method, convertedArgs.ToImmutable());
+            return new BoundCallExpression(syntax, method, expression, convertedArgs.ToImmutable());
         }
 
         private BoundExpression? TryBindTypeConversion(CallExpressionSyntax syntax, string symbolName, BoundScope scope)

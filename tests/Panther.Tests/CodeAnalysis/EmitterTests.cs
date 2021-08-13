@@ -25,7 +25,7 @@ namespace Panther.Tests.CodeAnalysis
         [MemberData(nameof(GetEmitterTests))]
         public void EmitterOutputsIL(string testDirectory, string[] sources, string expectedILPath)
         {
-            var expectedSource = File.ReadAllLines(expectedILPath);
+            var expectedSource = File.ReadAllLines(expectedILPath).Where(line => !line.TrimStart().StartsWith("//")).ToArray();
 
             var trees = sources.Select(SyntaxTree.LoadFile).ToArray();
 
@@ -66,7 +66,7 @@ namespace Panther.Tests.CodeAnalysis
             Assert.Empty(emitResult.Diagnostics);
 
             var il = DumpIl(assemblyLocation);
-            var actualSource = il.Split('\n');
+            var actualSource = il.Split('\n').Where(line => !line.TrimStart().StartsWith("//")).ToArray();
             AssertFileLines(expectedSource, actualSource);
 
             Assert.Equal(expectedSource.Length, actualSource.Length);

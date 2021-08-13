@@ -53,7 +53,7 @@ namespace Panther.CodeAnalysis.Lowering
                 .Select(expr => CreateTemporary(expr, "ctemp"))
                 .ToImmutableArray();
 
-            return new BoundCallExpression(node.Syntax, node.Method, args);
+            return new BoundCallExpression(node.Syntax, node.Method, node.Expression, args);
         }
 
         protected override BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)

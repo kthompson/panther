@@ -174,7 +174,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from token in Arb.Generate<SyntaxNode>()
             from function in GenFunctionSymbol(type)
             from args in Gen.Sequence(function.Parameters.Select(p => GenBoundExpression(p.Type)))
-            select new BoundCallExpression(token, function, args.ToImmutableArray());
+            select new BoundCallExpression(token, function, null, args.ToImmutableArray());
 
         public static Gen<BoundExpression> GenBoundExpression(Type type)
         {

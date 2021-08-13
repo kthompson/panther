@@ -2,10 +2,7 @@
 
     <PropertyGroup>
         <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <NoWarn>1701;1702;0612</NoWarn>
+        <NoWarn>1701;1702;0612</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
