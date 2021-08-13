@@ -123,6 +123,7 @@ namespace Panther.SyntaxGen
             using var indentedTextWriter = new IndentedTextWriter(writer);
 
             indentedTextWriter.WriteLine("using System;");
+            indentedTextWriter.WriteLine("using System.IO;");
             indentedTextWriter.WriteLine("using System.Collections.Generic;");
             indentedTextWriter.WriteLine("using System.Collections.Immutable;");
             indentedTextWriter.WriteLine();
@@ -221,6 +222,16 @@ namespace Panther.SyntaxGen
                         indentedTextWriter.WriteLine("}");
                     }
                 }
+                indentedTextWriter.Indent--;
+                indentedTextWriter.WriteLine("}");
+                indentedTextWriter.WriteLine();
+
+                indentedTextWriter.WriteLine("public override string ToString()");
+                indentedTextWriter.WriteLine("{");
+                indentedTextWriter.Indent++;
+                indentedTextWriter.WriteLine("using var writer = new StringWriter();");
+                indentedTextWriter.WriteLine("WriteTo(writer);");
+                indentedTextWriter.WriteLine("return writer.ToString();");
                 indentedTextWriter.Indent--;
                 indentedTextWriter.WriteLine("}");
 

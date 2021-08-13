@@ -58,7 +58,17 @@ namespace Panther.CodeAnalysis.Symbols
         public static Symbol NewRoot() => new RootSymbol();
         public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);
         public Symbol NewNamespace(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Namespace);
-        public Symbol NewClass(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Class);
+        public Symbol NewClass(TextLocation location, string name)
+        {
+            var symbol = new TermSymbol(this, location, name)
+            {
+                Flags = SymbolFlags.Class
+            };
+            symbol.Type = new ClassType(symbol);
+
+            return symbol;
+        }
+
         public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Object);
         public Symbol NewField(TextLocation location, string name, bool isReadOnly) =>
             new TermSymbol(this, location, name)
@@ -102,19 +112,22 @@ namespace Panther.CodeAnalysis.Symbols
             return true;
         }
 
+        public ImmutableArray<Symbol> Locals  =>
+            Members.Where(m => m.IsLocal).ToImmutableArray();
+
         public ImmutableArray<Symbol> Parameters =>
             Members.Where(m => m.IsParameter).ToImmutableArray();
 
-        public virtual ImmutableArray<Symbol> Methods =>
+        public ImmutableArray<Symbol> Methods =>
             Members.Where(sym => sym.IsMethod).ToImmutableArray();
 
-        public virtual ImmutableArray<Symbol> Fields =>
+        public ImmutableArray<Symbol> Fields =>
             Members.Where(sym => sym.IsField).ToImmutableArray();
 
-        public virtual ImmutableArray<Symbol> Types =>
+        public ImmutableArray<Symbol> Types =>
             Members.Where(m => m.IsType).ToImmutableArray();
 
-        public virtual ImmutableArray<TypeSymbol> GetTypeMembers(string name) =>
+        public ImmutableArray<TypeSymbol> GetTypeMembers(string name) =>
             GetMembers(name).OfType<TypeSymbol>().ToImmutableArray();
 
         public virtual ImmutableArray<Symbol> Members => _symbols.ToImmutableArray();

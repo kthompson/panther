@@ -3,7 +3,7 @@
 {
 } // end of class <Module>
 
-.class public auto ansi abstract sealed $Program
+.class public auto ansi sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
 	// Methods
@@ -13,7 +13,7 @@
 		// Method begins at RVA 0x2050
 		// Code size 18 (0x12)
 		.maxstack 1
-		.locals (
+		.locals init (
 			[0] object
 		)
 
@@ -32,7 +32,7 @@
 		// Code size 35 (0x23)
 		.maxstack 2
 		.entrypoint
-		.locals (
+		.locals init (
 			[0] string,
 			[1] object
 		)

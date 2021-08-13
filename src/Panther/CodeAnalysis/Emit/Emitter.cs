@@ -165,7 +165,7 @@ namespace Panther.CodeAnalysis.Emit
             var objectType = _knownTypes[TypeSymbol.Any];
 
             // TODO keep track of current namespace
-            var typeDef = new TypeDefinition("", type.Name, TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
+            var typeDef = new TypeDefinition("", type.Name, TypeAttributes.Sealed | TypeAttributes.Public, objectType);
 
             // PERF: this order by isn't necessary but its here so that tests pass
             foreach (var functionSignature in type.Methods.OrderBy(x => x.Name))
@@ -181,10 +181,18 @@ namespace Panther.CodeAnalysis.Emit
         {
             var type = method.ReturnType;
             var returnType = type == Type.Unit ? _voidType : LookupType(type.Symbol);
-            var isStatic = (method.Flags & SymbolFlags.Static) != 0;
-            var methodAttributes = isStatic
-                ? MethodAttributes.Static | MethodAttributes.Public
-                : MethodAttributes.Public;
+            var isStatic = method.IsStatic;
+
+            var methodAttributes = MethodAttributes.Public;
+            if (method.IsConstructor)
+            {
+                methodAttributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName |
+                                    MethodAttributes.HideBySig;
+            }
+
+            if (isStatic)
+                methodAttributes |= MethodAttributes.Static;
+
             var methodDefinition = new MethodDefinition(method.Name, methodAttributes, returnType);
             var methodParams =
                 from parameter in method.Parameters
@@ -239,6 +247,7 @@ namespace Panther.CodeAnalysis.Emit
             }
 
             methodDefinition.Body.OptimizeMacros();
+            methodDefinition.Body.InitLocals = _locals.Any();
         }
 
         private void EmitStatement(TypeDefinition declaringType, ILProcessor ilProcessor, BoundStatement statement)
@@ -422,6 +431,10 @@ namespace Panther.CodeAnalysis.Emit
                     EmitCallExpression(ilProcessor, callExpression);
                     break;
 
+                case BoundFieldExpression fieldExpression:
+                    EmitFieldExpression(ilProcessor, fieldExpression);
+                    break;
+
                 case BoundConversionExpression conversionExpression:
                     EmitConversionExpression(ilProcessor, conversionExpression);
                     break;
@@ -441,6 +454,24 @@ namespace Panther.CodeAnalysis.Emit
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expression), expression.GetType().FullName);
             }
+        }
+
+        private void EmitFieldExpression(ILProcessor ilProcessor, BoundFieldExpression node)
+        {
+            if (node.Expression != null && node.Expression is not BoundTypeExpression)
+            {
+                EmitExpression(ilProcessor, node.Expression);
+
+                var type = LookupType(node.Expression.Type.Symbol);
+                var field = type.Resolve().Fields.Single(f => f.Name == node.Field.Name);
+
+                ilProcessor.Emit(OpCodes.Ldfld, field);
+
+                return;
+            }
+
+
+            throw new NotImplementedException();
         }
 
         private void EmitConstantExpression(ILProcessor ilProcessor, BoundExpression node, BoundConstant constant)
@@ -572,21 +603,22 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitCallExpression(ILProcessor ilProcessor, BoundCallExpression callExpression)
         {
+            if (callExpression.Expression != null && callExpression.Expression is not BoundTypeExpression)
+            {
+                EmitExpression(ilProcessor, callExpression.Expression);
+            }
+
             foreach (var argExpr in callExpression.Arguments)
                 EmitExpression(ilProcessor, argExpr);
 
             if (_methods.TryGetValue(callExpression.Method, out var method))
             {
-                ilProcessor.Emit(OpCodes.Call, method);
+                var opCode = callExpression.Method.IsConstructor ? OpCodes.Newobj : OpCodes.Call;
+                ilProcessor.Emit(opCode, method);
             }
             else if (_methodReferences.TryGetValue(callExpression.Method, out var methodRef))
             {
                 ilProcessor.Emit(OpCodes.Call, methodRef);
-            }
-            else if (callExpression.Method.IsConstructor &&
-                     _types.TryGetValue(callExpression.Method.Owner, out var type))
-            {
-                ilProcessor.Emit(OpCodes.Newobj, type);
             }
             else
             {
@@ -713,7 +745,15 @@ namespace Panther.CodeAnalysis.Emit
                     var fieldReference = _fields.TryGetValue(variable, out var field)
                         ? field
                         : _globals[variable];
-                    ilProcessor.Emit(variable.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, fieldReference);
+                    if (variable.IsStatic)
+                    {
+                        ilProcessor.Emit(OpCodes.Ldsfld, fieldReference);
+                    }
+                    else
+                    {
+                        ilProcessor.Emit(OpCodes.Ldarg_0); // load this
+                        ilProcessor.Emit(OpCodes.Ldfld, fieldReference);
+                    }
                     break;
 
                 default:

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -28,6 +29,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return EqualsToken;
             yield return Expression;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record BinaryExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Left, SyntaxToken OperatorToken, ExpressionSyntax Right)
@@ -39,6 +47,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Left;
             yield return OperatorToken;
             yield return Right;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -55,6 +70,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Expression;
             yield return CloseBraceToken;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record BreakExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken BreakKeyword)
@@ -65,6 +87,13 @@ namespace Panther.CodeAnalysis.Syntax
         {
             yield return BreakKeyword;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record ContinueExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken ContinueKeyword)
@@ -74,6 +103,13 @@ namespace Panther.CodeAnalysis.Syntax
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ContinueKeyword;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -88,6 +124,13 @@ namespace Panther.CodeAnalysis.Syntax
             foreach (var child in Arguments.GetWithSeparators())
                 yield return child;
             yield return CloseParenToken;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -107,6 +150,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return CloseParenToken;
             yield return Body;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record GroupExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenParenToken, ExpressionSyntax Expression, SyntaxToken CloseParenToken)
@@ -118,6 +168,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return OpenParenToken;
             yield return Expression;
             yield return CloseParenToken;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -135,6 +192,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return ElseKeyword;
             yield return ElseExpression;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record MemberAccessExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken DotToken, IdentifierNameSyntax Name)
@@ -146,6 +210,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Expression;
             yield return DotToken;
             yield return Name;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -161,6 +232,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return CloseParenToken;
             yield return Body;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record UnaryExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OperatorToken, ExpressionSyntax Operand)
@@ -171,6 +249,13 @@ namespace Panther.CodeAnalysis.Syntax
         {
             yield return OperatorToken;
             yield return Operand;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -183,6 +268,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return OpenParenToken;
             yield return CloseParenToken;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record IdentifierNameSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier)
@@ -192,6 +284,13 @@ namespace Panther.CodeAnalysis.Syntax
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Identifier;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -205,6 +304,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return DotToken;
             yield return Right;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record ExpressionStatementSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression)
@@ -214,6 +320,13 @@ namespace Panther.CodeAnalysis.Syntax
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Expression;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -232,6 +345,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return EqualsToken;
             yield return Expression;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record GlobalStatementSyntax(SyntaxTree SyntaxTree, StatementSyntax Statement)
@@ -241,6 +361,13 @@ namespace Panther.CodeAnalysis.Syntax
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Statement;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -264,6 +391,13 @@ namespace Panther.CodeAnalysis.Syntax
 
             yield return EndOfFileToken;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record NamespaceDirectiveSyntax(SyntaxTree SyntaxTree, SyntaxToken NamespaceKeyword, NameSyntax Name)
@@ -274,6 +408,13 @@ namespace Panther.CodeAnalysis.Syntax
         {
             yield return NamespaceKeyword;
             yield return Name;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -286,6 +427,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return Identifier;
             yield return TypeAnnotation;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record TypeAnnotationSyntax(SyntaxTree SyntaxTree, SyntaxToken ColonToken, SyntaxToken IdentifierToken)
@@ -296,6 +444,13 @@ namespace Panther.CodeAnalysis.Syntax
         {
             yield return ColonToken;
             yield return IdentifierToken;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -312,6 +467,13 @@ namespace Panther.CodeAnalysis.Syntax
             }
             yield return Name;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record TemplateSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenBrace, ImmutableArray<MemberSyntax> Members, SyntaxToken CloseBrace)
@@ -325,6 +487,13 @@ namespace Panther.CodeAnalysis.Syntax
                 yield return child;
 
             yield return CloseBrace;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -347,6 +516,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return EqualsToken;
             yield return Body;
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record ClassDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ClassKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Fields, SyntaxToken CloseParenToken, TemplateSyntax? Template)
@@ -366,6 +542,13 @@ namespace Panther.CodeAnalysis.Syntax
                 yield return Template;
             }
         }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
     }
 
     public sealed partial record ObjectDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ObjectKeyword, SyntaxToken Identifier, TemplateSyntax Template)
@@ -377,6 +560,13 @@ namespace Panther.CodeAnalysis.Syntax
             yield return ObjectKeyword;
             yield return Identifier;
             yield return Template;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 

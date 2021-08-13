@@ -12,7 +12,13 @@ using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis
 {
+
+    // NOTE: We bring in two different versions of the Panther Standard
+    // Library one being the Actual StdLib and one being a Test version
+    // With the Extern alias we can access the types from the specific
+    // library we want
     extern alias StdLib;
+
 
     [Properties(MaxTest = 10)]
     public class EvaluationTests
@@ -464,22 +470,6 @@ namespace Panther.Tests.CodeAnalysis
             Execute($"val a = {n}", scriptHost);
 
             AssertEvaluation($"a", n, scriptHost);
-        }
-
-
-        [Fact]
-        public void EvaluatesObjectMethodCallExpression()
-        {
-            using var scriptHost = BuildScriptHost();
-            string code = @"
-                SomeObject.method()
-                
-                object SomeObject {
-                    def method() = ""taco""
-                }
-            ";
-
-            AssertEvaluation(code, "taco", scriptHost);
         }
 
         [Property]
