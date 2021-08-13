@@ -12,8 +12,7 @@ namespace Panther.CodeAnalysis.Lowering
 
         protected override BoundStatement RewriteStatement(BoundStatement node)
         {
-            // var statement = base.RewriteStatement(node);
-            if (node is BoundVariableDeclarationStatement varDecl && varDecl.Variable.Type == TypeSymbol.Unit)
+            if (node is BoundVariableDeclarationStatement varDecl && varDecl.Variable.Type == Type.Unit)
             {
                 var expression = RewriteExpression(varDecl.Expression);
                 if (expression.Kind == BoundNodeKind.UnitExpression)
@@ -22,7 +21,7 @@ namespace Panther.CodeAnalysis.Lowering
                 return base.RewriteStatement(new BoundExpressionStatement(node.Syntax, expression));
             }
 
-            if (node is BoundExpressionStatement expressionStatement && expressionStatement.Expression.Type == TypeSymbol.Unit)
+            if (node is BoundExpressionStatement expressionStatement && expressionStatement.Expression.Type == Type.Unit)
             {
                 var expression = RewriteExpression(expressionStatement.Expression);
                 if (expression.Kind == BoundNodeKind.UnitExpression)
@@ -36,7 +35,7 @@ namespace Panther.CodeAnalysis.Lowering
 
         protected override BoundExpression RewriteExpression(BoundExpression node)
         {
-            if (node is BoundVariableExpression variableExpression && variableExpression.Type == TypeSymbol.Unit)
+            if (node is BoundVariableExpression variableExpression && variableExpression.Type == Type.Unit)
                 return new BoundUnitExpression(node.Syntax);
 
             return base.RewriteExpression(node);

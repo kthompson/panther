@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Linq;
 using Mono.Cecil;
 using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -17,21 +19,232 @@ namespace Panther.CodeAnalysis.Binding
         public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
         private int _labelCounter = 0;
 
-        private readonly Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _breakContinueLabels =
-            new Stack<(BoundLabel, BoundLabel)>();
+        private readonly Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _breakContinueLabels = new();
+        private readonly Dictionary<Symbol, FunctionDeclarationSyntax> _functionDeclarations = new();
+        private readonly Dictionary<Symbol, BoundBlockExpression> _constructorBodies = new();
 
         public Binder(bool isScript)
         {
             _isScript = isScript;
         }
 
-        public static BoundGlobalScope BindGlobalScope(bool isScript, BoundGlobalScope? previous,
-            ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<AssemblyDefinition> references)
+        private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope scope)
+        {
+            var typeSymbol = scope.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
+            if (!scope.DefineSymbol(typeSymbol))
+            {
+                Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
+            }
+
+            var parameters = ImmutableArray.CreateBuilder<Symbol>();
+            var assignments = ImmutableArray.CreateBuilder<BoundStatement>();
+            var seenFieldNames = new HashSet<string>();
+
+            var ctor = typeSymbol.NewMethod(typeSymbol.Location, ".ctor");
+
+            for (var index = 0; index < syntax.Fields.Count; index++)
+            {
+                var field = syntax.Fields[index];
+                var fieldName = field.Identifier.Text;
+                var fieldType = BindTypeAnnotation(field.TypeAnnotation);
+                var fieldSymbol = typeSymbol.NewField(field.Identifier.Location, field.Identifier.Text, false)
+                    .WithType(fieldType);
+
+                typeSymbol.DefineSymbol(fieldSymbol);
+
+                if (!seenFieldNames.Add(fieldName))
+                {
+                    Diagnostics.ReportParameterAlreadyDeclared(field.Location, fieldName);
+                }
+                else
+                {
+                    // +1 since arg 0 is `this`
+                    var parameter = ctor.NewParameter(field.Identifier.Location, fieldName, index + 1).WithType(fieldType);
+                    ctor.DefineSymbol(parameter);
+                    parameters.Add(parameter);
+                    assignments.Add(new BoundAssignmentStatement(field, fieldSymbol,
+                        new BoundVariableExpression(field, parameter)));
+                }
+            }
+
+            var typeScope = new BoundScope(scope, typeSymbol);
+            var immParams = parameters.ToImmutableArray();
+            ctor.WithType(new MethodType(immParams, Type.Unit));
+
+            typeSymbol.DefineSymbol(ctor);
+            _constructorBodies.Add(ctor, new BoundBlockExpression(syntax, assignments.ToImmutableArray(), new BoundUnitExpression(syntax)));
+
+            if (syntax.Template != null)
+            {
+                BindMembers(syntax.Template.Members, typeScope);
+            }
+        }
+
+        private Symbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
+        {
+            var type = new BoundType(parent.Symbol,
+                    objectDeclaration.Identifier.Location,
+                    objectDeclaration.Identifier.Text)
+                .WithFlags(SymbolFlags.Object);
+            if (!parent.DefineSymbol(type))
+            {
+                Diagnostics.ReportAmbiguousType(objectDeclaration.Location, objectDeclaration.Identifier.Text);
+            }
+
+            var scope = new BoundScope(parent, type);
+
+            BindMembers(objectDeclaration.Template.Members, scope);
+        }
+
+        private void BindMembers(ImmutableArray<MemberSyntax> members, BoundScope scope)
+        {
+            var (functions, objectsAndClasses) = members.Partition(member => member is FunctionDeclarationSyntax);
+            // define classes and objects first
+            foreach (var member in objectsAndClasses)
+            {
+                switch (member)
+                {
+                    case ObjectDeclarationSyntax childObjectDeclaration:
+                        BindObjectDeclaration(childObjectDeclaration, scope);
+                        break;
+
+                    case ClassDeclarationSyntax classDeclaration:
+                        BindClassDeclaration(classDeclaration, scope);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(member));
+                }
+            }
+
+            foreach (var member in functions)
+            {
+                switch (member)
+                {
+                    case FunctionDeclarationSyntax functionDeclarationSyntax:
+                        var sym = BindFunctionDeclaration(functionDeclarationSyntax, scope);
+                        _functionDeclarations.Add(sym, functionDeclarationSyntax);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(member));
+                }
+            }
+        }
+
+        private Symbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static EntryPoint? BindEntryPoint(BoundScope boundScope, bool isScript,
+            ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<BoundStatement> globalStatements,
+            Symbol? mainFunction, Binder binder) =>
+            isScript
+                ? BindScriptEntryPoint(boundScope, globalStatements)
+                : BindMainEntryPoint(boundScope, syntaxTrees, globalStatements, mainFunction, binder);
+
+        private static EntryPoint BindMainEntryPoint(BoundScope boundScope, ImmutableArray<SyntaxTree> syntaxTrees,
+            ImmutableArray<BoundStatement> globalStatements, Symbol? mainFunction, Binder binder)
+        {
+            var hasGlobalStatements = globalStatements.Any();
+
+            var firstStatementPerSyntaxTree =
+                (from tree in syntaxTrees
+                 let firstStatement = tree.Root.Statements.OfType<GlobalStatementSyntax>().FirstOrDefault()
+                 where firstStatement != null
+                 select firstStatement)
+                .ToImmutableArray();
+
+            if (mainFunction != null)
+            {
+                // ensure main function signature is correct
+                if (mainFunction.Parameters.Any() || mainFunction.ReturnType != Type.Unit)
+                {
+                    binder.Diagnostics.ReportMainMustHaveCorrectSignature(
+                        mainFunction.Location
+                    );
+                }
+
+                // if a main function exists, global statements cannot
+                if (hasGlobalStatements)
+                {
+                    binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(
+                        mainFunction.Location
+                    );
+
+                    foreach (var firstStatement1 in firstStatementPerSyntaxTree)
+                    {
+                        binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
+                    }
+                }
+
+                return new EntryPoint(false, mainFunction, null);
+            }
+
+            // Global statements can only exist in one syntax tree
+            if (firstStatementPerSyntaxTree.Length > 1)
+            {
+                foreach (var firstStatement2 in firstStatementPerSyntaxTree)
+                {
+                    binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2!.Location);
+                }
+            }
+
+
+            var main = boundScope.Symbol
+                .NewMethod(TextLocation.None, "main")
+                .WithType(new MethodType(ImmutableArray<Symbol>.Empty, Type.Unit))
+                .WithFlags(SymbolFlags.Static);
+            var compilationUnit = globalStatements.First().Syntax;
+            var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
+
+            boundScope.DefineSymbol(main);
+
+            return new EntryPoint(false, main, body);
+        }
+
+        private static EntryPoint? BindScriptEntryPoint(BoundScope boundScope, ImmutableArray<BoundStatement> globalStatements)
+        {
+            if (!globalStatements.Any())
+                return null;
+
+            var eval = boundScope.Symbol.NewMethod(TextLocation.None, "$eval").WithType(Type.Any)
+                .WithFlags(SymbolFlags.Static);
+
+            var compilationUnit = globalStatements.First().Syntax;
+            var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalStatements);
+
+            // for our script function we need to return an object. if the expression is not an object then we will
+            // create a conversion expression to convert it.
+            if (boundStatementFromStatements.Expression.Type != Type.Any)
+            {
+                // what should we do when we have a unit expression?
+                boundStatementFromStatements = new BoundExpressionStatement(
+                    boundStatementFromStatements.Syntax,
+                    new BoundConversionExpression(
+                        boundStatementFromStatements.Syntax,
+                        Type.Any,
+                        boundStatementFromStatements.Expression
+                    )
+                );
+            }
+
+            boundScope.DefineSymbol(eval);
+
+            return new EntryPoint(true, eval, Lowerer.Lower(boundStatementFromStatements));
+        }
+
+        public static BoundAssembly BindAssembly(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, BoundAssembly? previous,  ImmutableArray<AssemblyDefinition> references)
         {
             var (root, parentScope) = CreateParentScope(previous, references);
             var scope = new BoundScope(parentScope, root);
             var binder = new Binder(isScript);
-
 
             var defaultType = new BoundType(root, TextLocation.None, "$Program") {Flags = SymbolFlags.Object};
             var defaultTypeAddedToNamespace = false;
@@ -60,9 +273,14 @@ namespace Panther.CodeAnalysis.Binding
                 // otherwise there would be an error
                 globalStatements.AddRange(compilationUnit.Statements);
 
+                var (functions, objectsAndClasses) = tree.Root.Members.Partition(member => member is FunctionDeclarationSyntax);
+
+                // bind classes and objects first
+                binder.BindMembers(objectsAndClasses, scope);
+
                 // functions go into our default type scope
                 // everything else can go in our global scope
-                binder.BindMembers(tree.Root.Members, defaultTypeScope, scope);
+                binder.BindMembers(functions, defaultTypeScope);
             }
 
             var statements =
@@ -71,29 +289,29 @@ namespace Panther.CodeAnalysis.Binding
                     .ToImmutableArray();
 
             // top level variables get converted to fields on the default type
-            var variables = defaultTypeScope.GetDeclaredVariables().OfType<FieldSymbol>();
+            var variables = defaultTypeScope.GetDeclaredVariables().Where(sym => sym.IsField);
 
             foreach (var variable in variables)
             {
                 defaultType.DefineSymbol(variable);
             }
 
-            if (defaultType.GetMembers().Any())
+            if (defaultType.Members.Any())
             {
                 root.DefineSymbol(defaultType);
                 defaultTypeAddedToNamespace = true;
             }
 
-            var mains = from type in root.GetTypeMembers()
-                        from member in type.GetMembers().OfType<SourceMethodSymbol>()
-                        where member.Name == "main"
-                        select member;
+            var mains = from type in root.Types
+                from member in type.Methods
+                where member.Name == "main"
+                select member;
 
             var mainFunction = mains.FirstOrDefault();
 
             var entryPoint = BindEntryPoint(defaultTypeScope, isScript, syntaxTrees, statements, mainFunction, binder);
 
-            if (!defaultTypeAddedToNamespace && defaultType.GetMembers().Any())
+            if (!defaultTypeAddedToNamespace && defaultType.Members.Any())
             {
                 root.DefineSymbol(defaultType);
             }
@@ -108,246 +326,56 @@ namespace Panther.CodeAnalysis.Binding
             diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics,
                 (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
 
-            return new BoundGlobalScope(previous, diagnostics,
-                defaultType,
-                entryPoint,
-                root,
-                references
-            );
-        }
+            var rootTypes = root.Types.ToImmutableArray();
 
-        private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope parent)
-        {
-            var type = new BoundType(parent.Symbol, syntax.Identifier.Location, syntax.Identifier.Text);
-            if (!parent.DefineSymbol(type))
-            {
-                Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
-            }
+            var diagnostics1 = ImmutableArray.CreateBuilder<Diagnostic>();
+            var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
 
-            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-            var assignments = ImmutableArray.CreateBuilder<BoundStatement>();
-            var seenFieldNames = new HashSet<string>();
+            diagnostics1.AddRange(diagnostics);
 
-            for (var index = 0; index < syntax.Fields.Count; index++)
-            {
-                var field = syntax.Fields[index];
-                var fieldName = field.Identifier.Text;
-                var fieldType = BindTypeAnnotation(field.TypeAnnotation);
-                var fieldSymbol = new FieldSymbol(field.Identifier.Text, false, fieldType, null);
-                type.DefineSymbol(fieldSymbol);
-
-                if (!seenFieldNames.Add(fieldName))
-                {
-                    Diagnostics.ReportParameterAlreadyDeclared(field.Location, fieldName);
-                }
-                else
-                {
-                    var parameter = new ParameterSymbol(fieldName, fieldType, index + 1); // +1 since arg 0 is `this`
-                    parameters.Add(parameter);
-                    assignments.Add(new BoundAssignmentStatement(field, fieldSymbol,
-                        new BoundVariableExpression(field, parameter)));
-                }
-            }
-
-            var scope = new BoundScope(parent, type);
-            var ctor = new ImportedMethodSymbol(".ctor", parameters.ToImmutable(), TypeSymbol.Unit);
-
-            type.DefineSymbol(ctor);
-            type.DefineFunctionBody(ctor, new BoundBlockExpression(syntax, assignments.ToImmutable(), new BoundUnitExpression(syntax)));
-
-            if (syntax.Template != null)
-            {
-                BindMembers(syntax.Template.Members, scope, scope);
-            }
-        }
-
-        private Symbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
-        {
-            var type = new BoundType(parent.Symbol,
-                objectDeclaration.Identifier.Location,
-                objectDeclaration.Identifier.Text);
-            if (!parent.DefineSymbol(type))
-            {
-                Diagnostics.ReportAmbiguousType(objectDeclaration.Location, objectDeclaration.Identifier.Text);
-            }
-
-            var scope = new BoundScope(parent, type);
-
-            BindMembers(objectDeclaration.Template.Members, scope, scope);
-        }
-
-        private void BindMembers(ImmutableArray<MemberSyntax> members, BoundScope functionScope, BoundScope scope)
-        {
-            foreach (var member in members)
-            {
-                switch (member)
-                {
-                    case FunctionDeclarationSyntax functionDeclarationSyntax:
-                        BindFunctionDeclaration(functionDeclarationSyntax, functionScope);
-
-                        break;
-                    case ObjectDeclarationSyntax childObjectDeclaration:
-                        BindObjectDeclaration(childObjectDeclaration, scope);
-                        break;
-
-                    case ClassDeclarationSyntax classDeclaration:
-                        BindClassDeclaration(classDeclaration, scope);
-                        break;
-
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(member));
-                }
-            }
-        }
-
-        private Symbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static EntryPoint? BindEntryPoint(BoundScope boundScope, bool isScript,
-            ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<BoundStatement> globalStatements,
-            SourceMethodSymbol? mainFunction, Binder binder) =>
-            isScript
-                ? BindScriptEntryPoint(boundScope, globalStatements)
-                : BindMainEntryPoint(boundScope, syntaxTrees, globalStatements, mainFunction, binder);
-
-        private static EntryPoint BindMainEntryPoint(BoundScope boundScope, ImmutableArray<SyntaxTree> syntaxTrees,
-            ImmutableArray<BoundStatement> globalStatements, SourceMethodSymbol? mainFunction, Binder binder)
-        {
-            var hasGlobalStatements = globalStatements.Any();
-
-            var firstStatementPerSyntaxTree =
-                (from tree in syntaxTrees
-                 let firstStatement = tree.Root.Statements.OfType<GlobalStatementSyntax>().FirstOrDefault()
-                 where firstStatement != null
-                 select firstStatement)
-                .ToImmutableArray();
-
-            if (mainFunction != null)
-            {
-                // ensure main function signature is correct
-                if (mainFunction.Parameters.Any() || mainFunction.ReturnType != TypeSymbol.Unit)
-                {
-                    binder.Diagnostics.ReportMainMustHaveCorrectSignature(
-                        mainFunction.Declaration.Identifier.Location
-                    );
-                }
-
-                // if a main function exists, global statements cannot
-                if (hasGlobalStatements)
-                {
-                    binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(
-                        mainFunction.Declaration.Identifier.Location
-                    );
-
-                    foreach (var firstStatement1 in firstStatementPerSyntaxTree)
-                    {
-                        binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
-                    }
-                }
-
-                return new EntryPoint(false, mainFunction, null);
-            }
-
-            // Global statements can only exist in one syntax tree
-            if (firstStatementPerSyntaxTree.Length > 1)
-            {
-                foreach (var firstStatement2 in firstStatementPerSyntaxTree)
-                {
-                    binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2!.Location);
-                }
-            }
-
-            var main = new ImportedMethodSymbol("main", ImmutableArray<ParameterSymbol>.Empty,
-                TypeSymbol.Unit).WithFlags(SymbolFlags.Static);
-            var compilationUnit = globalStatements.First().Syntax;
-            var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
-
-            boundScope.DefineSymbol(main);
-
-            return new EntryPoint(false, main, body);
-        }
-
-        private static EntryPoint? BindScriptEntryPoint(BoundScope boundScope, ImmutableArray<BoundStatement> globalStatements)
-        {
-            if (!globalStatements.Any())
-                return null;
-
-            var eval = new ImportedMethodSymbol("$eval",
-                ImmutableArray<ParameterSymbol>.Empty,
-                TypeSymbol.Any
-            ).WithFlags(SymbolFlags.Static);
-
-            var compilationUnit = globalStatements.First().Syntax;
-            var boundStatementFromStatements = BoundStatementFromStatements(compilationUnit, globalStatements);
-
-            // for our script function we need to return an object. if the expression is not an object then we will
-            // create a conversion expression to convert it.
-            if (boundStatementFromStatements.Expression.Type != TypeSymbol.Any)
-            {
-                // what should we do when we have a unit expression?
-                boundStatementFromStatements = new BoundExpressionStatement(
-                    boundStatementFromStatements.Syntax,
-                    new BoundConversionExpression(
-                        boundStatementFromStatements.Syntax,
-                        TypeSymbol.Any,
-                        boundStatementFromStatements.Expression
-                    )
-                );
-            }
-
-            boundScope.DefineSymbol(eval);
-
-            return new EntryPoint(true, eval, Lowerer.Lower(boundStatementFromStatements));
-        }
-
-        public static BoundAssembly BindAssembly(bool isScript, BoundAssembly? previous, BoundGlobalScope globalScope)
-        {
-            var (root, parentScope) = CreateParentScope(globalScope, globalScope.References);
-            var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
-
-            diagnostics.AddRange(globalScope.Diagnostics);
-
-            foreach (var boundType in globalScope.Types)
+            // Map and lower all function definitions
+            foreach (var boundType in rootTypes)
             {
                 var typeScope = new BoundScope(parentScope, boundType);
 
-                foreach (var methodSymbol in boundType.GetMembers().OfType<SourceMethodSymbol>())
+                foreach (var methodSymbol in boundType.Methods)
                 {
-                    var binder = new Binder(isScript);
                     var functionScope = new BoundScope(typeScope, methodSymbol);
 
-                    var body = binder.BindExpression(methodSymbol.Declaration.Body, functionScope);
-
-                    var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
-
-                    if (methodSymbol.ReturnType != TypeSymbol.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                    if (binder._constructorBodies.TryGetValue(methodSymbol, out var block))
                     {
-                        binder.Diagnostics.ReportAllPathsMustReturn(methodSymbol.Declaration.Identifier.Location);
+                        methodDefinitions.Add(methodSymbol, block);
                     }
+                    else if (binder._functionDeclarations.TryGetValue(methodSymbol, out var syntax))
+                    {
+                        var body = binder.BindExpression(syntax.Body, functionScope);
 
-                    boundType.DefineFunctionBody(methodSymbol, loweredBody);
+                        var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
+
+                        if (methodSymbol.ReturnType != Type.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                        {
+                            binder.Diagnostics.ReportAllPathsMustReturn(methodSymbol.Location);
+                        }
+
+                        methodDefinitions.Add(methodSymbol, loweredBody);
+                    }
                 }
             }
 
             // define entry point
-            if (globalScope.DefaultType != null && globalScope.EntryPoint != null && globalScope.EntryPoint.Body != null)
+            if (entryPoint is { Body: { } })
             {
-                globalScope.DefaultType.DefineFunctionBody(globalScope.EntryPoint.Symbol, globalScope.EntryPoint.Body);
+                methodDefinitions.Add(entryPoint.Symbol, entryPoint.Body);
             }
 
             return new BoundAssembly(
                 previous,
-                diagnostics.ToImmutableArray(),
-                globalScope.EntryPoint,
-                globalScope.Types,
-                globalScope.References
+                diagnostics1.ToImmutableArray(),
+                entryPoint,
+                defaultType,
+                rootTypes,
+                methodDefinitions.ToImmutable(),
+                references
             );
         }
 
@@ -364,11 +392,13 @@ namespace Panther.CodeAnalysis.Binding
                 new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax)));
         }
 
-        private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
+        private Symbol BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
         {
-            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-
             var seenParamNames = new HashSet<string>();
+
+            var function = scope.Symbol.NewMethod(syntax.Identifier.Location, syntax.Identifier.Text)
+                // TODO: determine if method should be static or not
+                .WithFlags(SymbolFlags.Static);
 
             for (var index = 0; index < syntax.Parameters.Count; index++)
             {
@@ -382,8 +412,10 @@ namespace Panther.CodeAnalysis.Binding
                 }
                 else
                 {
-                    var parameter = new ParameterSymbol(parameterName, parameterType, index);
-                    parameters.Add(parameter);
+                    var parameter = function.NewParameter(parameterSyntax.Identifier.Location, parameterName, index)
+                        .WithType(parameterType);
+
+                    function.DefineSymbol(parameter);
                 }
             }
 
@@ -392,9 +424,9 @@ namespace Panther.CodeAnalysis.Binding
             {
                 // HACK: temporarily bind to body so that we can detect the type
                 // var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
-                //     TypeSymbol.Unit, syntax);
-                var functionScope = new BoundScope(scope, new BoundType(Symbol.None, TextLocation.None, "<temp>"));
-                foreach (var parameterSymbol in parameters)
+                //     Type.Unit, syntax);
+                var functionScope = new BoundScope(scope, new BoundType(scope.Symbol, TextLocation.None, "<temp>"));
+                foreach (var parameterSymbol in function.Parameters)
                 {
                     functionScope.DefineSymbol(parameterSymbol);
                 }
@@ -402,19 +434,20 @@ namespace Panther.CodeAnalysis.Binding
                 var expr = BindExpression(syntax.Body, functionScope);
                 type = expr.Type;
 
-                if (type == TypeSymbol.Error)
+                if (type == Type.Error)
                     Debugger.Break();
             }
 
-            var function = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax)
-                // TODO: determine if method should be static or not
-                .WithFlags(SymbolFlags.Static);
+            function.Type = new MethodType(function.Parameters, type);
+
 
             if (!scope.DefineSymbol(function))
             {
                 Diagnostics.ReportAmbiguousMethod(syntax.Location, syntax.Identifier.Text,
-                    parameters.Select(p => p.Name).ToImmutableArray());
+                    function.Parameters.Select(p => p.Name).ToImmutableArray());
             }
+
+            return function;
         }
 
         private BoundStatement BindGlobalStatement(StatementSyntax syntax, BoundScope scope) =>
@@ -524,39 +557,37 @@ namespace Panther.CodeAnalysis.Binding
             var expressionType = type ?? boundExpression.Type;
 
             var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
-            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly,
-                boundExpression.ConstantValue, scope);
+            var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, scope);
 
             return new BoundVariableDeclarationStatement(syntax, variable, converted);
         }
 
-        private TypeSymbol BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause)
+        private Type BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause)
         {
-            var type = LookupType(syntaxTypeClause.IdentifierToken.Text);
+            // TODO: support non-builtin types
+            var identifierToken = syntaxTypeClause.IdentifierToken;
+            var type = LookupBuiltinType(identifierToken.Text);
             if (type == null)
             {
-                Diagnostics.ReportUndefinedType(syntaxTypeClause.IdentifierToken.Location,
-                    syntaxTypeClause.IdentifierToken.Text);
-                return TypeSymbol.Error;
+                Diagnostics.ReportUndefinedType(identifierToken.Location, identifierToken.Text);
+                return Type.Error;
             }
 
             return type;
         }
 
-        private TypeSymbol? BindOptionalTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause) =>
+        private Type? BindOptionalTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause) =>
             syntaxTypeClause == null ? null : BindTypeAnnotation(syntaxTypeClause);
 
-        private VariableSymbol BindVariable(SyntaxToken identifier, TypeSymbol expressionType, bool isReadOnly,
-            BoundConstant? constantValue,
-            BoundScope scope)
+        private Symbol BindVariable(SyntaxToken identifier, Type expressionType, bool isReadOnly, BoundScope scope)
         {
             var name = identifier.Text ?? "??";
             var declare = !identifier.IsInsertedToken;
 
-            VariableSymbol variable;
+            Symbol variable;
             if (scope.IsGlobalScope)
             {
-                variable = new FieldSymbol(name, isReadOnly, expressionType, constantValue);
+                variable = scope.Symbol.NewField(identifier.Location, name, isReadOnly).WithType(expressionType);
                 if (scope.Symbol.IsObject)
                 {
                     variable.Flags |= SymbolFlags.Static;
@@ -564,7 +595,7 @@ namespace Panther.CodeAnalysis.Binding
             }
             else
             {
-                variable = new LocalVariableSymbol(name, isReadOnly, expressionType, constantValue);
+                variable = scope.Symbol.NewLocal(identifier.Location, name, isReadOnly).WithType(expressionType);
             }
 
             if (declare && !scope.DefineSymbol(variable))
@@ -580,7 +611,7 @@ namespace Panther.CodeAnalysis.Binding
             var expression = BindExpression(syntax.Expression, scope);
 
             return new BoundExpressionStatement(syntax,
-                expression.Type == TypeSymbol.Error ? new BoundErrorExpression(syntax) : expression);
+                expression.Type == Type.Error ? new BoundErrorExpression(syntax) : expression);
         }
 
         private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope) =>
@@ -607,24 +638,6 @@ namespace Panther.CodeAnalysis.Binding
                 UnitExpressionSyntax unit => BindUnitExpression(unit),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
-
-        private BoundExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax, BoundScope scope)
-        {
-            // TODO: combine with BindMemberMethodAccess?
-            var expr = BindExpression(syntax.Expression, scope);
-            var type = expr.Type;
-            var name = syntax.Name.Identifier.Text;
-            var field = type.GetMembers(name).OfType<FieldSymbol>().FirstOrDefault();
-            if (field != null)
-            {
-                return new BoundFieldExpression(syntax, name, field);
-            }
-
-            // TODO add property support
-
-            Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
-            return new BoundErrorExpression(syntax);
-        }
 
         private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope)
         {
@@ -659,21 +672,21 @@ namespace Panther.CodeAnalysis.Binding
             new BoundBlockExpression(bindBreakStatement.Syntax, ImmutableArray.Create(bindBreakStatement),
                 new BoundUnitExpression(bindBreakStatement.Syntax));
 
-        private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol type, BoundScope scope,
+        private BoundExpression BindExpression(ExpressionSyntax syntax, Type type, BoundScope scope,
             bool allowExplicit = false)
         {
             var expression = BindExpression(syntax, scope);
             return BindConversion(syntax.Location, expression, type, allowExplicit);
         }
 
-        private BoundExpression BindConversion(TextLocation location, BoundExpression expression, TypeSymbol type,
+        private BoundExpression BindConversion(TextLocation location, BoundExpression expression, Type type,
             bool allowExplicit = false)
         {
             var conversion = Conversion.Classify(expression.Type, type);
 
             if (!conversion.Exists)
             {
-                if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
+                if (expression.Type != Type.Error && type != Type.Error)
                 {
                     Diagnostics.ReportCannotConvert(location, expression.Type, type);
                 }
@@ -692,34 +705,61 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
-        private BoundNode BindMethodExpression(ExpressionSyntax syntax, BoundScope scope)
-        {
-            switch (syntax)
-            {
-                case IdentifierNameSyntax identifierNameSyntax:
-                    return BindMethod(identifierNameSyntax, scope);
-
-                case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
-                    return BindMemberMethodAccess(memberAccessExpressionSyntax, scope);
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(syntax));
-            }
-        }
-
-        private BoundNode BindMemberMethodAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
+        private BoundNode BindMemberAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
         {
             // TODO: combine with BindMemberAccessExpression?
             var expr = BindExpression(syntax.Expression, scope);
             var type = expr.Type;
             var name = syntax.Name.Identifier.Text;
-            var methods = type.GetMembers(name).OfType<MethodSymbol>().ToImmutableArray();
-            if (methods.Length > 0)
+            var members = type.Symbol.GetMembers(name).ToImmutableArray();
+
+            // TODO add property support
+            switch (members.Length)
             {
-                return new BoundMethodExpression(syntax, name, methods);
+                case 0:
+                    Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
+                    return new BoundErrorExpression(syntax);
+
+                case 1:
+                    switch (members[0])
+                    {
+                        case { IsField: true } field:
+                            return new BoundFieldExpression(syntax, name, field);
+
+                        case MethodSymbol or { IsMethod: true }:
+                            return new BoundMethodExpression(syntax, name, members.Where(m => m.IsMethod).ToImmutableArray());
+                        default:
+                            // TODO: new error message as we have members but they are not of any expected type
+                            Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
+                            return new BoundErrorExpression(syntax);
+                    }
+
+                default:
+                {
+                    var methods = members.Where(m => m.IsMethod).ToImmutableArray();
+                    if (members.Length != methods.Length)
+                    {
+                        // TODO: new error message as something is wrong here we have non-method members with the same name
+                        Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
+                        return new BoundErrorExpression(syntax);
+                    }
+
+                    return new BoundMethodExpression(syntax, name, methods);
+                }
+            }
+        }
+
+        private BoundExpression BindMemberAccessExpression(MemberAccessExpressionSyntax syntax, BoundScope scope)
+        {
+            // TODO: combine with BindMemberMethodAccess?
+            var node = BindMemberAccess(syntax, scope);
+            if (node is BoundExpression expr)
+            {
+                return expr;
             }
 
-            Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
+            // TODO: fix this Type.Error put the appropriate TypeSymbol here
+            Diagnostics.ReportMissingDefinition(syntax.Location, Type.Error, syntax.Name.ToText());
             return new BoundErrorExpression(syntax);
         }
 
@@ -745,72 +785,200 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
         {
-            // Bind Conversion
-            if (syntax.Arguments.Count == 1 && syntax.Expression is IdentifierNameSyntax identifierNameSyntax)
+            // TODO: we should be able to refactor this a bit by extracting all of the IdentifierNameSyntax steps
+            switch (syntax.Expression)
             {
-                var type = LookupType(identifierNameSyntax.Identifier.Text);
-                if (type != null)
+                case IdentifierNameSyntax identifierNameSyntax:
                 {
-                    return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
+                    return BindIdentifierCallExpression(syntax, identifierNameSyntax, scope);
                 }
-            }
-
-            // bind regular functions
-            var expression = BindMethodExpression(syntax.Expression, scope);
-            if (expression is BoundErrorExpression errorExpression)
-                return errorExpression;
-
-            if (expression is BoundMethodExpression boundMethodExpression)
-            {
-                var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
-                var methods = boundMethodExpression.Methods.Where(x => x.Parameters.Length == boundArguments.Count)
-                    .ToImmutableArray();
-
-                if (methods.Length == 0)
+                case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
                 {
-                    Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
-                        boundArguments.Select(arg => arg.Type.Name).ToImmutableArray());
+                    var expression = BindMemberAccess(memberAccessExpressionSyntax, scope);
+                    if (expression is BoundErrorExpression errorExpression)
+                        return errorExpression;
 
+                    if (expression is BoundMethodExpression boundMethodExpression)
+                    {
+                        var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope))
+                            .ToList();
+                        var methods = boundMethodExpression.Methods
+                            .Where(x => x.Parameters.Length == boundArguments.Count)
+                            .ToImmutableArray();
+
+                        if (methods.Length == 0)
+                        {
+                            Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
+                                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+
+                            return new BoundErrorExpression(syntax);
+                        }
+
+                        if (methods.Length > 1)
+                        {
+                            // TODO: improve type detection and binding when multiple valid methods exist
+                            Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
+                                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+
+                            return new BoundErrorExpression(syntax);
+                        }
+
+                        return BindCallExpressionToMethodSymbol(syntax, methods[0], boundArguments);
+                    }
+
+                    Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
                     return new BoundErrorExpression(syntax);
                 }
 
-                if (methods.Length > 1)
-                {
-                    // TODO: improve type detection and binding when multiple valid methods exist
-                    Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
-                        boundArguments.Select(arg => arg.Type.Name).ToImmutableArray());
-
-                    return new BoundErrorExpression(syntax);
-                }
-
-                var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
-                for (int i = 0; i < syntax.Arguments.Count; i++)
-                {
-                    var argument = boundArguments[i];
-                    var parameter = methods[0].Parameters[i];
-                    var convertedArgument = BindConversion(syntax.Arguments[i].Location, argument, parameter.Type);
-                    convertedArgs.Add(convertedArgument);
-                }
-
-                return new BoundCallExpression(syntax, methods[0], convertedArgs.ToImmutable());
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(syntax));
             }
-
-            Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
-            return new BoundErrorExpression(syntax);
         }
 
-        private TypeSymbol? LookupType(string text)
+        private BoundExpression BindIdentifierCallExpression(CallExpressionSyntax syntax, IdentifierNameSyntax identifierNameSyntax, BoundScope scope)
         {
-            var types = new[]
-            {
-                TypeSymbol.Any,
-                TypeSymbol.Int,
-                TypeSymbol.Bool,
-                TypeSymbol.String,
-                TypeSymbol.Unit,
-            };
+            // Bind Conversion
+            var symbolName = identifierNameSyntax.ToText();
+            var boundExpression = TryBindTypeConversion(syntax, symbolName, scope);
+            if (boundExpression != null)
+                return boundExpression;
 
-            return types.FirstOrDefault(type => type.Name == text);
+            // Bind method
+
+            var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
+
+            return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope);
+        }
+
+        private BoundExpression BindIdentifierCallExpressionFromScope(CallExpressionSyntax syntax,
+            IdentifierNameSyntax identifierNameSyntax, string symbolName,
+            List<BoundExpression> boundArguments, BoundScope scope)
+        {
+            var symbols = scope.LookupSymbol(symbolName, false);
+
+            switch (symbols.Length)
+            {
+                case 0:
+                    if (scope.IsRootScope)
+                    {
+                        Diagnostics.ReportNoOverloads(
+                            identifierNameSyntax.Location,
+                            symbolName,
+                            boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
+                        );
+
+                        return new BoundErrorExpression(syntax);
+                    }
+                    else
+                    {
+                        return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope.Parent);
+                    }
+                case 1:
+                    return BindCallExpressionToSymbol(syntax, symbols[0], boundArguments);
+
+                default:
+                    // TODO: see if we have method symbols and try to prune them to the correct one
+                    var filteredSymbols = symbols.Where(sym =>
+                        (sym.IsMethod && sym.Parameters.Length == boundArguments.Count) ||
+                        (sym.IsClass && sym.LookupMethod(".ctor")?.Parameters.Length == boundArguments.Count)).ToImmutableArray();
+
+                    switch (filteredSymbols.Length)
+                    {
+                        case 0:
+                            Diagnostics.ReportNoOverloads(
+                                identifierNameSyntax.Location,
+                                symbolName,
+                                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
+                            );
+                            return new BoundErrorExpression(syntax);
+
+                        case 1:
+                            return BindCallExpressionToSymbol(syntax, filteredSymbols[0], boundArguments);
+
+                        default:
+                            Diagnostics.ReportAmbiguousMethod(identifierNameSyntax.Location, symbolName,
+                                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+                            return new BoundErrorExpression(syntax);
+                    }
+            }
+        }
+
+        private BoundExpression BindCallExpressionToSymbol(CallExpressionSyntax syntax, Symbol symbol, IReadOnlyList<BoundExpression> boundArguments)
+        {
+            switch (symbol)
+            {
+                case { IsClass: true }:
+                {
+                    // bind constructor
+                    // see if there is an applicable constructor
+                    var ctor = symbol.LookupMethod(".ctor");
+                    if (ctor != null && ctor.Parameters.Length == boundArguments.Count)
+                    {
+                        return BindCallExpressionToMethodSymbol(syntax, ctor, boundArguments);
+                    }
+
+                    // TODO: report better error
+                    Diagnostics.ReportNoOverloads(syntax.Expression.Location, symbol.Name,
+                        boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+
+                    return new BoundErrorExpression(syntax);
+                }
+                case MethodSymbol or { IsMethod: true }:
+                    return BindCallExpressionToMethodSymbol(syntax, symbol, boundArguments);
+
+                case { IsValue : true }:
+                    Diagnostics.ReportNotAFunction(syntax.Expression.Location, symbol.Name);
+                    return new BoundErrorExpression(syntax);
+
+                default:
+                    Diagnostics.ReportNoOverloads(syntax.Expression.Location, symbol.Name,
+                        boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+                    return new BoundErrorExpression(syntax);
+            }
+        }
+
+        private BoundExpression BindCallExpressionToMethodSymbol(CallExpressionSyntax syntax, Symbol method, IReadOnlyList<BoundExpression> boundArguments)
+        {
+            var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
+            for (var i = 0; i < syntax.Arguments.Count; i++)
+            {
+                var argument = boundArguments[i];
+                var parameter = method.Parameters[i];
+                var convertedArgument = BindConversion(syntax.Arguments[i].Location, argument, parameter.Type);
+                convertedArgs.Add(convertedArgument);
+            }
+
+            return new BoundCallExpression(syntax, method, convertedArgs.ToImmutable());
+        }
+
+        private BoundExpression? TryBindTypeConversion(CallExpressionSyntax syntax, string symbolName, BoundScope scope)
+        {
+            if (syntax.Arguments.Count != 1)
+                return null;
+
+            var type = LookupBuiltinType(symbolName);
+            if (type == null)
+                return null;
+
+            return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
+        }
+
+
+        private Dictionary<string, Type> _builtinLookup = new Dictionary<string, Type>
+        {
+            ["any"] = Type.Any,
+            ["int"] = Type.Int,
+            ["bool"] = Type.Bool,
+            ["string"] = Type.String,
+            ["unit"] = Type.Unit,
+        };
+
+        private Type? LookupBuiltinType(string text)
+        {
+            if (!_builtinLookup.TryGetValue(text, out var type))
+                return null;
+
+            return type;
         }
 
         private BoundExpression BindForExpression(ForExpressionSyntax syntax, BoundScope scope)
@@ -818,20 +986,20 @@ namespace Panther.CodeAnalysis.Binding
             var lowerBound = BindExpression(syntax.FromExpression, scope);
             var upperBound = BindExpression(syntax.ToExpression, scope);
 
-            if (lowerBound.Type != TypeSymbol.Int)
+            if (lowerBound.Type != Type.Int)
             {
-                Diagnostics.ReportTypeMismatch(syntax.FromExpression.Location, TypeSymbol.Int, lowerBound.Type);
+                Diagnostics.ReportTypeMismatch(syntax.FromExpression.Location, Type.Int, lowerBound.Type);
                 return new BoundErrorExpression(syntax);
             }
 
-            if (upperBound.Type != TypeSymbol.Int)
+            if (upperBound.Type != Type.Int)
             {
-                Diagnostics.ReportTypeMismatch(syntax.ToExpression.Location, TypeSymbol.Int, upperBound.Type);
+                Diagnostics.ReportTypeMismatch(syntax.ToExpression.Location, Type.Int, upperBound.Type);
                 return new BoundErrorExpression(syntax);
             }
 
             var newScope = new BoundScope(scope);
-            var variable = BindVariable(syntax.Variable, TypeSymbol.Int, true, null, newScope);
+            var variable = BindVariable(syntax.Variable, Type.Int, true, newScope);
 
             var body = BindLoopBody(syntax.Body, newScope, out var breakLabel, out var continueLabel);
 
@@ -840,7 +1008,7 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindWhileExpression(WhileExpressionSyntax syntax, BoundScope scope)
         {
-            var condition = BindExpression(syntax.ConditionExpression, TypeSymbol.Bool, scope);
+            var condition = BindExpression(syntax.ConditionExpression, Type.Bool, scope);
             var expr = BindLoopBody(syntax.Body, scope, out var breakLabel, out var continueLabel);
 
             return new BoundWhileExpression(syntax, condition, expr, breakLabel, continueLabel);
@@ -871,8 +1039,8 @@ namespace Panther.CodeAnalysis.Binding
             var then = BindExpression(syntax.ThenExpression, scope);
             var elseExpr = BindExpression(syntax.ElseExpression, scope);
 
-            if (condition.Type == TypeSymbol.Error || then.Type == TypeSymbol.Error ||
-                elseExpr.Type == TypeSymbol.Error)
+            if (condition.Type == Type.Error || then.Type == Type.Error ||
+                elseExpr.Type == Type.Error)
                 return new BoundErrorExpression(syntax);
 
             if (then.Type != elseExpr.Type)
@@ -881,9 +1049,9 @@ namespace Panther.CodeAnalysis.Binding
                 return new BoundErrorExpression(syntax);
             }
 
-            if (condition.Type != TypeSymbol.Bool)
+            if (condition.Type != Type.Bool)
             {
-                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Location, TypeSymbol.Bool, condition.Type);
+                Diagnostics.ReportTypeMismatch(syntax.ConditionExpression.Location, Type.Bool, condition.Type);
                 return new BoundErrorExpression(syntax);
             }
 
@@ -902,10 +1070,10 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundBlockExpression(syntax, stmts, expr);
         }
 
-        private static (Symbol root, BoundScope parent) CreateParentScope(BoundGlobalScope? previous,
+        private static (Symbol root, BoundScope parent) CreateParentScope(BoundAssembly? previous,
             ImmutableArray<AssemblyDefinition> references)
         {
-            var stack = new Stack<BoundGlobalScope>();
+            var stack = new Stack<BoundAssembly>();
 
             while (previous != null)
             {
@@ -921,7 +1089,6 @@ namespace Panther.CodeAnalysis.Binding
                 var scope = new BoundScope(parent);
 
                 // import all members from the previous default type which is where top level
-
                 var declaringType = previous.DefaultType;
                 if (declaringType != null)
                 {
@@ -982,7 +1149,7 @@ namespace Panther.CodeAnalysis.Binding
 
                 var type = scope.LookupType(name);
                 if (type != null)
-                    return new BoundTypeExpression(syntax, type);
+                    return new BoundTypeExpression(syntax, type.Type);
 
                 Diagnostics.ReportUndefinedName(ident.Location, name);
                 return new BoundErrorExpression(syntax);
@@ -998,7 +1165,7 @@ namespace Panther.CodeAnalysis.Binding
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax, BoundScope scope)
         {
             var boundOperand = BindExpression(syntax.Operand, scope);
-            if (boundOperand.Type == TypeSymbol.Error)
+            if (boundOperand.Type == Type.Error)
                 return new BoundErrorExpression(syntax);
 
             var boundOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, boundOperand.Type);
@@ -1019,7 +1186,7 @@ namespace Panther.CodeAnalysis.Binding
             var right = BindExpression(syntax.Right, scope);
             var boundOperator = BoundBinaryOperator.Bind(syntax.OperatorToken.Kind, left.Type, right.Type);
 
-            if (left.Type == TypeSymbol.Error || right.Type == TypeSymbol.Error)
+            if (left.Type == Type.Error || right.Type == Type.Error)
                 return new BoundErrorExpression(syntax);
 
             if (boundOperator == null)

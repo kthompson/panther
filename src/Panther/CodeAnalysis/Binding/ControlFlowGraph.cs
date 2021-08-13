@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -265,7 +266,7 @@ namespace Panther.CodeAnalysis.Binding
                     return new BoundLiteralExpression(condition.Syntax, !value);
                 }
 
-                var op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.Bool) ?? throw new Exception("invalid operator");
+                var op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, Type.Bool) ?? throw new Exception("invalid operator");
 
                 return new BoundUnaryExpression(condition.Syntax, op, condition);
             }

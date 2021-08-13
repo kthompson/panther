@@ -10,7 +10,7 @@ namespace Panther.CodeAnalysis.Binding
     {
         public abstract BoundNodeKind Kind { get; }
 
-        public override string ToString()
+        public string ToPrintString()
         {
             using var writer = new StringWriter();
             this.WriteTo(writer);

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -30,7 +29,7 @@ namespace Panther.CodeAnalysis
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public void ReportInvalidNumber(TextLocation textSpan, string text, TypeSymbol type) =>
+        public void ReportInvalidNumber(TextLocation textSpan, string text, Type type) =>
             Report(textSpan, $"The number {text} isn't a valid '{type}'");
 
         public void ReportInvalidEscapeSequence(TextLocation location, in char current) =>
@@ -45,11 +44,11 @@ namespace Panther.CodeAnalysis
         public void ReportUnexpectedEndOfLineTrivia(TextLocation location) =>
             Report(location, $"Unexpected end of line trivia but none found");
 
-        public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol operandType) =>
+        public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, Type operandType) =>
             Report(location, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");
 
-        public void ReportUndefinedBinaryOperator(TextLocation location, string operatorText, TypeSymbol leftType,
-            TypeSymbol rightType) =>
+        public void ReportUndefinedBinaryOperator(TextLocation location, string operatorText, Type leftType,
+            Type rightType) =>
             Report(location, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'");
 
         public void ReportUndefinedName(TextLocation location, string name) =>
@@ -61,7 +60,7 @@ namespace Panther.CodeAnalysis
         public void ReportReassignmentToVal(TextLocation location, string name) =>
             Report(location, $"Reassignment to val '{name}'");
 
-        public void ReportTypeMismatch(TextLocation location, TypeSymbol expectedType, TypeSymbol foundType) =>
+        public void ReportTypeMismatch(TextLocation location, Type expectedType, Type foundType) =>
             Report(location, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
 
         public void ReportExpectedExpression(TextLocation location, SyntaxKind kind) =>
@@ -79,10 +78,10 @@ namespace Panther.CodeAnalysis
         public void ReportAmbiguousMethod(TextLocation location, string name, ImmutableArray<string> argumentTypes) =>
             Report(location, $"Ambiguous method '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
 
-        public void ReportCannotConvert(TextLocation location, TypeSymbol fromType, TypeSymbol toType) =>
+        public void ReportCannotConvert(TextLocation location, Type fromType, Type toType) =>
             Report(location, $"Cannot convert from '{fromType}' to '{toType}'");
 
-        public void ReportCannotConvertImplicitly(TextLocation location, TypeSymbol fromType, TypeSymbol toType) =>
+        public void ReportCannotConvertImplicitly(TextLocation location, Type fromType, Type toType) =>
             Report(location, $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?");
 
         public void ReportUndefinedType(TextLocation location, string name) =>
@@ -127,8 +126,8 @@ namespace Panther.CodeAnalysis
         public void ReportAmbiguousType(TextLocation location, string typeName) =>
             Report(location, $"Duplicate type '{typeName}' detected");
 
-        public void ReportMissingDefinition(TextLocation location, TypeSymbol type, string name) =>
-            Report(location, $"'{type.Name}' does not contain a definition for '{name}'");
+        public void ReportMissingDefinition(TextLocation location, Type type, string name) =>
+            Report(location, $"'{type}' does not contain a definition for '{name}'");
 
         public void ReportInvalidReference(string reference) =>
             Report(null, $"The specified reference is not valid: {reference}");

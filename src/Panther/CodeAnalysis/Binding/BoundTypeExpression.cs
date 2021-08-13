@@ -6,7 +6,7 @@ namespace Panther.CodeAnalysis.Binding
     /// <summary>
     /// Access a type in scope
     /// </summary>
-    internal record BoundTypeExpression(SyntaxNode Syntax, TypeSymbol Type) : BoundExpression(Syntax)
+    internal record BoundTypeExpression(SyntaxNode Syntax, Type Type) : BoundExpression(Syntax)
     {
         public override BoundNodeKind Kind => BoundNodeKind.TypeExpression;
     }

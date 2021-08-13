@@ -1,6 +1,7 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -9,7 +10,7 @@ namespace Panther.CodeAnalysis.Binding
         BoundExpression Right) : BoundExpression(Syntax)
     {
         public override BoundNodeKind Kind => BoundNodeKind.BinaryExpression;
-        public override TypeSymbol Type { get ; init; } = Operator.Type;
+        public override Type Type { get ; init; } = Operator.Type;
         public override BoundConstant? ConstantValue { get; } = ConstantFolding.ComputeConstant(Left, Operator, Right);
     }
 }

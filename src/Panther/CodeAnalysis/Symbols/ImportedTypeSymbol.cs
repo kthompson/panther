@@ -39,15 +39,14 @@ namespace Panther.CodeAnalysis.Symbols
             });
 
             _membersByName = new Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>>(() =>
-                GetMembers()
+                Members
                     .GroupBy(x => x.Name,
                         (key, symbols) =>
                             new KeyValuePair<string, ImmutableArray<Symbol>>(key, symbols.ToImmutableArray()))
                     .ToImmutableDictionary());
         }
 
-
-        public override ImmutableArray<Symbol> GetMembers() => _members.Value;
+        public override ImmutableArray<Symbol> Members => _members.Value;
 
         public override ImmutableArray<Symbol> GetMembers(string name) =>
             _membersByName.Value.TryGetValue(name, out var symbols)
@@ -79,23 +78,23 @@ namespace Panther.CodeAnalysis.Symbols
             );
         }
 
-        private static TypeSymbol? LookupTypeByMetadataName(string name)
+        private static Type? LookupTypeByMetadataName(string name)
         {
             // TODO: we need to look up types other than these
             if (name == typeof(object).FullName)
-                return TypeSymbol.Any;
+                return Type.Any;
 
             if (name == typeof(int).FullName)
-                return TypeSymbol.Int;
+                return Type.Int;
 
             if (name == typeof(bool).FullName)
-                return TypeSymbol.Bool;
+                return Type.Bool;
 
             if (name == typeof(string).FullName)
-                return TypeSymbol.String;
+                return Type.String;
 
             if (name == typeof(void).FullName)
-                return TypeSymbol.Unit;
+                return Type.Unit;
 
             return null;
         }

@@ -4,6 +4,7 @@ using System.IO;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -199,7 +200,8 @@ namespace Panther.CodeAnalysis.Binding
             writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
             writer.WriteIdentifier(node.Variable.Name);
             writer.WritePunctuation(": ");
-            writer.WriteKeyword(node.Variable.Type.Name);
+            // TODO: writer.WriteKeyword(node.Variable.Type.Name);
+            writer.WriteKeyword(node.Variable.Type.ToString());
             writer.WritePunctuation(" = ");
             node.Expression.WriteTo(writer);
             writer.WriteLine();
@@ -289,15 +291,15 @@ namespace Panther.CodeAnalysis.Binding
         private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
         {
             var value = node.Value.ToString() ?? "";
-            if (node.Type == TypeSymbol.Bool)
+            if (node.Type == Type.Bool)
             {
                 writer.WriteKeyword(value);
             }
-            else if (node.Type == TypeSymbol.Int)
+            else if (node.Type == Type.Int)
             {
                 writer.WriteNumber(value);
             }
-            else if (node.Type == TypeSymbol.String)
+            else if (node.Type == Type.String)
             {
                 writer.WriteString("\"" + value.Replace("\"", "\"\"") + "\"");
             }
@@ -359,7 +361,8 @@ namespace Panther.CodeAnalysis.Binding
 
         private static void WriteConversionExpression(BoundConversionExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.Type.Name);
+            //TODO: writer.WriteIdentifier(node.Type.Name);
+            writer.WriteIdentifier(node.Type.ToString());
             writer.WritePunctuation("(");
             node.Expression.WriteTo(writer);
             writer.WritePunctuation(")");

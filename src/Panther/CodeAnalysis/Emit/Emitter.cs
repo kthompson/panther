@@ -8,19 +8,19 @@ using Mono.Cecil.Rocks;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Emit
 {
     internal class Emitter
     {
-        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
+        private readonly DiagnosticBag _diagnostics = new();
 
-        private readonly Dictionary<TypeSymbol, TypeReference> _knownTypes = new Dictionary<TypeSymbol, TypeReference>();
-
-        private readonly Dictionary<TypeSymbol, TypeDefinition> _types = new Dictionary<TypeSymbol, TypeDefinition>();
-        private readonly Dictionary<MethodSymbol, MethodDefinition> _methods = new Dictionary<MethodSymbol, MethodDefinition>();
-        private readonly Dictionary<LocalVariableSymbol, VariableDefinition> _locals = new Dictionary<LocalVariableSymbol, VariableDefinition>();
-        private readonly Dictionary<FieldSymbol, FieldReference> _fields = new Dictionary<FieldSymbol, FieldReference>();
+        private readonly Dictionary<Symbol, TypeReference> _knownTypes = new();
+        private readonly Dictionary<Symbol, TypeDefinition> _types = new();
+        private readonly Dictionary<Symbol, MethodDefinition> _methods = new();
+        private readonly Dictionary<Symbol, VariableDefinition> _locals = new();
+        private readonly Dictionary<Symbol, FieldReference> _fields = new();
 
         private readonly AssemblyDefinition _assemblyDefinition;
 
@@ -32,13 +32,13 @@ namespace Panther.CodeAnalysis.Emit
         private readonly MethodReference? _convertToInt32;
         private readonly FieldReference? _unit;
 
-        private readonly Dictionary<FieldSymbol, FieldReference> _globals;
-        private readonly Dictionary<MethodSymbol, MethodReference> _methodReferences;
+        private readonly Dictionary<Symbol, FieldReference> _globals;
+        private readonly Dictionary<Symbol, MethodReference> _methodReferences;
 
-        private readonly Dictionary<BoundLabel, int> _labels = new Dictionary<BoundLabel, int>();
-        private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch = new List<(int InstructionIndex, BoundLabel Target)>();
+        private readonly Dictionary<BoundLabel, int> _labels = new();
+        private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch = new();
 
-        private Emitter(string moduleName, ImmutableArray<AssemblyDefinition> references, Dictionary<FieldSymbol, FieldReference>? previousFields = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
+        private Emitter(string moduleName, ImmutableArray<AssemblyDefinition> references, Dictionary<Symbol, FieldReference>? previousFields = null, Dictionary<Symbol, MethodReference>? previousMethods = null)
         {
             _typeCache = (
                 from asm in references
@@ -72,15 +72,15 @@ namespace Panther.CodeAnalysis.Emit
             }
 
             // import fields from previous compilation
-            _globals = (previousFields ?? new Dictionary<FieldSymbol, FieldReference>()).Select(kv =>
+            _globals = (previousFields ?? new Dictionary<Symbol, FieldReference>()).Select(kv =>
                     (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
                 .ToDictionary(kv => kv.Item1, kv => kv.Item2);
 
-            _methodReferences = (previousMethods ?? new Dictionary<MethodSymbol, MethodReference>()).Select(kv =>
+            _methodReferences = (previousMethods ?? new Dictionary<Symbol, MethodReference>()).Select(kv =>
                     (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
                 .ToDictionary(kv => kv.Item1, kv => kv.Item2);
 
-            _voidType = ResolveBuiltinType("unit", "System.Void");
+            _voidType = ResolveBuiltinType(TypeSymbol.Unit.Name, "System.Void");
 
             _stringConcatReference = ResolveMethod("System.String", "Concat", new[] { "System.String", "System.String" });
 
@@ -91,15 +91,15 @@ namespace Panther.CodeAnalysis.Emit
             _unit = ResolveField("Panther.Unit", "Default");
         }
 
-        private TypeReference LookupType(TypeSymbol symbol) =>
+        private TypeReference LookupType(Symbol symbol) =>
             _knownTypes.TryGetValue(symbol, out var knownType) ? knownType : _types[symbol];
 
-        public static EmitResult Emit(BoundAssembly assembly, string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference>? previousGlobals = null, Dictionary<MethodSymbol, MethodReference>? previousMethods = null)
+        public static EmitResult Emit(BoundAssembly assembly, string moduleName, string outputPath, Dictionary<Symbol, FieldReference>? previousGlobals = null, Dictionary<Symbol, MethodReference>? previousMethods = null)
         {
             if (assembly.Diagnostics.Any())
                 return new EmitResult(assembly.Diagnostics,
-                    previousGlobals ?? new Dictionary<FieldSymbol, FieldReference>(),
-                    previousMethods ?? new Dictionary<MethodSymbol, MethodReference>(), null);
+                    previousGlobals ?? new Dictionary<Symbol, FieldReference>(),
+                    previousMethods ?? new Dictionary<Symbol, MethodReference>(), null);
 
             var emitter = new Emitter(moduleName, assembly.References, previousGlobals, previousMethods);
             return emitter.Emit(assembly, outputPath);
@@ -112,8 +112,6 @@ namespace Panther.CodeAnalysis.Emit
 
             // ensure all functions exist first so we can reference them
             // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
-            // TODO: this is probably wrong now, the functions will be in scope even though they shouldn't be
-            // unless we have an import
             foreach (var type in assembly.Types)
             {
                 EmitTypeDeclaration(type);
@@ -126,9 +124,9 @@ namespace Panther.CodeAnalysis.Emit
                 _fields.Clear();
                 var fieldAttributes = (type.Flags & SymbolFlags.Object) != 0 ? FieldAttributes.Public | FieldAttributes.Static : FieldAttributes.Public;
                 var defaultType = type.Name == "$Program";
-                foreach (var fieldMember in type.GetFieldMembers())
+                foreach (var fieldMember in type.Fields)
                 {
-                    var fieldType = LookupType(fieldMember.Type);
+                    var fieldType = LookupType((TypeSymbol)fieldMember.Type.Symbol);
                     var field = new FieldDefinition(fieldMember.Name, fieldAttributes, fieldType);
                     _fields[fieldMember] = field;
                     if (defaultType)
@@ -145,8 +143,9 @@ namespace Panther.CodeAnalysis.Emit
                     typeDef.Fields.Add(field);
                 }
 
-                foreach (var (functionSignature, boundBlockExpression) in type.MethodDefinitions)
+                foreach (var functionSignature in type.Methods)
                 {
+                    var boundBlockExpression = assembly.MethodDefinitions[functionSignature];
                     EmitFunctionBody(typeDef, functionSignature, boundBlockExpression);
                 }
             }
@@ -161,14 +160,15 @@ namespace Panther.CodeAnalysis.Emit
             return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, _assemblyDefinition);
         }
 
-        private void EmitTypeDeclaration(BoundType type)
+        private void EmitTypeDeclaration(Symbol type)
         {
             var objectType = _knownTypes[TypeSymbol.Any];
 
             // TODO keep track of current namespace
             var typeDef = new TypeDefinition("", type.Name, TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Public, objectType);
 
-            foreach (var functionSignature in type.MethodDefinitions.Keys.OrderBy(x => x.Name))
+            // PERF: this order by isn't necessary but its here so that tests pass
+            foreach (var functionSignature in type.Methods.OrderBy(x => x.Name))
             {
                 EmitFunctionDeclaration(typeDef, functionSignature);
             }
@@ -177,10 +177,10 @@ namespace Panther.CodeAnalysis.Emit
             _assemblyDefinition.MainModule.Types.Add(typeDef);
         }
 
-        private void EmitFunctionDeclaration(TypeDefinition declaringType, MethodSymbol method)
+        private void EmitFunctionDeclaration(TypeDefinition declaringType, Symbol method)
         {
             var type = method.ReturnType;
-            var returnType = type == TypeSymbol.Unit ? _voidType : LookupType(type);
+            var returnType = type == Type.Unit ? _voidType : LookupType(type.Symbol);
             var isStatic = (method.Flags & SymbolFlags.Static) != 0;
             var methodAttributes = isStatic
                 ? MethodAttributes.Static | MethodAttributes.Public
@@ -188,7 +188,7 @@ namespace Panther.CodeAnalysis.Emit
             var methodDefinition = new MethodDefinition(method.Name, methodAttributes, returnType);
             var methodParams =
                 from parameter in method.Parameters
-                let paramType = LookupType(parameter.Type)
+                let paramType = LookupType(parameter.Type.Symbol)
                 select new ParameterDefinition(parameter.Name, ParameterAttributes.None, paramType);
 
             if (!isStatic)
@@ -205,7 +205,7 @@ namespace Panther.CodeAnalysis.Emit
             declaringType.Methods.Add(methodDefinition);
         }
 
-        private void EmitFunctionBody(TypeDefinition declaringType, MethodSymbol method, BoundBlockExpression block)
+        private void EmitFunctionBody(TypeDefinition declaringType, Symbol method, BoundBlockExpression block)
         {
             var methodDefinition = _methods[method];
             var ilProcessor = methodDefinition.Body.GetILProcessor();
@@ -218,13 +218,13 @@ namespace Panther.CodeAnalysis.Emit
                 EmitStatement(declaringType, ilProcessor, statement);
 
             // only emit block's expression if its a non-unit expression or we are not void
-            if (block.Expression.Kind != BoundNodeKind.UnitExpression || method.ReturnType != TypeSymbol.Unit)
+            if (block.Expression.Kind != BoundNodeKind.UnitExpression || method.ReturnType != Type.Unit)
             {
                 // emit expression
                 EmitExpression(ilProcessor, block.Expression);
 
                 // pop non-unit expressions off the stack for unit functions
-                if (block.Expression.Type != TypeSymbol.Unit && method.ReturnType == TypeSymbol.Unit)
+                if (block.Expression.Type != Type.Unit && method.ReturnType == Type.Unit)
                     ilProcessor.Emit(OpCodes.Pop);
             }
 
@@ -285,55 +285,56 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitAssignmentStatement(ILProcessor ilProcessor, BoundAssignmentStatement assignmentStatement)
         {
-
-            switch (assignmentStatement.Variable)
+            if ((assignmentStatement.Variable.Flags & SymbolFlags.Field) != 0)
             {
-                case FieldSymbol globalVariableSymbol:
-                    var fieldReference = _fields[globalVariableSymbol];
-                    var field = fieldReference.Resolve();
-                    var isStatic = (field.Attributes & FieldAttributes.Static) != 0;
-                    if (isStatic)
-                    {
-                        EmitExpression(ilProcessor, assignmentStatement.Expression);
-                        ilProcessor.Emit(OpCodes.Stsfld, fieldReference);
-                    }
-                    else
-                    {
-                        ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
-                        // load our value to assign
-                        EmitExpression(ilProcessor, assignmentStatement.Expression);
-                        // perform: this.fieldReference = value
-                        ilProcessor.Emit(OpCodes.Stfld, fieldReference);
-                    }
-
-                    break;
-
-                case LocalVariableSymbol localVariableSymbol:
+                var fieldReference = _fields[assignmentStatement.Variable];
+                var field = fieldReference.Resolve();
+                var isStatic = (field.Attributes & FieldAttributes.Static) != 0;
+                if (isStatic)
+                {
                     EmitExpression(ilProcessor, assignmentStatement.Expression);
+                    ilProcessor.Emit(OpCodes.Stsfld, fieldReference);
+                }
+                else
+                {
+                    ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
+                    // load our value to assign
+                    EmitExpression(ilProcessor, assignmentStatement.Expression);
+                    // perform: this.fieldReference = value
+                    ilProcessor.Emit(OpCodes.Stfld, fieldReference);
+                }
+            }
+            else if(assignmentStatement.Variable is LocalVariableSymbol or {IsLocal: true})
+            {
+                EmitExpression(ilProcessor, assignmentStatement.Expression);
 
-                    ilProcessor.Emit(OpCodes.Stloc, _locals[localVariableSymbol]);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
+                ilProcessor.Emit(OpCodes.Stloc, _locals[assignmentStatement.Variable]);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException();
             }
         }
 
         private void EmitVariableDeclarationStatement(TypeDefinition declaringType, ILProcessor ilProcessor, BoundVariableDeclarationStatement variableDeclarationStatement)
         {
             var pantherVar = variableDeclarationStatement.Variable;
-            var variableType = LookupType(pantherVar.Type);
+            var variableType = LookupType(pantherVar.Type.Symbol);
+            if (pantherVar.IsField)
+            {
+                // TODO: figure out reassignment in case where type changes
+                var field = _fields[pantherVar];
+                EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
+                ilProcessor.Emit(pantherVar.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, field);
+
+                return;
+            }
+
+
             switch (pantherVar)
             {
-                case FieldSymbol globalVariableSymbol:
-                    // TODO: figure out reassignment in case where type changes
-                    var field = _fields[globalVariableSymbol];
-                    EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
-                    ilProcessor.Emit(OpCodes.Stsfld, field);
-
-                    break;
-
                 case LocalVariableSymbol localVariableSymbol:
+                {
                     if (!_locals.ContainsKey(localVariableSymbol))
                     {
                         var variableDef = new VariableDefinition(variableType);
@@ -348,8 +349,27 @@ namespace Panther.CodeAnalysis.Emit
                     ilProcessor.Emit(OpCodes.Stloc, index);
 
                     break;
+                }
 
+                case {IsLocal: true} or {IsParameter: true}:
+                {
+                    if (!_locals.ContainsKey(pantherVar))
+                    {
+                        var variableDef = new VariableDefinition(variableType);
+                        _locals[pantherVar] = variableDef;
+
+                        ilProcessor.Body.Variables.Add(variableDef);
+                    }
+
+                    var index = _locals[pantherVar].Index;
+
+                    EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
+                    ilProcessor.Emit(OpCodes.Stloc, index);
+
+                    break;
+                }
                 default:
+
                     throw new ArgumentOutOfRangeException();
             }
         }
@@ -380,7 +400,7 @@ namespace Panther.CodeAnalysis.Emit
 
             // pop non-unit expressions off the stack as their result wont be used
             // unit expression have no result on the stack
-            if (expressionStatement.Expression.Type != TypeSymbol.Unit)
+            if (expressionStatement.Expression.Type != Type.Unit)
                 ilProcessor.Emit(OpCodes.Pop);
         }
 
@@ -425,15 +445,15 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitConstantExpression(ILProcessor ilProcessor, BoundExpression node, BoundConstant constant)
         {
-            if (node.Type == TypeSymbol.Bool)
+            if (node.Type == Type.Bool)
             {
                 ilProcessor.Emit((bool)constant.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
             }
-            else if (node.Type == TypeSymbol.Int)
+            else if (node.Type == Type.Int)
             {
                 ilProcessor.Emit(OpCodes.Ldc_I4, (int)constant.Value);
             }
-            else if (node.Type == TypeSymbol.String)
+            else if (node.Type == Type.String)
             {
                 ilProcessor.Emit(OpCodes.Ldstr, (string)constant.Value);
             }
@@ -453,11 +473,11 @@ namespace Panther.CodeAnalysis.Emit
             {
                 case BoundBinaryOperatorKind.Addition:
                     // string or int
-                    if (@operator.LeftType == TypeSymbol.String)
+                    if (@operator.LeftType == Type.String)
                     {
                         ilProcessor.Emit(OpCodes.Call, _stringConcatReference);
                     }
-                    else if (@operator.LeftType == TypeSymbol.Int)
+                    else if (@operator.LeftType == Type.Int)
                     {
                         ilProcessor.Emit(OpCodes.Add);
                     }
@@ -563,11 +583,16 @@ namespace Panther.CodeAnalysis.Emit
             {
                 ilProcessor.Emit(OpCodes.Call, methodRef);
             }
+            else if (callExpression.Method.IsConstructor &&
+                     _types.TryGetValue(callExpression.Method.Owner, out var type))
+            {
+                ilProcessor.Emit(OpCodes.Newobj, type);
+            }
             else
             {
                 // search for the method in Predef for now
                 var methodReference = ResolveMethod("Panther.Predef", callExpression.Method.Name,
-                    callExpression.Method.Parameters.Select(p => LookupType(p.Type).FullName).ToArray());
+                    callExpression.Method.Parameters.Select(p => LookupType(p.Type.Symbol).FullName).ToArray());
 
                 if (methodReference != null)
                 {
@@ -583,42 +608,42 @@ namespace Panther.CodeAnalysis.Emit
 
             var fromType = conversionExpression.Expression.Type;
             var toType = conversionExpression.Type;
-            if (toType == TypeSymbol.String)
+            if (toType == Type.String)
             {
-                if (fromType == TypeSymbol.Bool)
+                if (fromType == Type.Bool)
                 {
                     ilProcessor.Emit(OpCodes.Call, _convertBoolToString);
                     return;
                 }
 
-                if (fromType == TypeSymbol.Int)
+                if (fromType == Type.Int)
                 {
                     ilProcessor.Emit(OpCodes.Call, _convertInt32ToString);
                     return;
                 }
             }
 
-            if (toType == TypeSymbol.Any)
+            if (toType == Type.Any)
             {
-                if (fromType == TypeSymbol.Bool)
+                if (fromType == Type.Bool)
                 {
                     ilProcessor.Emit(OpCodes.Box, _knownTypes[TypeSymbol.Bool]);
                     return;
                 }
 
-                if (fromType == TypeSymbol.Int)
+                if (fromType == Type.Int)
                 {
                     ilProcessor.Emit(OpCodes.Box, _knownTypes[TypeSymbol.Int]);
                     return;
                 }
 
-                if (fromType == TypeSymbol.String)
+                if (fromType == Type.String)
                 {
                     // no conversion required
                     return;
                 }
 
-                if (fromType == TypeSymbol.Unit)
+                if (fromType == Type.Unit)
                 {
                     // pop the expression if it was a ()
                     ilProcessor.Emit(OpCodes.Pop);
@@ -627,9 +652,9 @@ namespace Panther.CodeAnalysis.Emit
                 }
             }
 
-            if (toType == TypeSymbol.Int)
+            if (toType == Type.Int)
             {
-                if (fromType == TypeSymbol.String)
+                if (fromType == Type.String)
                 {
                     ilProcessor.Emit(OpCodes.Call, _convertToInt32);
                     return;
@@ -673,24 +698,26 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitVariableExpression(ILProcessor ilProcessor, BoundVariableExpression variableExpression)
         {
-            switch (variableExpression.Variable)
+            var variable = variableExpression.Variable;
+            switch (variable)
             {
-                case FieldSymbol globalVariableSymbol:
-                    var fieldReference = _fields.TryGetValue(globalVariableSymbol, out var field)
+                case ParameterSymbol or { IsParameter: true }:
+                    ilProcessor.Emit(OpCodes.Ldarg, variable.Index);
+                    break;
+
+                case LocalVariableSymbol or { IsLocal: true }:
+                    ilProcessor.Emit(OpCodes.Ldloc, _locals[variable]);
+                    break;
+
+                case {IsField: true}:
+                    var fieldReference = _fields.TryGetValue(variable, out var field)
                         ? field
-                        : _globals[globalVariableSymbol];
-                    var isStatic = (globalVariableSymbol.Flags & SymbolFlags.Static) != 0;
-
-                    ilProcessor.Emit(isStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, fieldReference);
+                        : _globals[variable];
+                    ilProcessor.Emit(variable.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, fieldReference);
                     break;
 
-                case ParameterSymbol parameterSymbol:
-                    ilProcessor.Emit(OpCodes.Ldarg, parameterSymbol.Index);
-                    break;
-
-                case LocalVariableSymbol localVariableSymbol:
-                    ilProcessor.Emit(OpCodes.Ldloc, _locals[localVariableSymbol]);
-                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(variable));
             }
         }
 

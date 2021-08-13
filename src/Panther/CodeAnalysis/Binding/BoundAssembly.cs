@@ -9,7 +9,9 @@ namespace Panther.CodeAnalysis.Binding
         BoundAssembly? Previous,
         ImmutableArray<Diagnostic> Diagnostics,
         EntryPoint? EntryPoint,
-        ImmutableArray<BoundType> Types,
+        BoundType DefaultType,
+        ImmutableArray<Symbol> Types,
+        ImmutableDictionary<Symbol, BoundBlockExpression> MethodDefinitions,
         ImmutableArray<AssemblyDefinition> References
     );
 }

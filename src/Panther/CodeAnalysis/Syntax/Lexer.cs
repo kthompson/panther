@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Syntax
 {
@@ -286,7 +287,7 @@ namespace Panther.CodeAnalysis.Syntax
                 _diagnostics.ReportInvalidNumber(
                     new TextLocation(_file, new TextSpan(start, _position - start)),
                     span.AsSpan().ToString(),
-                    TypeSymbol.Int);
+                    Type.Int);
 
             return (SyntaxKind.NumberToken, start, span, value);
         }

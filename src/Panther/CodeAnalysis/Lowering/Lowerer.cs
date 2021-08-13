@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Microsoft.VisualBasic;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Lowering
 {
@@ -38,7 +38,7 @@ namespace Panther.CodeAnalysis.Lowering
         private BoundLabel GenerateLabel(string tag, LabelToken token) =>
             new BoundLabel($"{tag}Label{(int)token}");
 
-        private VariableSymbol GenerateVariable(TypeSymbol type)
+        private VariableSymbol GenerateVariable(Type type)
         {
             _variableCount++;
             return new LocalVariableSymbol($"variable${_variableCount}", false, type, null);
@@ -225,7 +225,7 @@ namespace Panther.CodeAnalysis.Lowering
 
             var condition = new BoundBinaryExpression(node.Syntax,
                 new BoundVariableExpression(node.Syntax, node.Variable),
-                BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, TypeSymbol.Int, TypeSymbol.Int),
+                BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, Type.Int, Type.Int),
                 upperBound
             );
             var continueLabelStatement = new BoundLabelStatement(node.Syntax, node.ContinueLabel);
@@ -234,7 +234,7 @@ namespace Panther.CodeAnalysis.Lowering
                 new BoundAssignmentExpression(node.Syntax, node.Variable, new BoundBinaryExpression(
                     node.Syntax,
                     new BoundVariableExpression(node.Syntax, node.Variable),
-                    BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, TypeSymbol.Int, TypeSymbol.Int),
+                    BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, Type.Int, Type.Int),
                     new BoundLiteralExpression(node.Syntax, 1)
                 )));
             var whileBody = new BoundBlockExpression(

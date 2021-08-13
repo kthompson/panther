@@ -7,7 +7,7 @@ namespace Panther.CodeAnalysis.Binding
         : BoundExpression(Syntax)
     {
         public override BoundNodeKind Kind => BoundNodeKind.UnaryExpression;
-        public override TypeSymbol Type { get ; init; } = Operator.Type;
+        public override Type Type { get ; init; } = Operator.Type;
         public override BoundConstant? ConstantValue { get; } = ConstantFolding.ComputeConstant(Operator, Operand);
     }
 }

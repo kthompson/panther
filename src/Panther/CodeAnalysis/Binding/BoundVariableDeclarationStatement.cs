@@ -6,11 +6,11 @@ namespace Panther.CodeAnalysis.Binding
 {
     internal record BoundVariableDeclarationStatement : BoundStatement
     {
-        public VariableSymbol Variable { get; }
+        public Symbol Variable { get; }
         public BoundExpression Expression { get; }
         public override BoundNodeKind Kind => BoundNodeKind.VariableDeclarationStatement;
 
-        public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression)
+        public BoundVariableDeclarationStatement(SyntaxNode syntax, Symbol variable, BoundExpression expression)
             : base(syntax)
         {
             Variable = variable;
