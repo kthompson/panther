@@ -1,5 +1,6 @@
 ﻿using System;
 using Panther.CodeAnalysis.Symbols;
+using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
@@ -59,22 +60,22 @@ namespace Panther.CodeAnalysis.Binding
             switch (@operator.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
-                    return new BoundConstant(left.Type == TypeSymbol.Int
+                    return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue + (int)rightValue
                         : (object)((string)leftValue + (string)rightValue));
 
                 case BoundBinaryOperatorKind.BitwiseAnd:
-                    return new BoundConstant(left.Type == TypeSymbol.Int
+                    return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue & (int)rightValue
                         : (object)((bool)leftValue & (bool)rightValue));
 
                 case BoundBinaryOperatorKind.BitwiseOr:
-                    return new BoundConstant(left.Type == TypeSymbol.Int
+                    return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue | (int)rightValue
                         : (object)((bool)leftValue | (bool)rightValue));
 
                 case BoundBinaryOperatorKind.BitwiseXor:
-                    return new BoundConstant(left.Type == TypeSymbol.Int
+                    return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue ^ (int)rightValue
                         : (object)((bool)leftValue ^ (bool)rightValue));
 

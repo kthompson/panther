@@ -104,12 +104,23 @@
 	.method public static
 		void main () cil managed
 	{
-		// Method begins at RVA 0x2099
-		// Code size 1 (0x1)
-		.maxstack 8
+		// Method begins at RVA 0x209c
+		// Code size 14 (0xe)
+		.maxstack 2
 		.entrypoint
+		.locals (
+		[0] int32,
+		[1] int32
+		)
 
-		IL_0000: ret
+		IL_0000: ldc.i4.s 10
+		IL_0002: stloc.0
+		IL_0003: ldc.i4.s 20
+		IL_0005: stloc.1
+		IL_0006: ldloc.0
+		IL_0007: ldloc.1
+		IL_0008: call instance void Point::.ctor(int32, int32)
+		IL_000d: ret
 	} // end of method $Program::main
 
 } // end of class $Program

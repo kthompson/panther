@@ -6,7 +6,7 @@ namespace Panther.CodeAnalysis.Binding
 {
     sealed record BoundMethodExpression : BoundNode
     {
-        public BoundMethodExpression(SyntaxNode syntax, string name, ImmutableArray<MethodSymbol> methods)
+        public BoundMethodExpression(SyntaxNode syntax, string name, ImmutableArray<Symbol> methods)
             : base(syntax)
         {
             Name = name;
@@ -14,7 +14,7 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public string Name { get; }
-        public ImmutableArray<MethodSymbol> Methods { get; }
+        public ImmutableArray<Symbol> Methods { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.MethodExpression;
     }

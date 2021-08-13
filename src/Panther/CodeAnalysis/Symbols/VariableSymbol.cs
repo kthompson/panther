@@ -4,16 +4,19 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {
+    [Obsolete]
     public abstract class VariableSymbol : Symbol
     {
-        public bool IsReadOnly { get; }
-        public TypeSymbol Type { get; }
         internal BoundConstant? ConstantValue { get; }
 
-        internal VariableSymbol(string name, bool isReadOnly, TypeSymbol type, BoundConstant? constantValue)
+        internal VariableSymbol(string name, bool isReadOnly, Type type, BoundConstant? constantValue)
             : base(Symbol.None, TextLocation.None, name)
         {
-            IsReadOnly = isReadOnly;
+            if(isReadOnly)
+            {
+                this.Flags |= SymbolFlags.Readonly;
+            }
+
             Type = type;
             ConstantValue = isReadOnly ? constantValue : null;
         }

@@ -1,5 +1,4 @@
-﻿using System;
-using Panther.CodeAnalysis.Symbols;
+﻿using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
@@ -12,6 +11,6 @@ namespace Panther.CodeAnalysis.Binding
 
         public override BoundNodeKind Kind => BoundNodeKind.UnitExpression;
 
-        public override TypeSymbol Type { get; init; } = TypeSymbol.Unit;
+        public override Type Type { get; init; } = Type.Unit;
     }
 }

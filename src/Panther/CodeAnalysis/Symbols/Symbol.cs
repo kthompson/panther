@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -8,29 +6,29 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols
 {
-    [Flags]
-    public enum SymbolFlags
-    {
-        None = 0,
-        Namespace = 1,
-        Object = 1 << 1,
-        Class = 1 << 2,
-        Method = 1 << 3,
-        Static = 1 << 4, // methods and fields
-    }
-
     public abstract class Symbol
     {
         public SymbolFlags Flags { get; set; }
         public string Name { get; }
 
         public virtual bool IsRoot => false;
-        public virtual bool IsType => false;
-        public virtual bool IsNamespace => this.Flags.HasFlag(SymbolFlags.Namespace);
-        public virtual bool IsClass => this.Flags.HasFlag(SymbolFlags.Class);
-        public virtual bool IsObject => this.Flags.HasFlag(SymbolFlags.Object);
+        public bool IsType => IsClass || IsObject;
+        public bool IsNamespace => this.Flags.HasFlag(SymbolFlags.Namespace);
+        public bool IsClass => this.Flags.HasFlag(SymbolFlags.Class);
+        public bool IsObject => this.Flags.HasFlag(SymbolFlags.Object);
+        public bool IsMethod => this.Flags.HasFlag(SymbolFlags.Method);
+        public bool IsConstructor => this.Name == ".ctor";
+        public bool IsField => this.Flags.HasFlag(SymbolFlags.Field);
+        public bool IsParameter => this.Flags.HasFlag(SymbolFlags.Parameter);
+        public bool IsLocal => this.Flags.HasFlag(SymbolFlags.Local);
+        public bool IsValue => IsLocal || IsParameter || IsField;
+
+        public bool IsStatic => this.Flags.HasFlag(SymbolFlags.Static);
+        public bool IsReadOnly => this.Flags.HasFlag(SymbolFlags.Readonly);
 
         public virtual Symbol Owner { get; }
+        public int Index { get; set; } = 0;
+        public Type Type { get; set; } = Type.Unresolved;
         public virtual TextLocation Location { get; }
 
         protected Symbol(Symbol? owner, TextLocation location, string name)
@@ -38,7 +36,8 @@ namespace Panther.CodeAnalysis.Symbols
             Owner = owner ?? this;
             Name = name;
             Location = location;
-            _symbols = new Dictionary<string, ImmutableArray<Symbol>>();
+            _symbolMap = new Dictionary<string, ImmutableArray<Symbol>>();
+            _symbols = new List<Symbol>();
         }
 
         public override string ToString()
@@ -61,62 +60,99 @@ namespace Panther.CodeAnalysis.Symbols
         public Symbol NewNamespace(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Namespace);
         public Symbol NewClass(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Class);
         public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Object);
+        public Symbol NewField(TextLocation location, string name, bool isReadOnly) =>
+            new TermSymbol(this, location, name)
+                .WithFlags(SymbolFlags.Field| (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
 
-        private readonly Dictionary<string, ImmutableArray<Symbol>> _symbols;
-        // public virtual ImmutableArray<Symbol> Parameters => GetMembers<ParameterSymbol>();
+        public Symbol NewMethod(TextLocation location, string name) =>
+            new TermSymbol(this, location, name).WithFlags(SymbolFlags.Method);
 
-        public virtual bool DefineSymbol(Symbol symbol)
+        public Symbol NewParameter(TextLocation location, string name, int index) =>
+            new TermSymbol(this, location, name) { Index = index }.WithFlags(SymbolFlags.Parameter | SymbolFlags.Readonly);
+
+        public Symbol NewLocal(TextLocation location, string name, bool isReadOnly) =>
+            new TermSymbol(this, location, name)
+                .WithFlags(SymbolFlags.Local | (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
+
+        private readonly Dictionary<string, ImmutableArray<Symbol>> _symbolMap;
+        private readonly List<Symbol> _symbols;
+
+        public bool DefineSymbol(Symbol symbol)
         {
             // only one field symbol per name
-            if (symbol is FieldSymbol)
+            if ((symbol.Flags & SymbolFlags.Field) != 0)
             {
-                if (_symbols.ContainsKey(symbol.Name))
+                if (_symbolMap.ContainsKey(symbol.Name))
                     return false;
 
-                _symbols.Add(symbol.Name, ImmutableArray.Create(symbol));
+                _symbolMap.Add(symbol.Name, ImmutableArray.Create(symbol));
+                _symbols.Add(symbol);
                 return true;
             }
 
-            if (_symbols.TryGetValue(symbol.Name, out var symbols))
+            if (_symbolMap.TryGetValue(symbol.Name, out var symbols))
             {
-                _symbols[symbol.Name] = symbols.Add(symbol);
+                _symbolMap[symbol.Name] = symbols.Add(symbol);
+                _symbols.Add(symbol);
                 return true;
             }
 
-            _symbols.Add(symbol.Name, ImmutableArray.Create(symbol));
+            _symbolMap.Add(symbol.Name, ImmutableArray.Create(symbol));
+            _symbols.Add(symbol);
             return true;
         }
 
-        public virtual ImmutableArray<TypeSymbol> GetTypeMembers() =>
-            GetMembers().OfType<TypeSymbol>().ToImmutableArray();
+        public ImmutableArray<Symbol> Parameters =>
+            Members.Where(m => m.IsParameter).ToImmutableArray();
+
+        public virtual ImmutableArray<Symbol> Methods =>
+            Members.Where(sym => sym.IsMethod).ToImmutableArray();
+
+        public virtual ImmutableArray<Symbol> Fields =>
+            Members.Where(sym => sym.IsField).ToImmutableArray();
+
+        public virtual ImmutableArray<Symbol> Types =>
+            Members.Where(m => m.IsType).ToImmutableArray();
 
         public virtual ImmutableArray<TypeSymbol> GetTypeMembers(string name) =>
             GetMembers(name).OfType<TypeSymbol>().ToImmutableArray();
 
-        public virtual ImmutableArray<FieldSymbol> GetFieldMembers() =>
-            GetMembers().OfType<FieldSymbol>().ToImmutableArray();
+        public virtual ImmutableArray<Symbol> Members => _symbols.ToImmutableArray();
+        public Type ReturnType
+        {
+            get
+            {
+                if (Type is MethodType m)
+                {
+                    return m.ResultType;
+                }
 
-        ImmutableArray<Symbol> GetMembers<T>() where T : Symbol =>
-            GetMembers().Where(symbol => symbol is T).ToImmutableArray();
-
-        public virtual ImmutableArray<Symbol> GetMembers() =>
-            (from symbolList in _symbols.Values
-                from symbol in symbolList
-                select symbol).ToImmutableArray();
+                return Type;
+            }
+        }
 
         public virtual ImmutableArray<Symbol> GetMembers(string name) =>
-            _symbols.TryGetValue(name, out var symbols)
+            _symbolMap.TryGetValue(name, out var symbols)
                 ? symbols
                 : ImmutableArray<Symbol>.Empty;
+
+        public VariableSymbol? LookupVariable(string name) =>
+            GetMembers(name).OfType<VariableSymbol>().FirstOrDefault();
+
+        public TypeSymbol? LookupType(string name) =>
+            GetMembers(name).OfType<TypeSymbol>().FirstOrDefault();
+
+        public Symbol? LookupMethod(string name) =>
+            GetMembers(name).FirstOrDefault(m => m.IsMethod);
 
         private sealed class RootSymbol : Symbol
         {
             public override Symbol Owner => this;
-            // public override Type Type => Type.NoType;
             public override bool IsRoot => true;
 
             public RootSymbol() : base(null, TextLocation.None,  "global::")
             {
+                this.Type = Type.NoType;
             }
         }
 
@@ -124,9 +160,8 @@ namespace Panther.CodeAnalysis.Symbols
         {
             public NoSymbol() : base(null, TextLocation.None, "<none>")
             {
+                this.Type = Type.NoType;
             }
-
-            // public override Type Type => Type.NoType;
         }
 
         private sealed class TermSymbol : Symbol
@@ -135,90 +170,22 @@ namespace Panther.CodeAnalysis.Symbols
                 : base(owner, location, name)
             {
             }
-            // public override Type Type => Type.NoType;
         }
-    }
 
-    public static class SymbolExtensions
-    {
-        public static T WithFlags<T>(this T symbol, SymbolFlags flags) where T : Symbol
+        /// <summary>
+        /// An alias symbol is one like `string` that really represents the System.String
+        ///
+        /// Also allows us to rename something such as:
+        /// type u64 = System.UInt64
+        /// </summary>
+        private sealed class AliasSymbol : Symbol
         {
-            symbol.Flags = flags;
-            return symbol;
-        }
-    }
-
-    /// <summary>
-    /// An alias symbol is one like `string` that really represents the System.String
-    /// </summary>
-    public class AliasSymbol : Symbol
-    {
-        public Symbol Target { get; }
-        public AliasSymbol(Symbol owner, TextLocation location, string name, Symbol target)
-            : base(owner, location, name)
-        {
-            Target = target;
-        }
-    }
-
-    internal class EmptySymbolScope : SymbolScope
-    {
-        public override void DefineSymbol<A>(A symbol)
-        {
-            throw new InvalidOperationException($"cannot define symbol on {nameof(EmptySymbolScope)}");
-        }
-    }
-
-    internal class SymbolScope : IEnumerable<Symbol>
-    {
-        private readonly Dictionary<string, ImmutableArray<Symbol>> _symbols = new Dictionary<string, ImmutableArray<Symbol>>();
-
-        public bool DefineSymbolUnique<A>(A symbol) where A : Symbol
-        {
-            if (Lookup(symbol.Name) != Symbol.None)
+            public Symbol Target { get; }
+            public AliasSymbol(Symbol owner, TextLocation location, string name, Symbol target)
+                : base(owner, location, name)
             {
-                return false;
+                Target = target;
             }
-
-            DefineSymbol(symbol);
-            return true;
-        }
-
-        public virtual void DefineSymbol<A>(A symbol) where A : Symbol
-        {
-            if (_symbols.TryGetValue(symbol.Name, out var symbols))
-            {
-                _symbols[symbol.Name] = symbols.Add(symbol);
-                return;
-            }
-
-            _symbols.Add(symbol.Name, ImmutableArray.Create<Symbol>(symbol));
-        }
-
-        public ImmutableArray<Symbol> LookupAll(string name) =>
-            _symbols.TryGetValue(name, out var symbols)
-                ? symbols
-                : ImmutableArray<Symbol>.Empty;
-
-        public Symbol Lookup(string name) =>
-            (_symbols.TryGetValue(name, out var symbols))
-                ? symbols.First()
-                : Symbol.None;
-
-        public IEnumerator<Symbol> GetEnumerator()
-        {
-            foreach (var symbols in _symbols)
-            {
-                foreach (var symbol in symbols.Value)
-                {
-                    yield return symbol;
-                }
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }

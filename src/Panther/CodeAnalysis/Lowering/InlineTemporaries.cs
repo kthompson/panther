@@ -7,7 +7,7 @@ namespace Panther.CodeAnalysis.Lowering
 {
     internal sealed class InlineTemporaries : BoundStatementListRewriter
     {
-        private readonly Dictionary<VariableSymbol, BoundExpression> _expressionsToInline = new Dictionary<VariableSymbol, BoundExpression>();
+        private readonly Dictionary<Symbol, BoundExpression> _expressionsToInline = new Dictionary<Symbol, BoundExpression>();
 
         private InlineTemporaries()
         {

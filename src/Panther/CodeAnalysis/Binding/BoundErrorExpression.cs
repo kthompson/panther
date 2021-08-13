@@ -11,6 +11,6 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.ErrorExpression;
-        public override TypeSymbol Type { get ; init; } = TypeSymbol.Error;
+        public override Type Type { get ; init; } = Type.Error;
     }
 }

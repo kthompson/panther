@@ -1,5 +1,4 @@
-﻿using System;
-using Panther.CodeAnalysis.Symbols;
+﻿using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
@@ -10,10 +9,10 @@ namespace Panther.CodeAnalysis.Binding
         {
             Type = value switch
             {
-                int _ => TypeSymbol.Int,
-                bool _ => TypeSymbol.Bool,
-                string _ => TypeSymbol.String,
-                _ => throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}"),
+                int _ => Type.Int,
+                bool _ => Type.Bool,
+                string _ => Type.String,
+                _ => throw new System.Exception($"Unexpected literal '{value}' of type {value.GetType()}"),
             };
 
             ConstantValue = new BoundConstant(value);
@@ -22,7 +21,7 @@ namespace Panther.CodeAnalysis.Binding
         public object Value => ConstantValue.Value;
 
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
-        public override TypeSymbol Type { get ; init; }
+        public override Type Type { get ; init; }
         public override BoundConstant ConstantValue { get; }
     }
 }

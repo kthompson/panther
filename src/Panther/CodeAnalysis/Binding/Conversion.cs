@@ -22,21 +22,21 @@ namespace Panther.CodeAnalysis.Binding
             IsImplicit = isImplicit;
         }
 
-        public static Conversion Classify(TypeSymbol from, TypeSymbol to)
+        public static Conversion Classify(Type from, Type to)
         {
             if (from == to)
                 return Identity;
 
-            if (to == TypeSymbol.Any)
+            if (to == Type.Any)
                 return Implicit;
 
-            if (from == TypeSymbol.Any)
+            if (from == Type.Any)
                 return Explicit;
 
-            if ((from == TypeSymbol.Bool || from == TypeSymbol.Int) && to == TypeSymbol.String)
+            if ((from == Type.Bool || from == Type.Int) && to == Type.String)
                 return Explicit;
 
-            if (from == TypeSymbol.String && (to == TypeSymbol.Bool || to == TypeSymbol.Int))
+            if (from == Type.String && (to == Type.Bool || to == Type.Int))
                 return Explicit;
 
             return None;

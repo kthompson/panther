@@ -112,7 +112,7 @@ namespace Panther.CodeAnalysis.Lowering
         private BoundExpression CreateTemporary(BoundExpression boundExpression, string prefix = "temp")
         {
             _tempCount++;
-            var name = $"{prefix}${boundExpression.Type.Name}${_tempCount:0000}";
+            var name = $"{prefix}${_tempCount:0000}";
             var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
             _statements.Add(new BoundVariableDeclarationStatement(boundExpression.Syntax, tempVariable, boundExpression));
             return new BoundVariableExpression(boundExpression.Syntax, tempVariable);

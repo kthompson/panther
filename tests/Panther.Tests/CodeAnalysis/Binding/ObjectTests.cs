@@ -40,7 +40,7 @@ namespace Panther.Tests.CodeAnalysis.Binding
             {
                 Assert.Equal("Hello", hello.Name);
 
-                Assert.Collection(hello.GetTypeMembers(), world =>
+                Assert.Collection(hello.Types, world =>
                 {
                     Assert.Equal("World", world.Name);
                 });
@@ -58,7 +58,7 @@ namespace Panther.Tests.CodeAnalysis.Binding
             var compilation = Compile(code.Text);
 
             Assert.Collection(compilation.Types,
-                symbol => Assert.Collection(symbol.GetMembers().OfType<MethodSymbol>(),
+                symbol => Assert.Collection(symbol.Methods,
                     methodSymbol => Assert.Equal("world", methodSymbol.Name)));
         }
 
@@ -73,8 +73,8 @@ namespace Panther.Tests.CodeAnalysis.Binding
             var compilation = Compile(code.Text);
 
             Assert.Collection(compilation.Types,
-                symbol => Assert.Collection(symbol.GetMembers().OfType<MethodSymbol>(),
-                    methodSymbol => Assert.Equal("unit", methodSymbol.ReturnType.Name)));
+                symbol => Assert.Collection(symbol.Methods,
+                    methodSymbol => Assert.Equal("unit", methodSymbol.ReturnType.Symbol.Name)));
         }
     }
 }

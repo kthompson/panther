@@ -6,14 +6,13 @@ namespace Panther.CodeAnalysis.Symbols
 {
     public abstract class MethodSymbol : Symbol
     {
-        public ImmutableArray<ParameterSymbol> Parameters { get; }
-        public TypeSymbol ReturnType { get; }
 
-        protected MethodSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)
-            : base(Symbol.None, TextLocation.None, name)
+        protected MethodSymbol(Symbol owner, string name, ImmutableArray<ParameterSymbol> parameters, Type returnType)
+            : base(owner, TextLocation.None, name)
         {
-            Parameters = parameters;
-            ReturnType = returnType;
+            this.Type = new MethodType(parameters.OfType<Symbol>().ToImmutableArray(), returnType);
+            this.Flags |= SymbolFlags.Method;
+
             foreach (var parameter in parameters)
             {
                 this.DefineSymbol(parameter);

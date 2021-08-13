@@ -20,23 +20,7 @@ namespace Panther.CodeAnalysis
         public Compilation? Previous { get; }
         public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
         public ImmutableArray<AssemblyDefinition> References { get; }
-        public ImmutableArray<TypeSymbol> Types => BoundAssembly.Types.OfType<TypeSymbol>().ToImmutableArray();
-
-        private BoundGlobalScope? _globalScope;
-
-        private BoundGlobalScope GlobalScope
-        {
-            get
-            {
-                if (_globalScope == null)
-                {
-                    var globalScope = Binder.BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees, References);
-                    Interlocked.CompareExchange(ref _globalScope, globalScope, null);
-                }
-
-                return _globalScope;
-            }
-        }
+        public ImmutableArray<Symbol> Types => BoundAssembly.Types;
 
         private BoundAssembly? _boundAssembly;
         private BoundAssembly BoundAssembly
@@ -45,14 +29,14 @@ namespace Panther.CodeAnalysis
             {
                 if (_boundAssembly == null)
                 {
-                    var previous = this.Previous?.BoundAssembly;
-                    var bindAssembly = Binder.BindAssembly(IsScript, previous, GlobalScope);
+                    var bindAssembly = Binder.BindAssembly(IsScript, SyntaxTrees, Previous?.BoundAssembly,  References);
                     Interlocked.CompareExchange(ref _boundAssembly, bindAssembly, null);
                 }
 
-                return _boundAssembly;
+                return _boundAssembly!;
             }
         }
+
 
         private Compilation(ImmutableArray<AssemblyDefinition> references, bool isScript, Compilation? previous, params SyntaxTree[] syntaxTrees)
         {
@@ -104,7 +88,7 @@ namespace Panther.CodeAnalysis
                 {
                     yield return type;
 
-                    foreach (var member in type.GetMembers())
+                    foreach (var member in type.Members)
                     {
                         yield return member;
                     }
@@ -116,18 +100,21 @@ namespace Panther.CodeAnalysis
 
         public void EmitTree(TextWriter writer)
         {
-            var entryPoint = GlobalScope.EntryPoint?.Symbol;
-            foreach (var type in GlobalScope.Types)
+            var entryPoint = BoundAssembly.EntryPoint?.Symbol;
+            foreach (var type in BoundAssembly.Types)
             {
                 // TODO: print type symbol
-                foreach (var function in type.MethodDefinitions)
+                foreach (var function in type.Methods)
                 {
                     // emit entry point last
-                    if (entryPoint == function.Key)
+                    if (entryPoint == function)
                         continue;
 
-                    EmitTree(function.Key, function.Value, writer);
-                    writer.WriteLine();
+                    if (BoundAssembly.MethodDefinitions.TryGetValue(function, out var body))
+                    {
+                        EmitTree(function,  body, writer);
+                        writer.WriteLine();
+                    }
                 }
             }
 
@@ -139,20 +126,17 @@ namespace Panther.CodeAnalysis
             }
         }
 
-        public void EmitTree(MethodSymbol method, TextWriter writer)
+        public void EmitTree(Symbol method, TextWriter writer)
         {
             BoundAssembly? assembly = BoundAssembly;
 
             while (assembly != null)
             {
-                foreach (var boundType in assembly.Types)
+                if (assembly.MethodDefinitions.TryGetValue(method, out var block))
                 {
-                    if (boundType.MethodDefinitions.TryGetValue(method, out var block))
-                    {
-                        EmitTree(method, block, writer);
+                    EmitTree(method, block, writer);
 
-                        return;
-                    }
+                    return;
                 }
 
                 assembly = assembly.Previous;
@@ -161,7 +145,7 @@ namespace Panther.CodeAnalysis
             method.WriteTo(writer);
         }
 
-        private static void EmitTree(MethodSymbol method, BoundBlockExpression block, TextWriter writer)
+        private static void EmitTree(Symbol method, BoundBlockExpression block, TextWriter writer)
         {
             method.WriteTo(writer);
             writer.WritePunctuation(" = ");
@@ -172,7 +156,7 @@ namespace Panther.CodeAnalysis
         public EmitResult Emit(string moduleName, string outputPath) =>
             Emitter.Emit(BoundAssembly, moduleName, outputPath);
 
-        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<FieldSymbol, FieldReference> previousGlobals, Dictionary<MethodSymbol, MethodReference> previousMethods) =>
+        internal EmitResult Emit(string moduleName, string outputPath, Dictionary<Symbol, FieldReference> previousGlobals, Dictionary<Symbol, MethodReference> previousMethods) =>
             Emitter.Emit(BoundAssembly, moduleName, outputPath, previousGlobals, previousMethods);
     }
 }

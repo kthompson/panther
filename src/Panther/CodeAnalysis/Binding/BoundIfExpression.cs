@@ -1,5 +1,4 @@
-﻿using System;
-using Panther.CodeAnalysis.Symbols;
+﻿using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
@@ -8,7 +7,7 @@ namespace Panther.CodeAnalysis.Binding
         BoundExpression Else) : BoundExpression(Syntax)
     {
         public override BoundNodeKind Kind => BoundNodeKind.IfExpression;
-        public override TypeSymbol Type { get; init; } = Then.Type;
+        public override Type Type { get; init; } = Then.Type;
 
         public override BoundConstant? ConstantValue { get; } =
             Condition.ConstantValue == null

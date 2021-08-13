@@ -157,12 +157,13 @@ namespace Panther
         }
 
         [MetaCommand("dump", "Show bound tree of the given function")]
+        // ReSharper disable once UnusedMember.Local
         private void MetaDumpFunction(string functionName)
         {
             if (_previous == null)
                 return;
 
-            var function = _previous.GetSymbols().OfType<MethodSymbol>().FirstOrDefault(func => func.Name == functionName);
+            var function = _previous.GetSymbols().Where(m => m.IsMethod).FirstOrDefault(func => func.Name == functionName);
 
             if (function == null)
             {

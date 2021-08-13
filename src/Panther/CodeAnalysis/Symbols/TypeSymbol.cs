@@ -24,7 +24,5 @@ namespace Panther.CodeAnalysis.Symbols
         public static readonly TypeSymbol Bool = new BoundType(Symbol.None, TextLocation.None, "bool");
         public static readonly TypeSymbol Int = new BoundType(Symbol.None, TextLocation.None, "int");
         public static readonly TypeSymbol String = new BoundType(Symbol.None, TextLocation.None, "string");
-
-        public override bool IsType => true;
     }
 }

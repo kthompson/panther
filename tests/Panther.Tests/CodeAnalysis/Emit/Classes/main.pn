@@ -1,4 +1,7 @@
-﻿def main() = ()
+﻿def main() = {
+    Point(10, 20)
+    ()
+}
 
 class Point(X: int, Y: int)
 
