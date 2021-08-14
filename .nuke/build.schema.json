@@ -6,6 +6,10 @@
     "build": {
       "type": "object",
       "properties": {
+        "CodecovToken": {
+          "type": "string",
+          "default": "Secrets must be entered via 'nuke :secret [profile]'"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
@@ -42,6 +46,10 @@
             "VSCode"
           ]
         },
+        "IgnoreFailedSources": {
+          "type": "boolean",
+          "description": "Ignore unreachable sources during Restore"
+        },
         "NoLogo": {
           "type": "boolean",
           "description": "Disables displaying the NUKE logo"
@@ -73,7 +81,7 @@
             "enum": [
               "Clean",
               "Compile",
-              "Coverage",
+              "ReportCoverage",
               "Restore",
               "Test"
             ]
@@ -91,14 +99,11 @@
             "enum": [
               "Clean",
               "Compile",
-              "Coverage",
+              "ReportCoverage",
               "Restore",
               "Test"
             ]
           }
-        },
-        "TestPartition": {
-          "type": "string"
         },
         "Verbosity": {
           "type": "string",

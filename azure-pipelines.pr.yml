@@ -14,6 +14,9 @@
 # </auto-generated>
 # ------------------------------------------------------------------------------
 
+variables:
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
 stages:
   - stage: ubuntu_latest
     displayName: 'ubuntu-latest'
@@ -22,26 +25,26 @@ stages:
       vmImage: 'ubuntu-latest'
     jobs:
       - job: Compile
-        displayName: 'Compile'
+        displayName: '⚙️ Compile'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Restore Compile --skip'
       - job: Test
-        displayName: 'Test'
+        displayName: '🚦 Test'
         dependsOn: [ Compile ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Test --skip'
@@ -49,22 +52,27 @@ stages:
             inputs:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
-      - job: Coverage
-        displayName: 'Coverage'
+      - job: ReportCoverage
+        displayName: '📊 ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Artifacts
+            inputs:
+              artifactName: test-results
+              downloadPath: 'artifacts'
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Coverage --skip'
+              script: './build.cmd ReportCoverage --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: coverage-report.zip
-              pathtoPublish: 'artifacts/coverage-report.zip'
+              pathtoPublish: 'artifacts/reports/coverage-report.zip'
   - stage: windows_latest
     displayName: 'windows-latest'
     dependsOn: [  ]
@@ -72,26 +80,26 @@ stages:
       vmImage: 'windows-latest'
     jobs:
       - job: Compile
-        displayName: 'Compile'
+        displayName: '⚙️ Compile'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Restore Compile --skip'
       - job: Test
-        displayName: 'Test'
+        displayName: '🚦 Test'
         dependsOn: [ Compile ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Test --skip'
@@ -99,22 +107,27 @@ stages:
             inputs:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
-      - job: Coverage
-        displayName: 'Coverage'
+      - job: ReportCoverage
+        displayName: '📊 ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Artifacts
+            inputs:
+              artifactName: test-results
+              downloadPath: 'artifacts'
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Coverage --skip'
+              script: './build.cmd ReportCoverage --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: coverage-report.zip
-              pathtoPublish: 'artifacts/coverage-report.zip'
+              pathtoPublish: 'artifacts/reports/coverage-report.zip'
   - stage: macOS_latest
     displayName: 'macOS-latest'
     dependsOn: [  ]
@@ -122,26 +135,26 @@ stages:
       vmImage: 'macOS-latest'
     jobs:
       - job: Compile
-        displayName: 'Compile'
+        displayName: '⚙️ Compile'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Restore Compile --skip'
       - job: Test
-        displayName: 'Test'
+        displayName: '🚦 Test'
         dependsOn: [ Compile ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Test --skip'
@@ -149,19 +162,24 @@ stages:
             inputs:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
-      - job: Coverage
-        displayName: 'Coverage'
+      - job: ReportCoverage
+        displayName: '📊 ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(NUGET_PACKAGES)
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Artifacts
+            inputs:
+              artifactName: test-results
+              downloadPath: 'artifacts'
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Coverage --skip'
+              script: './build.cmd ReportCoverage --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: coverage-report.zip
-              pathtoPublish: 'artifacts/coverage-report.zip'
+              pathtoPublish: 'artifacts/reports/coverage-report.zip'
