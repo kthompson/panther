@@ -14,6 +14,9 @@
 # </auto-generated>
 # ------------------------------------------------------------------------------
 
+variables:
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
 trigger:
   branches:
     include:
@@ -26,147 +29,111 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     jobs:
-      - job: Compile
-        displayName: 'Compile'
+      - job: Test
+        displayName: 'Test'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(Pipeline.Workspace)/.nuget
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Restore Compile --skip'
-      - job: Test
-        displayName: 'Test'
-        dependsOn: [ Compile ]
-        steps:
-          - task: Cache@2
-            inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
-              restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
-          - task: CmdLine@2
-            inputs:
-              script: './build.cmd Test --skip'
+              script: './build.cmd Restore Compile Test --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
-      - job: Coverage
-        displayName: 'Coverage'
+      - job: ReportCoverage
+        displayName: 'ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(Pipeline.Workspace)/.nuget
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Coverage --skip'
+              script: './build.cmd ReportCoverage --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: coverage-report.zip
-              pathtoPublish: 'artifacts/coverage-report.zip'
+              pathtoPublish: 'artifacts/reports/coverage-report.zip'
   - stage: windows_latest
     displayName: 'windows-latest'
     dependsOn: [  ]
     pool:
       vmImage: 'windows-latest'
     jobs:
-      - job: Compile
-        displayName: 'Compile'
+      - job: Test
+        displayName: 'Test'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(Pipeline.Workspace)/.nuget
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Restore Compile --skip'
-      - job: Test
-        displayName: 'Test'
-        dependsOn: [ Compile ]
-        steps:
-          - task: Cache@2
-            inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
-              restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
-          - task: CmdLine@2
-            inputs:
-              script: './build.cmd Test --skip'
+              script: './build.cmd Restore Compile Test --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
-      - job: Coverage
-        displayName: 'Coverage'
+      - job: ReportCoverage
+        displayName: 'ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(Pipeline.Workspace)/.nuget
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Coverage --skip'
+              script: './build.cmd ReportCoverage --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: coverage-report.zip
-              pathtoPublish: 'artifacts/coverage-report.zip'
+              pathtoPublish: 'artifacts/reports/coverage-report.zip'
   - stage: macOS_latest
     displayName: 'macOS-latest'
     dependsOn: [  ]
     pool:
       vmImage: 'macOS-latest'
     jobs:
-      - job: Compile
-        displayName: 'Compile'
+      - job: Test
+        displayName: 'Test'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(Pipeline.Workspace)/.nuget
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Restore Compile --skip'
-      - job: Test
-        displayName: 'Test'
-        dependsOn: [ Compile ]
-        steps:
-          - task: Cache@2
-            inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
-              restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
-          - task: CmdLine@2
-            inputs:
-              script: './build.cmd Test --skip'
+              script: './build.cmd Restore Compile Test --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
-      - job: Coverage
-        displayName: 'Coverage'
+      - job: ReportCoverage
+        displayName: 'ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
-              key: $(Agent.OS) | **/global.json, **/*.csproj
+              key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: ~/.nuget/packages
+              path: $(Pipeline.Workspace)/.nuget
           - task: CmdLine@2
             inputs:
-              script: './build.cmd Coverage --skip'
+              script: './build.cmd ReportCoverage --skip'
           - task: PublishBuildArtifacts@1
             inputs:
               artifactName: coverage-report.zip
-              pathtoPublish: 'artifacts/coverage-report.zip'
+              pathtoPublish: 'artifacts/reports/coverage-report.zip'
