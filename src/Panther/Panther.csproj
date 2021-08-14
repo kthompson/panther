@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <WarningLevel>4</WarningLevel>
         <NoWarn>1701;1702;0612</NoWarn>
