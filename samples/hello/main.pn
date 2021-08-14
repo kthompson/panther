@@ -1,7 +1,9 @@
 ﻿def main() = {
     var guess = -1
     var guessCount = 0
-    var answer = 27 // use rand
+    val answer = rnd(100)
+
+    println("Picking a number between 0 and 100...")
 
     while (guess != answer) {
         println("Guess the answer:")

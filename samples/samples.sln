@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "hello", "hello\hello.pnproj", "{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.StdLib", "..\src\Panther.StdLib\Panther.StdLib.csproj", "{51DBFAA6-FB6E-4EDB-BA81-BFFBB8EAC61F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C9FC2AA-E913-4FE5-B41B-6882A82BF23E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51DBFAA6-FB6E-4EDB-BA81-BFFBB8EAC61F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51DBFAA6-FB6E-4EDB-BA81-BFFBB8EAC61F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51DBFAA6-FB6E-4EDB-BA81-BFFBB8EAC61F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51DBFAA6-FB6E-4EDB-BA81-BFFBB8EAC61F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

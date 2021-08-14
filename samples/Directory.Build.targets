@@ -3,8 +3,25 @@
     <Target Name="CreateManifestResourceNames" />
 
     <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-        <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)\..\src\Panther.Compiler\Panther.Compiler.csproj&quot; -- @(Compile->'&quot;%(Identity)&quot;', ' ') /o &quot;@(IntermediateRefAssembly)&quot; @(ReferencePath->'/r &quot;%(Identity)&quot;', ' ')"
-              WorkingDirectory="$(MSBuildProjectDirectory)" />
-    </Target>
+        <ItemGroup>
+            <ReferencePath Remove="@(ReferencePath)"
+                           Condition="'%(FileName)' != 'System.Console' AND
+                                '%(FileName)' != 'System.Runtime' AND
+                                '%(FileName)' != 'System.Runtime.Extensions' AND
+                                '%(FileName)' != 'Panther.StdLib'" />
+        </ItemGroup>
 
+        <PropertyGroup>
+            <PantherCompilerArgs>@(Compile->'"%(Identity)"', ' ')</PantherCompilerArgs>
+            <PantherCompilerArgs>$(PantherCompilerArgs) /o "@(IntermediateAssembly)"</PantherCompilerArgs>
+            <PantherCompilerArgs>$(PantherCompilerArgs) @(ReferencePath->'/r "%(Identity)"', ' ')</PantherCompilerArgs>
+
+            <PantherScriptExt Condition="$([MSBuild]::IsOSUnixLike())">.sh</PantherScriptExt>
+            <PantherScriptExt Condition="$([MSBuild]::IsOSPlatform('Windows'))">.cmd</PantherScriptExt>
+            <PantherCompilerScript Condition="'$(PantherCompilerScript)' == ''">pnc$(PantherScriptExt)</PantherCompilerScript>
+            <PantherCompileCommand>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\', '$(PantherCompilerScript)'))" $(PantherCompilerArgs)</PantherCompileCommand>
+        </PropertyGroup>
+
+        <Exec Command="$(PantherCompileCommand)" />
+    </Target>
 </Project>

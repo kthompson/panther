@@ -4,17 +4,14 @@
 # TODO:
 
 - classes
-  - instantiation
-  - field access  
+  - field assignment  
 - convert Predef to Panther?
     - needs namespaces
     - needs imports/using
-- support object fields/properties
+- object
+  - fields
 - finish using directive to tell us what symbols to import
 - support type aliases via Signatures
-- debugging support
-- Add SyntaxFactory for nicer API. Make ctors private. use source generators
-- ANSI console support
 
 # Notes
 
