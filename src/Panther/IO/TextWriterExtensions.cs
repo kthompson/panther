@@ -93,13 +93,11 @@ namespace Panther.IO
                     var fileName = textLocation.Filename ?? "";
                     var startLine = textLocation.StartLine + 1;
                     var startCharacter = textLocation.StartCharacter + 1;
-                    var endLine = textLocation.EndLine + 1;
-                    var endCharacter = textLocation.EndCharacter + 1;
 
                     writer.WriteLine();
 
                     writer.SetForeground(ConsoleColor.DarkRed);
-                    writer.Write($"{fileName}({startLine},{startCharacter},{endLine},{endCharacter}): ");
+                    writer.Write($"{fileName}({startLine},{startCharacter}): Error PN0000 : ");
                     writer.WriteLine(diagnostic);
                     writer.ResetColor();
 
