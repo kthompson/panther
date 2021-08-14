@@ -30,14 +30,14 @@ stages:
       vmImage: 'ubuntu-latest'
     jobs:
       - job: Test
-        displayName: 'Test'
+        displayName: '🚦 Test'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
               key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: $(Pipeline.Workspace)/.nuget
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Restore Compile Test --skip'
@@ -46,14 +46,19 @@ stages:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
       - job: ReportCoverage
-        displayName: 'ReportCoverage'
+        displayName: '📊 ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
               key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: $(Pipeline.Workspace)/.nuget
+              path: $(NUGET_PACKAGES)
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Artifacts
+            inputs:
+              artifactName: test-results
+              downloadPath: 'artifacts'
           - task: CmdLine@2
             inputs:
               script: './build.cmd ReportCoverage --skip'
@@ -68,14 +73,14 @@ stages:
       vmImage: 'windows-latest'
     jobs:
       - job: Test
-        displayName: 'Test'
+        displayName: '🚦 Test'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
               key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: $(Pipeline.Workspace)/.nuget
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Restore Compile Test --skip'
@@ -84,14 +89,19 @@ stages:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
       - job: ReportCoverage
-        displayName: 'ReportCoverage'
+        displayName: '📊 ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
               key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: $(Pipeline.Workspace)/.nuget
+              path: $(NUGET_PACKAGES)
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Artifacts
+            inputs:
+              artifactName: test-results
+              downloadPath: 'artifacts'
           - task: CmdLine@2
             inputs:
               script: './build.cmd ReportCoverage --skip'
@@ -106,14 +116,14 @@ stages:
       vmImage: 'macOS-latest'
     jobs:
       - job: Test
-        displayName: 'Test'
+        displayName: '🚦 Test'
         dependsOn: [  ]
         steps:
           - task: Cache@2
             inputs:
               key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: $(Pipeline.Workspace)/.nuget
+              path: $(NUGET_PACKAGES)
           - task: CmdLine@2
             inputs:
               script: './build.cmd Restore Compile Test --skip'
@@ -122,14 +132,19 @@ stages:
               artifactName: test-results
               pathtoPublish: 'artifacts/test-results'
       - job: ReportCoverage
-        displayName: 'ReportCoverage'
+        displayName: '📊 ReportCoverage'
         dependsOn: [ Test ]
         steps:
           - task: Cache@2
             inputs:
               key: $(Agent.OS) | global.json, src/**/*.csproj
               restoreKeys: $(Agent.OS)
-              path: $(Pipeline.Workspace)/.nuget
+              path: $(NUGET_PACKAGES)
+          - task: DownloadBuildArtifacts@0
+            displayName: Download Artifacts
+            inputs:
+              artifactName: test-results
+              downloadPath: 'artifacts'
           - task: CmdLine@2
             inputs:
               script: './build.cmd ReportCoverage --skip'
