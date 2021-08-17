@@ -44,6 +44,17 @@
         <Field Name="ContinueKeyword" Type="SyntaxToken" />
     </Node>
 
+    <Node Name="NewExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="NewExpression"/>
+
+        <Field Name="NewKeyword" Type="SyntaxToken" />
+
+        <Field Name="Type" Type="NameSyntax" />
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Arguments" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+    </Node>
+
     <Node Name="CallExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="CallExpression"/>
 
@@ -187,7 +198,7 @@
         <Kind Name="TypeAnnotation"/>
 
         <Field Name="ColonToken" Type="SyntaxToken" />
-        <Field Name="IdentifierToken" Type="SyntaxToken" />
+        <Field Name="Type" Type="NameSyntax" />
     </Node>
 
     <Node Name="UsingDirectiveSyntax">

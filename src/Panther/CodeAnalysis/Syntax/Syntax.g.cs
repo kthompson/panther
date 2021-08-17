@@ -113,6 +113,28 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
 
+    public sealed partial record NewExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
+        : ExpressionSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.NewExpression;
+        
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return NewKeyword;
+            yield return Type;
+            yield return OpenParenToken;
+            foreach (var child in Arguments.GetWithSeparators())
+                yield return child;
+            yield return CloseParenToken;
+        }
+        
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
+    }
+
     public sealed partial record CallExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
         : ExpressionSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.CallExpression;
@@ -436,14 +458,14 @@ namespace Panther.CodeAnalysis.Syntax
         }
     }
 
-    public sealed partial record TypeAnnotationSyntax(SyntaxTree SyntaxTree, SyntaxToken ColonToken, SyntaxToken IdentifierToken)
+    public sealed partial record TypeAnnotationSyntax(SyntaxTree SyntaxTree, SyntaxToken ColonToken, NameSyntax Type)
         : SyntaxNode(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.TypeAnnotation;
         
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return ColonToken;
-            yield return IdentifierToken;
+            yield return Type;
         }
         
         public override string ToString()

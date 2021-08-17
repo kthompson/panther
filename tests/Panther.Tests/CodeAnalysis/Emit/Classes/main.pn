@@ -1,5 +1,5 @@
 ﻿def main() = {
-    val p = Point(10, 20)
+    val p = new Point(10, 20)
     println(p.X)
     ()
 }
@@ -11,6 +11,6 @@ class Extent(xmin: int, xmax: int, ymin: int, ymax: int)
     def width() = xmax - xmin
     def height() = ymax - ymin
 
-    // def min() = Point(xmin, ymin)
-    // def max() = Point(xmax, ymax)
+    // def min() = new Point(xmin, ymin)
+    // def max() = new Point(xmax, ymax)
 }

@@ -135,6 +135,9 @@ namespace Panther.CodeAnalysis
         public void ReportBuiltinTypeNotFound(string builtinName) =>
             Report(null, $"The required builtin type '{builtinName}' could not be found");
 
+        public void ReportTypeNotFound(TextLocation location, string typeName) =>
+            Report(location, $"The type '{typeName}' could not be found");
+
         public void ReportTypeNotFound(string typeName) =>
             Report(null, $"The required type '{typeName}' could not be found");
 

@@ -43,7 +43,7 @@ namespace Panther.Tests.CodeAnalysis
         {
             using var scriptHost = BuildScriptHost();
             string code = $@"
-                Point({x}, {y}).distance()
+                new Point({x}, {y}).distance()
                 
                 class Point(X: int, Y: int)
                 {{
@@ -60,12 +60,54 @@ namespace Panther.Tests.CodeAnalysis
         {
             using var scriptHost = BuildScriptHost();
             string code = $@"
-                Point({x}, {y}).X
+                new Point({x}, {y}).X
                 
                 class Point(X: int, Y: int)
             ";
 
             AssertEvaluation(code, x, scriptHost);
+        }
+
+        [Property]
+        public void EvaluatesClassAssignment(int x, int y)
+        {
+            using var scriptHost = BuildScriptHost();
+            string code = $@"
+                val p = new Point({x}, {y})
+                p.X
+                
+                class Point(X: int, Y: int)
+            ";
+
+            AssertEvaluation(code, x, scriptHost);
+        }
+
+        [Fact]
+        public void EvaluatesClassAssignment2()
+        {
+            using var scriptHost = BuildScriptHost();
+            string code = $@"
+                val p = new Point(10, 20)
+                p.Y
+                
+                class Point(X: int, Y: int)
+            ";
+
+            AssertEvaluation(code, 20, scriptHost);
+        }
+
+        [Fact]
+        public void EvaluatesClassAssignmentWithTypeAnnotation()
+        {
+            using var scriptHost = BuildScriptHost();
+            string code = $@"
+                val p: Point = new Point(10, 20)
+                p.Y
+                
+                class Point(X: int, Y: int)
+            ";
+
+            AssertEvaluation(code, 20, scriptHost);
         }
     }
 }

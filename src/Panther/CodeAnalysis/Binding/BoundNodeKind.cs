@@ -14,6 +14,7 @@ namespace Panther.CodeAnalysis.Binding
         ForExpression,
         IfExpression,
         LiteralExpression,
+        NewExpression,
         MemberAssignmentExpression,
         MethodExpression,
         TypeExpression,

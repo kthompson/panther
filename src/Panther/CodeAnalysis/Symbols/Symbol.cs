@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Symbols
 {
     public abstract class Symbol
     {
-        public SymbolFlags Flags { get; set; }
+        public virtual SymbolFlags Flags { get; set; }
         public string Name { get; }
 
         public virtual bool IsRoot => false;
@@ -28,8 +28,33 @@ namespace Panther.CodeAnalysis.Symbols
 
         public virtual Symbol Owner { get; }
         public int Index { get; set; } = 0;
-        public Type Type { get; set; } = Type.Unresolved;
+        public virtual Type Type { get; set; } = Type.Unresolved;
         public virtual TextLocation Location { get; }
+
+        public string FullName
+        {
+            get
+            {
+                List<Symbol> AncestorsAndSelf(List<Symbol> list, Symbol symbol)
+                {
+                    while (true)
+                    {
+                        if (symbol.IsRoot || symbol == None)
+                        {
+                            return list;
+                        }
+
+                        list.Insert(0, symbol);
+
+                        symbol = symbol.Owner;
+                    }
+                }
+
+                var ancestors = AncestorsAndSelf(new List<Symbol>(), this);
+
+                return string.Join(".", ancestors.Select(ancestor => ancestor.Name));
+            }
+        }
 
         protected Symbol(Symbol? owner, TextLocation location, string name)
         {
@@ -118,6 +143,9 @@ namespace Panther.CodeAnalysis.Symbols
         public ImmutableArray<Symbol> Parameters =>
             Members.Where(m => m.IsParameter).ToImmutableArray();
 
+        public ImmutableArray<Symbol> Constructors =>
+            Members.Where(m => m.IsConstructor).ToImmutableArray();
+
         public ImmutableArray<Symbol> Methods =>
             Members.Where(sym => sym.IsMethod).ToImmutableArray();
 
@@ -194,6 +222,19 @@ namespace Panther.CodeAnalysis.Symbols
         private sealed class AliasSymbol : Symbol
         {
             public Symbol Target { get; }
+
+            public override SymbolFlags Flags
+            {
+                get => Target.Flags;
+                set { }
+            }
+
+            public override Type Type
+            {
+                get => Target.Type;
+                set { }
+            }
+
             public AliasSymbol(Symbol owner, TextLocation location, string name, Symbol target)
                 : base(owner, location, name)
             {

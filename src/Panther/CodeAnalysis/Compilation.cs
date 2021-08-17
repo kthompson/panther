@@ -153,7 +153,10 @@ namespace Panther.CodeAnalysis
             block.WriteTo(writer);
         }
 
-        public EmitResult Emit(string moduleName, string outputPath) =>
+        public IEmitResult EmitVM(string outputPath) =>
+           VMEmitter.Emit(BoundAssembly, outputPath);
+
+        public IEmitResult Emit(string moduleName, string outputPath) =>
             Emitter.Emit(BoundAssembly, moduleName, outputPath);
 
         internal EmitResult Emit(string moduleName, string outputPath, Dictionary<Symbol, FieldReference> previousGlobals, Dictionary<Symbol, MethodReference> previousMethods) =>

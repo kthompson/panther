@@ -1,7 +1,20 @@
 ﻿def main() = {
     var guess = -1
+    var useHints = false
+    var minGuess = 0
+    var maxGuess = 100
     var guessCount = 0
     val answer = rnd(100)
+
+    println("Would you like to turn hints on?")
+    print("Type 1 for yes or 0 for no:")
+
+    val useHints = int(readLine()) == 1
+    if(useHints) {
+        println("Using hints:" + string(useHints))
+    } else {
+        println("Not using hints:" + string(useHints))
+    }
 
     println("Picking a number between 0 and 100...")
 
@@ -11,9 +24,15 @@
         guessCount = guessCount + 1
 
         if (guess > answer) {
-            println("Lower")
+            println("Your guess is too high")
+            maxGuess = if (guess > maxGuess) maxGuess else guess
+            val hintString = if(useHints) " hint: " + string((minGuess + maxGuess) / 2) else ""
+            println("It should be between " + string(minGuess) + " and " + string(maxGuess) + hintString)
         } else if (guess < answer) {
-            println("Higher")
+            println("Your guess is too low!")
+            minGuess = if (guess < minGuess) minGuess else guess
+            val hintString = if(useHints) " hint: " + string((minGuess + maxGuess) / 2) else ""
+            println("It should be between " + string(minGuess) + " and " + string(maxGuess) + hintString)
         } else {
             println("Correct: " + string(answer))
             println(string(guessCount) + " total guesses")

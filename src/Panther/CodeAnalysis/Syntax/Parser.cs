@@ -57,18 +57,19 @@ namespace Panther.CodeAnalysis.Syntax
             this.Diagnostics.AddRange(lexer.Diagnostics);
 
             // a
-            _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierName;
-            _prefixParseFunctions[SyntaxKind.StringToken] = ParseLiteralExpression;
-            _prefixParseFunctions[SyntaxKind.NumberToken] = ParseLiteralExpression;
-            _prefixParseFunctions[SyntaxKind.TrueKeyword] = ParseBooleanLiteral;
-            _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
-            _prefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
-            _prefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
-            _prefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
-            _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
-            _prefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
             _prefixParseFunctions[SyntaxKind.BreakKeyword] = ParseBreakExpression;
             _prefixParseFunctions[SyntaxKind.ContinueKeyword] = ParseContinueExpression;
+            _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
+            _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
+            _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierName;
+            _prefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
+            _prefixParseFunctions[SyntaxKind.NumberToken] = ParseLiteralExpression;
+            _prefixParseFunctions[SyntaxKind.NewKeyword] = ParseNewExpression;
+            _prefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
+            _prefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
+            _prefixParseFunctions[SyntaxKind.StringToken] = ParseLiteralExpression;
+            _prefixParseFunctions[SyntaxKind.TrueKeyword] = ParseBooleanLiteral;
+            _prefixParseFunctions[SyntaxKind.WhileKeyword] = ParseWhileExpression;
 
             // -a
             _prefixParseFunctions[SyntaxKind.BangToken] = ParsePrefixExpression;
@@ -494,6 +495,18 @@ namespace Panther.CodeAnalysis.Syntax
             }
         }
 
+        private NewExpressionSyntax ParseNewExpression()
+        {
+            // new Point(0, 1)
+            var newToken = Accept();
+            var type = ParseNameSyntax();
+            var openToken = Accept(SyntaxKind.OpenParenToken);
+            var arguments = ParseArguments();
+            var closeToken = Accept(SyntaxKind.CloseParenToken);
+
+            return new NewExpressionSyntax(_syntaxTree, newToken, type, openToken, arguments, closeToken);
+        }
+
         private LiteralExpressionSyntax ParseLiteralExpression()
         {
             var numberToken = Accept();
@@ -659,9 +672,9 @@ namespace Panther.CodeAnalysis.Syntax
         private TypeAnnotationSyntax ParseTypeAnnotation()
         {
             var colonToken = Accept(SyntaxKind.ColonToken);
-            var identToken = Accept(SyntaxKind.IdentifierToken);
+            var type = ParseNameSyntax();
 
-            return new TypeAnnotationSyntax(_syntaxTree, colonToken, identToken);
+            return new TypeAnnotationSyntax(_syntaxTree, colonToken, type);
         }
     }
 }
