@@ -96,9 +96,9 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<Symbol> LookupSymbol(string name, bool deep = true)
         {
-            var methods = Symbol.GetMembers(name).ToImmutableArray();
-            if (methods.Any())
-                return methods;
+            var members = Symbol.GetMembers(name).ToImmutableArray();
+            if (members.Any())
+                return members;
 
             if (_importedSymbols.TryGetValue(name, out var symbols))
             {

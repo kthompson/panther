@@ -64,6 +64,9 @@ namespace Panther.Tests.CodeAnalysis
                 assemblyLocation);
 
             Assert.Empty(emitResult.Diagnostics);
+            // var vmOutput = Path.Combine(outputDirectory, moduleName);
+            // Directory.CreateDirectory(vmOutput);
+            // var emitVm = compilation.EmitVM(vmOutput);
 
             var il = DumpIl(assemblyLocation);
             var actualSource = il.Split('\n').Where(line => !line.TrimStart().StartsWith("//")).ToArray();

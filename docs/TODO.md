@@ -4,12 +4,13 @@
 # TODO:
 
 - classes
-  - field assignment  
+  - field assignment
+- arrays
+- object
+  - fields
 - convert Predef to Panther?
     - needs namespaces
     - needs imports/using
-- object
-  - fields
 - finish using directive to tell us what symbols to import
 - support type aliases via Signatures
 
@@ -29,3 +30,8 @@ References must always be valid.
      Panther source file: .pn
      Panther IL or pil: plain IL file with class definitions and
      Panther byte code or pbc
+
+
+# Hack
+
+Memory manager 12.1.3

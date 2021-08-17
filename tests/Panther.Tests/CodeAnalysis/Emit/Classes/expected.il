@@ -97,27 +97,21 @@
 		.maxstack 2
 		.entrypoint
 		.locals init (
-		[0] int32,
-		[1] int32,
-		[2] class Point,
-		[3] object
+		[0] class Point,
+		[1] object
 		)
 
 		IL_0000: ldc.i4.s 10
-		IL_0002: stloc.0
-		IL_0003: ldc.i4.s 20
-		IL_0005: stloc.1
-		IL_0006: ldloc.0
-		IL_0007: ldloc.1
-		IL_0008: newobj instance void Point::.ctor(int32, int32)
-		IL_000d: stloc.2
-		IL_000e: ldloc.2
-		IL_000f: ldfld int32 Point::X
-		IL_0014: box [System.Private.CoreLib]System.Int32
-		IL_0019: stloc.3
-		IL_001a: ldloc.3
-		IL_001b: call void [Panther.StdLib]Panther.Predef::println(object)
-		IL_0020: ret
+		IL_0002: ldc.i4.s 20
+		IL_0004: newobj instance void Point::.ctor(int32, int32)
+		IL_0009: stloc.0
+		IL_000a: ldloc.0
+		IL_000b: ldfld int32 Point::X
+		IL_0010: box [System.Private.CoreLib]System.Int32
+		IL_0015: stloc.1
+		IL_0016: ldloc.1
+		IL_0017: call void [Panther.StdLib]Panther.Predef::println(object)
+		IL_001c: ret
 	} // end of method $Program::main
 
 } // end of class $Program

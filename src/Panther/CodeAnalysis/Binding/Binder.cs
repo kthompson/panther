@@ -47,7 +47,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 var field = syntax.Fields[index];
                 var fieldName = field.Identifier.Text;
-                var fieldType = BindTypeAnnotation(field.TypeAnnotation);
+                var fieldType = BindTypeAnnotation(field.TypeAnnotation, scope).Type;
                 var fieldSymbol = typeSymbol.NewField(field.Identifier.Location, field.Identifier.Text, false)
                     .WithType(fieldType);
 
@@ -407,7 +407,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 var parameterSyntax = syntax.Parameters[index];
                 var parameterName = parameterSyntax.Identifier.Text;
-                var parameterType = BindTypeAnnotation(parameterSyntax.TypeAnnotation);
+                var parameterType = BindTypeAnnotation(parameterSyntax.TypeAnnotation, scope).Type;
 
                 if (!seenParamNames.Add(parameterName))
                 {
@@ -422,7 +422,7 @@ namespace Panther.CodeAnalysis.Binding
                 }
             }
 
-            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation);
+            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation, scope)?.Type;
             if (type == null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
@@ -556,7 +556,7 @@ namespace Panther.CodeAnalysis.Binding
         {
             var isReadOnly = syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword;
             var boundExpression = BindExpression(syntax.Expression, scope);
-            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation);
+            var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation, scope)?.Type;
             var expressionType = type ?? boundExpression.Type;
 
             var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
@@ -565,22 +565,20 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundVariableDeclarationStatement(syntax, variable, converted);
         }
 
-        private Type BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause)
+        private Symbol BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause, BoundScope boundScope)
         {
-            // TODO: support non-builtin types
-            var identifierToken = syntaxTypeClause.IdentifierToken;
-            var type = LookupBuiltinType(identifierToken.Text);
+            var type = BindTypeSymbol(syntaxTypeClause.Type, boundScope);
             if (type == null)
             {
-                Diagnostics.ReportUndefinedType(identifierToken.Location, identifierToken.Text);
-                return Type.Error;
+                Diagnostics.ReportUndefinedType(syntaxTypeClause.Type.Location, syntaxTypeClause.Type.ToText());
+                return TypeSymbol.Error;
             }
 
             return type;
         }
 
-        private Type? BindOptionalTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause) =>
-            syntaxTypeClause == null ? null : BindTypeAnnotation(syntaxTypeClause);
+        private Symbol? BindOptionalTypeAnnotation(TypeAnnotationSyntax? syntaxTypeClause, BoundScope scope) =>
+            syntaxTypeClause == null ? null : BindTypeAnnotation(syntaxTypeClause, scope);
 
         private Symbol BindVariable(SyntaxToken identifier, Type expressionType, bool isReadOnly, BoundScope scope)
         {
@@ -620,27 +618,61 @@ namespace Panther.CodeAnalysis.Binding
         private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope) =>
             syntax switch
             {
-                BreakExpressionSyntax breakStatementSyntax => BindStatementToExpression(
-                    BindBreakStatement(breakStatementSyntax)),
-                ContinueExpressionSyntax continueStatementSyntax => BindStatementToExpression(
-                    BindContinueStatement(continueStatementSyntax)),
-                LiteralExpressionSyntax literalExpressionSyntax => BindLiteralExpression(literalExpressionSyntax),
-                AssignmentExpressionSyntax assignmentExpressionSyntax => BindAssignmentExpression(
-                    assignmentExpressionSyntax, scope),
+                AssignmentExpressionSyntax assignmentExpressionSyntax => BindAssignmentExpression(assignmentExpressionSyntax, scope),
                 BinaryExpressionSyntax binaryExpressionSyntax => BindBinaryExpression(binaryExpressionSyntax, scope),
-                UnaryExpressionSyntax unaryExpressionSyntax => BindUnaryExpression(unaryExpressionSyntax, scope),
-                GroupExpressionSyntax groupExpressionSyntax => BindGroupExpression(groupExpressionSyntax, scope),
-                NameSyntax nameExpressionSyntax => BindNameExpression(nameExpressionSyntax, scope),
                 BlockExpressionSyntax blockExpressionSyntax => BindBlockExpression(blockExpressionSyntax, scope),
-                IfExpressionSyntax ifExpressionSyntax => BindIfExpression(ifExpressionSyntax, scope),
-                WhileExpressionSyntax whileExpressionSyntax => BindWhileExpression(whileExpressionSyntax, scope),
-                ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
+                BreakExpressionSyntax breakStatementSyntax => BindStatementToExpression(BindBreakStatement(breakStatementSyntax)),
                 CallExpressionSyntax callExpressionSyntax => BindCallExpression(callExpressionSyntax, scope),
-                MemberAccessExpressionSyntax memberAccessExpressionSyntax => BindMemberAccessExpression(
-                    memberAccessExpressionSyntax, scope),
+                ContinueExpressionSyntax continueStatementSyntax => BindStatementToExpression(BindContinueStatement(continueStatementSyntax)),
+                ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
+                GroupExpressionSyntax groupExpressionSyntax => BindGroupExpression(groupExpressionSyntax, scope),
+                IfExpressionSyntax ifExpressionSyntax => BindIfExpression(ifExpressionSyntax, scope),
+                LiteralExpressionSyntax literalExpressionSyntax => BindLiteralExpression(literalExpressionSyntax),
+                MemberAccessExpressionSyntax memberAccessExpressionSyntax => BindMemberAccessExpression(memberAccessExpressionSyntax, scope),
+                NameSyntax nameExpressionSyntax => BindNameExpression(nameExpressionSyntax, scope),
+                NewExpressionSyntax newExpressionSyntax => BindNewExpression(newExpressionSyntax, scope),
+                UnaryExpressionSyntax unaryExpressionSyntax => BindUnaryExpression(unaryExpressionSyntax, scope),
                 UnitExpressionSyntax unit => BindUnitExpression(unit),
+                WhileExpressionSyntax whileExpressionSyntax => BindWhileExpression(whileExpressionSyntax, scope),
                 _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
             };
+
+        private BoundExpression BindNewExpression(NewExpressionSyntax syntax, BoundScope scope)
+        {
+            var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope))
+                .ToImmutableArray();
+
+            var type = BindTypeSymbol(syntax.Type, scope);
+            if (type == null)
+                return new BoundErrorExpression(syntax);
+
+            // find constructor from type that matches the arguments:
+            var filteredSymbols = type.Constructors.Where(sym =>
+                (sym.IsMethod && sym.Parameters.Length == boundArguments.Length)
+            ).ToImmutableArray();
+
+            switch (filteredSymbols.Length)
+            {
+                case 0:
+                    Diagnostics.ReportNoOverloads(
+                        syntax.Type.Location,
+                        syntax.Type.ToText(),
+                        boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
+                    );
+                    return new BoundErrorExpression(syntax);
+
+                case 1:
+                    var constructor = filteredSymbols[0];
+                    var convertedArguments = BindArguments(syntax.Arguments, constructor, boundArguments);
+
+                    return new BoundNewExpression(syntax, constructor, convertedArguments);
+
+                default:
+                    Diagnostics.ReportAmbiguousMethod(syntax.Type.Location, syntax.Type.ToText(),
+                        boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+                    return new BoundErrorExpression(syntax);
+            }
+        }
 
         private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope)
         {
@@ -749,6 +781,76 @@ namespace Panther.CodeAnalysis.Binding
 
                     return new BoundMethodExpression(syntax, name, expr, methods);
                 }
+            }
+        }
+
+        private Symbol? BindTypeSymbol(NameSyntax syntax, BoundScope scope)
+        {
+            switch (syntax)
+            {
+                case IdentifierNameSyntax identifier:
+                {
+                    var matchingSymbols = scope
+                        .LookupSymbol(identifier.ToText())
+                        .Where(x => x.IsType)
+                        .ToImmutableArray();
+                    switch (matchingSymbols.Length)
+                    {
+                        case 0:
+                            Diagnostics.ReportTypeNotFound(identifier.Location, identifier.ToText());
+                            return null;
+                        case 1:
+                            return matchingSymbols[0];
+                        default:
+                            // we should never have the same type name in the same scope
+                            throw new InvalidOperationException();
+                    }
+                }
+                case QualifiedNameSyntax qualified:
+                {
+                    var names = qualified.ToIdentifierNames().ToList();
+
+                    var rootSymbols = scope
+                        .LookupSymbol(names[0].ToText())
+                        .Where(x => x.IsType || x.IsNamespace)
+                        .ToImmutableArray();
+
+                    names.RemoveAt(0);
+
+                    while (true)
+                    {
+                        switch (rootSymbols.Length)
+                        {
+                            case 0:
+                                Diagnostics.ReportTypeNotFound(qualified.Location, qualified.ToText());
+                                return null;
+                            case 1:
+                                // search all rights
+                                if (names.Count == 0)
+                                {
+                                    if (rootSymbols[0].IsType)
+                                    {
+                                        return rootSymbols[0];
+                                    }
+
+                                    Diagnostics.ReportTypeNotFound(qualified.Location, qualified.ToText());
+                                    return null;
+                                }
+
+                                rootSymbols = rootSymbols[0].GetMembers(names[0].ToText())
+                                    .Where(x => x.IsType || x.IsNamespace)
+                                    .ToImmutableArray();
+
+                                names.RemoveAt(0);
+                                continue;
+                            default:
+                                // we should never have the same type name in the same scope
+                                throw new InvalidOperationException();
+                        }
+                    }
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(syntax));
             }
         }
 
@@ -861,8 +963,8 @@ namespace Panther.CodeAnalysis.Binding
                 default:
                     // TODO: see if we have method symbols and try to prune them to the correct one
                     var filteredSymbols = symbols.Where(sym =>
-                        (sym.IsMethod && sym.Parameters.Length == boundArguments.Count) ||
-                        (sym.IsClass && sym.LookupMethod(".ctor")?.Parameters.Length == boundArguments.Count)).ToImmutableArray();
+                        (sym.IsMethod && sym.Parameters.Length == boundArguments.Count)
+                        ).ToImmutableArray();
 
                     switch (filteredSymbols.Length)
                     {
@@ -922,16 +1024,23 @@ namespace Panther.CodeAnalysis.Binding
 
         private BoundExpression BindCallExpressionToMethodSymbol(CallExpressionSyntax syntax, Symbol method, BoundExpression? expression, IReadOnlyList<BoundExpression> boundArguments)
         {
+            var convertedArgs = BindArguments(syntax.Arguments, method, boundArguments);
+
+            return new BoundCallExpression(syntax, method, expression, convertedArgs);
+        }
+
+        private ImmutableArray<BoundExpression> BindArguments(SeparatedSyntaxList<ExpressionSyntax> arguments, Symbol method, IReadOnlyList<BoundExpression> boundArguments)
+        {
             var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
-            for (var i = 0; i < syntax.Arguments.Count; i++)
+            for (var i = 0; i < arguments.Count; i++)
             {
                 var argument = boundArguments[i];
                 var parameter = method.Parameters[i];
-                var convertedArgument = BindConversion(syntax.Arguments[i].Location, argument, parameter.Type);
+                var convertedArgument = BindConversion(arguments[i].Location, argument, parameter.Type);
                 convertedArgs.Add(convertedArgument);
             }
 
-            return new BoundCallExpression(syntax, method, expression, convertedArgs.ToImmutable());
+            return convertedArgs.ToImmutable();
         }
 
         private BoundExpression? TryBindTypeConversion(CallExpressionSyntax syntax, string symbolName, BoundScope scope)
@@ -946,8 +1055,7 @@ namespace Panther.CodeAnalysis.Binding
             return BindExpression(syntax.Arguments[0], type, scope, allowExplicit: true);
         }
 
-
-        private Dictionary<string, Type> _builtinLookup = new Dictionary<string, Type>
+        private static Dictionary<string, Type> _builtinLookup = new()
         {
             ["any"] = Type.Any,
             ["int"] = Type.Int,
@@ -1093,6 +1201,13 @@ namespace Panther.CodeAnalysis.Binding
         {
             var root = Symbol.NewRoot();
             var rootScope = new BoundScope(root);
+
+            // define default symbols
+            rootScope.Import(root.NewClass(TextLocation.None, "any").WithType(Type.Any));
+            rootScope.Import(root.NewClass(TextLocation.None, "int").WithType(Type.Int));
+            rootScope.Import(root.NewClass(TextLocation.None, "bool").WithType(Type.Bool));
+            rootScope.Import(root.NewClass(TextLocation.None, "string").WithType(Type.String));
+            rootScope.Import(root.NewClass(TextLocation.None, "unit").WithType(Type.Unit));
 
             // find Predef and add its functions
             var importedTypes =

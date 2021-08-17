@@ -20,6 +20,7 @@ namespace Panther.CodeAnalysis.Binding
                 BoundForExpression boundForExpression => RewriteForExpression(boundForExpression),
                 BoundIfExpression boundIfExpression => RewriteIfExpression(boundIfExpression),
                 BoundLiteralExpression boundLiteralExpression => RewriteLiteralExpression(boundLiteralExpression),
+                BoundNewExpression boundLiteralExpression => RewriteNewExpression(boundLiteralExpression),
                 BoundTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
                 BoundUnaryExpression boundUnaryExpression => RewriteUnaryExpression(boundUnaryExpression),
                 BoundUnitExpression boundUnitExpression => RewriteUnitExpression(boundUnitExpression),
@@ -29,7 +30,40 @@ namespace Panther.CodeAnalysis.Binding
             };
 
         protected virtual BoundExpression RewriteFieldExpression(BoundFieldExpression node) => node;
+
         protected virtual BoundExpression RewriteTypeExpression(BoundTypeExpression node) => node;
+
+        protected virtual BoundExpression RewriteNewExpression(BoundNewExpression node)
+        {
+            List<BoundExpression>? newArguments = null;
+
+            for (var i = 0; i < node.Arguments.Length; i++)
+            {
+                var argument = node.Arguments[i];
+                var newArgument = RewriteExpression(argument);
+
+                if (newArgument != argument)
+                {
+                    if (newArguments == null)
+                    {
+                        // initialize the list with all the statements up to `i`
+                        newArguments = new List<BoundExpression>();
+
+                        for (var j = 0; j < i; j++)
+                        {
+                            newArguments.Add(node.Arguments[j]);
+                        }
+                    }
+                }
+
+                newArguments?.Add(newArgument);
+            }
+
+            if (newArguments == null)
+                return node;
+
+            return new BoundNewExpression(node.Syntax, node.Constructor, newArguments?.ToImmutableArray() ?? node.Arguments);
+        }
 
         protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
         {

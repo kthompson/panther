@@ -1,3 +1,5 @@
+extern alias TestLib;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,6 +59,20 @@ namespace Panther.Tests.CodeAnalysis
             var expectedOutput = BuildExpectedOutput("What is your name?", "Hello, Kevin");
             // verify mock
             AssertEvaluation(@"getOutput()", expectedOutput, scriptHost);
+        }
+
+        [Fact(Skip = "TODO")]
+        public void EvaluatesStringEqualityWithConstructedString()
+        {
+            using var scriptHost = BuildScriptHostTestLib();
+
+            // TODO: currently the problem here is that we end up using ceq for string
+            // equality when instead we should be using the string's `==` operator
+            // some cases do pass though when we have strings that are constants
+            // on both sides of the equality check
+            Execute(@$"def stringTest(arg: string) = ""hi"" + arg", scriptHost);
+
+            AssertEvaluation(@"stringTest(""gh"") == ""high""", true, scriptHost);
         }
 
         [Property]
@@ -295,6 +311,8 @@ namespace Panther.Tests.CodeAnalysis
             using var scriptHost = BuildScriptHost();
             AssertEvaluation(code, value, scriptHost);
         }
+
+
 
         [Property]
         public void EvaluatesDivision(int number, NonZeroInt number2)

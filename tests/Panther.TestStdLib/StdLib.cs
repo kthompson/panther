@@ -25,6 +25,6 @@ namespace Panther
         public static void print(object value) => _writer.Write(value);
         public static void println(object value) => _writer.WriteLine(value);
         public static void println() => _writer.WriteLine();
-        public static string readLine() => _lines.Dequeue();
+        public static string? readLine() => _lines.Dequeue();
     }
 }

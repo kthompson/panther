@@ -268,7 +268,6 @@ namespace Panther
             {
                 Directory.Delete(SubmissionsFolder, true);
             }
-
         }
 
         private void SaveSubmission(string text)

@@ -99,7 +99,7 @@ namespace Panther.CodeAnalysis.Emit
             if (assembly.Diagnostics.Any())
                 return new EmitResult(assembly.Diagnostics,
                     previousGlobals ?? new Dictionary<Symbol, FieldReference>(),
-                    previousMethods ?? new Dictionary<Symbol, MethodReference>(), null);
+                    previousMethods ?? new Dictionary<Symbol, MethodReference>(), null, null);
 
             var emitter = new Emitter(moduleName, assembly.References, previousGlobals, previousMethods);
             return emitter.Emit(assembly, outputPath);
@@ -108,7 +108,7 @@ namespace Panther.CodeAnalysis.Emit
         public EmitResult Emit(BoundAssembly assembly, string outputPath)
         {
             if (_diagnostics.Any())
-                return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, null);
+                return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, null, null);
 
             // ensure all functions exist first so we can reference them
             // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
@@ -126,7 +126,7 @@ namespace Panther.CodeAnalysis.Emit
                 var defaultType = type.Name == "$Program";
                 foreach (var fieldMember in type.Fields)
                 {
-                    var fieldType = LookupType((TypeSymbol)fieldMember.Type.Symbol);
+                    var fieldType = LookupType(fieldMember.Type.Symbol);
                     var field = new FieldDefinition(fieldMember.Name, fieldAttributes, fieldType);
                     _fields[fieldMember] = field;
                     if (defaultType)
@@ -157,7 +157,7 @@ namespace Panther.CodeAnalysis.Emit
 
             _assemblyDefinition.Write(outputPath);
 
-            return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, _assemblyDefinition);
+            return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, _assemblyDefinition, outputPath);
         }
 
         private void EmitTypeDeclaration(Symbol type)
@@ -439,6 +439,10 @@ namespace Panther.CodeAnalysis.Emit
                     EmitConversionExpression(ilProcessor, conversionExpression);
                     break;
 
+                case BoundNewExpression newExpression:
+                    EmitNewExpression(ilProcessor, newExpression);
+                    break;
+
                 case BoundUnaryExpression unaryExpression:
                     EmitUnaryExpression(ilProcessor, unaryExpression);
                     break;
@@ -453,6 +457,25 @@ namespace Panther.CodeAnalysis.Emit
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expression), expression.GetType().FullName);
+            }
+        }
+
+        private void EmitNewExpression(ILProcessor ilProcessor, BoundNewExpression node)
+        {
+            foreach (var argExpr in node.Arguments)
+                EmitExpression(ilProcessor, argExpr);
+
+            if (_methods.TryGetValue(node.Constructor, out var method))
+            {
+                ilProcessor.Emit(OpCodes.Newobj, method);
+            }
+            else if (_methodReferences.TryGetValue(node.Constructor, out var methodRef))
+            {
+                ilProcessor.Emit(OpCodes.Newobj, methodRef);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -613,8 +636,7 @@ namespace Panther.CodeAnalysis.Emit
 
             if (_methods.TryGetValue(callExpression.Method, out var method))
             {
-                var opCode = callExpression.Method.IsConstructor ? OpCodes.Newobj : OpCodes.Call;
-                ilProcessor.Emit(opCode, method);
+                ilProcessor.Emit(OpCodes.Call, method);
             }
             else if (_methodReferences.TryGetValue(callExpression.Method, out var methodRef))
             {
