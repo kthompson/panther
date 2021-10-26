@@ -21,5 +21,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TextSpan Span => new TextSpan(_position, Text?.Length ?? 0);
         public override TextSpan FullSpan => Span;
         public override IEnumerable<SyntaxNode> GetChildren() => ImmutableArray<SyntaxNode>.Empty;
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitTrivia(this);
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+            visitor.VisitTrivia(this);
     }
 }

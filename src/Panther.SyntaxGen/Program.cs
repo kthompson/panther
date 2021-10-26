@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -119,6 +120,101 @@ namespace Panther.SyntaxGen
             _tree = ReadTree("Syntax.xml");
             _typeLookup = _tree.Types.ToDictionary(t => t.Name);
 
+            GenerateSyntax();
+            GenerateVisitor();
+        }
+
+        private static void GenerateVisitor()
+        {
+            using var writer = new StringWriter();
+            using var indentedTextWriter = new IndentedTextWriter(writer);
+
+            indentedTextWriter.WriteLine("using System;");
+            indentedTextWriter.WriteLine("using System.IO;");
+            indentedTextWriter.WriteLine("using System.Collections.Generic;");
+            indentedTextWriter.WriteLine("using System.Collections.Immutable;");
+            indentedTextWriter.WriteLine();
+            indentedTextWriter.WriteLine("#nullable enable");
+            indentedTextWriter.WriteLine();
+            indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Syntax");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+            indentedTextWriter.WriteLine("public partial class SyntaxVisitor");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+
+            using (var enumerator = _tree.Types.OfType<Node>().OrderBy(node => node.Name).GetEnumerator())
+            {
+                if (enumerator.MoveNext())
+                {
+                    var node = enumerator.Current;
+
+                    while (enumerator.MoveNext())
+                    {
+                        WriteVisitorMethod(indentedTextWriter, node, false);
+                        indentedTextWriter.WriteLineNoTabs("");
+
+                        node = enumerator.Current;
+                    }
+
+                    WriteVisitorMethod(indentedTextWriter, node, false);
+                }
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+            indentedTextWriter.WriteLine("public partial class SyntaxVisitor<TResult>");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+            using (var enumerator = _tree.Types.OfType<Node>().OrderBy(node => node.Name).GetEnumerator())
+            {
+                if (enumerator.MoveNext())
+                {
+                    var node = enumerator.Current;
+
+                    while (enumerator.MoveNext())
+                    {
+                        WriteVisitorMethod(indentedTextWriter, node, true);
+                        indentedTextWriter.WriteLineNoTabs("");
+
+                        node = enumerator.Current;
+                    }
+
+                    WriteVisitorMethod(indentedTextWriter, node, true);
+                }
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+
+            var contents = writer.ToString();
+
+            var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Syntax", "SyntaxVisitor.g.cs");
+            File.WriteAllText(path, contents);
+            Console.WriteLine($"Wrote syntax visitor to {path}");
+        }
+
+        private static void WriteVisitorMethod(IndentedTextWriter indentedTextWriter, Node node, bool generic)
+        {
+            var name = node.Name;
+            var methodName = Regex.Replace(name, "Syntax$", "");
+            var returnType = generic ? "TResult" : "void";
+            indentedTextWriter.WriteLine($"public virtual {returnType} Visit{methodName}({name} node) =>");
+            indentedTextWriter.Indent++;
+            indentedTextWriter.WriteLine("this.DefaultVisit(node);");
+            indentedTextWriter.Indent--;
+        }
+
+        private static void GenerateSyntax()
+        {
             using var writer = new StringWriter();
             using var indentedTextWriter = new IndentedTextWriter(writer);
 
@@ -153,7 +249,7 @@ namespace Panther.SyntaxGen
                 indentedTextWriter.Write("(SyntaxTree);");
                 indentedTextWriter.Indent--;
                 indentedTextWriter.WriteLine();
-                writer.WriteLine();
+                indentedTextWriter.WriteLineNoTabs("");
             }
 
             foreach (var node in _tree.Types.OfType<Node>())
@@ -175,65 +271,17 @@ namespace Panther.SyntaxGen
                 indentedTextWriter.Write(node.Base ?? _tree.Root);
                 indentedTextWriter.WriteLine("(SyntaxTree) {");
 
-                var kind = node.Kinds.FirstOrDefault();
-                if (kind != null)
-                {
-                    indentedTextWriter.WriteLine($"public override SyntaxKind Kind => SyntaxKind.{kind.Name};");
-                    indentedTextWriter.WriteLine("");
-                }
+                EmitKind(node, indentedTextWriter);
 
-                indentedTextWriter.WriteLine("public override IEnumerable<SyntaxNode> GetChildren()");
-                indentedTextWriter.WriteLine("{");
-                indentedTextWriter.Indent++;
-                foreach (var field in node.Fields)
-                {
-                    var canBeNull = field.Type.EndsWith("?");
-                    if (canBeNull)
-                    {
-                        indentedTextWriter.WriteLine($"if ({field.Name} != null)");
-                        indentedTextWriter.WriteLine("{");
-                        indentedTextWriter.Indent++;
-                    }
+                // EmitEquals(indentedTextWriter, name, node);
 
-                    // TODO: verify that the field is a ImmutableArray<T> where T : SyntaxNode
-                    if (field.Type.StartsWith("ImmutableArray<"))
-                    {
-                        indentedTextWriter.WriteLine($"foreach (var child in {field.Name})");
-                        indentedTextWriter.Indent++;
-                        indentedTextWriter.WriteLine($"yield return child;");
-                        indentedTextWriter.Indent--;
-                        writer.WriteLine();
-                    }
-                    else if (field.Type.StartsWith("SeparatedSyntaxList<"))
-                    {
-                        indentedTextWriter.WriteLine($"foreach (var child in {field.Name}.GetWithSeparators())");
-                        indentedTextWriter.Indent++;
-                        indentedTextWriter.WriteLine($"yield return child;");
-                        indentedTextWriter.Indent--;
-                    }
-                    else
-                    {
-                        indentedTextWriter.WriteLine($"yield return {field.Name};");
-                    }
+                EmitGetHashCode(indentedTextWriter, node);
 
-                    if (canBeNull)
-                    {
-                        indentedTextWriter.Indent--;
-                        indentedTextWriter.WriteLine("}");
-                    }
-                }
-                indentedTextWriter.Indent--;
-                indentedTextWriter.WriteLine("}");
-                indentedTextWriter.WriteLine();
+                EmitGetChildren(indentedTextWriter, node, writer);
 
-                indentedTextWriter.WriteLine("public override string ToString()");
-                indentedTextWriter.WriteLine("{");
-                indentedTextWriter.Indent++;
-                indentedTextWriter.WriteLine("using var writer = new StringWriter();");
-                indentedTextWriter.WriteLine("WriteTo(writer);");
-                indentedTextWriter.WriteLine("return writer.ToString();");
-                indentedTextWriter.Indent--;
-                indentedTextWriter.WriteLine("}");
+                EmitToString(indentedTextWriter);
+
+                EmitAccept(indentedTextWriter, name);
 
                 indentedTextWriter.Indent--;
                 indentedTextWriter.WriteLine("}");
@@ -243,10 +291,165 @@ namespace Panther.SyntaxGen
             indentedTextWriter.Indent--;
             indentedTextWriter.WriteLine("}");
 
-            var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Syntax", "Syntax.g.cs");
-            File.WriteAllText(path, writer.ToString());
+            var contents = writer.ToString();
 
+
+            var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Syntax", "Syntax.g.cs");
+            File.WriteAllText(path, contents);
             Console.WriteLine($"Wrote syntax to {path}");
+        }
+
+        private static void EmitAccept(IndentedTextWriter writer, string name)
+        {
+            var methodName = Regex.Replace(name, "Syntax$", "");
+            writer.WriteLineNoTabs("");
+            writer.WriteLine($"public override void Accept(SyntaxVisitor visitor) => visitor.Visit{methodName}(this);");
+            writer.WriteLineNoTabs("");
+            writer.WriteLine($"public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.Visit{methodName}(this);");
+        }
+
+        private static void EmitKind(Node node, IndentedTextWriter indentedTextWriter)
+        {
+            var kind = node.Kinds.FirstOrDefault();
+            if (kind != null)
+            {
+                indentedTextWriter.WriteLine($"public override SyntaxKind Kind => SyntaxKind.{kind.Name};");
+                indentedTextWriter.WriteLineNoTabs("");
+            }
+        }
+
+        private static void EmitToString(IndentedTextWriter indentedTextWriter)
+        {
+            indentedTextWriter.WriteLine("public override string ToString()");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+            indentedTextWriter.WriteLine("using var writer = new StringWriter();");
+            indentedTextWriter.WriteLine("WriteTo(writer);");
+            indentedTextWriter.WriteLine("return writer.ToString();");
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+        }
+
+        private static void EmitGetChildren(IndentedTextWriter indentedTextWriter, Node node, StringWriter writer)
+        {
+            indentedTextWriter.WriteLine("public override IEnumerable<SyntaxNode> GetChildren()");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+            foreach (var field in node.Fields)
+            {
+                var canBeNull = field.Type.EndsWith("?");
+                if (canBeNull)
+                {
+                    indentedTextWriter.WriteLine($"if ({field.Name} != null)");
+                    indentedTextWriter.WriteLine("{");
+                    indentedTextWriter.Indent++;
+                }
+
+                // TODO: verify that the field is a ImmutableArray<T> where T : SyntaxNode
+                if (field.Type.StartsWith("ImmutableArray<"))
+                {
+                    indentedTextWriter.WriteLine($"foreach (var child in {field.Name})");
+                    indentedTextWriter.Indent++;
+                    indentedTextWriter.WriteLine($"yield return child;");
+                    indentedTextWriter.Indent--;
+                    indentedTextWriter.WriteLineNoTabs("");
+                }
+                else if (field.Type.StartsWith("SeparatedSyntaxList<"))
+                {
+                    indentedTextWriter.WriteLine($"foreach (var child in {field.Name}.GetWithSeparators())");
+                    indentedTextWriter.Indent++;
+                    indentedTextWriter.WriteLine($"yield return child;");
+                    indentedTextWriter.Indent--;
+                }
+                else
+                {
+                    indentedTextWriter.WriteLine($"yield return {field.Name};");
+                }
+
+                if (canBeNull)
+                {
+                    indentedTextWriter.Indent--;
+                    indentedTextWriter.WriteLine("}");
+                }
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+            indentedTextWriter.WriteLineNoTabs("");
+        }
+
+        private static void EmitEquals(IndentedTextWriter indentedTextWriter, string name, Node node)
+        {
+            indentedTextWriter.WriteLine($"public override bool Equals({name}? other)");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+            indentedTextWriter.WriteLine("if (ReferenceEquals(null, other)) return false;");
+            indentedTextWriter.WriteLine("if (ReferenceEquals(this, other)) return true;");
+            indentedTextWriter.WriteLine("return ");
+            indentedTextWriter.Indent++;
+            using (var enumerator = node.Fields.GetEnumerator())
+            {
+                if (enumerator.MoveNext())
+                {
+                    var field = enumerator.Current;
+
+                    while (enumerator.MoveNext())
+                    {
+                        indentedTextWriter.WriteLine($"{field!.Name}.Equals(other.{field.Name}) &&");
+                        field = enumerator.Current;
+                    }
+
+                    indentedTextWriter.WriteLine($"{field!.Name}.Equals(other.{field.Name});");
+                }
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+            indentedTextWriter.WriteLineNoTabs("");
+        }
+
+        private static void EmitGetHashCode(IndentedTextWriter indentedTextWriter, Node node)
+        {
+            indentedTextWriter.WriteLine("public override int GetHashCode()");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+            var fields = node.Fields.ToList();
+            if (fields.Count > 8)
+            {
+
+                indentedTextWriter.WriteLine("var hc = new HashCode();");
+                foreach (var field in fields)
+                {
+                    indentedTextWriter.WriteLine($"hc.Add({field!.Name});");
+                }
+                indentedTextWriter.WriteLine("return hc.ToHashCode();");
+            }
+            else
+            {
+                indentedTextWriter.Write("return HashCode.Combine(");
+                using (var enumerator = fields.GetEnumerator())
+                {
+                    if (enumerator.MoveNext())
+                    {
+                        var field = enumerator.Current;
+
+                        while (enumerator.MoveNext())
+                        {
+                            indentedTextWriter.Write($"{field!.Name}, ");
+                            field = enumerator.Current;
+                        }
+
+                        indentedTextWriter.Write($"{field!.Name}");
+                    }
+                }
+
+                indentedTextWriter.WriteLine(");");
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+            indentedTextWriter.WriteLineNoTabs("");
         }
 
 
