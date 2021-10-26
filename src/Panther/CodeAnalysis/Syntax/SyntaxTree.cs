@@ -68,9 +68,7 @@ namespace Panther.CodeAnalysis.Syntax
                     {
                         root = new CompilationUnitSyntax(
                             syntaxTree,
-                            ImmutableArray<NamespaceDirectiveSyntax>.Empty,
                             ImmutableArray<UsingDirectiveSyntax>.Empty,
-                            ImmutableArray<GlobalStatementSyntax>.Empty,
                             ImmutableArray<MemberSyntax>.Empty,
                             token
                         );

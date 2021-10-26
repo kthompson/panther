@@ -164,7 +164,7 @@
         <Field Name="Expression" Type="ExpressionSyntax" />
     </Node>
 
-    <Node Name="GlobalStatementSyntax">
+    <Node Name="GlobalStatementSyntax" Base="MemberSyntax">
         <Kind Name="GlobalStatement"/>
 
         <Field Name="Statement" Type="StatementSyntax" />
@@ -173,18 +173,34 @@
     <Node Name="CompilationUnitSyntax">
         <Kind Name="CompilationUnit"/>
 
-        <Field Name="NamespaceDirectives" Type="ImmutableArray&lt;NamespaceDirectiveSyntax&gt;" />
         <Field Name="Usings" Type="ImmutableArray&lt;UsingDirectiveSyntax&gt;" />
-        <Field Name="Statements" Type="ImmutableArray&lt;GlobalStatementSyntax&gt;" />
         <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
+
         <Field Name="EndOfFileToken" Type="SyntaxToken" />
     </Node>
 
-    <Node Name="NamespaceDirectiveSyntax">
+    <AbstractNode Name="NamespaceBodySyntax" />
+
+    <Node Name="NamespaceMembersSyntax" Base="NamespaceBodySyntax">
+        <Kind Name="NamespaceMembers"/>
+
+        <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
+    </Node>
+
+    <Node Name="NestedNamespaceSyntax" Base="NamespaceBodySyntax">
+        <Kind Name="NestedNamespace"/>
+
+        <Field Name="DotToken" Type="SyntaxToken" />
+        <Field Name="Name" Type="SyntaxToken" />
+        <Field Name="Body" Type="NamespaceBodySyntax" />
+    </Node>
+
+    <Node Name="NamespaceDeclarationSyntax" Base="MemberSyntax">
         <Kind Name="NamespaceDirective"/>
 
         <Field Name="NamespaceKeyword" Type="SyntaxToken" />
-        <Field Name="Name" Type="NameSyntax" />
+        <Field Name="Name" Type="SyntaxToken" />
+        <Field Name="Body" Type="NamespaceBodySyntax" />
     </Node>
 
     <Node Name="ParameterSyntax">

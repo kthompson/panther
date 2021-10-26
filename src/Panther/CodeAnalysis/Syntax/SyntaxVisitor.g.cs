@@ -57,7 +57,13 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual void VisitNamespaceDirective(NamespaceDirectiveSyntax node) =>
+        public virtual void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual void VisitNamespaceMembers(NamespaceMembersSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual void VisitNestedNamespace(NestedNamespaceSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual void VisitNewExpression(NewExpressionSyntax node) =>
@@ -143,7 +149,13 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual TResult VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual TResult VisitNamespaceDirective(NamespaceDirectiveSyntax node) =>
+        public virtual TResult VisitNamespaceDeclaration(NamespaceDeclarationSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitNamespaceMembers(NamespaceMembersSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitNestedNamespace(NestedNamespaceSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitNewExpression(NewExpressionSyntax node) =>

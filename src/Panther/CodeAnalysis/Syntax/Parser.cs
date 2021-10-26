@@ -137,26 +137,12 @@ namespace Panther.CodeAnalysis.Syntax
 
         public CompilationUnitSyntax ParseCompilationUnit()
         {
-
-            var namespaceDirectives = ParseNamespaces();
             var usingDirectives = ParseUsings();
-            var statements = ParseGlobalStatements();
-            var members = ParseMembers();
+            var namespaceSyntax = ParseMembers();
 
             var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-            return new CompilationUnitSyntax(_syntaxTree, namespaceDirectives, usingDirectives, statements, members, endToken);
-        }
-
-        private ImmutableArray<NamespaceDirectiveSyntax> ParseNamespaces()
-        {
-            var namespaceDirectives = ImmutableArray.CreateBuilder<NamespaceDirectiveSyntax>();
-            while (CurrentKind == SyntaxKind.NamespaceKeyword)
-            {
-                namespaceDirectives.Add(ParseNamespaceDirective());
-            }
-
-            return namespaceDirectives.ToImmutable();
+            return new CompilationUnitSyntax(_syntaxTree, usingDirectives, namespaceSyntax, endToken);
         }
 
         private ImmutableArray<UsingDirectiveSyntax> ParseUsings()
@@ -173,7 +159,7 @@ namespace Panther.CodeAnalysis.Syntax
         private ImmutableArray<MemberSyntax> ParseMembers()
         {
             var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-            while (CurrentKind is SyntaxKind.DefKeyword or SyntaxKind.ObjectKeyword or SyntaxKind.ClassKeyword)
+            while (CurrentKind != SyntaxKind.EndOfInputToken && CurrentKind != SyntaxKind.CloseBraceToken)
             {
                 var startToken = CurrentToken;
 
@@ -187,13 +173,55 @@ namespace Panther.CodeAnalysis.Syntax
             return members.ToImmutable();
         }
 
+        private bool IsMemberKind => CurrentKind
+            is SyntaxKind.DefKeyword
+            or SyntaxKind.ObjectKeyword
+            or SyntaxKind.ClassKeyword
+            or SyntaxKind.NamespaceKeyword;
+
         private MemberSyntax ParseMember() =>
             CurrentKind switch
             {
                 SyntaxKind.DefKeyword => ParseFunctionDeclaration(),
                 SyntaxKind.ClassKeyword => ParseClassDeclaration(),
-                _ => ParseObjectDeclaration(),
+                SyntaxKind.NamespaceKeyword => ParseNamespaceDeclaration(),
+                SyntaxKind.ObjectKeyword => ParseObjectDeclaration(),
+                _ => ParseGlobalStatement(),
             };
+
+        private MemberSyntax ParseNamespaceDeclaration()
+        {
+            var namespaceKeyword = Accept();
+            var identifier = Accept(SyntaxKind.IdentifierToken);
+            var namespaceBody = ParseNamespaceBody();
+
+            return new NamespaceDeclarationSyntax(_syntaxTree, namespaceKeyword, identifier, namespaceBody);
+        }
+
+        private NamespaceBodySyntax ParseNamespaceBody()
+        {
+            if (CurrentKind == SyntaxKind.DotToken)
+            {
+                return ParseNestedNamespace();
+            }
+
+            return ParseNamespaceMembers();
+        }
+
+        private NamespaceBodySyntax ParseNamespaceMembers()
+        {
+            var members = ParseMembers();
+            return new NamespaceMembersSyntax(_syntaxTree, members);
+        }
+
+        private NamespaceBodySyntax ParseNestedNamespace()
+        {
+            var dotToken = Accept();
+            var identifier = Accept(SyntaxKind.IdentifierToken);
+            var namespaceBody = ParseNamespaceBody();
+
+            return new NestedNamespaceSyntax(_syntaxTree, dotToken, identifier, namespaceBody);
+        }
 
         private TemplateSyntax ParseTemplate()
         {
@@ -229,14 +257,6 @@ namespace Panther.CodeAnalysis.Syntax
         {
             var statement = ParseStatement();
             return new GlobalStatementSyntax(_syntaxTree, statement);
-        }
-
-        private NamespaceDirectiveSyntax ParseNamespaceDirective()
-        {
-            var namespaceKeyword = Accept();
-            var name = ParseNameSyntax();
-
-            return new NamespaceDirectiveSyntax(_syntaxTree, namespaceKeyword, name);
         }
 
         private UsingDirectiveSyntax ParseUsingDirective()
@@ -586,20 +606,7 @@ namespace Panther.CodeAnalysis.Syntax
                 _ => ParseExpressionStatement()
             };
 
-        private ImmutableArray<GlobalStatementSyntax> ParseGlobalStatements()
-        {
-            var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
-
-            while (CurrentKind != SyntaxKind.ObjectKeyword
-                   && CurrentKind != SyntaxKind.DefKeyword
-                   && CurrentKind != SyntaxKind.ClassKeyword
-                   && CurrentKind != SyntaxKind.EndOfInputToken)
-            {
-                globalStatements.Add(ParseGlobalStatement());
-            }
-
-            return globalStatements.ToImmutable();
-        }
+        private bool IsEndOfInput => CurrentKind == SyntaxKind.EndOfInputToken;
 
         private ExpressionSyntax ParseContinueExpression()
         {
