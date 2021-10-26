@@ -11,6 +11,14 @@ namespace Panther.CodeAnalysis.Syntax
             yield return LiteralToken;
         }
 
+        public override void Accept(SyntaxVisitor visitor)
+        {
+            visitor.VisitLiteralExpression(this);
+        }
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+            visitor.VisitLiteralExpression(this);
+
 
         public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken)
             : this(syntaxTree, literalToken, literalToken.Value)

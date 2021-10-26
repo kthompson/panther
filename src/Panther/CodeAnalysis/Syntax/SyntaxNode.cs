@@ -117,5 +117,9 @@ namespace Panther.CodeAnalysis.Syntax
                 PrettyPrint(writer, previous, indent);
             }
         }
+
+        public abstract void Accept(SyntaxVisitor visitor);
+
+        public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
     }
 }
