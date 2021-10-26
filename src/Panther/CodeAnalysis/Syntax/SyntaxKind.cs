@@ -106,5 +106,7 @@
         UsingDirective,
         GlobalStatement,
         NamespaceDirective,
+        NamespaceMembers,
+        NestedNamespace,
     }
 }

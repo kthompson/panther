@@ -16,6 +16,9 @@ namespace Panther.CodeAnalysis.Syntax
     public abstract partial record StatementSyntax(SyntaxTree SyntaxTree)
         : SyntaxNode(SyntaxTree);
 
+    public abstract partial record NamespaceBodySyntax(SyntaxTree SyntaxTree)
+        : SyntaxNode(SyntaxTree);
+
     public abstract partial record MemberSyntax(SyntaxTree SyntaxTree)
         : SyntaxNode(SyntaxTree);
 
@@ -549,7 +552,7 @@ namespace Panther.CodeAnalysis.Syntax
     }
 
     public sealed partial record GlobalStatementSyntax(SyntaxTree SyntaxTree, StatementSyntax Statement)
-        : SyntaxNode(SyntaxTree) {
+        : MemberSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.GlobalStatement;
 
         public override int GetHashCode()
@@ -574,24 +577,18 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitGlobalStatement(this);
     }
 
-    public sealed partial record CompilationUnitSyntax(SyntaxTree SyntaxTree, ImmutableArray<NamespaceDirectiveSyntax> NamespaceDirectives, ImmutableArray<UsingDirectiveSyntax> Usings, ImmutableArray<GlobalStatementSyntax> Statements, ImmutableArray<MemberSyntax> Members, SyntaxToken EndOfFileToken)
+    public sealed partial record CompilationUnitSyntax(SyntaxTree SyntaxTree, ImmutableArray<UsingDirectiveSyntax> Usings, ImmutableArray<MemberSyntax> Members, SyntaxToken EndOfFileToken)
         : SyntaxNode(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.CompilationUnit;
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(NamespaceDirectives, Usings, Statements, Members, EndOfFileToken);
+            return HashCode.Combine(Usings, Members, EndOfFileToken);
         }
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            foreach (var child in NamespaceDirectives)
-                yield return child;
-
             foreach (var child in Usings)
-                yield return child;
-
-            foreach (var child in Statements)
                 yield return child;
 
             foreach (var child in Members)
@@ -612,19 +609,20 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitCompilationUnit(this);
     }
 
-    public sealed partial record NamespaceDirectiveSyntax(SyntaxTree SyntaxTree, SyntaxToken NamespaceKeyword, NameSyntax Name)
-        : SyntaxNode(SyntaxTree) {
-        public override SyntaxKind Kind => SyntaxKind.NamespaceDirective;
+    public sealed partial record NamespaceMembersSyntax(SyntaxTree SyntaxTree, ImmutableArray<MemberSyntax> Members)
+        : NamespaceBodySyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.NamespaceMembers;
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(NamespaceKeyword, Name);
+            return HashCode.Combine(Members);
         }
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return NamespaceKeyword;
-            yield return Name;
+            foreach (var child in Members)
+                yield return child;
+
         }
 
         public override string ToString()
@@ -634,9 +632,65 @@ namespace Panther.CodeAnalysis.Syntax
             return writer.ToString();
         }
 
-        public override void Accept(SyntaxVisitor visitor) => visitor.VisitNamespaceDirective(this);
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitNamespaceMembers(this);
 
-        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNamespaceDirective(this);
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNamespaceMembers(this);
+    }
+
+    public sealed partial record NestedNamespaceSyntax(SyntaxTree SyntaxTree, SyntaxToken DotToken, SyntaxToken Name, NamespaceBodySyntax Body)
+        : NamespaceBodySyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.NestedNamespace;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(DotToken, Name, Body);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return DotToken;
+            yield return Name;
+            yield return Body;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitNestedNamespace(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNestedNamespace(this);
+    }
+
+    public sealed partial record NamespaceDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken NamespaceKeyword, SyntaxToken Name, NamespaceBodySyntax Body)
+        : MemberSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.NamespaceDirective;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(NamespaceKeyword, Name, Body);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return NamespaceKeyword;
+            yield return Name;
+            yield return Body;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitNamespaceDeclaration(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNamespaceDeclaration(this);
     }
 
     public sealed partial record ParameterSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier, TypeAnnotationSyntax TypeAnnotation)

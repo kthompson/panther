@@ -104,7 +104,9 @@ namespace Panther.CodeAnalysis.Binding
 
         private void BindMembers(ImmutableArray<MemberSyntax> members, BoundScope scope)
         {
-            var (functions, objectsAndClasses) = members.Partition(member => member is FunctionDeclarationSyntax);
+            var (objectsAndClasses, rest) =  members.Partition(member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax);
+            var (functions, statements) = rest.Partition(member => member is FunctionDeclarationSyntax);
+
             // define classes and objects first
             foreach (var member in objectsAndClasses)
             {
@@ -136,12 +138,19 @@ namespace Panther.CodeAnalysis.Binding
                         throw new ArgumentOutOfRangeException(nameof(member));
                 }
             }
+
+            // // TODO
+            // foreach (var statement in statements)
+            // {
+            //
+            //     BindStatement(statement);
+            // }
         }
 
-        private Symbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
-        {
-            throw new NotImplementedException();
-        }
+        // private Symbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
+        // {
+        //     throw new NotImplementedException();
+        // }
 
         private static EntryPoint? BindEntryPoint(BoundScope boundScope, bool isScript,
             ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<BoundStatement> globalStatements,
@@ -157,7 +166,7 @@ namespace Panther.CodeAnalysis.Binding
 
             var firstStatementPerSyntaxTree =
                 (from tree in syntaxTrees
-                 let firstStatement = tree.Root.Statements.OfType<GlobalStatementSyntax>().FirstOrDefault()
+                 let firstStatement = tree.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault()
                  where firstStatement != null
                  select firstStatement)
                 .ToImmutableArray();
@@ -241,6 +250,10 @@ namespace Panther.CodeAnalysis.Binding
             return new EntryPoint(true, eval, Lowerer.Lower(boundStatementFromStatements));
         }
 
+        private static bool IsTopLevelDeclaration(SyntaxNode member) =>
+            member.Kind is SyntaxKind.NamespaceDirective or SyntaxKind.ClassDeclaration or SyntaxKind
+                .ObjectDeclaration;
+
         public static BoundAssembly BindAssembly(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, BoundAssembly? previous,  ImmutableArray<AssemblyDefinition> references)
         {
             var (root, parentScope) = CreateParentScope(previous, references);
@@ -255,14 +268,25 @@ namespace Panther.CodeAnalysis.Binding
 
             foreach (var tree in syntaxTrees)
             {
-                // TODO: global statements are not supported with a namespace
                 var compilationUnit = tree.Root;
+                var allTopLevel = compilationUnit.Members.All(IsTopLevelDeclaration);
+                var allGlobalStatements = compilationUnit.Members.All(member => member is GlobalStatementSyntax);
 
-                foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
+                if (!allTopLevel || !allGlobalStatements)
                 {
-                    var namespaceSymbol = binder.BindNamespace(namespaceDirective);
-                    scope = scope.EnterNamespace(namespaceSymbol);
+                    // TODO: global statements are not supported with a namespace
                 }
+
+                // foreach (var memberSyntax in compilationUnit.Members)
+                // {
+                //
+                // }
+
+                // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
+                // {
+                //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
+                //     scope = scope.EnterNamespace(namespaceSymbol);
+                // }
 
                 foreach (var @using in compilationUnit.Usings)
                 {
@@ -272,7 +296,7 @@ namespace Panther.CodeAnalysis.Binding
 
                 // should only be one set of global statements
                 // otherwise there would be an error
-                globalStatements.AddRange(compilationUnit.Statements);
+                globalStatements.AddRange(compilationUnit.Members.OfType<GlobalStatementSyntax>());
 
                 var (functions, objectsAndClasses) = tree.Root.Members.Partition(member => member is FunctionDeclarationSyntax);
 
