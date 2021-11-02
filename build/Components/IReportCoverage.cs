@@ -9,13 +9,15 @@ using Nuke.Common.Tools.ReportGenerator;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Common.ValueInjection;
 
+using static Nuke.Common.Tools.Codecov.CodecovTasks;
+
 namespace Panther.Build.Components
 {
     interface IReportCoverage : ITest, IHazReports, IHazGitRepository, IHazGitVersion
     {
         bool CreateCoverageHtmlReport { get; }
         bool ReportToCodecov { get; }
-        [Parameter] [Secret] string CodecovToken => ValueInjectionUtility.TryGetValue(() => CodecovToken);
+        [Parameter] [Secret] string? CodecovToken => ValueInjectionUtility.TryGetValue(() => CodecovToken);
 
         string CoverageReportDirectory => ReportDirectory / "coverage-report";
         string CoverageReportArchive => Path.ChangeExtension(CoverageReportDirectory, ".zip");
@@ -28,12 +30,12 @@ namespace Panther.Build.Components
             .Requires(() => !ReportToCodecov || CodecovToken != null)
             .Executes(() =>
             {
-                // if (ReportToCodecov)
-                // {
-                //     Codecov(_ => _
-                //         .Apply(CodecovSettingsBase)
-                //         .Apply(CodecovSettings));
-                // }
+                if (ReportToCodecov)
+                {
+                    Codecov(_ => _
+                        .Apply(CodecovSettingsBase)
+                        .Apply(CodecovSettings));
+                }
 
                 if (CreateCoverageHtmlReport)
                 {
@@ -70,6 +72,7 @@ namespace Panther.Build.Components
 
         void UploadCoverageData()
         {
+
             TestResultDirectory.GlobFiles("*.xml").ForEach(x =>
                 AzurePipelines.Instance?.PublishCodeCoverage(
                     AzurePipelinesCodeCoverageToolType.Cobertura,
