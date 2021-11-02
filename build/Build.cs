@@ -5,6 +5,7 @@ using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.CI.AzurePipelines.Configuration;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
@@ -43,6 +44,23 @@ using static Nuke.Common.IO.FileSystemTasks;
     CachePath = "$(NUGET_PACKAGES)",
     TriggerBranchesInclude = new []{ "main" }
 )]
+[GitHubActions("default", GitHubActionsImage.WindowsLatest, GitHubActionsImage.UbuntuLatest, GitHubActionsImage.MacOsLatest,
+    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage) },
+    // NonEntryTargets = new[] { nameof(IRestore.Restore), nameof(ICompile.Compile) },
+    // ExcludedTargets = new[] { nameof(Clean) },
+    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
+    // CachePath = "$(NUGET_PACKAGES)",
+    OnPushBranches = new []{ "main" }
+)]
+[GitHubActions("pr", GitHubActionsImage.WindowsLatest, GitHubActionsImage.UbuntuLatest, GitHubActionsImage.MacOsLatest,
+    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage) },
+
+    // NonEntryTargets = new[] { nameof(IRestore.Restore) },
+    // ExcludedTargets = new[] { nameof(Clean) },
+    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" },
+    // CachePath = "$(NUGET_PACKAGES)",
+    OnPullRequestBranches = new [] { "main" }
+    )]
 class Build : NukeBuild,
     IHazChangelog,
     IHazGitRepository,
