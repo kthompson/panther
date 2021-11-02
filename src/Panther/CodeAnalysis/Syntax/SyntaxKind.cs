@@ -105,7 +105,7 @@
         // Top level items
         UsingDirective,
         GlobalStatement,
-        NamespaceDirective,
+        NamespaceDeclaration,
         NamespaceMembers,
         NestedNamespace,
     }

@@ -667,7 +667,7 @@ namespace Panther.CodeAnalysis.Syntax
 
     public sealed partial record NamespaceDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken NamespaceKeyword, SyntaxToken Name, NamespaceBodySyntax Body)
         : MemberSyntax(SyntaxTree) {
-        public override SyntaxKind Kind => SyntaxKind.NamespaceDirective;
+        public override SyntaxKind Kind => SyntaxKind.NamespaceDeclaration;
 
         public override int GetHashCode()
         {

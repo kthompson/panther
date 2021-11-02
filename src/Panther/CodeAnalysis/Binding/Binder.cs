@@ -251,7 +251,7 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         private static bool IsTopLevelDeclaration(SyntaxNode member) =>
-            member.Kind is SyntaxKind.NamespaceDirective or SyntaxKind.ClassDeclaration or SyntaxKind
+            member.Kind is SyntaxKind.NamespaceDeclaration or SyntaxKind.ClassDeclaration or SyntaxKind
                 .ObjectDeclaration;
 
         public static BoundAssembly BindAssembly(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, BoundAssembly? previous,  ImmutableArray<AssemblyDefinition> references)

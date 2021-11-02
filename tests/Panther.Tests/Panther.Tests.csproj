@@ -43,6 +43,7 @@
     <None Remove="CodeAnalysis\Emit\**\*.il" />
     <None Remove="CodeAnalysis\Emit\**\*.pn" />
     <None Remove="CodeAnalysis\Emit\**\output.txt" />
+    <Compile Remove="CodeAnalysis\Emit\**\*.cs" />
     <Content Include="CodeAnalysis\Emit\**\*.pn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -50,6 +51,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="CodeAnalysis\Emit\**\output.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CodeAnalysis\Emit\**\*.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
