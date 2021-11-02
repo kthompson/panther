@@ -8,8 +8,8 @@ class Point(X: int, Y: int)
 
 class Extent(xmin: int, xmax: int, ymin: int, ymax: int)
 {
-    def width() = xmax - xmin
-    def height() = ymax - ymin
+    def width(): int = xmax - xmin
+    def height(): int = ymax - ymin
 
     // def min() = new Point(xmin, ymin)
     // def max() = new Point(xmax, ymax)

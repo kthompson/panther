@@ -87,6 +87,9 @@ namespace Panther.CodeAnalysis
         public void ReportUndefinedType(TextLocation location, string name) =>
             Report(location, $"Type '{name}' is not defined");
 
+        public void ReportTypeAnnotationRequired(TextLocation location) =>
+            Report(location, "Type annotation is required");
+
         public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName) =>
             Report(location, $"Function parameter '{parameterName}' was already declared");
 
