@@ -1,4 +1,10 @@
 ﻿using System;
 using static Panther.Predef;
 
-println("Hello World!");
+public static partial class Program
+{
+    public static void main()
+    {
+        println("Hello World!");
+    }
+}

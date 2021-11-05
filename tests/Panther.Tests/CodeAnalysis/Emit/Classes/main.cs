@@ -1,10 +1,13 @@
 ﻿using System;
 using static Panther.Predef;
 
-public static void main()
+public static partial class Program
 {
-    var p = new Point(10, 20);
-    println(p.X);
+    public static void main()
+    {
+        var p = new Point(10, 20);
+        println(p.X);
+    }
 }
 
 class Point

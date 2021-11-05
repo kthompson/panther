@@ -1,2 +1,2 @@
-﻿val x = 12
+﻿val x: int = 12
 println(string(x))

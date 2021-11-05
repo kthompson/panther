@@ -88,11 +88,19 @@ namespace Panther.Tests.CodeAnalysis
 
             var assemblyLocation = Path.Combine(outputDirectory, moduleName + ".dll");
 
-            var emitResult = compilation.Emit(
+            var result = compilation.Emit(
                 moduleName,
                 assemblyLocation);
 
-            Assert.Empty(emitResult.Diagnostics);
+            Assert.Empty(result.Diagnostics);
+
+            // var (emitSuccess, emitDiagnostics) = compilation.EmitCSharp(
+            //     moduleName,
+            //     assemblyLocation);
+            //
+            // Assert.Empty(emitDiagnostics);
+            // Assert.True(emitSuccess);
+
             // var vmOutput = Path.Combine(outputDirectory, moduleName);
             // Directory.CreateDirectory(vmOutput);
             // var emitVm = compilation.EmitVM(vmOutput);

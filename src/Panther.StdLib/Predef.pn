@@ -1,0 +1,17 @@
+﻿using System
+
+namespace Panther
+
+object Predef {
+    def print(object value): unit => Console.Write(value)
+
+    def println(object value): unit => Console.WriteLine(value)
+
+    def println(): unit => Console.WriteLine()
+
+    def readLine(): string => Console.ReadLine()
+
+    val _random = new Random()
+
+    def rnd(max: int): int => _random.Next(max)
+}

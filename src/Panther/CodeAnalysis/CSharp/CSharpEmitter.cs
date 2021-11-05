@@ -1,14 +1,16 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
+using CASyntaxTree = Microsoft.CodeAnalysis.SyntaxTree;
+using SyntaxFacts = Panther.CodeAnalysis.Syntax.SyntaxFacts;
+using SyntaxKind = Panther.CodeAnalysis.Syntax.SyntaxKind;
 using SyntaxNode = Panther.CodeAnalysis.Syntax.SyntaxNode;
 using SyntaxToken = Panther.CodeAnalysis.Syntax.SyntaxToken;
 using SyntaxTree = Panther.CodeAnalysis.Syntax.SyntaxTree;
@@ -16,7 +18,6 @@ using SyntaxTrivia = Panther.CodeAnalysis.Syntax.SyntaxTrivia;
 
 namespace Panther.CodeAnalysis.CSharp
 {
-
     enum ContainerType
     {
         None,
@@ -31,6 +32,92 @@ namespace Panther.CodeAnalysis.CSharp
         private readonly IndentedTextWriter _writer;
         private readonly DiagnosticBag _diagnostics;
         private ContainerType _containerType = ContainerType.None;
+        private string _containerName = "";
+
+        private static readonly IEnumerable<string> DefaultNamespaces =
+            new[]
+            {
+                "System",
+                "System.IO",
+                "System.Net",
+                "System.Linq",
+                "System.Text",
+                "Panther",
+            };
+
+        private static readonly CSharpCompilationOptions DefaultCompilationOptions =
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+                .WithOverflowChecks(true)
+                .WithPlatform(Platform.X64)
+                .WithOptimizationLevel(OptimizationLevel.Release)
+                .WithSpecificDiagnosticOptions(
+                    new Dictionary<string, ReportDiagnostic>
+                    {
+                        ["CS8019"] = ReportDiagnostic.Suppress // Unnecessary using directive
+                    }
+                )
+                .WithUsings(DefaultNamespaces);
+
+        private static readonly IEnumerable<MetadataReference> DefaultReferences =
+            new[]
+            {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Panther.Unit).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.GenericUriParser).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly
+                    .Location)
+            };
+
+
+        public static string ToCSharpText(SyntaxTree tree)
+        {
+            using var emitter = new CSharpEmitter(tree);
+            emitter.Visit(tree.Root);
+            return emitter.ToText();
+        }
+
+        public static (bool Success, ImmutableArray<Diagnostic>) ToCSharp(string moduleName, string outputPath, params SyntaxTree[] trees)
+        {
+            var sourceFileLookup = trees.Select(tree => tree.File).ToDictionary(file => file.FileName);
+
+            var list = new List<CASyntaxTree>();
+            foreach (var tree in trees)
+            {
+                using var emitter = new CSharpEmitter(tree);
+                emitter.Visit(tree.Root);
+                list.Add(emitter.BuildSyntaxTree());
+            }
+
+            var compilation = CSharpCompilation.Create(moduleName, list.ToArray(), DefaultReferences, DefaultCompilationOptions.WithMainTypeName("Program"))
+                ;
+
+            using var stream = new MemoryStream();
+            var result = compilation.Emit(stream);
+
+            if (result.Success)
+            {
+                File.WriteAllBytes(outputPath, stream.GetBuffer());
+            }
+
+            return (result.Success, result.Diagnostics.SelectMany(diag =>
+            {
+                if (diag.WarningLevel == 4)
+                    return Array.Empty<Diagnostic>();
+
+                var diagLocation = diag.Location;
+                // var diagSpan = diagLocation.SourceSpan;
+                var path = diagLocation.SourceTree?.FilePath;
+
+                var sourceFile = path != null && sourceFileLookup.TryGetValue(path, out var file) ? file : new NoSourceFile();
+
+
+                var location = new TextLocation(sourceFile, new TextSpan(0, 0));
+
+                return new[] { new Diagnostic(location, diag.GetMessage()) };
+            }).ToImmutableArray());
+        }
+
 
         private CSharpEmitter(SyntaxTree syntaxTree)
         {
@@ -46,6 +133,13 @@ namespace Panther.CodeAnalysis.CSharp
             _writer.Flush();
             var result = _stream.ToString();
             return result;
+        }
+
+        private CASyntaxTree BuildSyntaxTree()
+        {
+            _writer.Flush();
+            var result = _stream.ToString();
+            return CSharpSyntaxTree.ParseText(result, null, _syntaxTree.File.FileName);
         }
 
         protected override void DefaultVisit(SyntaxNode node)
@@ -68,6 +162,11 @@ namespace Panther.CodeAnalysis.CSharp
         public override void VisitToken(SyntaxToken node)
         {
         }
+
+        public override void VisitUnitExpression(UnitExpressionSyntax node)
+        {
+        }
+
 
         public override void VisitGlobalStatement(GlobalStatementSyntax node)
         {
@@ -182,28 +281,124 @@ namespace Panther.CodeAnalysis.CSharp
                 _writer.WriteLine($" {p} {{ get; }}");
             }
 
+            if (node.Fields.Count > 0 && node.Template != null)
+            {
+                WriteLine();
+            }
+
             // emit body if any exists
-            var saveContainerType = _containerType;
 
-            _containerType = ContainerType.Class;
-
+            using var _ = MarkContainer(node.Identifier.Text, ContainerType.Class);
             node.Template?.Accept(this);
-
-            _containerType = saveContainerType;
 
             // close class
             EndBlock();
-            // WriteLine("<=CD3");
         }
 
         public override void VisitTemplate(TemplateSyntax node)
         {
-            if (_containerType == ContainerType.Class)
-            {
-                WriteLine();
-            }
-            VisitSeparated(node.Members, () => WriteLine());
+            VisitMembers(node.Members);
         }
+
+        private void VisitMembers(ImmutableArray<MemberSyntax> members)
+        {
+            var decls = members
+                .Where(member => member is not GlobalStatementSyntax)
+                .Where(member => member is not FunctionDeclarationSyntax)
+                .ToImmutableArray();
+
+            var funcs = members.OfType<FunctionDeclarationSyntax>().Where(func => func.Identifier.Text != "main")
+                .ToImmutableArray();
+
+            var main = members.OfType<FunctionDeclarationSyntax>()
+                .FirstOrDefault(func => func.Identifier.Text == "main");
+
+            var statements = members.OfType<GlobalStatementSyntax>().Select(global => global.Statement)
+                .ToImmutableArray();
+
+            var emitStatic = _containerType is ContainerType.None or ContainerType.Object;
+            var emitMainOrStatic = !statements.IsEmpty || main != null;
+            var emitProgram = (emitMainOrStatic || !funcs.IsEmpty) && _containerType == ContainerType.None;
+
+            if (emitProgram)
+            {
+                _writer.WriteLine("public static partial class Program");
+                StartBlock();
+            }
+
+            if (emitMainOrStatic)
+            {
+                // for top level statements we need to iterate twice
+                // 1. defining top-level fields for this class,
+
+                foreach (var assignment in statements.OfType<VariableDeclarationStatementSyntax>())
+                {
+                    _writer.Write("public ");
+                    if(emitStatic)
+                    {
+                        _writer.Write("static ");
+                    }
+
+                    assignment.TypeAnnotation!.Type.Accept(this);
+
+                    _writer.Write(" ");
+                    _writer.Write(assignment.IdentifierToken.Text);
+                    _writer.WriteLine(";");
+                    // we emit the value later in case the expression is too complex for a field initializer
+                }
+
+                // 2. defining the entry point expressions(or static constructor)
+                _writer.WriteLine(emitProgram || main != null ? "public static void main()" : $"static {_containerName}");
+                StartBlock();
+
+                foreach (var statement in statements)
+                {
+                    if (statement is VariableDeclarationStatementSyntax varDecl)
+                    {
+                        // create a temporary assignment expression and emit that
+                        var assignment = new AssignmentExpressionSyntax(varDecl.SyntaxTree,
+                            new IdentifierNameSyntax(varDecl.SyntaxTree, varDecl.IdentifierToken), varDecl.EqualsToken,
+                            varDecl.Expression);
+
+                        assignment.Accept(this);
+                        _writer.WriteLine(";");
+                    }
+                    else
+                    {
+                        statement.Accept(this);
+                    }
+                }
+
+                // TODO: if topLevelStatements == false this is probably wrong
+                // emit the actual main body if there is one, globals will already be assigned
+                if (main != null && main.Body.Kind != SyntaxKind.UnitExpression)
+                {
+                    main.Body.Accept(this);
+                }
+
+                // end constructor/main
+                EndBlock();
+
+                if (!funcs.IsEmpty)
+                {
+                    WriteLine();
+                }
+            }
+
+            VisitSeparated(funcs, WriteLine);
+
+            if (emitProgram)
+            {
+                EndBlock();
+                if (!decls.IsEmpty)
+                {
+                    WriteLine();
+                }
+            }
+
+            VisitSeparated(decls, WriteLine);
+        }
+
 
         public override void VisitIdentifierName(IdentifierNameSyntax node)
         {
@@ -237,7 +432,8 @@ namespace Panther.CodeAnalysis.CSharp
 
         public override void VisitObjectDeclaration(ObjectDeclarationSyntax node)
         {
-            _writer.WriteLine($"public partial class {node.Identifier.Text}");
+            _writer.WriteLine($"public static partial class {node.Identifier.Text}");
+            using var _ = MarkContainer(node.Identifier.Text, ContainerType.Object);
             StartBlock();
             node.Template.Accept(this);
             EndBlock();
@@ -247,7 +443,7 @@ namespace Panther.CodeAnalysis.CSharp
         {
             _writer.Write("public ");
 
-            if (_containerType != ContainerType.Class)
+            if (_containerType is ContainerType.Object or ContainerType.None)
             {
                 _writer.Write("static ");
             }
@@ -322,7 +518,21 @@ namespace Panther.CodeAnalysis.CSharp
             _writer.Write("while (");
             node.ConditionExpression.Accept(this);
             _writer.WriteLine(")");
-            node.Body.Accept(this);
+            EmitBlock(node.Body);
+        }
+
+        void EmitBlock(ExpressionSyntax node)
+        {
+            if (node.Kind == SyntaxKind.BlockExpression)
+            {
+                StartBlock();
+                node.Accept(this);
+                EndBlock();
+            }
+            else
+            {
+                node.Accept(this);
+            }
         }
 
         public override void VisitBinaryExpression(BinaryExpressionSyntax node)
@@ -385,18 +595,17 @@ namespace Panther.CodeAnalysis.CSharp
 
         public override void VisitBlockExpression(BlockExpressionSyntax node)
         {
-            StartBlock();
+            // StartBlock();
 
-            foreach (var statement in node.Statements)
+            VisitSeparated(node.Statements, () => { });
+
+            if (node.Expression.Kind != SyntaxKind.UnitExpression)
             {
-                statement.Accept(this);
+                node.Expression.Accept(this);
+                _writer.WriteLine(";");
             }
 
-            node.Expression.Accept(this);
-            // TODO: this should really only be emitted when our blocks type is non-unit
-            _writer.WriteLine(";");
-
-            EndBlock();
+            // EndBlock();
         }
 
         public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
@@ -412,7 +621,7 @@ namespace Panther.CodeAnalysis.CSharp
             _writer.Write("if (");
             node.ConditionExpression.Accept(this);
             _writer.WriteLine(")");
-            node.ThenExpression.Accept(this);
+            EmitBlock(node.ThenExpression);
 
             if (node.ThenExpression is not BlockExpressionSyntax)
             {
@@ -428,7 +637,7 @@ namespace Panther.CodeAnalysis.CSharp
                 _writer.WriteLine("else");
             }
 
-            node.ElseExpression.Accept(this);
+            EmitBlock(node.ElseExpression);
         }
 
         public override void VisitCompilationUnit(CompilationUnitSyntax node)
@@ -442,13 +651,7 @@ namespace Panther.CodeAnalysis.CSharp
                 usingDirective.Accept(this);
             }
 
-            VisitSeparated(node.Members, previous =>
-            {
-                if (previous is FunctionDeclarationSyntax or ClassDeclarationSyntax or ObjectDeclarationSyntax)
-                {
-                    WriteLine();
-                }
-            });
+            VisitMembers(node.Members);
         }
 
         private void WriteLine()
@@ -505,16 +708,43 @@ namespace Panther.CodeAnalysis.CSharp
             }
         }
 
-        public static string ToCSharpText(SyntaxTree tree)
+        private IDisposable MarkContainer(string name, ContainerType type)
         {
-            using var emitter = new CSharpEmitter(tree);
-            emitter.Visit(tree.Root);
-            return emitter.ToText();
+            var saveContainerName = _containerName;
+            var saveContainerType = _containerType;
+            _containerName = name;
+            _containerType = type;
+
+            return Disposable.Create(() =>
+            {
+                _containerName = saveContainerName;
+                _containerType = saveContainerType;
+            });
         }
+
         public void Dispose()
         {
             _writer.Dispose();
             _stream.Dispose();
+        }
+    }
+
+    class Disposable
+    {
+        public static IDisposable Create(Action action) => new ActionDisposable(action);
+        private class ActionDisposable : IDisposable
+        {
+            private Action _action;
+
+            public ActionDisposable(Action action)
+            {
+                _action = action;
+            }
+
+            public void Dispose()
+            {
+                _action();
+            }
         }
     }
 }

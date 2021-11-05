@@ -1,8 +1,11 @@
 ﻿using System;
 using static Panther.Predef;
 
-public static void main()
+public static partial class Program
 {
-    var name = getName();
-    println("Hello " + name + "!");
+    public static void main()
+    {
+        var name = getName();
+        println("Hello " + name + "!");
+    }
 }
