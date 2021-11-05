@@ -1,8 +1,11 @@
 using System;
 using static Panther.Predef;
 
-public static string getName()
+public static partial class Program
 {
-    println("What is your name?");
-    return readLine();
+    public static string getName()
+    {
+        println("What is your name?");
+        return readLine();
+    }
 }

@@ -1,4 +1,4 @@
 ﻿def main() = {
-    val name = getName()
+    val name: string = getName()
     println("Hello " + name + "!")
 }

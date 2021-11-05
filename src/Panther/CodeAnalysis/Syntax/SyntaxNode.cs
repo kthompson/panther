@@ -9,6 +9,8 @@ namespace Panther.CodeAnalysis.Syntax
 {
     public abstract record SyntaxNode(SyntaxTree SyntaxTree)
     {
+        internal int? Id { get; set; }
+
         public abstract SyntaxKind Kind { get; }
 
         public virtual TextSpan Span

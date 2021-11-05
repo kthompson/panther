@@ -49,10 +49,17 @@ namespace Panther.Compiler
                         return 1;
                     }
 
-                    var emitResult = compilation.Emit(module, output.FullName);
-                    if (emitResult.Diagnostics.Any())
+                    // var (_, diagnostics) = compilation.EmitCSharp(module, output.FullName);
+                    // if (diagnostics.Any())
+                    // {
+                    //     Console.Error.WriteDiagnostics(diagnostics);
+                    //     return 1;
+                    // }
+
+                    var result = compilation.Emit(module, output.FullName);
+                    if (result.Diagnostics.Any())
                     {
-                        Console.Error.WriteDiagnostics(emitResult.Diagnostics);
+                        Console.Error.WriteDiagnostics(result.Diagnostics);
                         return 1;
                     }
 

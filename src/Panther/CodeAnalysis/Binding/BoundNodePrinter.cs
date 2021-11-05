@@ -1,7 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.IO;
-using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
 using Type = Panther.CodeAnalysis.Symbols.Type;
