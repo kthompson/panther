@@ -728,16 +728,19 @@ namespace Panther.CodeAnalysis.Emit
                     break;
 
                 case BoundUnaryOperatorKind.Negation:
-                    // TODO: is Negation and BitwiseNegation the same opcode??
+                    // f(i) = -i
                     ilProcessor.Emit(OpCodes.Neg);
                     break;
 
                 case BoundUnaryOperatorKind.LogicalNegation:
-                    ilProcessor.Emit(OpCodes.Not);
+                    // f(b) = !b (logical)
+                    ilProcessor.Emit(OpCodes.Ldc_I4_0);
+                    ilProcessor.Emit(OpCodes.Ceq);
                     break;
 
                 case BoundUnaryOperatorKind.BitwiseNegation:
-                    ilProcessor.Emit(OpCodes.Neg);
+                    // f(i) = ~i
+                    ilProcessor.Emit(OpCodes.Not);
                     break;
 
                 default:
