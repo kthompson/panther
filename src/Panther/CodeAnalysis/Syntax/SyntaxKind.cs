@@ -72,9 +72,7 @@
         AssignmentExpression,
         BinaryExpression,
         BlockExpression,
-        BreakExpression,
         CallExpression,
-        ContinueExpression,
         ForExpression,
         GroupExpression,
         IdentifierName,
@@ -88,6 +86,8 @@
         WhileExpression,
 
         // Statements
+        BreakStatement,
+        ContinueStatement,
         ExpressionStatement,
         VariableDeclarationStatement,
 
@@ -95,6 +95,7 @@
         Template,
         TypeAnnotation,
         Parameter,
+        Initializer,
         CompilationUnit,
 
         // Members
@@ -107,6 +108,6 @@
         GlobalStatement,
         NamespaceDeclaration,
         NamespaceMembers,
-        NestedNamespace,
+        NestedNamespace
     }
 }

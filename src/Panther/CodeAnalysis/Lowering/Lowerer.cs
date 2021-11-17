@@ -162,7 +162,7 @@ namespace Panther.CodeAnalysis.Lowering
         protected override BoundExpression RewriteIfExpression(BoundIfExpression node)
         {
             /*
-             * if (<conditon>)
+             * if (<condition>)
              *     <thenBody>
              * else
              *     <elseBody>
@@ -170,7 +170,7 @@ namespace Panther.CodeAnalysis.Lowering
              *
              * to
              *
-             * gotoIfFalse <conditon> <elseLabel>
+             * gotoIfFalse <condition> <elseLabel>
              *    <thenBody>
              *    goto <endLabel>
              * <elseLabel>
