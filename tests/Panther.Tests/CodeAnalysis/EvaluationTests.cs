@@ -224,7 +224,7 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Property]
-        public void EvaluatesNegate(bool value)
+        public void EvaluatesLogicalNegation(bool value)
         {
             string code = $"!{b(value)}";
             object value1 = !value;
@@ -470,15 +470,6 @@ namespace Panther.Tests.CodeAnalysis
         {
             using var scriptHost = BuildScriptHost();
             AssertEvaluation(b.ToString().ToLower(), b, scriptHost);
-        }
-
-        [Property]
-        public void EvaluatesLogicalNegation(bool b)
-        {
-            string code = "!" + b.ToString().ToLower();
-            object value = !b;
-            using var scriptHost = BuildScriptHost();
-            AssertEvaluation(code, value, scriptHost);
         }
 
         [Property]
