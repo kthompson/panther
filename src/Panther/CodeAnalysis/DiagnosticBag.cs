@@ -84,6 +84,9 @@ namespace Panther.CodeAnalysis
         public void ReportCannotConvertImplicitly(TextLocation location, Type fromType, Type toType) =>
             Report(location, $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?");
 
+        public void ReportUndefinedTypeOrInitializer(TextLocation location) =>
+            Report(location, $"A type of initializer is required for a Variable/Value declaration");
+
         public void ReportUndefinedType(TextLocation location, string name) =>
             Report(location, $"Type '{name}' is not defined");
 

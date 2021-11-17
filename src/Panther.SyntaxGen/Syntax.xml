@@ -3,8 +3,11 @@
 <Tree Root="SyntaxNode">
 
     <PredefinedNode Name="SyntaxToken" Base="SyntaxNode"/>
+    <PredefinedNode Name="SyntaxTrivia" Base="SyntaxNode"/>
 
     <AbstractNode Name="ExpressionSyntax" />
+
+    <PredefinedNode Name="LiteralExpressionSyntax" Base="ExpressionSyntax"/>
 
     <Node Name="AssignmentExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="AssignmentExpression"/>
@@ -13,7 +16,6 @@
         <Field Name="EqualsToken" Type="SyntaxToken" />
         <Field Name="Expression" Type="ExpressionSyntax" />
     </Node>
-
 
     <Node Name="BinaryExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="BinaryExpression"/>
@@ -30,18 +32,6 @@
         <Field Name="Statements" Type="ImmutableArray&lt;StatementSyntax&gt;" />
         <Field Name="Expression" Type="ExpressionSyntax" />
         <Field Name="CloseBraceToken" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="BreakExpressionSyntax" Base="ExpressionSyntax">
-        <Kind Name="BreakExpression"/>
-
-        <Field Name="BreakKeyword" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="ContinueExpressionSyntax" Base="ExpressionSyntax">
-        <Kind Name="ContinueExpression"/>
-
-        <Field Name="ContinueKeyword" Type="SyntaxToken" />
     </Node>
 
     <Node Name="NewExpressionSyntax" Base="ExpressionSyntax">
@@ -148,6 +138,18 @@
 
     <AbstractNode Name="StatementSyntax" />
 
+    <Node Name="BreakStatementSyntax" Base="StatementSyntax">
+        <Kind Name="BreakStatement"/>
+
+        <Field Name="BreakKeyword" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="ContinueStatementSyntax" Base="StatementSyntax">
+        <Kind Name="ContinueStatement"/>
+
+        <Field Name="ContinueKeyword" Type="SyntaxToken" />
+    </Node>
+
     <Node Name="ExpressionStatementSyntax" Base="StatementSyntax">
         <Kind Name="ExpressionStatement"/>
 
@@ -160,8 +162,7 @@
         <Field Name="ValOrVarToken" Type="SyntaxToken" />
         <Field Name="IdentifierToken" Type="SyntaxToken" />
         <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax?" />
-        <Field Name="EqualsToken" Type="SyntaxToken" />
-        <Field Name="Expression" Type="ExpressionSyntax" />
+        <Field Name="Initializer" Type="InitializerSyntax?" />
     </Node>
 
     <Node Name="GlobalStatementSyntax" Base="MemberSyntax">
@@ -196,7 +197,7 @@
     </Node>
 
     <Node Name="NamespaceDeclarationSyntax" Base="MemberSyntax">
-        <Kind Name="NamespaceDirective"/>
+        <Kind Name="NamespaceDeclaration"/>
 
         <Field Name="NamespaceKeyword" Type="SyntaxToken" />
         <Field Name="Name" Type="SyntaxToken" />
@@ -208,6 +209,13 @@
 
         <Field Name="Identifier" Type="SyntaxToken" />
         <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax" />
+    </Node>
+
+    <Node Name="InitializerSyntax">
+        <Kind Name="Initializer"/>
+
+        <Field Name="EqualsToken" Type="SyntaxToken" />
+        <Field Name="Expression" Type="ExpressionSyntax" />
     </Node>
 
     <Node Name="TypeAnnotationSyntax">

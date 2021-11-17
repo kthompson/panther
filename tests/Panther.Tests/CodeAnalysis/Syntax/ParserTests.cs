@@ -202,6 +202,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertNode(SyntaxKind.Initializer);
             e.AssertToken(SyntaxKind.EqualsToken, "=");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);
@@ -338,6 +339,7 @@ namespace Panther.Tests.CodeAnalysis.Syntax
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertToken(SyntaxKind.IdentifierToken, "x");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            e.AssertNode(SyntaxKind.Initializer);
             e.AssertToken(SyntaxKind.EqualsToken, "=");
             e.AssertTrivia(SyntaxKind.WhitespaceTrivia, " ");
             e.AssertNode(SyntaxKind.LiteralExpression);

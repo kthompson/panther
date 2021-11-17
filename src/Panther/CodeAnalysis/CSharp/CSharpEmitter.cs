@@ -353,12 +353,12 @@ namespace Panther.CodeAnalysis.CSharp
 
                 foreach (var statement in statements)
                 {
-                    if (statement is VariableDeclarationStatementSyntax varDecl)
+                    if (statement is VariableDeclarationStatementSyntax varDecl && varDecl.Initializer != null)
                     {
                         // create a temporary assignment expression and emit that
                         var assignment = new AssignmentExpressionSyntax(varDecl.SyntaxTree,
-                            new IdentifierNameSyntax(varDecl.SyntaxTree, varDecl.IdentifierToken), varDecl.EqualsToken,
-                            varDecl.Expression);
+                            new IdentifierNameSyntax(varDecl.SyntaxTree, varDecl.IdentifierToken), varDecl.Initializer.EqualsToken,
+                            varDecl.Initializer.Expression);
 
                         assignment.Accept(this);
                         _writer.WriteLine(";");
@@ -423,11 +423,32 @@ namespace Panther.CodeAnalysis.CSharp
 
         public override void VisitVariableDeclarationStatement(VariableDeclarationStatementSyntax node)
         {
-            _writer.Write("var ");
-            _writer.Write(node.IdentifierToken.Text);
-            _writer.Write(" = ");
-            node.Expression.Accept(this);
-            _writer.WriteLine(";");
+            if (node.Initializer == null)
+            {
+                // int i;
+                if (node.TypeAnnotation != null)
+                {
+                    node.TypeAnnotation.Type.Accept(this);
+                    _writer.Write(" ");
+                    _writer.Write(node.IdentifierToken.Text);
+                    _writer.WriteLine(";");
+                }
+                else
+                {
+                    _writer.Write("var ");
+                    _writer.Write(node.IdentifierToken.Text);
+                    _writer.WriteLine(" = <error> ;");
+                }
+            }
+            else
+            {
+                // var i = 0;
+                _writer.Write("var ");
+                _writer.Write(node.IdentifierToken.Text);
+                _writer.Write(" = ");
+                node.Initializer.Expression.Accept(this);
+                _writer.WriteLine(";");
+            }
         }
 
         public override void VisitObjectDeclaration(ObjectDeclarationSyntax node)

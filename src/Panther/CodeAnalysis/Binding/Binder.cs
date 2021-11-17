@@ -538,6 +538,8 @@ namespace Panther.CodeAnalysis.Binding
         private BoundStatement BindStatementInternal(StatementSyntax syntax, BoundScope scope) =>
             syntax switch
             {
+                BreakStatementSyntax breakStatementSyntax => BindBreakStatement(breakStatementSyntax),
+                ContinueStatementSyntax continueStatementSyntax => BindContinueStatement(continueStatementSyntax),
                 ExpressionStatementSyntax expressionStatementSyntax => BindExpressionStatement(
                     expressionStatementSyntax, scope),
                 VariableDeclarationStatementSyntax variableDeclarationStatementSyntax =>
@@ -545,7 +547,7 @@ namespace Panther.CodeAnalysis.Binding
                 _ => throw new ArgumentOutOfRangeException(nameof(syntax))
             };
 
-        private BoundStatement BindContinueStatement(ContinueExpressionSyntax syntax)
+        private BoundStatement BindContinueStatement(ContinueStatementSyntax syntax)
         {
             var label = GetContinueLabel();
             if (label == null)
@@ -557,7 +559,7 @@ namespace Panther.CodeAnalysis.Binding
             return new BoundGotoStatement(syntax, label);
         }
 
-        private BoundStatement BindBreakStatement(BreakExpressionSyntax syntax)
+        private BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
         {
             var label = GetBreakLabel();
             if (label == null)
@@ -578,12 +580,13 @@ namespace Panther.CodeAnalysis.Binding
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax,
             BoundScope scope)
         {
+            // TODO: handle cases where we dont have an initializer
             var isReadOnly = syntax.ValOrVarToken.Kind == SyntaxKind.ValKeyword;
-            var boundExpression = BindExpression(syntax.Expression, scope);
+            var boundExpression = BindExpression(syntax.Initializer!.Expression, scope);
             var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation, scope)?.Type;
             var expressionType = type ?? boundExpression.Type;
 
-            var converted = BindConversion(syntax.Expression.Location, boundExpression, expressionType);
+            var converted = BindConversion(syntax.Initializer!.Expression.Location, boundExpression, expressionType);
             var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, scope);
 
             return new BoundVariableDeclarationStatement(syntax, variable, converted);
@@ -645,9 +648,7 @@ namespace Panther.CodeAnalysis.Binding
                 AssignmentExpressionSyntax assignmentExpressionSyntax => BindAssignmentExpression(assignmentExpressionSyntax, scope),
                 BinaryExpressionSyntax binaryExpressionSyntax => BindBinaryExpression(binaryExpressionSyntax, scope),
                 BlockExpressionSyntax blockExpressionSyntax => BindBlockExpression(blockExpressionSyntax, scope),
-                BreakExpressionSyntax breakStatementSyntax => BindStatementToExpression(BindBreakStatement(breakStatementSyntax)),
                 CallExpressionSyntax callExpressionSyntax => BindCallExpression(callExpressionSyntax, scope),
-                ContinueExpressionSyntax continueStatementSyntax => BindStatementToExpression(BindContinueStatement(continueStatementSyntax)),
                 ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
                 GroupExpressionSyntax groupExpressionSyntax => BindGroupExpression(groupExpressionSyntax, scope),
                 IfExpressionSyntax ifExpressionSyntax => BindIfExpression(ifExpressionSyntax, scope),
@@ -725,11 +726,6 @@ namespace Panther.CodeAnalysis.Binding
             Diagnostics.ReportNotAssignable(syntax.Name.Location);
             return new BoundErrorExpression(syntax);
         }
-
-        // hack to convert a statement into an expression
-        private static BoundBlockExpression BindStatementToExpression(BoundStatement bindBreakStatement) =>
-            new BoundBlockExpression(bindBreakStatement.Syntax, ImmutableArray.Create(bindBreakStatement),
-                new BoundUnitExpression(bindBreakStatement.Syntax));
 
         private BoundExpression BindExpression(ExpressionSyntax syntax, Type type, BoundScope scope,
             bool allowExplicit = false)

@@ -57,8 +57,6 @@ namespace Panther.CodeAnalysis.Syntax
             this.Diagnostics.AddRange(lexer.Diagnostics);
 
             // a
-            _prefixParseFunctions[SyntaxKind.BreakKeyword] = ParseBreakExpression;
-            _prefixParseFunctions[SyntaxKind.ContinueKeyword] = ParseContinueExpression;
             _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
             _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
             _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierName;
@@ -338,18 +336,28 @@ namespace Panther.CodeAnalysis.Syntax
 
         bool HasStatementTerminator(SyntaxNode expr) => GetStatementTerminator(expr) != null;
 
-        private static SyntaxKind? GetStatementTerminator(SyntaxNode expr)
+        private static SyntaxKind? GetStatementTerminator(SyntaxNode expression)
         {
-            var nodes = expr.DescendantsAndSelf().Where(x => x.Kind != SyntaxKind.WhitespaceTrivia).ToImmutableList();
-            var lastKind = nodes.Select(x => x.Kind).LastOrDefault();
+            var syntaxNode = expression
+                .DescendantsAndSelf()
+                .LastOrDefault(x => x.Kind != SyntaxKind.WhitespaceTrivia);
 
-            return lastKind switch
+            return syntaxNode?.Kind switch
             {
                 SyntaxKind.EndOfInputToken => SyntaxKind.EndOfInputToken,
                 SyntaxKind.EndOfLineTrivia => SyntaxKind.EndOfLineTrivia,
                 SyntaxKind.CloseBraceToken => SyntaxKind.CloseBraceToken,
                 _ => null
             };
+        }
+
+        private void AssertStatementTerminator(SyntaxNode expr)
+        {
+            var terminator = GetStatementTerminator(expr) ?? GetStatementTerminator(CurrentToken);
+            if (terminator == null)
+            {
+                Diagnostics.ReportUnexpectedEndOfLineTrivia(expr.Location);
+            }
         }
 
         private ExpressionSyntax ParseExpression(OperatorPrecedence precedence, bool inGroup = false)
@@ -372,7 +380,7 @@ namespace Panther.CodeAnalysis.Syntax
             var left = prefixFunction();
 
             // investigate if we can use precedence to break early
-            if (left.Kind is SyntaxKind.ContinueExpression or SyntaxKind.BreakExpression || isTerminatingLine(left))
+            if (isTerminatingLine(left))
                 return left;
 
             while (precedence < CurrentPrecedence() && !isTerminatingLine(left))
@@ -603,21 +611,23 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 SyntaxKind.ValKeyword => ParseVariableDeclarationStatement(),
                 SyntaxKind.VarKeyword => ParseVariableDeclarationStatement(),
+                SyntaxKind.BreakKeyword => ParseBreakStatement(),
+                SyntaxKind.ContinueKeyword => ParseContinueStatement(),
                 _ => ParseExpressionStatement()
             };
 
         private bool IsEndOfInput => CurrentKind == SyntaxKind.EndOfInputToken;
 
-        private ExpressionSyntax ParseContinueExpression()
+        private StatementSyntax ParseContinueStatement()
         {
             var keyword = Accept();
-            return new ContinueExpressionSyntax(_syntaxTree, keyword);
+            return new ContinueStatementSyntax(_syntaxTree, keyword);
         }
 
-        private ExpressionSyntax ParseBreakExpression()
+        private StatementSyntax ParseBreakStatement()
         {
             var keyword = Accept();
-            return new BreakExpressionSyntax(_syntaxTree, keyword);
+            return new BreakStatementSyntax(_syntaxTree, keyword);
         }
 
         private StatementSyntax ParseExpressionStatement()
@@ -627,42 +637,36 @@ namespace Panther.CodeAnalysis.Syntax
             return new ExpressionStatementSyntax(_syntaxTree, expr);
         }
 
-        private SyntaxKind? GetStatementTerminator(ExpressionSyntax expression)
-        {
-            var syntaxNode = expression
-                .DescendantsAndSelf()
-                .LastOrDefault(token => token.Kind != SyntaxKind.WhitespaceTrivia);
-
-            return syntaxNode?.Kind switch
-            {
-                SyntaxKind.EndOfLineTrivia => SyntaxKind.EndOfLineTrivia,
-                SyntaxKind.CloseBraceToken => SyntaxKind.CloseBraceToken,
-                SyntaxKind.EndOfInputToken => SyntaxKind.EndOfInputToken,
-                _ => null
-            };
-        }
-
-        private void AssertStatementTerminator(ExpressionSyntax expr)
-        {
-            var terminator = GetStatementTerminator(expr) ?? GetStatementTerminator(CurrentToken);
-            if (terminator == null)
-            {
-                Diagnostics.ReportUnexpectedEndOfLineTrivia(expr.Location);
-            }
-        }
-
         private StatementSyntax ParseVariableDeclarationStatement()
         {
             var valToken = Accept();
             var identToken = Accept(SyntaxKind.IdentifierToken);
             var typeAnnotationSyntax = ParseOptionalTypeAnnotation();
+            var initializer = ParseOptionalInitializer();
 
-            var equalsToken = Accept(SyntaxKind.EqualsToken);
-            var expr = ParseExpression(OperatorPrecedence.Lowest);
+            var endOfStatement = (SyntaxNode?)initializer ?? typeAnnotationSyntax;
+            if(endOfStatement != null)
+            {
+                AssertStatementTerminator(endOfStatement);
+            }
+            else
+            {
+                Diagnostics.ReportUndefinedTypeOrInitializer(identToken.Location);
+            }
 
-            AssertStatementTerminator(expr);
+            return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, initializer);
+        }
 
-            return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, equalsToken, expr);
+
+        private InitializerSyntax? ParseOptionalInitializer()
+        {
+            if (CurrentKind != SyntaxKind.EqualsToken)
+                return null;
+
+            var equals = Accept();
+            var expression =  ParseExpression(OperatorPrecedence.Lowest);
+
+            return new InitializerSyntax(_syntaxTree, equals, expression);
         }
 
         private ExpressionSyntax ParseAssignmentExpression(ExpressionSyntax name)

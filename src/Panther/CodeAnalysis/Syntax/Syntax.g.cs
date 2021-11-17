@@ -109,58 +109,6 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitBlockExpression(this);
     }
 
-    public sealed partial record BreakExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken BreakKeyword)
-        : ExpressionSyntax(SyntaxTree) {
-        public override SyntaxKind Kind => SyntaxKind.BreakExpression;
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(BreakKeyword);
-        }
-
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return BreakKeyword;
-        }
-
-        public override string ToString()
-        {
-            using var writer = new StringWriter();
-            WriteTo(writer);
-            return writer.ToString();
-        }
-
-        public override void Accept(SyntaxVisitor visitor) => visitor.VisitBreakExpression(this);
-
-        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitBreakExpression(this);
-    }
-
-    public sealed partial record ContinueExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken ContinueKeyword)
-        : ExpressionSyntax(SyntaxTree) {
-        public override SyntaxKind Kind => SyntaxKind.ContinueExpression;
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(ContinueKeyword);
-        }
-
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return ContinueKeyword;
-        }
-
-        public override string ToString()
-        {
-            using var writer = new StringWriter();
-            WriteTo(writer);
-            return writer.ToString();
-        }
-
-        public override void Accept(SyntaxVisitor visitor) => visitor.VisitContinueExpression(this);
-
-        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitContinueExpression(this);
-    }
-
     public sealed partial record NewExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
         : ExpressionSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.NewExpression;
@@ -492,6 +440,58 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitQualifiedName(this);
     }
 
+    public sealed partial record BreakStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken BreakKeyword)
+        : StatementSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.BreakStatement;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(BreakKeyword);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return BreakKeyword;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitBreakStatement(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitBreakStatement(this);
+    }
+
+    public sealed partial record ContinueStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken ContinueKeyword)
+        : StatementSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.ContinueStatement;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ContinueKeyword);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return ContinueKeyword;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitContinueStatement(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitContinueStatement(this);
+    }
+
     public sealed partial record ExpressionStatementSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression)
         : StatementSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.ExpressionStatement;
@@ -518,13 +518,13 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitExpressionStatement(this);
     }
 
-    public sealed partial record VariableDeclarationStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken ValOrVarToken, SyntaxToken IdentifierToken, TypeAnnotationSyntax? TypeAnnotation, SyntaxToken EqualsToken, ExpressionSyntax Expression)
+    public sealed partial record VariableDeclarationStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken ValOrVarToken, SyntaxToken IdentifierToken, TypeAnnotationSyntax? TypeAnnotation, InitializerSyntax? Initializer)
         : StatementSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(ValOrVarToken, IdentifierToken, TypeAnnotation, EqualsToken, Expression);
+            return HashCode.Combine(ValOrVarToken, IdentifierToken, TypeAnnotation, Initializer);
         }
 
         public override IEnumerable<SyntaxNode> GetChildren()
@@ -535,8 +535,10 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 yield return TypeAnnotation;
             }
-            yield return EqualsToken;
-            yield return Expression;
+            if (Initializer != null)
+            {
+                yield return Initializer;
+            }
         }
 
         public override string ToString()
@@ -718,6 +720,33 @@ namespace Panther.CodeAnalysis.Syntax
         public override void Accept(SyntaxVisitor visitor) => visitor.VisitParameter(this);
 
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitParameter(this);
+    }
+
+    public sealed partial record InitializerSyntax(SyntaxTree SyntaxTree, SyntaxToken EqualsToken, ExpressionSyntax Expression)
+        : SyntaxNode(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.Initializer;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(EqualsToken, Expression);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return EqualsToken;
+            yield return Expression;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitInitializer(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitInitializer(this);
     }
 
     public sealed partial record TypeAnnotationSyntax(SyntaxTree SyntaxTree, SyntaxToken ColonToken, NameSyntax Type)

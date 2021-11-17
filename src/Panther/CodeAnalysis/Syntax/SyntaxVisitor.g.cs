@@ -18,7 +18,7 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitBlockExpression(BlockExpressionSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual void VisitBreakExpression(BreakExpressionSyntax node) =>
+        public virtual void VisitBreakStatement(BreakStatementSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual void VisitCallExpression(CallExpressionSyntax node) =>
@@ -30,7 +30,7 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitCompilationUnit(CompilationUnitSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual void VisitContinueExpression(ContinueExpressionSyntax node) =>
+        public virtual void VisitContinueStatement(ContinueStatementSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual void VisitExpressionStatement(ExpressionStatementSyntax node) =>
@@ -52,6 +52,9 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual void VisitIfExpression(IfExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual void VisitInitializer(InitializerSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual void VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
@@ -110,7 +113,7 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual TResult VisitBlockExpression(BlockExpressionSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual TResult VisitBreakExpression(BreakExpressionSyntax node) =>
+        public virtual TResult VisitBreakStatement(BreakStatementSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitCallExpression(CallExpressionSyntax node) =>
@@ -122,7 +125,7 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual TResult VisitCompilationUnit(CompilationUnitSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual TResult VisitContinueExpression(ContinueExpressionSyntax node) =>
+        public virtual TResult VisitContinueStatement(ContinueStatementSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitExpressionStatement(ExpressionStatementSyntax node) =>
@@ -144,6 +147,9 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual TResult VisitIfExpression(IfExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitInitializer(InitializerSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
