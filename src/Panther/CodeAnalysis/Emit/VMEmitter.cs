@@ -250,7 +250,8 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitVariableDeclarationStatement(BoundVariableDeclarationStatement node, VMProcessor processor)
         {
-            EmitAssignment(node.Variable, node.Expression, processor);
+            if (node.Expression != null)
+                EmitAssignment(node.Variable, node.Expression, processor);
         }
 
         private void EmitAssignmentStatement(BoundAssignmentStatement node, VMProcessor processor)

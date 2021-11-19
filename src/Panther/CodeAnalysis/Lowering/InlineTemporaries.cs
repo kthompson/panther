@@ -15,8 +15,8 @@ namespace Panther.CodeAnalysis.Lowering
 
         protected override BoundStatement RewriteStatement(BoundStatement node)
         {
-            if (node is BoundVariableDeclarationStatement varDecl && (varDecl.Variable.Name.StartsWith("temp$")
-                //|| varDecl.Variable.Name.StartsWith("ctemp$")
+            if (node is BoundVariableDeclarationStatement { Expression: { } } varDecl && (varDecl.Variable.Name.StartsWith("temp$")
+                    //|| varDecl.Variable.Name.StartsWith("ctemp$")
                 ))
             {
                 _expressionsToInline[varDecl.Variable] = varDecl.Expression;

@@ -57,6 +57,9 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitInitializer(InitializerSyntax node) =>
             this.DefaultVisit(node);
 
+        public virtual void VisitLiteralExpression(LiteralExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
         public virtual void VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
             this.DefaultVisit(node);
 
@@ -79,6 +82,12 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual void VisitQualifiedName(QualifiedNameSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual void VisitToken(SyntaxToken node) =>
+            this.DefaultVisit(node);
+
+        public virtual void VisitTrivia(SyntaxTrivia node) =>
             this.DefaultVisit(node);
 
         public virtual void VisitTemplate(TemplateSyntax node) =>
@@ -152,6 +161,9 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual TResult VisitInitializer(InitializerSyntax node) =>
             this.DefaultVisit(node);
 
+        public virtual TResult VisitLiteralExpression(LiteralExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
         public virtual TResult VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
             this.DefaultVisit(node);
 
@@ -174,6 +186,12 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual TResult VisitQualifiedName(QualifiedNameSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitToken(SyntaxToken node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitTrivia(SyntaxTrivia node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitTemplate(TemplateSyntax node) =>

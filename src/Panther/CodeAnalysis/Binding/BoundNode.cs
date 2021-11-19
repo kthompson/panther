@@ -16,5 +16,8 @@ namespace Panther.CodeAnalysis.Binding
             this.WriteTo(writer);
             return writer.ToString();
         }
+
+        public abstract void Accept(BoundNodeVisitor visitor);
+        public abstract TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor);
     }
 }

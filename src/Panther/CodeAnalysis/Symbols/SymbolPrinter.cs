@@ -74,6 +74,10 @@ namespace Panther.CodeAnalysis.Symbols
                     WriteValueSymbol(symbol, writer);
                     break;
 
+                case var sym when sym == Symbol.None:
+                    writer.WriteIdentifier("<none>");
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(symbol));
             }

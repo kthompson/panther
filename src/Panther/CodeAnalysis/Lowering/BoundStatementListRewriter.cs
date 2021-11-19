@@ -39,7 +39,8 @@ namespace Panther.CodeAnalysis.Lowering
         {
             var statement = base.RewriteStatement(node);
 
-            _statements.Add(statement);
+            if (statement is not BoundNopStatement)
+                _statements.Add(statement);
 
             return statement;
         }

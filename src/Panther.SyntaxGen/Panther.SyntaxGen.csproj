@@ -6,6 +6,9 @@
 
     <ItemGroup>
       <None Remove="Syntax.xml" />
+      <Content Include="Bound.xml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
       <Content Include="Syntax.xml">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>

@@ -253,7 +253,7 @@ namespace Panther.CodeAnalysis.Binding
 
         protected virtual BoundStatement RewriteVariableDeclarationStatement(BoundVariableDeclarationStatement node)
         {
-            var expr = RewriteExpression(node.Expression);
+            var expr = node.Expression == null ? null : RewriteExpression(node.Expression);
             if (expr == node.Expression)
                 return node;
 

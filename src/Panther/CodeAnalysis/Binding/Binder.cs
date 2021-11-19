@@ -586,7 +586,7 @@ namespace Panther.CodeAnalysis.Binding
             var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation, scope)?.Type;
             var expressionType = type ?? boundExpression.Type;
 
-            var converted = BindConversion(syntax.Initializer!.Expression.Location, boundExpression, expressionType);
+            var converted = BindConversion(syntax.Initializer.Expression.Location, boundExpression, expressionType);
             var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, scope);
 
             return new BoundVariableDeclarationStatement(syntax, variable, converted);

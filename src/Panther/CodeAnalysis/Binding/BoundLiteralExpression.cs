@@ -7,6 +7,7 @@ namespace Panther.CodeAnalysis.Binding
     {
         public BoundLiteralExpression(SyntaxNode syntax, object value) : base(syntax)
         {
+            Value = value;
             Type = value switch
             {
                 int _ => Type.Int,
@@ -14,14 +15,12 @@ namespace Panther.CodeAnalysis.Binding
                 string _ => Type.String,
                 _ => throw new System.Exception($"Unexpected literal '{value}' of type {value.GetType()}"),
             };
-
-            ConstantValue = new BoundConstant(value);
         }
 
-        public object Value => ConstantValue.Value;
-
+        public object Value { get; }
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
         public override Type Type { get ; init; }
-        public override BoundConstant ConstantValue { get; }
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitLiteralExpression(this);
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitLiteralExpression(this);
     }
 }

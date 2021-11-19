@@ -3,10 +3,12 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    sealed record BoundConditionalGotoStatement(SyntaxNode Syntax,
-        BoundLabel BoundLabel ,
-        BoundExpression Condition, bool JumpIfTrue = false) : BoundStatement(Syntax)
+    sealed partial record BoundConditionalGotoStatement
     {
-        public override BoundNodeKind Kind => BoundNodeKind.ConditionalGotoStatement;
+        public BoundConditionalGotoStatement(SyntaxNode syntax, BoundLabel boundLabel,
+            BoundExpression condition) : this(syntax, boundLabel, condition, false)
+        {
+
+        }
     }
 }

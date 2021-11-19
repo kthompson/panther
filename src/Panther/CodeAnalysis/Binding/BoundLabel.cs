@@ -1,12 +1,17 @@
 ﻿namespace Panther.CodeAnalysis.Binding
 {
-    public sealed class BoundLabel
+    internal sealed record BoundLabel(string Name)
     {
-        public string Name { get; }
-
-        internal BoundLabel(string name)
+        public bool Equals(BoundLabel? other)
         {
-            Name = name;
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Name == other.Name;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
         }
 
         public override string ToString() => Name;
