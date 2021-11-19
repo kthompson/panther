@@ -1,24 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using FsCheck.Xunit;
-using Mono.Cecil;
-using Moq;
-using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Lowering;
-using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
-using Panther.CodeAnalysis.Text;
-using Panther.Tests.CodeAnalysis.Syntax;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis.Lowering
 {
-    [Properties(Arbitrary = new[] { typeof(BindingGenerators) })]
+    [Properties(Arbitrary = new[] { typeof(BindingGenerators) }, MaxTest = 1000)]
     public class LoweringTests
     {
         [Property]
@@ -36,8 +27,6 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         [Fact]
         private void LoweringShouldPreserveSideEffectOrderInCallExpressions()
         {
-
-
             string SideEffectBlock(int i) =>
                 AnnotatedText.Parse($@"{{
                                         println(""{i}"")
@@ -86,12 +75,12 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         {
             switch (expression)
             {
-                case BoundBlockExpression _:
+                case BoundBlockExpression:
                     return true;
-                case BoundErrorExpression _:
-                case BoundLiteralExpression _:
-                case BoundUnitExpression _:
-                case BoundVariableExpression _:
+                case BoundErrorExpression:
+                case BoundLiteralExpression:
+                case BoundUnitExpression:
+                case BoundVariableExpression:
                     return false;
                 case BoundAssignmentExpression assignmentExpression:
                     return ContainsBlock(assignmentExpression.Expression);
@@ -121,12 +110,11 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 BoundGotoStatement _ => false,
                 BoundLabelStatement _ => false,
                 BoundNopStatement _ => false,
-                BoundAssignmentStatement assignmentStatement => ContainsBlock(assignmentStatement.Expression),
-                BoundConditionalGotoStatement boundConditionalGotoStatement => ContainsBlock(
-                    boundConditionalGotoStatement.Condition),
-                BoundExpressionStatement boundExpressionStatement => ContainsBlock(boundExpressionStatement.Expression),
-                BoundVariableDeclarationStatement boundVariableDeclarationStatement => ContainsBlock(
-                    boundVariableDeclarationStatement.Expression),
+                BoundAssignmentStatement statement => ContainsBlock(statement.Expression),
+                BoundConditionalGotoStatement statement => ContainsBlock(statement.Condition),
+                BoundExpressionStatement statement => ContainsBlock(statement.Expression),
+                BoundVariableDeclarationStatement(_, _, var expression) => expression != null &&
+                                                                           ContainsBlock(expression),
                 _ => throw new ArgumentOutOfRangeException(nameof(arg))
             };
     }

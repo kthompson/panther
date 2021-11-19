@@ -4,30 +4,26 @@ using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal static class ConstantFolding
+    internal class ConstantFolding: BoundNodeVisitor<BoundConstant?>
     {
-        public static BoundConstant? ComputeConstant(BoundUnaryOperator @operator, BoundExpression operand)
+        private ConstantFolding()
         {
-            if (operand.ConstantValue == null)
-                return null;
-
-            var constant = operand.ConstantValue.Value;
-
-            return @operator.Kind switch
-            {
-                BoundUnaryOperatorKind.Identity => operand.ConstantValue,
-                BoundUnaryOperatorKind.Negation => new BoundConstant(-(int)constant),
-                BoundUnaryOperatorKind.LogicalNegation => new BoundConstant(!(bool)constant),
-                BoundUnaryOperatorKind.BitwiseNegation => new BoundConstant(~(int)constant),
-                _ => throw new ArgumentOutOfRangeException(nameof(@operator),
-                    $"Unknown operator kind '{@operator.Kind}'")
-            };
         }
 
-        public static BoundConstant? ComputeConstant(BoundExpression left, BoundBinaryOperator @operator, BoundExpression right)
+        public static BoundConstant? Fold(BoundExpression expression)
         {
-            var leftConstant = left.ConstantValue;
-            var rightConstant = right.ConstantValue;
+            var folding = new ConstantFolding();
+            return expression.Accept(folding);
+        }
+
+        public override BoundConstant? VisitBinaryExpression(BoundBinaryExpression node)
+        {
+            var left = node.Left;
+            var right = node.Right;
+            var @operator = node.Operator;
+
+            var leftConstant = left.Accept(this);
+            var rightConstant = right.Accept(this);
 
             if (leftConstant == null)
                 return null;
@@ -62,22 +58,22 @@ namespace Panther.CodeAnalysis.Binding
                 case BoundBinaryOperatorKind.Addition:
                     return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue + (int)rightValue
-                        : (object)((string)leftValue + (string)rightValue));
+                        : (string)leftValue + (string)rightValue);
 
                 case BoundBinaryOperatorKind.BitwiseAnd:
                     return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue & (int)rightValue
-                        : (object)((bool)leftValue & (bool)rightValue));
+                        : (bool)leftValue & (bool)rightValue);
 
                 case BoundBinaryOperatorKind.BitwiseOr:
                     return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue | (int)rightValue
-                        : (object)((bool)leftValue | (bool)rightValue));
+                        : (bool)leftValue | (bool)rightValue);
 
                 case BoundBinaryOperatorKind.BitwiseXor:
                     return new BoundConstant(left.Type == Type.Int
                         ? (int)leftValue ^ (int)rightValue
-                        : (object)((bool)leftValue ^ (bool)rightValue));
+                        : (bool)leftValue ^ (bool)rightValue);
 
                 case BoundBinaryOperatorKind.Division:
                     return new BoundConstant((int)leftValue / (int)rightValue);
@@ -110,5 +106,37 @@ namespace Panther.CodeAnalysis.Binding
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        public override BoundConstant? VisitUnaryExpression(BoundUnaryExpression node)
+        {
+            var @operator = node.Operator;
+            var operandConstant = node.Operand.Accept(this);
+
+            if (operandConstant == null)
+                return null;
+
+            var constant = operandConstant.Value;
+
+            return @operator.Kind switch
+            {
+                BoundUnaryOperatorKind.Identity => operandConstant,
+                BoundUnaryOperatorKind.Negation => new BoundConstant(-(int)constant),
+                BoundUnaryOperatorKind.LogicalNegation => new BoundConstant(!(bool)constant),
+                BoundUnaryOperatorKind.BitwiseNegation => new BoundConstant(~(int)constant),
+                _ => throw new ArgumentOutOfRangeException(nameof(node), $"Unknown operator kind '{@operator.Kind}'")
+            };
+        }
+
+        public override BoundConstant? VisitIfExpression(BoundIfExpression node)
+        {
+            var condition = node.Condition.Accept(this);
+            if (condition == null)
+                return null;
+
+            var clause = (bool)condition.Value ? node.Then : node.Else;
+            return clause.Accept(this);
+        }
+
+        public override BoundConstant? VisitLiteralExpression(BoundLiteralExpression node) => new(node.Value);
     }
 }

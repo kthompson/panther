@@ -22,6 +22,10 @@ namespace Panther.SyntaxGen
         [XmlElement(ElementName = "AbstractNode", Type = typeof(AbstractNode))]
         [XmlElement(ElementName = "PredefinedNode", Type = typeof(PredefinedNode))]
         public List<TreeType> Types;
+
+        public IEnumerable<TreeType> ConcreteNodes =>
+            Types.Where(type => type is not AbstractNode)
+                .OrderBy(node => node.Name);
     }
 
     public class Node : TreeType
@@ -112,19 +116,185 @@ namespace Panther.SyntaxGen
 
     class Program
     {
-        private static Dictionary<string, TreeType> _typeLookup;
         private static Tree _tree;
+        private static Tree _boundTree;
 
         static void Main(string[] args)
         {
+            _boundTree = ReadTree("Bound.xml");
             _tree = ReadTree("Syntax.xml");
-            _typeLookup = _tree.Types.ToDictionary(t => t.Name);
 
-            GenerateSyntax();
-            GenerateVisitor();
+            GenerateSyntaxTree();
+            GenerateSyntaxVisitor();
+
+            GenerateBoundTree();
+            GenerateBoundVisitor();
         }
 
-        private static void GenerateVisitor()
+
+
+        private static void GenerateBoundTree()
+        {
+            using var writer = new StringWriter();
+            using var indentedTextWriter = new IndentedTextWriter(writer);
+
+            indentedTextWriter.WriteLine("using System;");
+            indentedTextWriter.WriteLine("using System.IO;");
+            indentedTextWriter.WriteLine("using System.Collections.Generic;");
+            indentedTextWriter.WriteLine("using System.Collections.Immutable;");
+            indentedTextWriter.WriteLine("using Panther.CodeAnalysis.Symbols;");
+            indentedTextWriter.WriteLine("using Panther.CodeAnalysis.Syntax;");
+            indentedTextWriter.WriteLine();
+            indentedTextWriter.WriteLine("#nullable enable");
+            indentedTextWriter.WriteLine();
+            indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Binding");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+            foreach (var node in _boundTree.Types.OfType<AbstractNode>())
+            {
+                var name = node.Name;
+                indentedTextWriter.Write($"internal abstract partial record {name}(SyntaxNode Syntax");
+
+                foreach (var field in node.Fields)
+                {
+                    indentedTextWriter.Write(", ");
+                    indentedTextWriter.Write(field.Type);
+                    indentedTextWriter.Write(" ");
+                    indentedTextWriter.Write(field.Name);
+                }
+
+                indentedTextWriter.WriteLine(")");
+                indentedTextWriter.Indent++;
+                indentedTextWriter.Write(": ");
+                indentedTextWriter.Write(node.Base ?? _boundTree.Root);
+                indentedTextWriter.Write("(Syntax);");
+                indentedTextWriter.Indent--;
+                indentedTextWriter.WriteLine();
+                indentedTextWriter.WriteLineNoTabs("");
+            }
+
+            foreach (var node in _boundTree.Types.OfType<Node>())
+            {
+                var name = node.Name;
+                indentedTextWriter.Write($"internal sealed partial record {name}(SyntaxNode Syntax");
+
+                foreach (var field in node.Fields)
+                {
+                    indentedTextWriter.Write(", ");
+                    indentedTextWriter.Write(field.Type);
+                    indentedTextWriter.Write(" ");
+                    indentedTextWriter.Write(field.Name);
+                }
+
+                indentedTextWriter.WriteLine(")");
+                indentedTextWriter.Indent++;
+                indentedTextWriter.Write(": ");
+                indentedTextWriter.Write(node.Base ?? _boundTree.Root);
+                indentedTextWriter.WriteLine("(Syntax) {");
+
+                EmitBoundKind(node, indentedTextWriter);
+
+                // EmitGetHashCode(indentedTextWriter, node);
+
+                EmitToString(indentedTextWriter);
+
+                EmitAcceptBoundNodeVisitor(indentedTextWriter, name);
+
+                indentedTextWriter.Indent--;
+                indentedTextWriter.WriteLine("}");
+                writer.WriteLine();
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+            var contents = writer.ToString();
+
+
+            var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Binding", "Binding.g.cs");
+            File.WriteAllText(path, contents);
+            Console.WriteLine($"Wrote bound nodes to {path}");
+        }
+        private static void GenerateBoundVisitor()
+        {
+            using var writer = new StringWriter();
+            using var indentedTextWriter = new IndentedTextWriter(writer);
+
+            indentedTextWriter.WriteLine("using System;");
+            indentedTextWriter.WriteLine("using System.IO;");
+            indentedTextWriter.WriteLine("using System.Collections.Generic;");
+            indentedTextWriter.WriteLine("using System.Collections.Immutable;");
+            indentedTextWriter.WriteLine();
+            indentedTextWriter.WriteLine("#nullable enable");
+            indentedTextWriter.WriteLine();
+            indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Binding");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+            indentedTextWriter.WriteLine("internal partial class BoundNodeVisitor");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+
+            using (var enumerator = _boundTree.ConcreteNodes.GetEnumerator())
+            {
+                if (enumerator.MoveNext())
+                {
+                    var node = enumerator.Current;
+
+                    while (enumerator.MoveNext())
+                    {
+                        WriteVisitorMethod(indentedTextWriter, node, false);
+                        indentedTextWriter.WriteLineNoTabs("");
+
+                        node = enumerator.Current;
+                    }
+
+                    WriteVisitorMethod(indentedTextWriter, node, false);
+                }
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+            indentedTextWriter.WriteLine("internal partial class BoundNodeVisitor<TResult>");
+            indentedTextWriter.WriteLine("{");
+            indentedTextWriter.Indent++;
+
+            using (var enumerator = _boundTree.ConcreteNodes.GetEnumerator())
+            {
+                if (enumerator.MoveNext())
+                {
+                    var node = enumerator.Current;
+
+                    while (enumerator.MoveNext())
+                    {
+                        WriteVisitorMethod(indentedTextWriter, node, true);
+                        indentedTextWriter.WriteLineNoTabs("");
+
+                        node = enumerator.Current;
+                    }
+
+                    WriteVisitorMethod(indentedTextWriter, node, true);
+                }
+            }
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
+
+
+            var contents = writer.ToString();
+
+            var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Binding", "BoundNodeVisitor.g.cs");
+            File.WriteAllText(path, contents);
+            Console.WriteLine($"Wrote bound visitor to {path}");
+        }
+
+        private static void GenerateSyntaxVisitor()
         {
             using var writer = new StringWriter();
             using var indentedTextWriter = new IndentedTextWriter(writer);
@@ -145,7 +315,7 @@ namespace Panther.SyntaxGen
             indentedTextWriter.Indent++;
 
 
-            using (var enumerator = _tree.Types.OfType<Node>().OrderBy(node => node.Name).GetEnumerator())
+            using (var enumerator = _tree.ConcreteNodes.GetEnumerator())
             {
                 if (enumerator.MoveNext())
                 {
@@ -170,7 +340,7 @@ namespace Panther.SyntaxGen
             indentedTextWriter.WriteLine("{");
             indentedTextWriter.Indent++;
 
-            using (var enumerator = _tree.Types.OfType<Node>().OrderBy(node => node.Name).GetEnumerator())
+            using (var enumerator = _tree.ConcreteNodes.GetEnumerator())
             {
                 if (enumerator.MoveNext())
                 {
@@ -202,10 +372,10 @@ namespace Panther.SyntaxGen
             Console.WriteLine($"Wrote syntax visitor to {path}");
         }
 
-        private static void WriteVisitorMethod(IndentedTextWriter indentedTextWriter, Node node, bool generic)
+        private static void WriteVisitorMethod(IndentedTextWriter indentedTextWriter, TreeType node, bool generic)
         {
             var name = node.Name;
-            var methodName = Regex.Replace(name, "Syntax$", "");
+            var methodName = Regex.Replace(Regex.Replace(name, "^Bound", ""), "(Syntax$|^Syntax)", "");
             var returnType = generic ? "TResult" : "void";
             indentedTextWriter.WriteLine($"public virtual {returnType} Visit{methodName}({name} node) =>");
             indentedTextWriter.Indent++;
@@ -213,7 +383,7 @@ namespace Panther.SyntaxGen
             indentedTextWriter.Indent--;
         }
 
-        private static void GenerateSyntax()
+        private static void GenerateSyntaxTree()
         {
             using var writer = new StringWriter();
             using var indentedTextWriter = new IndentedTextWriter(writer);
@@ -271,7 +441,7 @@ namespace Panther.SyntaxGen
                 indentedTextWriter.Write(node.Base ?? _tree.Root);
                 indentedTextWriter.WriteLine("(SyntaxTree) {");
 
-                EmitKind(node, indentedTextWriter);
+                EmitSyntaxKind(node, indentedTextWriter);
 
                 // EmitEquals(indentedTextWriter, name, node);
 
@@ -281,7 +451,7 @@ namespace Panther.SyntaxGen
 
                 EmitToString(indentedTextWriter);
 
-                EmitAccept(indentedTextWriter, name);
+                EmitAcceptSyntaxVisitor(indentedTextWriter, name);
 
                 indentedTextWriter.Indent--;
                 indentedTextWriter.WriteLine("}");
@@ -299,16 +469,35 @@ namespace Panther.SyntaxGen
             Console.WriteLine($"Wrote syntax to {path}");
         }
 
-        private static void EmitAccept(IndentedTextWriter writer, string name)
+        private static void EmitAcceptBoundNodeVisitor(IndentedTextWriter writer, string name)
         {
-            var methodName = Regex.Replace(name, "Syntax$", "");
+            var methodName = Regex.Replace(name, "^Bound", "");
+            writer.WriteLineNoTabs("");
+            writer.WriteLine($"public override void Accept(BoundNodeVisitor visitor) => visitor.Visit{methodName}(this);");
+            writer.WriteLineNoTabs("");
+            writer.WriteLine($"public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.Visit{methodName}(this);");
+        }
+
+        private static void EmitAcceptSyntaxVisitor(IndentedTextWriter writer, string name)
+        {
+            var methodName = Regex.Replace(name, "(Syntax$|^Syntax)", "");
             writer.WriteLineNoTabs("");
             writer.WriteLine($"public override void Accept(SyntaxVisitor visitor) => visitor.Visit{methodName}(this);");
             writer.WriteLineNoTabs("");
             writer.WriteLine($"public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.Visit{methodName}(this);");
         }
 
-        private static void EmitKind(Node node, IndentedTextWriter indentedTextWriter)
+        private static void EmitBoundKind(Node node, IndentedTextWriter indentedTextWriter)
+        {
+            var kind = node.Kinds.FirstOrDefault();
+            if (kind != null)
+            {
+                indentedTextWriter.WriteLine($"public override BoundNodeKind Kind => BoundNodeKind.{kind.Name};");
+                indentedTextWriter.WriteLineNoTabs("");
+            }
+        }
+
+        private static void EmitSyntaxKind(Node node, IndentedTextWriter indentedTextWriter)
         {
             var kind = node.Kinds.FirstOrDefault();
             if (kind != null)
@@ -324,7 +513,7 @@ namespace Panther.SyntaxGen
             indentedTextWriter.WriteLine("{");
             indentedTextWriter.Indent++;
             indentedTextWriter.WriteLine("using var writer = new StringWriter();");
-            indentedTextWriter.WriteLine("WriteTo(writer);");
+            indentedTextWriter.WriteLine("this.WriteTo(writer);");
             indentedTextWriter.WriteLine("return writer.ToString();");
             indentedTextWriter.Indent--;
             indentedTextWriter.WriteLine("}");

@@ -53,7 +53,9 @@ namespace Panther.CodeAnalysis.Lowering
                 .Select(expr => CreateTemporary(expr, "ctemp"))
                 .ToImmutableArray();
 
-            return new BoundCallExpression(node.Syntax, node.Method, node.Expression, args);
+            var rewritten = node.Expression == null ? null : this.RewriteExpression(node.Expression);
+
+            return new BoundCallExpression(node.Syntax, node.Method, rewritten, args);
         }
 
         protected override BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
@@ -113,7 +115,7 @@ namespace Panther.CodeAnalysis.Lowering
         {
             _tempCount++;
             var name = $"{prefix}${_tempCount:0000}";
-            var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
+            var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, null /*boundExpression.ConstantValue*/);
             _statements.Add(new BoundVariableDeclarationStatement(boundExpression.Syntax, tempVariable, boundExpression));
             return new BoundVariableExpression(boundExpression.Syntax, tempVariable);
         }

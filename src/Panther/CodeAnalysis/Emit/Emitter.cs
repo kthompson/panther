@@ -333,8 +333,11 @@ namespace Panther.CodeAnalysis.Emit
             {
                 // TODO: figure out reassignment in case where type changes
                 var field = _fields[pantherVar];
-                EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
-                ilProcessor.Emit(pantherVar.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, field);
+                if (variableDeclarationStatement.Expression != null)
+                {
+                    EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
+                    ilProcessor.Emit(pantherVar.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, field);
+                }
 
                 return;
             }
@@ -354,8 +357,11 @@ namespace Panther.CodeAnalysis.Emit
 
                     var index = _locals[localVariableSymbol].Index;
 
-                    EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
-                    ilProcessor.Emit(OpCodes.Stloc, index);
+                    if(variableDeclarationStatement.Expression != null)
+                    {
+                        EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
+                        ilProcessor.Emit(OpCodes.Stloc, index);
+                    }
 
                     break;
                 }
@@ -372,8 +378,11 @@ namespace Panther.CodeAnalysis.Emit
 
                     var index = _locals[pantherVar].Index;
 
-                    EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
-                    ilProcessor.Emit(OpCodes.Stloc, index);
+                    if (variableDeclarationStatement.Expression != null)
+                    {
+                        EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
+                        ilProcessor.Emit(OpCodes.Stloc, index);
+                    }
 
                     break;
                 }
@@ -415,9 +424,10 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitExpression(ILProcessor ilProcessor, BoundExpression expression)
         {
-            if (expression.ConstantValue != null)
+            var constant = ConstantFolding.Fold(expression);
+            if (constant != null)
             {
-                EmitConstantExpression(ilProcessor, expression, expression.ConstantValue);
+                EmitConstantExpression(ilProcessor, expression, constant);
                 return;
             }
 

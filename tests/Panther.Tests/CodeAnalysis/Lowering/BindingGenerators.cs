@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using FsCheck;
@@ -83,8 +84,12 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from chars in Gen.ArrayOf(count, Gen.Elements<char>("abcdefghijklmnopqrstuvwxyz"))
             select new string(chars);
 
+
+        private static HashSet<string> _identifiers = new HashSet<string>();
+        private static bool IsUnique(string ident) => _identifiers.Add(ident);
+
         public static Arbitrary<BoundLabel> BoundLabel() =>
-            Identifier().Select(x => new BoundLabel(x)).ToArbitrary();
+            Identifier().Where(IsUnique).Select(x => new BoundLabel(x)).ToArbitrary();
 
         public static Arbitrary<BoundLabelStatement> BoundLabelStatement() =>
             (

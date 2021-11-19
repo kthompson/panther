@@ -12,5 +12,10 @@ namespace Panther.CodeAnalysis.Binding
         {
             BoundLabel = boundLabel;
         }
+
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitGotoStatement(this);
+
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitGotoStatement(this);
+
     }
 }

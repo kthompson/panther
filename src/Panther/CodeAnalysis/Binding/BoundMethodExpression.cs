@@ -19,5 +19,7 @@ namespace Panther.CodeAnalysis.Binding
         public ImmutableArray<Symbol> Methods { get; }
 
         public override BoundNodeKind Kind => BoundNodeKind.MethodExpression;
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitMethodExpression(this);
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitMethodExpression(this);
     }
 }

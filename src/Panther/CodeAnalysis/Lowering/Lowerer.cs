@@ -98,7 +98,7 @@ namespace Panther.CodeAnalysis.Lowering
             var reachableStatements = new HashSet<BoundStatement>(controlFlow.Blocks.SelectMany(basicBlock => basicBlock.Statements));
 
             var builder = block.Statements.ToBuilder();
-            for (int i = builder.Count - 1; i >= 0; i--)
+            for (var i = builder.Count - 1; i >= 0; i--)
             {
                 if (!reachableStatements.Contains(builder[i]))
                     builder.RemoveAt(i);
@@ -109,12 +109,11 @@ namespace Panther.CodeAnalysis.Lowering
 
         protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            var constant = node.Condition.ConstantValue;
+            var constant = ConstantFolding.Fold(node.Condition);
             if (constant == null)
                 return base.RewriteBoundConditionalGotoStatement(node);
 
             var condition = (bool)constant.Value;
-
             var condition2 = node.JumpIfTrue ? condition : !condition;
             if (condition2)
                 return new BoundGotoStatement(node.Syntax, node.BoundLabel);
@@ -185,15 +184,19 @@ namespace Panther.CodeAnalysis.Lowering
             var variable = GenerateVariable(node.Type);
 
             var condition = RewriteExpression(node.Condition);
+            if (condition is BoundLiteralExpression literal)
+                return RewriteExpression((bool)literal.Value ? node.Then : node.Else);
+
             var then = RewriteExpression(node.Then);
             var @else = RewriteExpression(node.Else);
             var block = new BoundBlockExpression(node.Syntax,
                 ImmutableArray.Create<BoundStatement>(
+                    new BoundVariableDeclarationStatement(node.Syntax, variable, null),
                     new BoundConditionalGotoStatement(node.Syntax, elseLabel, condition),
-                    new BoundVariableDeclarationStatement(node.Syntax, variable, then),
+                    new BoundAssignmentStatement(node.Syntax, variable, then),
                     new BoundGotoStatement(node.Syntax, endLabel),
                     new BoundLabelStatement(node.Syntax, elseLabel),
-                    new BoundVariableDeclarationStatement(node.Syntax, variable, @else),
+                    new BoundAssignmentStatement(node.Syntax, variable, @else),
                     new BoundLabelStatement(node.Syntax, endLabel)
                 ),
                 new BoundVariableExpression(node.Syntax, variable)

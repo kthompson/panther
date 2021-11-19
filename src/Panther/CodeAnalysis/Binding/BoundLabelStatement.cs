@@ -12,5 +12,8 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.LabelStatement;
+
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitLabelStatement(this);
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitLabelStatement(this);
     }
 }

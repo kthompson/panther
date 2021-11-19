@@ -41,7 +41,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -69,7 +69,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -100,7 +100,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -131,7 +131,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -161,7 +161,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -205,7 +205,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -233,7 +233,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -265,7 +265,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -293,7 +293,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -323,7 +323,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -350,7 +350,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -377,7 +377,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -403,7 +403,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -431,7 +431,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -457,7 +457,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -483,7 +483,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -509,7 +509,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -544,7 +544,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -570,7 +570,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -602,7 +602,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -630,7 +630,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -658,7 +658,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -686,7 +686,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -713,7 +713,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -740,7 +740,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -767,7 +767,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -798,7 +798,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -828,7 +828,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -865,7 +865,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -900,7 +900,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 
@@ -928,7 +928,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override string ToString()
         {
             using var writer = new StringWriter();
-            WriteTo(writer);
+            this.WriteTo(writer);
             return writer.ToString();
         }
 

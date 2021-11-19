@@ -7,7 +7,7 @@ using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding
 {
-    internal static class BoundNodePrinter
+    static class BoundNodePrinterExtensions
     {
         public static void WriteTo(this BoundNode node, TextWriter writer)
         {
@@ -18,289 +18,282 @@ namespace Panther.CodeAnalysis.Binding
             WriteTo(node, indentedWriter);
         }
 
-        public static void WriteTo(this BoundNode node, IndentedTextWriter writer)
+        public static void WriteTo(this BoundNode node, IndentedTextWriter writer) =>
+            BoundNodePrinter.WriteTo(node, writer);
+    }
+
+    internal class BoundNodePrinter : BoundNodeVisitor
+    {
+        private readonly IndentedTextWriter _writer;
+
+        private BoundNodePrinter(IndentedTextWriter writer)
         {
-            switch (node)
-            {
-                case BoundBinaryExpression boundBinaryExpression:
-                    WriteBinaryExpression(boundBinaryExpression, writer);
-                    break;
-
-                case BoundBlockExpression boundBlockExpression:
-                    WriteBlockExpression(boundBlockExpression, writer);
-                    break;
-
-                case BoundCallExpression boundCallExpression:
-                    WriteCallExpression(boundCallExpression, writer);
-                    break;
-
-                case BoundConversionExpression boundConversionExpression:
-                    WriteConversionExpression(boundConversionExpression, writer);
-                    break;
-
-                case BoundErrorExpression boundErrorExpression:
-                    WriteErrorExpression(boundErrorExpression, writer);
-                    break;
-
-                case BoundAssignmentExpression boundAssignmentExpression:
-                    WriteAssignmentExpression(boundAssignmentExpression, writer);
-                    break;
-
-                case BoundForExpression boundForExpression:
-                    WriteForExpression(boundForExpression, writer);
-                    break;
-
-                case BoundIfExpression boundIfExpression:
-                    WriteIfExpression(boundIfExpression, writer);
-                    break;
-
-                case BoundLiteralExpression boundLiteralExpression:
-                    WriteLiteralExpression(boundLiteralExpression, writer);
-                    break;
-
-                case BoundUnaryExpression boundUnaryExpression:
-                    WriteUnaryExpression(boundUnaryExpression, writer);
-                    break;
-
-                case BoundUnitExpression boundUnitExpression:
-                    WriteUnitExpression(boundUnitExpression, writer);
-                    break;
-
-                case BoundVariableExpression boundVariableExpression:
-                    WriteVariableExpression(boundVariableExpression, writer);
-                    break;
-
-                case BoundWhileExpression boundWhileExpression:
-                    WriteWhileExpression(boundWhileExpression, writer);
-                    break;
-
-                case BoundConditionalGotoStatement boundConditionalGotoStatement:
-                    WriteConditionalGotoStatement(boundConditionalGotoStatement, writer);
-                    break;
-
-                case BoundExpressionStatement boundExpressionStatement:
-                    WriteExpressionStatement(boundExpressionStatement, writer);
-                    break;
-
-                case BoundGotoStatement boundGotoStatement:
-                    WriteGotoStatement(boundGotoStatement, writer);
-                    break;
-
-                case BoundLabelStatement boundLabelStatement:
-                    WriteLabelStatement(boundLabelStatement, writer);
-                    break;
-
-                case BoundVariableDeclarationStatement boundVariableDeclarationStatement:
-                    WriteVariableDeclarationStatement(boundVariableDeclarationStatement, writer);
-                    break;
-
-                case BoundAssignmentStatement boundAssignmentStatement:
-                    WriteAssignmentStatement(boundAssignmentStatement, writer);
-                    break;
-
-                case BoundNopStatement boundNopStatement:
-                    WriteNopStatement(boundNopStatement, writer);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(node), node.Kind.ToString());
-            }
+            this._writer = writer;
         }
 
-        private static void WriteNopStatement(BoundNopStatement node, IndentedTextWriter writer)
-        {
-            writer.WriteKeyword("nop");
-            writer.WriteLine();
-        }
+        public static void WriteTo(BoundNode node, IndentedTextWriter writer) =>
+            node.Accept(new BoundNodePrinter(writer));
 
-        private static void WriteAssignmentStatement(BoundAssignmentStatement node, IndentedTextWriter writer)
-        {
-            writer.WriteIdentifier(node.Variable.Name);
-            writer.WritePunctuation(" = ");
-            node.Expression.WriteTo(writer);
-            writer.WriteLine();
-        }
-
-        private static void WriteNestedExpression(this IndentedTextWriter writer, BoundNode node)
+        private void WriteNestedExpression(BoundNode node)
         {
             if (node is BoundBlockExpression)
             {
-                node.WriteTo(writer);
+                node.Accept(this);
                 return;
             }
 
-            writer.Indent++;
-            node.WriteTo(writer);
-            writer.Indent--;
+            _writer.Indent++;
+            node.Accept(this);
+            _writer.Indent--;
         }
 
-        private static void WriteAssignmentExpression(BoundAssignmentExpression node, IndentedTextWriter writer)
+        private void WriteNestedExpression(BoundExpression node, OperatorPrecedence parentPrecedence)
         {
-            writer.WriteIdentifier(node.Variable.Name);
-            writer.WritePunctuation(" = ");
-            node.Expression.WriteTo(writer);
+            if (node is BoundBinaryExpression binaryExpression)
+            {
+                WriteNestedExpression(binaryExpression, parentPrecedence, binaryExpression.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ?? throw new Exception("Invalid operator"));
+            }
+            else
+            {
+                node.Accept(this);
+            }
         }
 
-        private static void WriteIfExpression(BoundIfExpression node, IndentedTextWriter writer)
+        private void WriteNestedExpression(BoundNode node, OperatorPrecedence parent, OperatorPrecedence current)
         {
-            writer.WriteKeyword("if ");
-            writer.WritePunctuation("(");
-            node.Condition.WriteTo(writer);
-            writer.WritePunctuation(") ");
-            writer.WriteLine();
-            writer.WriteNestedExpression(node.Then);
-            writer.WriteKeyword(" else ");
-            writer.WriteLine();
-            writer.WriteNestedExpression(node.Else);
+            if (parent >= current)
+            {
+                _writer.WritePunctuation("(");
+                node.Accept(this);
+                _writer.WritePunctuation(")");
+            }
+            else
+            {
+                node.Accept(this);
+            }
         }
 
-        private static void WriteUnitExpression(BoundUnitExpression node, IndentedTextWriter writer)
-        {
-            writer.WritePunctuation("()");
-        }
+        protected override void DefaultVisit(BoundNode node) =>
+            throw new NotSupportedException(node.Kind.ToString());
 
-        private static void WriteVariableExpression(BoundVariableExpression node, IndentedTextWriter writer)
+        public override void VisitNewExpression(BoundNewExpression node)
         {
-            writer.WriteIdentifier(node.Variable.Name);
-        }
-
-        private static void WriteForExpression(BoundForExpression node, IndentedTextWriter writer)
-        {
-            writer.WriteKeyword("for ");
-            writer.WritePunctuation("(");
-            writer.WriteIdentifier(node.Variable.Name);
-            writer.WritePunctuation(" <- ");
-            node.LowerBound.WriteTo(writer);
-            writer.WriteKeyword(" to ");
-            node.UpperBound.WriteTo(writer);
-            writer.WritePunctuation(") ");
-            writer.WriteLine();
-            writer.WriteNestedExpression(node.Body);
-        }
-
-        private static void WriteWhileExpression(BoundWhileExpression node, IndentedTextWriter writer)
-        {
-            writer.WriteKeyword("while ");
-            writer.WritePunctuation("(");
-            node.Condition.WriteTo(writer);
-            writer.WritePunctuation(") ");
-            writer.WriteLine();
-            writer.WriteNestedExpression(node.Body);
-        }
-
-        private static void WriteExpressionStatement(BoundExpressionStatement node, IndentedTextWriter writer)
-        {
-            node.Expression.WriteTo(writer);
-            writer.WriteLine();
-        }
-
-        private static void WriteVariableDeclarationStatement(BoundVariableDeclarationStatement node, IndentedTextWriter writer)
-        {
-            writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
-            writer.WriteIdentifier(node.Variable.Name);
-            writer.WritePunctuation(": ");
-            // TODO: writer.WriteKeyword(node.Variable.Type.Name);
-            writer.WriteKeyword(node.Variable.Type.ToString());
-            writer.WritePunctuation(" = ");
-            node.Expression.WriteTo(writer);
-            writer.WriteLine();
-        }
-
-        private static void WriteCallExpression(BoundCallExpression node, IndentedTextWriter writer)
-        {
-            writer.WriteIdentifier(node.Method.Name);
-            writer.WritePunctuation("(");
+            _writer.WriteKeyword("new ");
+            _writer.WriteIdentifier(node.Type.Symbol.Name);
+            _writer.WritePunctuation("(");
             var iterator = node.Arguments.GetEnumerator();
             if (iterator.MoveNext())
             {
                 while (true)
                 {
-                    iterator.Current.WriteTo(writer);
+                    iterator.Current.Accept(this);
                     if (!iterator.MoveNext())
                         break;
 
-                    writer.WritePunctuation(", ");
+                    _writer.WritePunctuation(", ");
+                }
+            }
+            _writer.WritePunctuation(")");
+        }
+
+        public override void VisitFieldExpression(BoundFieldExpression node)
+        {
+            if (node.Expression != null)
+            {
+                node.Expression.Accept(this);
+            }
+            else
+            {
+                _writer.WriteKeyword("this");
+            }
+            _writer.WritePunctuation(".");
+            _writer.WriteIdentifier(node.Field.Name);
+        }
+
+        public override void VisitNopStatement(BoundNopStatement node)
+        {
+            _writer.WriteKeyword("nop");
+            _writer.WriteLine();
+        }
+
+        public override void VisitAssignmentStatement(BoundAssignmentStatement node)
+        {
+            _writer.WriteIdentifier(node.Variable.Name);
+            _writer.WritePunctuation(" = ");
+            node.Expression.Accept(this);
+            _writer.WriteLine();
+        }
+
+        public override void VisitAssignmentExpression(BoundAssignmentExpression node)
+        {
+            _writer.WriteIdentifier(node.Variable.Name);
+            _writer.WritePunctuation(" = ");
+            node.Expression.Accept(this);
+        }
+
+        public override void VisitIfExpression(BoundIfExpression node)
+        {
+            _writer.WriteKeyword("if ");
+            _writer.WritePunctuation("(");
+            node.Condition.Accept(this);
+            _writer.WritePunctuation(") ");
+            _writer.WriteLine();
+            WriteNestedExpression(node.Then);
+            _writer.WriteKeyword(" else ");
+            _writer.WriteLine();
+            WriteNestedExpression(node.Else);
+        }
+
+        public override void VisitUnitExpression(BoundUnitExpression node)
+        {
+            _writer.WritePunctuation("()");
+        }
+
+        public override void VisitVariableExpression(BoundVariableExpression node)
+        {
+            _writer.WriteIdentifier(node.Variable.Name);
+        }
+
+        public override void VisitForExpression(BoundForExpression node)
+        {
+            _writer.WriteKeyword("for ");
+            _writer.WritePunctuation("(");
+            _writer.WriteIdentifier(node.Variable.Name);
+            _writer.WritePunctuation(" <- ");
+            node.LowerBound.Accept(this);
+            _writer.WriteKeyword(" to ");
+            node.UpperBound.Accept(this);
+            _writer.WritePunctuation(") ");
+            _writer.WriteLine();
+            WriteNestedExpression(node.Body);
+        }
+
+        public override void VisitWhileExpression(BoundWhileExpression node)
+        {
+            _writer.WriteKeyword("while ");
+            _writer.WritePunctuation("(");
+            node.Condition.Accept(this);
+            _writer.WritePunctuation(") ");
+            _writer.WriteLine();
+            WriteNestedExpression(node.Body);
+        }
+
+
+        public override void VisitExpressionStatement(BoundExpressionStatement node)
+        {
+            node.Expression.Accept(this);
+            _writer.WriteLine();
+        }
+
+        public override void VisitVariableDeclarationStatement(BoundVariableDeclarationStatement node)
+        {
+            _writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
+            _writer.WriteIdentifier(node.Variable.Name);
+            _writer.WritePunctuation(": ");
+            _writer.WriteKeyword(node.Variable.Type.ToString());
+            if(node.Expression != null)
+            {
+                _writer.WritePunctuation(" = ");
+                node.Expression.Accept(this);
+            }
+            _writer.WriteLine();
+        }
+
+        public override void VisitCallExpression(BoundCallExpression node)
+        {
+            _writer.WriteIdentifier(node.Method.Name);
+            _writer.WritePunctuation("(");
+            var iterator = node.Arguments.GetEnumerator();
+            if (iterator.MoveNext())
+            {
+                while (true)
+                {
+                    iterator.Current.Accept(this);
+                    if (!iterator.MoveNext())
+                        break;
+
+                    _writer.WritePunctuation(", ");
                 }
             }
 
-            writer.WritePunctuation(")");
+            _writer.WritePunctuation(")");
         }
 
-        private static void WriteBlockExpression(BoundBlockExpression node, IndentedTextWriter writer)
+        public override void VisitBlockExpression(BoundBlockExpression node)
         {
             if (node.Statements.Length == 0)
             {
-                writer.WritePunctuation("{ ");
-                node.Expression.WriteTo(writer);
-                writer.WritePunctuation(" }");
+                _writer.WritePunctuation("{ ");
+                node.Expression.Accept(this);
+                _writer.WritePunctuation(" }");
                 return;
             }
 
-            writer.WritePunctuation("{");
-            writer.WriteLine();
-            writer.Indent++;
+            _writer.WritePunctuation("{");
+            _writer.WriteLine();
+            _writer.Indent++;
 
             foreach (var statement in node.Statements)
             {
-                statement.WriteTo(writer);
+                statement.Accept(this);
             }
 
-            node.Expression.WriteTo(writer);
-            writer.WriteLine();
+            node.Expression.Accept(this);
+            _writer.WriteLine();
 
-            writer.Indent--;
-            writer.WritePunctuation("}");
+            _writer.Indent--;
+            _writer.WritePunctuation("}");
         }
 
-        private static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
+        public override void VisitLabelStatement(BoundLabelStatement node)
         {
-            var dedent = (writer.Indent > 0);
+            var dedent = (_writer.Indent > 0);
             if (dedent)
-                writer.Indent--;
+                _writer.Indent--;
 
-            writer.WritePunctuation(node.BoundLabel.Name);
-            writer.WritePunctuation(":");
-            writer.WriteLine();
+            _writer.WritePunctuation(node.BoundLabel.Name);
+            _writer.WritePunctuation(":");
+            _writer.WriteLine();
 
             if (dedent)
-                writer.Indent++;
+                _writer.Indent++;
         }
 
-        private static void WriteGotoStatement(BoundGotoStatement node, IndentedTextWriter writer)
+        public override void VisitGotoStatement(BoundGotoStatement node)
         {
-            writer.WriteKeyword("goto ");
-            writer.WriteIdentifier(node.BoundLabel.Name);
-            writer.WriteLine();
+            _writer.WriteKeyword("goto ");
+            _writer.WriteIdentifier(node.BoundLabel.Name);
+            _writer.WriteLine();
         }
 
-        private static void WriteConditionalGotoStatement(BoundConditionalGotoStatement node, IndentedTextWriter writer)
+        public override void VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            writer.WriteKeyword("goto ");
-            writer.WriteIdentifier(node.BoundLabel.Name);
-            writer.WriteKeyword(node.JumpIfTrue ? " if " : " unless ");
-            node.Condition.WriteTo(writer);
-            writer.WriteLine();
+            _writer.WriteKeyword("goto ");
+            _writer.WriteIdentifier(node.BoundLabel.Name);
+            _writer.WriteKeyword(node.JumpIfTrue ? " if " : " unless ");
+            node.Condition.Accept(this);
+            _writer.WriteLine();
         }
 
-        private static void WriteErrorExpression(BoundErrorExpression node, IndentedTextWriter writer)
+        public override void VisitErrorExpression(BoundErrorExpression node)
         {
-            writer.WriteKeyword("err");
+            _writer.WriteKeyword("err");
         }
 
-        private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
+        public override void VisitLiteralExpression(BoundLiteralExpression node)
         {
             var value = node.Value.ToString() ?? "";
             if (node.Type == Type.Bool)
             {
-                writer.WriteKeyword(value);
+                _writer.WriteKeyword(value);
             }
             else if (node.Type == Type.Int)
             {
-                writer.WriteNumber(value);
+                _writer.WriteNumber(value);
             }
             else if (node.Type == Type.String)
             {
-                writer.WriteString("\"" + value.Replace("\"", "\"\"") + "\"");
+                _writer.WriteString("\"" + value.Replace("\"", "\"\"") + "\"");
             }
             else
             {
@@ -308,63 +301,36 @@ namespace Panther.CodeAnalysis.Binding
             }
         }
 
-        private static void WriteUnaryExpression(BoundUnaryExpression node, IndentedTextWriter writer)
+        public override void VisitUnaryExpression(BoundUnaryExpression node)
         {
             var op = SyntaxFacts.GetText(node.Operator.SyntaxKind) ??
                              throw new Exception("Invalid operator");
 
-            writer.WritePunctuation(op);
-            writer.WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
+            _writer.WritePunctuation(op);
+            WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
         }
 
-        private static void WriteBinaryExpression(BoundBinaryExpression node, IndentedTextWriter writer)
+        public override void VisitBinaryExpression(BoundBinaryExpression node)
         {
             var op = SyntaxFacts.GetText(node.Operator.SyntaxKind) ??
                              throw new Exception("Invalid operator");
             var precedence = node.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ??
                              throw new Exception("Invalid operator");
 
-            writer.WriteNestedExpression(node.Left, precedence);
-            writer.Write(" ");
-            writer.WritePunctuation(op);
-            writer.Write(" ");
-            writer.WriteNestedExpression(node.Right, precedence);
+            WriteNestedExpression(node.Left, precedence);
+            _writer.Write(" ");
+            _writer.WritePunctuation(op);
+            _writer.Write(" ");
+            WriteNestedExpression(node.Right, precedence);
         }
 
-        private static void WriteNestedExpression(this IndentedTextWriter writer,
-            BoundExpression node, OperatorPrecedence parentPrecedence)
-        {
-            if (node is BoundBinaryExpression binaryExpression)
-            {
-                writer.WriteNestedExpression(binaryExpression, parentPrecedence, binaryExpression.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ?? throw new Exception("Invalid operator"));
-            }
-            else
-            {
-                node.WriteTo(writer);
-            }
-        }
-
-        private static void WriteNestedExpression(this IndentedTextWriter writer, BoundNode node, OperatorPrecedence parent, OperatorPrecedence current)
-        {
-            if (parent >= current)
-            {
-                writer.WritePunctuation("(");
-                node.WriteTo(writer);
-                writer.WritePunctuation(")");
-            }
-            else
-            {
-                node.WriteTo(writer);
-            }
-        }
-
-        private static void WriteConversionExpression(BoundConversionExpression node, IndentedTextWriter writer)
+        public override void VisitConversionExpression(BoundConversionExpression node)
         {
             //TODO: writer.WriteIdentifier(node.Type.Name);
-            writer.WriteIdentifier(node.Type.ToString());
-            writer.WritePunctuation("(");
-            node.Expression.WriteTo(writer);
-            writer.WritePunctuation(")");
+            _writer.WriteIdentifier(node.Type.ToString());
+            _writer.WritePunctuation("(");
+            node.Expression.Accept(this);
+            _writer.WritePunctuation(")");
         }
 
         // private IEnumerable<(string name, object value)> GetProperties()
