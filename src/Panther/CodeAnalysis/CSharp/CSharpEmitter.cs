@@ -109,7 +109,7 @@ namespace Panther.CodeAnalysis.CSharp
                 // var diagSpan = diagLocation.SourceSpan;
                 var path = diagLocation.SourceTree?.FilePath;
 
-                var sourceFile = path != null && sourceFileLookup.TryGetValue(path, out var file) ? file : new NoSourceFile();
+                var sourceFile = path != null && sourceFileLookup.TryGetValue(path, out var file) ? file : SourceFile.Empty;
 
 
                 var location = new TextLocation(sourceFile, new TextSpan(0, 0));

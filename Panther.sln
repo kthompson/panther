@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.TestStdLib", "tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.SyntaxGen", "src\Panther.SyntaxGen\Panther.SyntaxGen.csproj", "{898E175B-F2B0-401D-9148-B436FE3D6374}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panther.CodeAnalysis.Text", "src\Panther.CodeAnalysis.Text\Panther.CodeAnalysis.Text.csproj", "{8001E8D7-B315-40DE-8F58-653ED74D802A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,10 @@ Global
 		{898E175B-F2B0-401D-9148-B436FE3D6374}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{898E175B-F2B0-401D-9148-B436FE3D6374}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{898E175B-F2B0-401D-9148-B436FE3D6374}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8001E8D7-B315-40DE-8F58-653ED74D802A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8001E8D7-B315-40DE-8F58-653ED74D802A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8001E8D7-B315-40DE-8F58-653ED74D802A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8001E8D7-B315-40DE-8F58-653ED74D802A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -90,6 +96,7 @@ Global
 		{DD9FBDF6-61EA-40C8-93FA-CC7792E32822} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 		{3D577B7A-B3B2-426A-B891-ED3DA62F3BE1} = {DE9991AB-E783-4C47-B224-BFE5493F2A9B}
 		{898E175B-F2B0-401D-9148-B436FE3D6374} = {3A9F57E8-52F8-4A65-93B7-910383111244}
+		{8001E8D7-B315-40DE-8F58-653ED74D802A} = {3A9F57E8-52F8-4A65-93B7-910383111244}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {685AA9B0-62DB-4F96-984D-2922750366A4}
