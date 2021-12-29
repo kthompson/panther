@@ -3,6 +3,7 @@ using System.Linq;
 using FsCheck.Xunit;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Lowering;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
@@ -15,7 +16,8 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         [Property]
         private void LoweringABoundStatementShouldNotContainBlocks(BoundStatement statement)
         {
-            var block = Lowerer.Lower(statement);
+            var root = Symbol.NewRoot();
+            var block = LoweringPipeline.Lower(root, statement);
 
             var containsBlock = ContainsBlock(block);
             if (containsBlock)

@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+﻿using System.Collections.Immutable;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
-using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Lowering
 {
-    internal sealed class Lowerer : BoundTreeRewriter
+    internal sealed class LoopLowerer : BoundTreeRewriter
     {
+        private readonly Symbol _method;
         private int _labelCount;
         private int _variableCount;
 
@@ -19,9 +16,14 @@ namespace Panther.CodeAnalysis.Lowering
         {
         }
 
-        private Lowerer()
+        private LoopLowerer(Symbol method)
         {
+            _method = method;
         }
+
+
+        public static BoundStatement Lower(Symbol method, BoundStatement statement) =>
+            new LoopLowerer(method).RewriteStatement(statement);
 
         private LabelToken GenerateLabelToken()
         {
@@ -38,73 +40,15 @@ namespace Panther.CodeAnalysis.Lowering
         private BoundLabel GenerateLabel(string tag, LabelToken token) =>
             new BoundLabel($"{tag}Label{(int)token}");
 
-        private VariableSymbol GenerateVariable(Type type)
+        private Symbol GenerateVariable(Type type)
         {
             _variableCount++;
-            return new LocalVariableSymbol($"variable${_variableCount}", false, type, null);
-        }
+            var name = $"variable${_variableCount}";
 
-        public static BoundBlockExpression Lower(BoundStatement statement)
-        {
-            var debug = false;
-            if (debug)
-            {
-                Console.WriteLine("==== Original Code ===");
-                statement.WriteTo(Console.Out);
-            }
-
-            var lowerer = new Lowerer();
-            var boundStatement = lowerer.RewriteStatement(statement);
-            if (debug)
-            {
-                Console.WriteLine("==== Lowered Code ===");
-                boundStatement.WriteTo(Console.Out);
-            }
-
-            var tac = ThreeAddressCode.Lower(boundStatement);
-            if (debug)
-            {
-                Console.WriteLine("==== Three Address Code ===");
-                tac.WriteTo(Console.Out);
-            }
-
-            var unitLessStatements = RemoveUnitAssignments.Lower(tac);
-            if (debug)
-            {
-                Console.WriteLine("==== Remove Unit Assignments ===");
-                unitLessStatements.WriteTo(Console.Out);
-            }
-
-            var inlinedTemporaries = InlineTemporaries.Lower(unitLessStatements);
-            if (debug)
-            {
-                Console.WriteLine("==== Inlined Temporaries ===");
-                inlinedTemporaries.WriteTo(Console.Out);
-            }
-
-            var deadCodeRemoval = RemoveDeadCode(inlinedTemporaries);
-            if (debug)
-            {
-                Console.WriteLine("==== Dead Code Removal ===");
-                deadCodeRemoval.WriteTo(Console.Out);
-            }
-
-            return deadCodeRemoval;
-        }
-
-        private static BoundBlockExpression RemoveDeadCode(BoundBlockExpression block)
-        {
-            var controlFlow = ControlFlowGraph.Create(block);
-            var reachableStatements = new HashSet<BoundStatement>(controlFlow.Blocks.SelectMany(basicBlock => basicBlock.Statements));
-
-            var builder = block.Statements.ToBuilder();
-            for (var i = builder.Count - 1; i >= 0; i--)
-            {
-                if (!reachableStatements.Contains(builder[i]))
-                    builder.RemoveAt(i);
-            }
-
-            return new BoundBlockExpression(block.Syntax, builder.ToImmutable(), block.Expression);
+            return _method
+                .NewLocal(TextLocation.None, name, false)
+                .WithType(type)
+                .Declare();
         }
 
         protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)

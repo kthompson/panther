@@ -112,6 +112,22 @@ namespace Panther.CodeAnalysis.Symbols
         private readonly Dictionary<string, ImmutableArray<Symbol>> _symbolMap;
         private readonly List<Symbol> _symbols;
 
+        public Symbol Declare()
+        {
+            Owner.DefineSymbol(this);
+            return this;
+        }
+
+        public void Delete() => Owner.Delete(this);
+
+        public void Delete(Symbol child)
+        {
+            if (_symbols.Remove(child))
+            {
+                _symbolMap[child.Name] = _symbolMap[child.Name].Remove(child);
+            }
+        }
+
         public bool DefineSymbol(Symbol symbol)
         {
             // only one field symbol per name

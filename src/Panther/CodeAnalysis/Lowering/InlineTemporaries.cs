@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 
@@ -7,10 +8,12 @@ namespace Panther.CodeAnalysis.Lowering
 {
     internal sealed class InlineTemporaries : BoundStatementListRewriter
     {
+        private readonly Symbol _method;
         private readonly Dictionary<Symbol, BoundExpression> _expressionsToInline = new Dictionary<Symbol, BoundExpression>();
 
-        private InlineTemporaries()
+        private InlineTemporaries(Symbol method)
         {
+            _method = method;
         }
 
         protected override BoundStatement RewriteStatement(BoundStatement node)
@@ -19,6 +22,7 @@ namespace Panther.CodeAnalysis.Lowering
                     //|| varDecl.Variable.Name.StartsWith("ctemp$")
                 ))
             {
+                varDecl.Variable.Delete();
                 _expressionsToInline[varDecl.Variable] = varDecl.Expression;
                 return new BoundNopStatement(node.Syntax);
             }
@@ -45,7 +49,7 @@ namespace Panther.CodeAnalysis.Lowering
             return base.RewriteBlockExpression(node);
         }
 
-        public static BoundBlockExpression Lower(BoundBlockExpression blockExpression) =>
-            new InlineTemporaries().Rewrite(blockExpression);
+        public static BoundBlockExpression Lower(Symbol method, BoundBlockExpression blockExpression) =>
+            new InlineTemporaries(method).Rewrite(blockExpression);
     }
 }

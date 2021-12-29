@@ -212,7 +212,7 @@ namespace Panther.CodeAnalysis.Binding
                 .WithType(new MethodType(ImmutableArray<Symbol>.Empty, Type.Unit))
                 .WithFlags(SymbolFlags.Static);
             var compilationUnit = globalStatements.First().Syntax;
-            var body = Lowerer.Lower(BoundStatementFromStatements(compilationUnit, globalStatements));
+            var body = LoweringPipeline.Lower(main, BoundStatementFromStatements(compilationUnit, globalStatements));
 
             boundScope.DefineSymbol(main);
 
@@ -224,7 +224,9 @@ namespace Panther.CodeAnalysis.Binding
             if (!globalStatements.Any())
                 return null;
 
-            var eval = boundScope.Symbol.NewMethod(TextLocation.None, "$eval").WithType(Type.Any)
+            var eval = boundScope.Symbol
+                .NewMethod(TextLocation.None, "$eval")
+                .WithType(Type.Any)
                 .WithFlags(SymbolFlags.Static);
 
             var compilationUnit = globalStatements.First().Syntax;
@@ -247,7 +249,7 @@ namespace Panther.CodeAnalysis.Binding
 
             boundScope.DefineSymbol(eval);
 
-            return new EntryPoint(true, eval, Lowerer.Lower(boundStatementFromStatements));
+            return new EntryPoint(true, eval, LoweringPipeline.Lower(eval, boundStatementFromStatements));
         }
 
         private static bool IsTopLevelDeclaration(SyntaxNode member) =>
@@ -375,7 +377,7 @@ namespace Panther.CodeAnalysis.Binding
                     {
                         var body = binder.BindExpression(syntax.Body, functionScope);
 
-                        var loweredBody = Lowerer.Lower(new BoundExpressionStatement(body.Syntax, body));
+                        var loweredBody = LoweringPipeline.Lower(methodSymbol, new BoundExpressionStatement(body.Syntax, body));
 
                         if (methodSymbol.ReturnType != Type.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
                         {
