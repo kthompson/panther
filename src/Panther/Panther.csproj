@@ -13,5 +13,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Panther.StdLib\Panther.StdLib.csproj" />
+      <ProjectReference Include="..\Panther.CodeAnalysis.Text\Panther.CodeAnalysis.Text.csproj" />
     </ItemGroup>
 </Project>

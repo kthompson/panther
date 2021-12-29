@@ -41,7 +41,7 @@ namespace Panther.CodeAnalysis.Text
             return lower - 1;
         }
 
-        public TextLine GetLine(int index) => this.Lines[index];
+        public override TextLine GetLine(int index) => this.Lines[index];
 
         private static IReadOnlyList<TextLine> ParseLines(SourceFile sourceFile, string text)
         {
