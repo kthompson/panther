@@ -9,15 +9,17 @@ namespace Panther.CodeAnalysis.Lowering
 {
     sealed class ThreeAddressCode : BoundStatementListRewriter
     {
+        private readonly Symbol _method;
         private int _tempCount = 0;
 
-        private ThreeAddressCode()
+        private ThreeAddressCode(Symbol method)
         {
+            _method = method;
         }
 
-        public static BoundBlockExpression Lower(BoundStatement boundStatement)
+        public static BoundBlockExpression Lower(Symbol method, BoundStatement boundStatement)
         {
-            var tac = new ThreeAddressCode();
+            var tac = new ThreeAddressCode(method);
             tac.RewriteStatement(boundStatement);
             return tac.GetBlock(boundStatement.Syntax);
         }
@@ -115,7 +117,13 @@ namespace Panther.CodeAnalysis.Lowering
         {
             _tempCount++;
             var name = $"{prefix}${_tempCount:0000}";
-            var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, null /*boundExpression.ConstantValue*/);
+
+            var tempVariable = _method
+                .NewLocal(TextLocation.None, name, true)
+                .WithType(boundExpression.Type)
+                .Declare();
+
+            // var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
             _statements.Add(new BoundVariableDeclarationStatement(boundExpression.Syntax, tempVariable, boundExpression));
             return new BoundVariableExpression(boundExpression.Syntax, tempVariable);
         }
