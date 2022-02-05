@@ -94,6 +94,7 @@
         //  Nodes
         Template,
         TypeAnnotation,
+        FunctionBody,
         Parameter,
         Initializer,
         CompilationUnit,

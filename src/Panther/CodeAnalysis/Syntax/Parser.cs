@@ -293,10 +293,22 @@ namespace Panther.CodeAnalysis.Syntax
             var parameters = ParseParameterList();
             var closeParenToken = Accept(SyntaxKind.CloseParenToken);
             var typeAnnotation = ParseOptionalTypeAnnotation();
-            var equalsToken = Accept(SyntaxKind.EqualsToken);
-            var body = ParseExpression(OperatorPrecedence.Lowest);
+            var body = ParseFunctionBody();
 
-            return new FunctionDeclarationSyntax(_syntaxTree, defKeyword, identifier, openParenToken, parameters, closeParenToken, typeAnnotation, equalsToken, body);
+            return new FunctionDeclarationSyntax(_syntaxTree, defKeyword, identifier, openParenToken, parameters,
+                closeParenToken, typeAnnotation, body);
+        }
+
+        private FunctionBodySyntax? ParseFunctionBody()
+        {
+            if (CurrentKind == SyntaxKind.EqualsToken)
+            {
+                var equalsToken = Accept();
+                var body = ParseExpression(OperatorPrecedence.Lowest);
+                return new FunctionBodySyntax(_syntaxTree, equalsToken, body);
+            }
+
+            return null;
         }
 
         private SeparatedSyntaxList<ParameterSyntax> ParseParameterList()
