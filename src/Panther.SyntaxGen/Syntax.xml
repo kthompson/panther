@@ -243,6 +243,13 @@
 
     <AbstractNode Name="MemberSyntax" />
 
+    <Node Name="FunctionBodySyntax" Base="MemberSyntax">
+        <Kind Name="FunctionBody"/>
+
+        <Field Name="EqualsToken" Type="SyntaxToken" />
+        <Field Name="Body" Type="ExpressionSyntax" />
+    </Node>
+
     <Node Name="FunctionDeclarationSyntax" Base="MemberSyntax">
         <Kind Name="FunctionDeclaration"/>
 
@@ -252,8 +259,7 @@
         <Field Name="Parameters" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;" />
         <Field Name="CloseParenToken" Type="SyntaxToken" />
         <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax?" />
-        <Field Name="EqualsToken" Type="SyntaxToken" />
-        <Field Name="Body" Type="ExpressionSyntax" />
+        <Field Name="Body" Type="FunctionBodySyntax?" />
     </Node>
 
     <Node Name="ClassDeclarationSyntax" Base="MemberSyntax">

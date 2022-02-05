@@ -144,7 +144,7 @@ namespace Panther.CodeAnalysis.CSharp
 
         protected override void DefaultVisit(SyntaxNode node)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException(node.Kind.ToString());
         }
 
         void VisitChildren(SyntaxNode node)
@@ -371,8 +371,18 @@ namespace Panther.CodeAnalysis.CSharp
 
                 // TODO: if topLevelStatements == false this is probably wrong
                 // emit the actual main body if there is one, globals will already be assigned
-                if (main != null && main.Body.Kind != SyntaxKind.UnitExpression)
+                if (main?.Body != null && main.Body.Kind != SyntaxKind.UnitExpression)
                 {
+                    _isUnit = false;
+                    if (main.TypeAnnotation == null)
+                    {
+                        _isUnit = true;
+                    }
+                    else
+                    {
+                        SetIsUnitFromNameSyntax(main.TypeAnnotation.Type);
+                    }
+
                     main.Body.Accept(this);
                 }
 
@@ -464,30 +474,53 @@ namespace Panther.CodeAnalysis.CSharp
         {
             _writer.Write("public ");
 
+            if (node.Body == null)
+            {
+                _writer.Write("abstract ");
+            }
+
             if (_containerType is ContainerType.Object or ContainerType.None)
             {
                 _writer.Write("static ");
             }
 
-            bool isUnit;
             if (node.TypeAnnotation == null)
             {
                 // _diagnostics.ReportTypeAnnotationRequired(node.Identifier.Location);
                 // for now lets assume its unit/void
-                isUnit = true;
+                _isUnit = true;
                 _writer.Write("void");
             }
             else
             {
                 node.TypeAnnotation.Accept(this);
-                isUnit = node.TypeAnnotation.Type is IdentifierNameSyntax ident && ident.Identifier.Text == "unit";
+                SetIsUnitFromNameSyntax(node.TypeAnnotation.Type);
             }
             _writer.Write($" {node.Identifier.Text}(");
 
             VisitSeparatedCommas(node.Parameters);
 
-            _writer.WriteLine(")");
-            StartBlock();
+
+            if (node.Body == null)
+            {
+                _writer.WriteLine(");");
+            }
+            else
+            {
+                _writer.WriteLine(")");
+                StartBlock();
+                node.Body.Accept(this);
+                EndBlock();
+            }
+        }
+
+        private void SetIsUnitFromNameSyntax(NameSyntax nameSyntax)
+        {
+            _isUnit = nameSyntax is IdentifierNameSyntax ident && ident.Identifier.Text == "unit";
+        }
+
+        public override void VisitFunctionBody(FunctionBodySyntax node)
+        {
             // flatten
             var (statements, expression) = ExpressionFlattener.Flatten(node.Body);
             foreach (var statement in statements)
@@ -495,19 +528,17 @@ namespace Panther.CodeAnalysis.CSharp
                 statement.Accept(this);
             }
 
-            if (!isUnit)
+            if (!_isUnit)
             {
                 _writer.Write("return ");
                 expression.Accept(this);
                 _writer.WriteLine(";");
             }
-            else if(expression.Kind != SyntaxKind.UnitExpression)
+            else if (expression.Kind != SyntaxKind.UnitExpression)
             {
                 expression.Accept(this);
                 _writer.WriteLine(";");
             }
-
-            EndBlock();
         }
 
         private void EndBlock()
@@ -688,6 +719,8 @@ namespace Panther.CodeAnalysis.CSharp
             "string",
             "unit",
         };
+
+        private bool _isUnit;
 
         string TypeToCSharpType(string type) =>
             type switch

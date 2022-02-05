@@ -174,7 +174,7 @@ namespace Panther.CodeAnalysis.Binding
             if (mainFunction != null)
             {
                 // ensure main function signature is correct
-                if (mainFunction.Parameters.Any() || mainFunction.ReturnType != Type.Unit)
+                if (mainFunction.Parameters.Any() || (mainFunction.ReturnType != Type.Unit && mainFunction.ReturnType != Type.Int))
                 {
                     binder.Diagnostics.ReportMainMustHaveCorrectSignature(
                         mainFunction.Location
@@ -343,22 +343,19 @@ namespace Panther.CodeAnalysis.Binding
                 root.DefineSymbol(defaultType);
             }
 
-            var diagnostics = binder.Diagnostics.ToImmutableArray();
+            var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+            // var diagnostics = binder.Diagnostics.ToImmutableArray();
 
             if (previous != null)
             {
-                diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
+                diagnostics.AddRange(previous.Diagnostics);
             }
 
-            diagnostics = Enumerable.Aggregate(syntaxTrees, diagnostics,
-                (current, syntaxTree) => current.InsertRange(0, syntaxTree.Diagnostics));
+            diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
             var rootTypes = root.Types.ToImmutableArray();
 
-            var diagnostics1 = ImmutableArray.CreateBuilder<Diagnostic>();
             var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
-
-            diagnostics1.AddRange(diagnostics);
 
             // Map and lower all function definitions
             foreach (var boundType in rootTypes)
@@ -375,16 +372,21 @@ namespace Panther.CodeAnalysis.Binding
                     }
                     else if (binder._functionDeclarations.TryGetValue(methodSymbol, out var syntax))
                     {
-                        var body = binder.BindExpression(syntax.Body, functionScope);
-
-                        var loweredBody = LoweringPipeline.Lower(methodSymbol, new BoundExpressionStatement(body.Syntax, body));
-
-                        if (methodSymbol.ReturnType != Type.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                        if (syntax.Body != null)
                         {
-                            binder.Diagnostics.ReportAllPathsMustReturn(methodSymbol.Location);
-                        }
+                            // TODO: we should require some kind of attribute when there is no body ie "extern" or something
+                            var body = binder.BindExpression(syntax.Body.Body, functionScope);
 
-                        methodDefinitions.Add(methodSymbol, loweredBody);
+                            var loweredBody = LoweringPipeline.Lower(methodSymbol,
+                                new BoundExpressionStatement(body.Syntax, body));
+
+                            if (methodSymbol.ReturnType != Type.Unit && !ControlFlowGraph.AllBlocksReturn(loweredBody))
+                            {
+                                binder.Diagnostics.ReportAllPathsMustReturn(methodSymbol.Location);
+                            }
+
+                            methodDefinitions.Add(methodSymbol, loweredBody);
+                        }
                     }
                 }
             }
@@ -395,9 +397,11 @@ namespace Panther.CodeAnalysis.Binding
                 methodDefinitions.Add(entryPoint.Symbol, entryPoint.Body);
             }
 
+            diagnostics.AddRange(binder.Diagnostics);
+
             return new BoundAssembly(
                 previous,
-                diagnostics1.ToImmutableArray(),
+                diagnostics.ToImmutableArray(),
                 entryPoint,
                 defaultType,
                 rootTypes,
@@ -449,7 +453,7 @@ namespace Panther.CodeAnalysis.Binding
             }
 
             var type = BindOptionalTypeAnnotation(syntax.TypeAnnotation, scope)?.Type;
-            if (type == null)
+            if (type == null && syntax.Body != null)
             {
                 // HACK: temporarily bind to body so that we can detect the type
                 // var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
@@ -460,14 +464,14 @@ namespace Panther.CodeAnalysis.Binding
                     functionScope.DefineSymbol(parameterSymbol);
                 }
 
-                var expr = BindExpression(syntax.Body, functionScope);
+                var expr = BindExpression(syntax.Body.Body, functionScope);
                 type = expr.Type;
 
                 if (type == Type.Error)
                     Debugger.Break();
             }
 
-            function.Type = new MethodType(function.Parameters, type);
+            function.Type = new MethodType(function.Parameters, type ?? Type.Error);
 
 
             if (!scope.DefineSymbol(function))
@@ -769,6 +773,9 @@ namespace Panther.CodeAnalysis.Binding
             var type = expr.Type;
             var name = syntax.Name.Identifier.Text;
             var members = type.Symbol.GetMembers(name).ToImmutableArray();
+
+            if (expr.Kind == BoundNodeKind.ErrorExpression)
+                return expr;
 
             // TODO add property support
             switch (members.Length)

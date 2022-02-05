@@ -39,6 +39,9 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitForExpression(ForExpressionSyntax node) =>
             this.DefaultVisit(node);
 
+        public virtual void VisitFunctionBody(FunctionBodySyntax node) =>
+            this.DefaultVisit(node);
+
         public virtual void VisitFunctionDeclaration(FunctionDeclarationSyntax node) =>
             this.DefaultVisit(node);
 
@@ -141,6 +144,9 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual TResult VisitForExpression(ForExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitFunctionBody(FunctionBodySyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitFunctionDeclaration(FunctionDeclarationSyntax node) =>

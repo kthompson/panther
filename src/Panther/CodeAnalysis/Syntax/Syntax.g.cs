@@ -837,13 +837,40 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitTemplate(this);
     }
 
-    public sealed partial record FunctionDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken DefKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Parameters, SyntaxToken CloseParenToken, TypeAnnotationSyntax? TypeAnnotation, SyntaxToken EqualsToken, ExpressionSyntax Body)
+    public sealed partial record FunctionBodySyntax(SyntaxTree SyntaxTree, SyntaxToken EqualsToken, ExpressionSyntax Body)
+        : MemberSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.FunctionBody;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(EqualsToken, Body);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return EqualsToken;
+            yield return Body;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitFunctionBody(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitFunctionBody(this);
+    }
+
+    public sealed partial record FunctionDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken DefKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Parameters, SyntaxToken CloseParenToken, TypeAnnotationSyntax? TypeAnnotation, FunctionBodySyntax? Body)
         : MemberSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(DefKeyword, Identifier, OpenParenToken, Parameters, CloseParenToken, TypeAnnotation, EqualsToken, Body);
+            return HashCode.Combine(DefKeyword, Identifier, OpenParenToken, Parameters, CloseParenToken, TypeAnnotation, Body);
         }
 
         public override IEnumerable<SyntaxNode> GetChildren()
@@ -858,8 +885,10 @@ namespace Panther.CodeAnalysis.Syntax
             {
                 yield return TypeAnnotation;
             }
-            yield return EqualsToken;
-            yield return Body;
+            if (Body != null)
+            {
+                yield return Body;
+            }
         }
 
         public override string ToString()
