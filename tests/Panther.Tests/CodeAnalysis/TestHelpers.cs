@@ -17,11 +17,12 @@ using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
 using Xunit;
+using Xunit.Sdk;
 
 
 namespace Panther.Tests.CodeAnalysis
 {
-    public static class TestHelpers
+    public static partial class TestHelpers
     {
         public static ImmutableArray<AssemblyDefinition> AssembliesWithStdLib { get; }
         public static ImmutableArray<AssemblyDefinition> AssembliesWithTestStdLib { get; }
@@ -58,7 +59,7 @@ namespace Panther.Tests.CodeAnalysis
             using var scriptHost = new ScriptHost(AssembliesWithStdLib, testName ?? "test");
 
             var result = scriptHost.Execute(syntaxTree);
-            var expectedDiagnosticMessages = AnnotatedText.UnindentLines(diagnosticText);
+            var expectedDiagnosticMessages = diagnosticText.UnindentLines();
 
             Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length, "Test invalid, must have equal number of diagnostics as text spans");
 
@@ -130,6 +131,39 @@ namespace Panther.Tests.CodeAnalysis
 
             var compilation = host.Compile(tree);
             return compilation;
+        }
+
+
+        public static void AssertByteArrays(IList<byte> expected, IList<byte> actual, string message = "")
+        {
+            string BinaryValue(IList<byte> bytes, int i) =>
+                i < bytes.Count
+                    ? "0b" + Convert.ToString(bytes[i], 2).PadLeft(8, '0')
+                    : "MISSING";
+
+            string BuildErrString(int i, IList<byte> expectedBytes, IList<byte> actualBytes)
+            {
+                var expectedBinary = BinaryValue(expectedBytes, i);
+                var actualBinary = BinaryValue(actualBytes, i);
+
+                return message +
+                       $"Expected: {string.Join(", ", expectedBytes.Select(x => $"0x{x:X2}"))}\r\n" +
+                       $"Actual:   {string.Join(", ", actualBytes.Select(x => $"0x{x:X2}"))}\r\n" +
+                       new string('-', 10 + i * 6) + "^^^^\r\n" +
+                       "\r\n" +
+                       $"At offset: {i}\r\n" +
+                       $"Expected: {expectedBinary}\r\n" +
+                       $"Actual:   {actualBinary}"
+                    ;
+            }
+
+            for (var i = 0; i < expected.Count; i++)
+            {
+                if (i >= actual.Count || expected[i] != actual[i])
+                {
+                    throw new XunitException("\r\n" + BuildErrString(i, expected, actual));
+                }
+            }
         }
     }
 }

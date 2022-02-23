@@ -13,9 +13,9 @@ namespace Panther.CodeAnalysis.Syntax
     {
         private readonly SyntaxTree _syntaxTree;
         private readonly SourceFile _file;
-        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
+        private readonly DiagnosticBag _diagnostics = new();
         private int _position;
-        private Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>> _lexFunctions = new Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>>();
+        private readonly Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>> _lexFunctions = new();
 
         public Lexer(SyntaxTree syntaxTree)
         {
