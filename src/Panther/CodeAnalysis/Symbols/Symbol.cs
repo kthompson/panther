@@ -171,9 +171,6 @@ namespace Panther.CodeAnalysis.Symbols
         public ImmutableArray<Symbol> Types =>
             Members.Where(m => m.IsType).ToImmutableArray();
 
-        public ImmutableArray<TypeSymbol> GetTypeMembers(string name) =>
-            GetMembers(name).OfType<TypeSymbol>().ToImmutableArray();
-
         public virtual ImmutableArray<Symbol> Members => _symbols.ToImmutableArray();
         public Type ReturnType
         {
@@ -188,19 +185,25 @@ namespace Panther.CodeAnalysis.Symbols
             }
         }
 
-        public virtual ImmutableArray<Symbol> GetMembers(string name) =>
+        public virtual ImmutableArray<Symbol> LookupMembers(string name) =>
             _symbolMap.TryGetValue(name, out var symbols)
                 ? symbols
                 : ImmutableArray<Symbol>.Empty;
 
-        public VariableSymbol? LookupVariable(string name) =>
-            GetMembers(name).OfType<VariableSymbol>().FirstOrDefault();
+        public Symbol? LookupNamespace(string name) =>
+            LookupMembers(name).SingleOrDefault(m => m.IsNamespace);
+
+        public Symbol? LookupParameter(string name) =>
+            LookupMembers(name).SingleOrDefault(m => m.IsParameter);
+
+        public Symbol? LookupVariable(string name) =>
+            LookupMembers(name).SingleOrDefault(m => m.IsLocal);
 
         public TypeSymbol? LookupType(string name) =>
-            GetMembers(name).OfType<TypeSymbol>().FirstOrDefault();
+            LookupMembers(name).OfType<TypeSymbol>().FirstOrDefault();
 
-        public Symbol? LookupMethod(string name) =>
-            GetMembers(name).FirstOrDefault(m => m.IsMethod);
+        public ImmutableArray<Symbol> LookupMethod(string name) =>
+            LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();
 
         private sealed class RootSymbol : Symbol
         {

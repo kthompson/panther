@@ -313,7 +313,7 @@ namespace Panther.CodeAnalysis.Emit
                     ilProcessor.Emit(OpCodes.Stfld, fieldReference);
                 }
             }
-            else if(assignmentStatement.Variable is LocalVariableSymbol or {IsLocal: true})
+            else if(assignmentStatement.Variable is {IsLocal: true})
             {
                 EmitExpression(ilProcessor, assignmentStatement.Expression);
 
@@ -345,27 +345,6 @@ namespace Panther.CodeAnalysis.Emit
 
             switch (pantherVar)
             {
-                case LocalVariableSymbol localVariableSymbol:
-                {
-                    if (!_locals.ContainsKey(localVariableSymbol))
-                    {
-                        var variableDef = new VariableDefinition(variableType);
-                        _locals[localVariableSymbol] = variableDef;
-
-                        ilProcessor.Body.Variables.Add(variableDef);
-                    }
-
-                    var index = _locals[localVariableSymbol].Index;
-
-                    if(variableDeclarationStatement.Expression != null)
-                    {
-                        EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
-                        ilProcessor.Emit(OpCodes.Stloc, index);
-                    }
-
-                    break;
-                }
-
                 case {IsLocal: true} or {IsParameter: true}:
                 {
                     if (!_locals.ContainsKey(pantherVar))
@@ -768,11 +747,11 @@ namespace Panther.CodeAnalysis.Emit
             var variable = variableExpression.Variable;
             switch (variable)
             {
-                case ParameterSymbol or { IsParameter: true }:
+                case { IsParameter: true }:
                     ilProcessor.Emit(OpCodes.Ldarg, variable.Index);
                     break;
 
-                case LocalVariableSymbol or { IsLocal: true }:
+                case { IsLocal: true }:
                     ilProcessor.Emit(OpCodes.Ldloc, _locals[variable]);
                     break;
 

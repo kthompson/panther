@@ -62,7 +62,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public Symbol? LookupVariable(string name)
         {
-            var variable = Symbol.GetMembers(name).FirstOrDefault(v => v.IsValue);
+            var variable = Symbol.LookupMembers(name).FirstOrDefault(v => v.IsValue);
             if (variable != null)
                 return variable;
 
@@ -79,7 +79,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public TypeSymbol? LookupType(string name)
         {
-            var type = Symbol.GetTypeMembers(name).FirstOrDefault();
+            var type = Symbol.LookupType(name);
             if (type != null)
                 return type;
 
@@ -96,7 +96,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<Symbol> LookupSymbol(string name, bool deep = true)
         {
-            var members = Symbol.GetMembers(name).ToImmutableArray();
+            var members = Symbol.LookupMembers(name).ToImmutableArray();
             if (members.Any())
                 return members;
 
@@ -118,7 +118,7 @@ namespace Panther.CodeAnalysis.Binding
 
         public ImmutableArray<Symbol> LookupMethod(string name, bool deep = true)
         {
-            var methods = Symbol.GetMembers(name).Where(m => m.IsMethod).ToImmutableArray();
+            var methods = Symbol.LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();
 
             if (methods.Any())
                 return methods;

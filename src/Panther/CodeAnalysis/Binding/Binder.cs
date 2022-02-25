@@ -772,7 +772,7 @@ namespace Panther.CodeAnalysis.Binding
             var expr = BindExpression(syntax.Expression, scope);
             var type = expr.Type;
             var name = syntax.Name.Identifier.Text;
-            var members = type.Symbol.GetMembers(name).ToImmutableArray();
+            var members = type.Symbol.LookupMembers(name).ToImmutableArray();
 
             if (expr.Kind == BoundNodeKind.ErrorExpression)
                 return expr;
@@ -790,7 +790,7 @@ namespace Panther.CodeAnalysis.Binding
                         case { IsField: true } field:
                             return new BoundFieldExpression(syntax, name, expr, field);
 
-                        case MethodSymbol or { IsMethod: true }:
+                        case { IsMethod: true }:
                             return new BoundMethodExpression(syntax, name, expr, members.Where(m => m.IsMethod).ToImmutableArray());
                         default:
                             // TODO: new error message as we have members but they are not of any expected type
@@ -866,7 +866,7 @@ namespace Panther.CodeAnalysis.Binding
                                     return null;
                                 }
 
-                                rootSymbols = rootSymbols[0].GetMembers(names[0].ToText())
+                                rootSymbols = rootSymbols[0].LookupMembers(names[0].ToText())
                                     .Where(x => x.IsType || x.IsNamespace)
                                     .ToImmutableArray();
 
@@ -1025,7 +1025,7 @@ namespace Panther.CodeAnalysis.Binding
                 {
                     // bind constructor
                     // see if there is an applicable constructor
-                    var ctor = symbol.LookupMethod(".ctor");
+                    var ctor = symbol.LookupMethod(".ctor").FirstOrDefault();
                     if (ctor != null && ctor.Parameters.Length == boundArguments.Count)
                     {
                         return BindCallExpressionToMethodSymbol(syntax, ctor, expression, boundArguments);
@@ -1037,7 +1037,7 @@ namespace Panther.CodeAnalysis.Binding
 
                     return new BoundErrorExpression(syntax);
                 }
-                case MethodSymbol or { IsMethod: true }:
+                case { IsMethod: true }:
                     return BindCallExpressionToMethodSymbol(syntax, symbol, expression, boundArguments);
 
                 case { IsValue : true }:
