@@ -54,7 +54,7 @@ namespace Panther.CodeAnalysis.Symbols
         {
             switch (symbol)
             {
-                case MethodSymbol or { IsMethod: true }:
+                case { IsMethod: true }:
                     WriteMethodSymbol(symbol, writer);
                     break;
 
@@ -62,11 +62,11 @@ namespace Panther.CodeAnalysis.Symbols
                     WriteTypeSymbol(symbol, writer);
                     break;
 
-                case ParameterSymbol or { IsParameter: true }:
+                case { IsParameter: true }:
                     WriteParameterSymbol(symbol, writer);
                     break;
 
-                case LocalVariableSymbol or { IsLocal: true }:
+                case { IsLocal: true }:
                     WriteValueSymbol(symbol, writer);
                     break;
 

@@ -48,16 +48,18 @@ namespace Panther.CodeAnalysis.Symbols
 
         public override ImmutableArray<Symbol> Members => _members.Value;
 
-        public override ImmutableArray<Symbol> GetMembers(string name) =>
+        public override ImmutableArray<Symbol> LookupMembers(string name) =>
             _membersByName.Value.TryGetValue(name, out var symbols)
                 ? symbols
                 : ImmutableArray<Symbol>.Empty;
 
-        private MethodSymbol? ImportMethodDefinition(MethodDefinition methodDefinition)
+        private Symbol? ImportMethodDefinition(MethodDefinition methodDefinition)
         {
-            var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
+            var method = this
+                .NewMethod(TextLocation.None, methodDefinition.Name)
+                .Declare();
 
-            for (int i = 0; i < methodDefinition.Parameters.Count; i++)
+            for (var i = 0; i < methodDefinition.Parameters.Count; i++)
             {
                 var p = methodDefinition.Parameters[i];
                 // TODO: update handling for failure
@@ -65,17 +67,19 @@ namespace Panther.CodeAnalysis.Symbols
                 if (pType == null)
                     return null;
 
-                parameters.Add(new ParameterSymbol(p.Name, pType, i));
+                method
+                    .NewParameter(TextLocation.None, p.Name, i)
+                    .WithType(pType)
+                    .Declare();
             }
 
             var returnType = LookupTypeByMetadataName(methodDefinition.ReturnType.FullName);
-            if (returnType == null)
-                return null;
+            if (returnType != null)
+            {
+                method.Type = returnType;
+            }
 
-            return new ImportedMethodSymbol(methodDefinition.Name,
-                parameters.ToImmutableArray(),
-                returnType
-            );
+            return method;
         }
 
         private static Type? LookupTypeByMetadataName(string name)

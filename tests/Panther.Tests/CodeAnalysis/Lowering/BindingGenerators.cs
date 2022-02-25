@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using FsCheck;
+using Microsoft.FSharp.Core;
 using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Text;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
 #pragma warning disable 612
@@ -20,6 +22,14 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             Gen.Constant(Panther.CodeAnalysis.Symbols.Type.String),
             Gen.Constant(Panther.CodeAnalysis.Symbols.Type.Unit)
         );
+
+        private static readonly Symbol TypeSymbol;
+        private static readonly Symbol MainSymbol;
+        static BindingGenerators()
+        {
+            TypeSymbol = Symbol.NewRoot().NewClass(TextLocation.None, "Program").Declare();
+            MainSymbol = TypeSymbol.NewMethod(TextLocation.None, "Main").Declare();
+        }
 
         public static Arbitrary<SyntaxNode> SyntaxNode() =>
             Gen.Constant((SyntaxNode)new SyntaxToken(null!, SyntaxKind.InvalidTokenTrivia, 0)).ToArbitrary();
@@ -67,14 +77,6 @@ namespace Panther.Tests.CodeAnalysis.Lowering
         ).ToArbitrary();
 
         public static Arbitrary<Type> Type => TypeGen.ToArbitrary();
-        public static Arbitrary<ParameterSymbol> ParameterSymbol() =>
-        (
-            from ident in Identifier()
-            from readOnly in Arb.Generate<bool>()
-            from index in Gen.Choose(0, 5)
-            from type in Arb.Generate<Type>()
-            select new ParameterSymbol(ident, type, index)
-        ).ToArbitrary();
 
         public static Arbitrary<BoundUnitExpression> BoundUnitExpression =>
             Gen.Constant(new BoundUnitExpression(null!)).ToArbitrary();
@@ -117,15 +119,34 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from expr in GenBoundExpression(type)
             select new BoundBlockExpression(token, statements, expr);
 
-        public static Gen<MethodSymbol> GenFunctionSymbol(Type returnType) =>
-            from name in Identifier()
-            from parameters in Arb.Generate<ImmutableArray<ParameterSymbol>>()
-            select (MethodSymbol)new ImportedMethodSymbol(name, parameters, returnType);
+        public static Gen<(string ident, Type type)> GenNameAndType() =>
+            from ident in Identifier()
+            from type in TypeGen
+            select (ident, type);
 
-        public static Gen<LocalVariableSymbol> GenLocalVariableSymbol(Type type) =>
+        public static Gen<int> GenParamSymbols(Symbol method) =>
+            from i in Gen.Choose(0, 5)
+            from idents in Gen.ArrayOf(i, GenNameAndType())
+            let parameters = idents
+                .Select((param, n) =>
+                    method.NewParameter(TextLocation.None, param.ident, n)
+                        .WithType(param.type)
+                        .Declare())
+                .ToList()
+            select i;
+
+        public static Gen<Symbol> GenFunctionSymbol(Type returnType) =>
+            from name in Identifier()
+            let method = TypeSymbol.NewMethod(TextLocation.None, name)
+                .WithType(returnType)
+                .Declare()
+            from _ in GenParamSymbols(method)
+            select method;
+
+        public static Gen<Symbol> GenLocalVariableSymbol(Type type) =>
             from ident in Identifier()
             from readOnly in Arb.Generate<bool>()
-            select new LocalVariableSymbol(ident, readOnly, type, null);
+            select MainSymbol.NewLocal(TextLocation.None, ident, readOnly).WithType(type).Declare();
 
         public static Gen<BoundExpression> GenBoundLiteralExpression(Type typeSymbol)
         {
