@@ -20,7 +20,7 @@ namespace Panther.CodeAnalysis.Symbols
         public bool IsObject => this.Flags.HasFlag(SymbolFlags.Object);
         public bool IsMember => (this.Flags & SymbolFlags.Member) != 0;
         public bool IsMethod => this.Flags.HasFlag(SymbolFlags.Method);
-        public bool IsConstructor => this.Name == ".ctor";
+        public bool IsConstructor => this.Name is ".ctor" or ".cctor";
         public bool IsField => this.Flags.HasFlag(SymbolFlags.Field);
         public bool IsParameter => this.Flags.HasFlag(SymbolFlags.Parameter);
         public bool IsLocal => this.Flags.HasFlag(SymbolFlags.Local);
@@ -96,13 +96,8 @@ namespace Panther.CodeAnalysis.Symbols
 
         public Symbol NewClass(TextLocation location, string name)
         {
-            var symbol = new TermSymbol(this, location, name)
-            {
-                Flags = SymbolFlags.Class
-            };
-            symbol.Type = new ClassType(symbol);
-
-            return symbol;
+            var symbol = NewTerm(location, name, SymbolFlags.Class);
+            return symbol.WithType(new ClassType(symbol));
         }
 
         public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name)
@@ -219,8 +214,8 @@ namespace Panther.CodeAnalysis.Symbols
         public Symbol? LookupVariable(string name) =>
             LookupSingle(name, m => m.IsLocal);
 
-        public TypeSymbol? LookupType(string name) =>
-            LookupMembers(name).OfType<TypeSymbol>().SingleOrDefault();
+        public Symbol? LookupType(string name) =>
+            LookupSingle(name, m => m.IsType);
 
         public ImmutableArray<Symbol> LookupMethod(string name) =>
             LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();

@@ -85,7 +85,7 @@ namespace Panther.CodeAnalysis.Lowering
 
         protected override BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
         {
-            RewriteStatement(new BoundAssignmentStatement(node.Syntax, node.Variable, node.Expression));
+            RewriteStatement(new BoundAssignmentStatement(node.Syntax, node.Left, node.Right));
 
             return new BoundUnitExpression(node.Syntax);
         }

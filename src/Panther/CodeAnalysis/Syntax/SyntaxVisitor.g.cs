@@ -114,7 +114,7 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitWhileExpression(WhileExpressionSyntax node) =>
             this.DefaultVisit(node);
     }
-    public abstract partial class SyntaxVisitor<TResult>
+    public partial class SyntaxVisitor<TResult>
     {
         public virtual TResult VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
             this.DefaultVisit(node);

@@ -133,20 +133,29 @@ namespace Panther.CodeAnalysis.Lowering
 
             var then = RewriteExpression(node.Then);
             var @else = RewriteExpression(node.Else);
+            var variableExpression = new BoundVariableExpression(node.Syntax, variable);
             var block = new BoundBlockExpression(node.Syntax,
                 ImmutableArray.Create<BoundStatement>(
                     new BoundVariableDeclarationStatement(node.Syntax, variable, null),
                     new BoundConditionalGotoStatement(node.Syntax, elseLabel, condition),
-                    new BoundAssignmentStatement(node.Syntax, variable, then),
+                    new BoundAssignmentStatement(node.Syntax, variableExpression, then),
                     new BoundGotoStatement(node.Syntax, endLabel),
                     new BoundLabelStatement(node.Syntax, elseLabel),
-                    new BoundAssignmentStatement(node.Syntax, variable, @else),
+                    new BoundAssignmentStatement(node.Syntax, variableExpression, @else),
                     new BoundLabelStatement(node.Syntax, endLabel)
                 ),
-                new BoundVariableExpression(node.Syntax, variable)
+                variableExpression
             );
 
             return RewriteExpression(block);
+        }
+
+        private BoundExpression ValueExpression(SyntaxNode syntax, Symbol symbol)
+        {
+            if (symbol.IsField)
+                return new BoundFieldExpression(syntax, null, symbol);
+
+            return new BoundVariableExpression(syntax, symbol);
         }
 
         protected override BoundExpression RewriteForExpression(BoundForExpression node)
@@ -170,20 +179,22 @@ namespace Panther.CodeAnalysis.Lowering
 
             var declareX = new BoundVariableDeclarationStatement(node.Syntax, node.Variable, lowerBound);
 
+            var variableExpression = ValueExpression(node.Syntax, node.Variable);
             var condition = new BoundBinaryExpression(node.Syntax,
-                new BoundVariableExpression(node.Syntax, node.Variable),
+                variableExpression,
                 BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, Type.Int, Type.Int),
                 upperBound
             );
             var continueLabelStatement = new BoundLabelStatement(node.Syntax, node.ContinueLabel);
             var incrementX = new BoundExpressionStatement(
                 node.Syntax,
-                new BoundAssignmentExpression(node.Syntax, node.Variable, new BoundBinaryExpression(
-                    node.Syntax,
-                    new BoundVariableExpression(node.Syntax, node.Variable),
-                    BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, Type.Int, Type.Int),
-                    new BoundLiteralExpression(node.Syntax, 1)
-                )));
+                new BoundAssignmentExpression(node.Syntax, variableExpression,
+                    new BoundBinaryExpression(
+                        node.Syntax,
+                        variableExpression,
+                        BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, Type.Int, Type.Int),
+                        new BoundLiteralExpression(node.Syntax, 1)
+                    )));
             var whileBody = new BoundBlockExpression(
                 node.Syntax,
                 ImmutableArray.Create<BoundStatement>(

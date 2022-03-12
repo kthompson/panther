@@ -22,14 +22,14 @@ namespace Panther.CodeAnalysis.Binding
         public override Type Type { get; init; } = Expression.Type;
     }
 
-    internal partial record BoundNewExpression
-    {
-        public override Type Type { get; init; } = Constructor.Owner.Type;
-    }
-
     internal partial record BoundCallExpression
     {
         public override Type Type { get; init; } = Method.ReturnType;
+    }
+
+    internal partial record BoundFieldExpression
+    {
+        public override Type Type { get; init; } = Field.Type;
     }
 
     internal partial record BoundForExpression
@@ -45,6 +45,11 @@ namespace Panther.CodeAnalysis.Binding
     internal partial record BoundIfExpression
     {
         public override Type Type { get; init; } = Then.Type;
+    }
+
+    internal partial record BoundNewExpression
+    {
+        public override Type Type { get; init; } = Constructor.Owner.Type;
     }
 
     internal partial record BoundWhileExpression

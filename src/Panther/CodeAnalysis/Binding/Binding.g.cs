@@ -18,7 +18,7 @@ namespace Panther.CodeAnalysis.Binding
     internal abstract partial record BoundMember(SyntaxNode Syntax)
         : BoundNode(Syntax);
 
-    internal sealed partial record BoundAssignmentExpression(SyntaxNode Syntax, Symbol Variable, BoundExpression Expression)
+    internal sealed partial record BoundAssignmentExpression(SyntaxNode Syntax, BoundExpression Left, BoundExpression Right)
         : BoundExpression(Syntax) {
         public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
 
@@ -98,22 +98,6 @@ namespace Panther.CodeAnalysis.Binding
         public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitContinueStatement(this);
     }
 
-    internal sealed partial record BoundNewExpression(SyntaxNode Syntax, Symbol Constructor, ImmutableArray<BoundExpression> Arguments)
-        : BoundExpression(Syntax) {
-        public override BoundNodeKind Kind => BoundNodeKind.NewExpression;
-
-        public override string ToString()
-        {
-            using var writer = new StringWriter();
-            this.WriteTo(writer);
-            return writer.ToString();
-        }
-
-        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitNewExpression(this);
-
-        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitNewExpression(this);
-    }
-
     internal sealed partial record BoundCallExpression(SyntaxNode Syntax, Symbol Method, BoundExpression? Expression, ImmutableArray<BoundExpression> Arguments)
         : BoundExpression(Syntax) {
         public override BoundNodeKind Kind => BoundNodeKind.CallExpression;
@@ -128,6 +112,22 @@ namespace Panther.CodeAnalysis.Binding
         public override void Accept(BoundNodeVisitor visitor) => visitor.VisitCallExpression(this);
 
         public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitCallExpression(this);
+    }
+
+    internal sealed partial record BoundFieldExpression(SyntaxNode Syntax, BoundExpression? Expression, Symbol Field)
+        : BoundExpression(Syntax) {
+        public override BoundNodeKind Kind => BoundNodeKind.FieldExpression;
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitFieldExpression(this);
+
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitFieldExpression(this);
     }
 
     internal sealed partial record BoundForExpression(SyntaxNode Syntax, Symbol Variable, BoundExpression LowerBound, BoundExpression UpperBound, BoundExpression Body, BoundLabel BreakLabel, BoundLabel ContinueLabel)
@@ -176,6 +176,22 @@ namespace Panther.CodeAnalysis.Binding
         public override void Accept(BoundNodeVisitor visitor) => visitor.VisitIfExpression(this);
 
         public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitIfExpression(this);
+    }
+
+    internal sealed partial record BoundNewExpression(SyntaxNode Syntax, Symbol Constructor, ImmutableArray<BoundExpression> Arguments)
+        : BoundExpression(Syntax) {
+        public override BoundNodeKind Kind => BoundNodeKind.NewExpression;
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitNewExpression(this);
+
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitNewExpression(this);
     }
 
     internal sealed partial record BoundWhileExpression(SyntaxNode Syntax, BoundExpression Condition, BoundExpression Body, BoundLabel BreakLabel, BoundLabel ContinueLabel)
@@ -242,7 +258,7 @@ namespace Panther.CodeAnalysis.Binding
         public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitVariableExpression(this);
     }
 
-    internal sealed partial record BoundAssignmentStatement(SyntaxNode Syntax, Symbol Variable, BoundExpression Expression)
+    internal sealed partial record BoundAssignmentStatement(SyntaxNode Syntax, BoundExpression Left, BoundExpression Right)
         : BoundStatement(Syntax) {
         public override BoundNodeKind Kind => BoundNodeKind.AssignmentStatement;
 

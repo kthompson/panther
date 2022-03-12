@@ -204,11 +204,12 @@ namespace Panther.CodeAnalysis.Binding
 
         protected virtual BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
         {
-            var expr = RewriteExpression(node.Expression);
-            if (expr == node.Expression)
+            var left = RewriteExpression(node.Left);
+            var right = RewriteExpression(node.Right);
+            if (left == node.Left && right == node.Right)
                 return node;
 
-            return new BoundAssignmentExpression(node.Syntax, node.Variable, expr);
+            return new BoundAssignmentExpression(node.Syntax, left, right);
         }
 
         protected virtual BoundStatement RewriteStatement(BoundStatement node) =>
@@ -226,11 +227,12 @@ namespace Panther.CodeAnalysis.Binding
 
         protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
         {
-            var expr = RewriteExpression(node.Expression);
-            if (expr == node.Expression)
+            var left = RewriteExpression(node.Left);
+            var right = RewriteExpression(node.Right);
+            if (left == node.Left && right == node.Right)
                 return node;
 
-            return new BoundAssignmentStatement(node.Syntax, node.Variable, expr);
+            return new BoundAssignmentStatement(node.Syntax, left, right);
         }
 
         protected virtual BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
