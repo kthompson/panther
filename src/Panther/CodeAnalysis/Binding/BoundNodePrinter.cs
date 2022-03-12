@@ -118,17 +118,17 @@ namespace Panther.CodeAnalysis.Binding
 
         public override void VisitAssignmentStatement(BoundAssignmentStatement node)
         {
-            _writer.WriteIdentifier(node.Variable.Name);
+            node.Left.Accept(this);
             _writer.WritePunctuation(" = ");
-            node.Expression.Accept(this);
+            node.Right.Accept(this);
             _writer.WriteLine();
         }
 
         public override void VisitAssignmentExpression(BoundAssignmentExpression node)
         {
-            _writer.WriteIdentifier(node.Variable.Name);
+            node.Left.Accept(this);
             _writer.WritePunctuation(" = ");
-            node.Expression.Accept(this);
+            node.Right.Accept(this);
         }
 
         public override void VisitIfExpression(BoundIfExpression node)

@@ -256,7 +256,8 @@ namespace Panther.CodeAnalysis.Emit
 
         private void EmitAssignmentStatement(BoundAssignmentStatement node, VMProcessor processor)
         {
-            EmitAssignment(node.Variable, node.Expression, processor);
+            throw new NotImplementedException();
+            // EmitAssignment(node.Variable, node.Expression, processor);
         }
 
         private void EmitAssignment(Symbol variable, BoundExpression expression, VMProcessor processor)

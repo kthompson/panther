@@ -67,8 +67,8 @@ namespace Panther.CodeAnalysis
 
             _id++;
 
-            var asm = _loadContext?.LoadFromAssemblyPath(outputPath);
-            var method = asm?.EntryPoint;
+            var asm = _loadContext.LoadFromAssemblyPath(outputPath);
+            var method = asm.EntryPoint;
             var result = method?.Invoke(null, Array.Empty<object>());
 
             return new ExecutionResult(ImmutableArray<Diagnostic>.Empty, result);

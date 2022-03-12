@@ -7,17 +7,15 @@
     <AbstractNode Name="BoundExpression" />
 
     <PredefinedNode Name="BoundLiteralExpression" Base="BoundExpression" />
-    <PredefinedNode Name="BoundFieldExpression" Base="BoundExpression" />
     <PredefinedNode Name="BoundConversionExpression" Base="BoundExpression" />
     <PredefinedNode Name="BoundErrorExpression" Base="BoundExpression" />
 
     <Node Name="BoundAssignmentExpression" Base="BoundExpression">
         <Kind Name="AssignmentExpression"/>
 
-        <Field Name="Variable" Type="Symbol" />
-        <Field Name="Expression" Type="BoundExpression" />
+        <Field Name="Left" Type="BoundExpression" />
+        <Field Name="Right" Type="BoundExpression" />
     </Node>
-
 
     <Node Name="BoundBinaryExpression" Base="BoundExpression">
         <Kind Name="BinaryExpression"/>
@@ -42,19 +40,19 @@
         <Kind Name="ContinueStatement"/>
     </Node>
 
-    <Node Name="BoundNewExpression" Base="BoundExpression">
-        <Kind Name="NewExpression"/>
-
-        <Field Name="Constructor" Type="Symbol" />
-        <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    </Node>
-
     <Node Name="BoundCallExpression" Base="BoundExpression">
         <Kind Name="CallExpression"/>
 
         <Field Name="Method" Type="Symbol" />
         <Field Name="Expression" Type="BoundExpression?" />
         <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    </Node>
+
+    <Node Name="BoundFieldExpression" Base="BoundExpression">
+        <Kind Name="FieldExpression"/>
+
+        <Field Name="Expression" Type="BoundExpression?" />
+        <Field Name="Field" Type="Symbol" />
     </Node>
 
     <Node Name="BoundForExpression" Base="BoundExpression">
@@ -82,12 +80,12 @@
         <Field Name="Else" Type="BoundExpression" />
     </Node>
 
-<!--    <Node Name="BoundMemberAccessExpression" Base="BoundExpression">-->
-<!--        <Kind Name="MemberAccessExpression"/>-->
+    <Node Name="BoundNewExpression" Base="BoundExpression">
+        <Kind Name="NewExpression"/>
 
-<!--        <Field Name="Expression" Type="BoundExpression" />-->
-<!--        <Field Name="Name" Type="BoundIdentifierName" />-->
-<!--    </Node>-->
+        <Field Name="Constructor" Type="Symbol" />
+        <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    </Node>
 
     <Node Name="BoundWhileExpression" Base="BoundExpression">
         <Kind Name="WhileExpression"/>
@@ -137,8 +135,8 @@
     <Node Name="BoundAssignmentStatement" Base="BoundStatement">
         <Kind Name="AssignmentStatement"/>
 
-        <Field Name="Variable" Type="Symbol" />
-        <Field Name="Expression" Type="BoundExpression" />
+        <Field Name="Left" Type="BoundExpression" />
+        <Field Name="Right" Type="BoundExpression" />
     </Node>
 
     <Node Name="BoundConditionalGotoStatement" Base="BoundStatement">

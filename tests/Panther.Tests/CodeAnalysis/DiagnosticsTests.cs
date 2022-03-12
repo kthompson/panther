@@ -294,36 +294,6 @@ namespace Panther.Tests.CodeAnalysis
         }
 
         [Fact]
-        public void ReportAlreadyDefinedVariable2()
-        {
-            var text = @"{
-                    val a = 1
-                    var [a] = 2
-                }";
-
-            var diagnostic = @"
-                Variable 'a' is already defined in the current scope
-            ";
-
-            AssertHasDiagnostics(text, diagnostic);
-        }
-
-        [Fact]
-        public void ReportAlreadyDefinedVariable3()
-        {
-            var text = @"{
-                    var a = 1
-                    val [a] = 2
-                }";
-
-            var diagnostic = @"
-                Variable 'a' is already defined in the current scope
-            ";
-
-            AssertHasDiagnostics(text, diagnostic);
-        }
-
-        [Fact]
         public void ReportUndefinedName()
         {
             var text = @"[a] = 1";

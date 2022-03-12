@@ -34,6 +34,7 @@ namespace Panther.CodeAnalysis.Binding
         }
 
         public bool IsRootScope => Parent == this;
+
         public bool IsGlobalScope => Symbol.IsType && Symbol.Name == "$Program";
 
         public void ImportMembers(Symbol namespaceOrTypeSymbol)
@@ -77,7 +78,7 @@ namespace Panther.CodeAnalysis.Binding
             return Parent.LookupVariable(name);
         }
 
-        public TypeSymbol? LookupType(string name)
+        public Symbol? LookupType(string name)
         {
             var type = Symbol.LookupType(name);
             if (type != null)
@@ -85,7 +86,7 @@ namespace Panther.CodeAnalysis.Binding
 
             if (_importedSymbols.TryGetValue(name, out var importedSymbols))
             {
-                return importedSymbols.OfType<TypeSymbol>().FirstOrDefault();
+                return importedSymbols.FirstOrDefault(t => t.IsType);
             }
 
             if (IsRootScope)

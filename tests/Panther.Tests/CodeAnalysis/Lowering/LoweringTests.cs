@@ -85,7 +85,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 case BoundVariableExpression:
                     return false;
                 case BoundAssignmentExpression assignmentExpression:
-                    return ContainsBlock(assignmentExpression.Expression);
+                    return ContainsBlock(assignmentExpression.Right);
                 case BoundBinaryExpression binaryExpression:
                     return ContainsBlock(binaryExpression.Left, binaryExpression.Right);
                 case BoundCallExpression boundCallExpression:
@@ -112,7 +112,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering
                 BoundGotoStatement _ => false,
                 BoundLabelStatement _ => false,
                 BoundNopStatement _ => false,
-                BoundAssignmentStatement statement => ContainsBlock(statement.Expression),
+                BoundAssignmentStatement statement => ContainsBlock(statement.Right),
                 BoundConditionalGotoStatement statement => ContainsBlock(statement.Condition),
                 BoundExpressionStatement statement => ContainsBlock(statement.Expression),
                 BoundVariableDeclarationStatement(_, _, var expression) => expression != null &&

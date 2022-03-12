@@ -28,11 +28,11 @@ namespace Panther.CodeAnalysis.Binding
             _isScript = isScript;
         }
 
-        private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope scope)
+        private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope parent)
         {
-            var typeSymbol = scope.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
+            var typeSymbol = parent.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
 
-            if (!scope.DefineSymbol(typeSymbol))
+            if (!parent.DefineSymbol(typeSymbol))
             {
                 Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
             }
@@ -47,7 +47,7 @@ namespace Panther.CodeAnalysis.Binding
             {
                 var field = syntax.Fields[index];
                 var fieldName = field.Identifier.Text;
-                var fieldType = BindTypeAnnotation(field.TypeAnnotation, scope).Type;
+                var fieldType = BindTypeAnnotation(field.TypeAnnotation, parent).Type;
                 var fieldSymbol = typeSymbol.NewField(field.Identifier.Location, field.Identifier.Text, false)
                     .WithType(fieldType);
 
@@ -63,12 +63,15 @@ namespace Panther.CodeAnalysis.Binding
                     var parameter = ctor.NewParameter(field.Identifier.Location, fieldName, index + 1).WithType(fieldType);
                     ctor.DefineSymbol(parameter);
                     parameters.Add(parameter);
-                    assignments.Add(new BoundAssignmentStatement(field, fieldSymbol,
-                        new BoundVariableExpression(field, parameter)));
+                    assignments.Add(new BoundAssignmentStatement(
+                        field,
+                        new BoundFieldExpression(field, null, fieldSymbol),
+                        new BoundVariableExpression(field, parameter)
+                    ));
                 }
             }
 
-            var typeScope = new BoundScope(scope, typeSymbol);
+            var typeScope = new BoundScope(parent, typeSymbol);
             var immParams = parameters.ToImmutableArray();
             ctor.WithType(new MethodType(immParams, Type.Unit));
 
@@ -77,7 +80,7 @@ namespace Panther.CodeAnalysis.Binding
 
             if (syntax.Template != null)
             {
-                BindMembers(syntax.Template.Members, typeScope);
+                BindMembers(syntax.Template.Members, syntax, typeScope);
             }
         }
 
@@ -88,21 +91,24 @@ namespace Panther.CodeAnalysis.Binding
 
         private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
         {
-            var type = new BoundType(parent.Symbol,
+            var typeSymbol = parent.Symbol
+                .NewObject(
                     objectDeclaration.Identifier.Location,
-                    objectDeclaration.Identifier.Text)
-                .WithFlags(SymbolFlags.Object);
-            if (!parent.DefineSymbol(type))
+                    objectDeclaration.Identifier.Text
+                );
+            typeSymbol.Type = new ClassType(typeSymbol);
+
+            if (!parent.DefineSymbol(typeSymbol))
             {
                 Diagnostics.ReportAmbiguousType(objectDeclaration.Location, objectDeclaration.Identifier.Text);
             }
 
-            var scope = new BoundScope(parent, type);
+            var scope = new BoundScope(parent, typeSymbol);
 
-            BindMembers(objectDeclaration.Template.Members, scope);
+            BindMembers(objectDeclaration.Template.Members, objectDeclaration, scope);
         }
 
-        private void BindMembers(ImmutableArray<MemberSyntax> members, BoundScope scope)
+        private void BindMembers(ImmutableArray<MemberSyntax> members, SyntaxNode parent, BoundScope scope)
         {
             var (objectsAndClasses, rest) =  members.Partition(member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax);
             var (functions, statements) = rest.Partition(member => member is FunctionDeclarationSyntax);
@@ -139,12 +145,56 @@ namespace Panther.CodeAnalysis.Binding
                 }
             }
 
-            // // TODO
-            // foreach (var statement in statements)
-            // {
-            //
-            //     BindStatement(statement);
-            // }
+
+            var boundStatements = ImmutableArray.CreateBuilder<BoundStatement>();
+
+            // check statements for field declarations
+            foreach (var memberSyntax in statements)
+            {
+                switch (memberSyntax)
+                {
+                    case GlobalStatementSyntax(_, var statement):
+                        // #error this should not be binding prior to defining fields?
+                        boundStatements.Add(BindStatement(statement, scope, true));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(memberSyntax));
+                }
+            }
+
+            var typeSymbol = scope.Symbol;
+
+            if (!boundStatements.Any())
+                return;
+
+            var isObject = typeSymbol.IsObject;
+            var ctorName = isObject ? ".cctor" : ".ctor";
+
+            var existingCtor = typeSymbol.Constructors.FirstOrDefault();
+            var ctorSymbol = existingCtor ?? typeSymbol.NewMethod(typeSymbol.Location, ctorName);
+
+            if (isObject)
+            {
+                ctorSymbol.Flags |= SymbolFlags.Static;
+            }
+
+            if (existingCtor == null)
+            {
+                ctorSymbol.Type = new MethodType(ImmutableArray<Symbol>.Empty, Type.Unit);
+                typeSymbol.DefineSymbol(ctorSymbol);
+            }
+
+            if (_constructorBodies.TryGetValue(ctorSymbol, out var existingBody))
+            {
+                boundStatements.Add(new BoundExpressionStatement(parent, existingBody));
+            }
+
+            var loweredBody = LoweringPipeline.Lower(ctorSymbol,
+                new BoundExpressionStatement(parent,
+                    new BoundBlockExpression(parent, boundStatements.ToImmutable(),
+                        new BoundUnitExpression(parent))));
+
+            _constructorBodies[ctorSymbol] = loweredBody;
         }
 
         // private Symbol BindNamespace(NamespaceDirectiveSyntax namespaceDirective)
@@ -279,11 +329,6 @@ namespace Panther.CodeAnalysis.Binding
                     // TODO: global statements are not supported with a namespace
                 }
 
-                // foreach (var memberSyntax in compilationUnit.Members)
-                // {
-                //
-                // }
-
                 // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
                 // {
                 //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
@@ -300,14 +345,15 @@ namespace Panther.CodeAnalysis.Binding
                 // otherwise there would be an error
                 globalStatements.AddRange(compilationUnit.Members.OfType<GlobalStatementSyntax>());
 
-                var (functions, objectsAndClasses) = tree.Root.Members.Partition(member => member is FunctionDeclarationSyntax);
+                var (objectsAndClasses, rest) =  compilationUnit.Members.Partition(member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax);
+                var functions = rest.Where(member => member is FunctionDeclarationSyntax).ToImmutableArray();
 
                 // bind classes and objects first
-                binder.BindMembers(objectsAndClasses, scope);
+                binder.BindMembers(objectsAndClasses, compilationUnit,  scope);
 
                 // functions go into our default type scope
                 // everything else can go in our global scope
-                binder.BindMembers(functions, defaultTypeScope);
+                binder.BindMembers(functions, compilationUnit, defaultTypeScope);
             }
 
             var statements =
@@ -619,7 +665,7 @@ namespace Panther.CodeAnalysis.Binding
             var declare = !identifier.IsInsertedToken;
 
             Symbol variable;
-            if (scope.IsGlobalScope)
+            if (scope.Symbol.IsType)
             {
                 variable = scope.Symbol.NewField(identifier.Location, name, isReadOnly).WithType(expressionType);
                 if (scope.Symbol.IsObject)
@@ -724,9 +770,22 @@ namespace Panther.CodeAnalysis.Binding
 
                 var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
 
-                var convertedExpression = BindConversion(syntax.Expression.Location, boundRHS, variable.Type);
+                return new BoundAssignmentExpression(syntax, boundLHS, boundRHS);
+            }
 
-                return new BoundAssignmentExpression(syntax, variable, convertedExpression);
+            if (boundLHS is BoundFieldExpression fieldExpression)
+            {
+                var field = fieldExpression.Field;
+                if (field.IsReadOnly)
+                {
+                    Diagnostics.ReportReassignmentToVal(syntax.Name.Location, field.Name);
+
+                    return new BoundErrorExpression(syntax);
+                }
+
+                var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
+
+                return new BoundAssignmentExpression(syntax, boundLHS, boundRHS);
             }
 
             Diagnostics.ReportNotAssignable(syntax.Name.Location);
@@ -788,7 +847,7 @@ namespace Panther.CodeAnalysis.Binding
                     switch (members[0])
                     {
                         case { IsField: true } field:
-                            return new BoundFieldExpression(syntax, name, expr, field);
+                            return new BoundFieldExpression(syntax, expr, field);
 
                         case { IsMethod: true }:
                             return new BoundMethodExpression(syntax, name, expr, members.Where(m => m.IsMethod).ToImmutableArray());
@@ -1272,7 +1331,12 @@ namespace Panther.CodeAnalysis.Binding
 
                 var variable = scope.LookupVariable(name);
                 if (variable != null)
+                {
+                    if (variable.IsField)
+                        return new BoundFieldExpression(syntax, null, variable);
+
                     return new BoundVariableExpression(syntax, variable);
+                }
 
                 var type = scope.LookupType(name);
                 if (type != null)

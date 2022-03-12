@@ -107,11 +107,16 @@ namespace Panther.Tests.CodeAnalysis.Lowering
             from elseExpr in GenBoundExpression(type)
             select new BoundIfExpression(null!, condition, thenExpr, elseExpr);
 
-        public static Gen<BoundAssignmentExpression> GenBoundAssignmentExpression(Type type) =>
+        public static Gen<BoundExpression> GenBoundExpressionLHS(Type type) =>
             from token in Arb.Generate<SyntaxNode>()
             from variable in GenLocalVariableSymbol(type)
+            select (BoundExpression)new BoundVariableExpression(token, variable);
+
+        public static Gen<BoundAssignmentExpression> GenBoundAssignmentExpression(Type type) =>
+            from token in Arb.Generate<SyntaxNode>()
+            from lhs in GenBoundExpressionLHS(type)
             from initializer in GenBoundExpression(type)
-            select new BoundAssignmentExpression(token, variable, initializer);
+            select new BoundAssignmentExpression(token, lhs, initializer);
 
         public static Gen<BoundBlockExpression> GenBoundBlockExpression(Type type) =>
             from token in Arb.Generate<SyntaxNode>()

@@ -11,7 +11,7 @@ namespace Panther.Tests.CodeAnalysis
         public void EvaluatesObjectMethodCallExpression()
         {
             using var scriptHost = BuildScriptHost();
-            string code = @"
+            var code = @"
                 SomeObject.method()
                 
                 object SomeObject {
@@ -22,11 +22,11 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(code, "taco", scriptHost);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void EvaluatesObjectFieldExpression()
         {
             using var scriptHost = BuildScriptHost();
-            string code = @"
+            var code = @"
                 SomeObject.field
                 
                 object SomeObject {
@@ -37,12 +37,76 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(code, "taco", scriptHost);
         }
 
+        [Fact(Skip = "TODO")]
+        public void EvaluatesObjectNestedFieldExpression()
+        {
+            using var scriptHost = BuildScriptHost();
+            var code = @"
+                SomeObject.Nested.field
+                
+                object SomeObject {
+                    object Nested {
+                        val field = ""taco""
+                    }
+                }
+            ";
+
+            AssertEvaluation(code, "taco", scriptHost);
+        }
+
+        [Fact]
+        public void EvaluatesObjectFieldAssignmentExpression()
+        {
+            using var scriptHost = BuildScriptHost();
+            var code = @"
+                SomeObject.field = SomeObject.field + "" bell""
+                SomeObject.field
+                
+                object SomeObject {
+                    var field = ""taco""
+                }
+            ";
+
+            AssertEvaluation(code, "taco bell", scriptHost);
+        }
+
+        [Fact(Skip = "TODO")]
+        public void EvaluatesNestedObjectFieldAssignmentExpression()
+        {
+            using var scriptHost = BuildScriptHost();
+            var code = @"
+                SomeObject.Nested.field = SomeObject.Nested.field + "" bell""
+                SomeObject.Nested.field
+                
+                object SomeObject {
+                    object Nested {   
+                        var field = ""taco""
+                    }
+                }
+            ";
+
+            AssertEvaluation(code, "taco bell", scriptHost);
+        }
+
+
+        [Property]
+        public void EvaluatesClassFieldExpression(int x, int y)
+        {
+            using var scriptHost = BuildScriptHost();
+            var code = $@"
+                new Point({x}, {y}).X
+                
+                class Point(X: int, Y: int)
+            ";
+
+            AssertEvaluation(code, x, scriptHost);
+        }
 
         [Property]
         public void EvaluatesClassMethodCallExpression(int x, int y)
         {
             using var scriptHost = BuildScriptHost();
-            string code = $@"
+            var code = $@"
                 new Point({x}, {y}).distance()
                 
                 class Point(X: int, Y: int)
@@ -55,24 +119,27 @@ namespace Panther.Tests.CodeAnalysis
         }
 
 
-        [Property]
-        public void EvaluatesClassFieldExpression(int x, int y)
+        [Fact]
+        public void EvaluatesClassFieldsFieldExpression()
         {
             using var scriptHost = BuildScriptHost();
-            string code = $@"
-                new Point({x}, {y}).X
+            var code = $@"
+                val x = new B(new A(1))
+                x.A.X
                 
-                class Point(X: int, Y: int)
+                class A(X: int)
+                class B(A: A)
             ";
 
-            AssertEvaluation(code, x, scriptHost);
+            AssertEvaluation(code, 1, scriptHost);
         }
 
+
         [Property]
-        public void EvaluatesClassAssignment(int x, int y)
+        public void EvaluatesClassFieldAccess(int x, int y)
         {
             using var scriptHost = BuildScriptHost();
-            string code = $@"
+            var code = $@"
                 val p = new Point({x}, {y})
                 p.X
                 
@@ -82,11 +149,12 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(code, x, scriptHost);
         }
 
+
         [Fact]
-        public void EvaluatesClassAssignment2()
+        public void EvaluatesClassFieldAccess2()
         {
             using var scriptHost = BuildScriptHost();
-            string code = $@"
+            var code = $@"
                 val p = new Point(10, 20)
                 p.Y
                 
@@ -96,11 +164,43 @@ namespace Panther.Tests.CodeAnalysis
             AssertEvaluation(code, 20, scriptHost);
         }
 
+        [Property]
+        public void EvaluatesClassFieldAssignment(int x, int y)
+        {
+            using var scriptHost = BuildScriptHost();
+            var code = $@"
+                val p = new A({x})
+                p.X = {y}
+                p.X
+                
+                class A(X: int)
+            ";
+
+            AssertEvaluation(code, y, scriptHost);
+        }
+
+
+        [Property]
+        public void EvaluatesClassFieldExpressions(int x, int y)
+        {
+            using var scriptHost = BuildScriptHost();
+            var code = $@"
+                val p = new A({x})
+                p.X = p.X + {y}
+                p.X
+                
+                class A(X: int)
+            ";
+
+            AssertEvaluation(code, x + y, scriptHost);
+        }
+
+
         [Fact]
         public void EvaluatesClassAssignmentWithTypeAnnotation()
         {
             using var scriptHost = BuildScriptHost();
-            string code = $@"
+            var code = $@"
                 val p: Point = new Point(10, 20)
                 p.Y
                 
