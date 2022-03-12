@@ -20,5 +20,7 @@ namespace Panther.CodeAnalysis.Symbols
         // Access
         Static = 1 << 8, // methods and fields
         Readonly = 1 << 9,
+
+        Member = Object | Class,
     }
 }

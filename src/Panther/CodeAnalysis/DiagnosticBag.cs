@@ -93,8 +93,8 @@ namespace Panther.CodeAnalysis
         public void ReportTypeAnnotationRequired(TextLocation location) =>
             Report(location, "Type annotation is required");
 
-        public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName) =>
-            Report(location, $"Function parameter '{parameterName}' was already declared");
+        public void ReportDuplicateParameter(TextLocation location, string parameterName) =>
+            Report(location, $"Duplicate parameter '{parameterName}'");
 
         public void ReportInvalidBreakOrContinue(TextLocation location, string keyword) =>
             Report(location, $"{keyword} not valid in this context");
@@ -180,5 +180,8 @@ namespace Panther.CodeAnalysis
 
         public void ReportRequiredFieldNotFound(string typeName, string fieldName) =>
             Report(null, $"Required field {typeName}.{fieldName} was not found");
+
+        public void ReportDuplicateDefinition(TextLocation location, string name) =>
+            Report(location, $"Duplicate definition '{name}'");
     }
 }

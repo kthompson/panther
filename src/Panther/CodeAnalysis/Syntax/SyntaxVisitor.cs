@@ -9,13 +9,10 @@
         }
     }
 
-    public partial class SyntaxVisitor<TResult>
+    public abstract partial class SyntaxVisitor<TResult>
     {
         public virtual TResult Visit(SyntaxNode node) => node.Accept(this);
 
-        protected virtual TResult DefaultVisit(SyntaxNode node)
-        {
-            return default!;
-        }
+        protected abstract TResult DefaultVisit(SyntaxNode node);
     }
 }

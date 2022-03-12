@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -12,10 +13,12 @@ namespace Panther.CodeAnalysis.Symbols
         public string Name { get; }
 
         public virtual bool IsRoot => false;
+
         public bool IsType => IsClass || IsObject;
         public bool IsNamespace => this.Flags.HasFlag(SymbolFlags.Namespace);
         public bool IsClass => this.Flags.HasFlag(SymbolFlags.Class);
         public bool IsObject => this.Flags.HasFlag(SymbolFlags.Object);
+        public bool IsMember => (this.Flags & SymbolFlags.Member) != 0;
         public bool IsMethod => this.Flags.HasFlag(SymbolFlags.Method);
         public bool IsConstructor => this.Name == ".ctor";
         public bool IsField => this.Flags.HasFlag(SymbolFlags.Field);
@@ -82,7 +85,15 @@ namespace Panther.CodeAnalysis.Symbols
 
         public static Symbol NewRoot() => new RootSymbol();
         public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);
-        public Symbol NewNamespace(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Namespace);
+
+        public Symbol NewTerm(TextLocation location, string name, SymbolFlags flags) =>
+            new TermSymbol(this, location, name)
+                .WithFlags(flags);
+
+        public Symbol NewNamespace(TextLocation location, string name) =>
+            new TermSymbol(this, location, name)
+                .WithFlags(SymbolFlags.Namespace);
+
         public Symbol NewClass(TextLocation location, string name)
         {
             var symbol = new TermSymbol(this, location, name)
@@ -94,7 +105,8 @@ namespace Panther.CodeAnalysis.Symbols
             return symbol;
         }
 
-        public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name).WithFlags(SymbolFlags.Object);
+        public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name)
+            .WithFlags(SymbolFlags.Object);
         public Symbol NewField(TextLocation location, string name, bool isReadOnly) =>
             new TermSymbol(this, location, name)
                 .WithFlags(SymbolFlags.Field| (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
@@ -103,7 +115,8 @@ namespace Panther.CodeAnalysis.Symbols
             new TermSymbol(this, location, name).WithFlags(SymbolFlags.Method);
 
         public Symbol NewParameter(TextLocation location, string name, int index) =>
-            new TermSymbol(this, location, name) { Index = index }.WithFlags(SymbolFlags.Parameter | SymbolFlags.Readonly);
+            new TermSymbol(this, location, name) { Index = index }
+                .WithFlags(SymbolFlags.Parameter | SymbolFlags.Readonly);
 
         public Symbol NewLocal(TextLocation location, string name, bool isReadOnly) =>
             new TermSymbol(this, location, name)
@@ -171,7 +184,11 @@ namespace Panther.CodeAnalysis.Symbols
         public ImmutableArray<Symbol> Types =>
             Members.Where(m => m.IsType).ToImmutableArray();
 
+        public ImmutableArray<Symbol> Namespaces =>
+            Members.Where(m => m.IsNamespace).ToImmutableArray();
+
         public virtual ImmutableArray<Symbol> Members => _symbols.ToImmutableArray();
+
         public Type ReturnType
         {
             get
@@ -190,17 +207,20 @@ namespace Panther.CodeAnalysis.Symbols
                 ? symbols
                 : ImmutableArray<Symbol>.Empty;
 
+        public Symbol? LookupSingle(string name, Predicate<Symbol> predicate) =>
+            LookupMembers(name).SingleOrDefault(m => predicate(m));
+
         public Symbol? LookupNamespace(string name) =>
-            LookupMembers(name).SingleOrDefault(m => m.IsNamespace);
+            LookupSingle(name, m => m.IsNamespace);
 
         public Symbol? LookupParameter(string name) =>
-            LookupMembers(name).SingleOrDefault(m => m.IsParameter);
+            LookupSingle(name, m => m.IsParameter);
 
         public Symbol? LookupVariable(string name) =>
-            LookupMembers(name).SingleOrDefault(m => m.IsLocal);
+            LookupSingle(name, m => m.IsLocal);
 
         public TypeSymbol? LookupType(string name) =>
-            LookupMembers(name).OfType<TypeSymbol>().FirstOrDefault();
+            LookupMembers(name).OfType<TypeSymbol>().SingleOrDefault();
 
         public ImmutableArray<Symbol> LookupMethod(string name) =>
             LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();
