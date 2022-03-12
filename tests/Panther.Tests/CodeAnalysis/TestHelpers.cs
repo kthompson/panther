@@ -22,7 +22,7 @@ using Xunit.Sdk;
 
 namespace Panther.Tests.CodeAnalysis
 {
-    public static partial class TestHelpers
+    internal static partial class TestHelpers
     {
         public static ImmutableArray<AssemblyDefinition> AssembliesWithStdLib { get; }
         public static ImmutableArray<AssemblyDefinition> AssembliesWithTestStdLib { get; }
@@ -55,25 +55,38 @@ namespace Panther.Tests.CodeAnalysis
         public static void AssertHasDiagnostics(string text, string diagnosticText, [CallerMemberName] string? testName = null)
         {
             var annotatedText = AnnotatedText.Parse(text);
+
             var syntaxTree = SyntaxTree.Parse(annotatedText.Text);
             using var scriptHost = new ScriptHost(AssembliesWithStdLib, testName ?? "test");
 
             var result = scriptHost.Execute(syntaxTree);
+
+            var diagnostics = result.Diagnostics;
+
+            AssertDiagnostics(diagnosticText, annotatedText, diagnostics);
+        }
+
+        public static void AssertDiagnostics(string diagnosticText, AnnotatedText annotatedText, ImmutableArray<Diagnostic> diagnostics)
+        {
             var expectedDiagnosticMessages = diagnosticText.UnindentLines();
 
-            Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length, "Test invalid, must have equal number of diagnostics as text spans");
+            Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length,
+                "Test invalid, must have equal number of diagnostics as text spans");
 
             var expectedDiagnostics = expectedDiagnosticMessages.Zip(annotatedText.Spans)
                 .Select(tuple => new { Span = tuple.Second, Message = tuple.First })
                 .OrderBy(diagnostic => diagnostic.Span.Start)
                 .ToArray();
 
-            var actualDiagnostics = result.Diagnostics.OrderBy(diagnostic => diagnostic.Location?.Span.Start ?? -1).ToArray();
+
+            var actualDiagnostics = diagnostics.OrderBy(diagnostic => diagnostic.Location?.Span.Start ?? -1).ToArray();
 
             for (var i = 0; i < expectedDiagnosticMessages.Length; i++)
             {
-                Assert.True(i < expectedDiagnostics.Length, $"Expected at least {i + 1} expected diagnostics only found {expectedDiagnostics.Length}");
-                Assert.True(i < actualDiagnostics.Length, $"Expected at least {i + 1} actual diagnostics only found {actualDiagnostics.Length}");
+                Assert.True(i < expectedDiagnostics.Length,
+                    $"Expected at least {i + 1} expected diagnostics only found {expectedDiagnostics.Length}");
+                Assert.True(i < actualDiagnostics.Length,
+                    $"Expected at least {i + 1} actual diagnostics only found {actualDiagnostics.Length}");
 
                 var expectedMessage = expectedDiagnostics[i].Message;
                 var actualMessage = actualDiagnostics[i].Message;

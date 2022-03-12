@@ -55,7 +55,7 @@ namespace Panther.CodeAnalysis.Binding
 
                 if (!seenFieldNames.Add(fieldName))
                 {
-                    Diagnostics.ReportParameterAlreadyDeclared(field.Location, fieldName);
+                    Diagnostics.ReportDuplicateParameter(field.Location, fieldName);
                 }
                 else
                 {
@@ -441,7 +441,7 @@ namespace Panther.CodeAnalysis.Binding
 
                 if (!seenParamNames.Add(parameterName))
                 {
-                    Diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
+                    Diagnostics.ReportDuplicateParameter(parameterSyntax.Location, parameterName);
                 }
                 else
                 {
