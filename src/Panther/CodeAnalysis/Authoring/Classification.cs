@@ -1,12 +1,11 @@
-﻿namespace Panther.CodeAnalysis.Authoring
+﻿namespace Panther.CodeAnalysis.Authoring;
+
+public enum Classification
 {
-    public enum Classification
-    {
-        Text,
-        Keyword,
-        Identifier,
-        Number,
-        String,
-        Comment,
-    }
+    Text,
+    Keyword,
+    Identifier,
+    Number,
+    String,
+    Comment,
 }

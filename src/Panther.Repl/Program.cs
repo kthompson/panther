@@ -3,13 +3,12 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Panther
+namespace Panther;
+
+static class Program
 {
-    static class Program
+    private static void Main()
     {
-        private static void Main()
-        {
-            new PantherRepl().Run();
-        }
+        new PantherRepl().Run();
     }
 }

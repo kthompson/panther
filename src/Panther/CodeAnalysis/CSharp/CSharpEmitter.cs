@@ -16,789 +16,788 @@ using SyntaxToken = Panther.CodeAnalysis.Syntax.SyntaxToken;
 using SyntaxTree = Panther.CodeAnalysis.Syntax.SyntaxTree;
 using SyntaxTrivia = Panther.CodeAnalysis.Syntax.SyntaxTrivia;
 
-namespace Panther.CodeAnalysis.CSharp
+namespace Panther.CodeAnalysis.CSharp;
+
+enum ContainerType
 {
-    enum ContainerType
+    None,
+    Object,
+    Class,
+}
+
+internal class CSharpEmitter : SyntaxVisitor, IDisposable
+{
+    private readonly SyntaxTree _syntaxTree;
+    private readonly StringWriter _stream;
+    private readonly IndentedTextWriter _writer;
+    private readonly DiagnosticBag _diagnostics;
+    private ContainerType _containerType = ContainerType.None;
+    private string _containerName = "";
+
+    private static readonly IEnumerable<string> DefaultNamespaces =
+        new[]
+        {
+            "System",
+            "System.IO",
+            "System.Net",
+            "System.Linq",
+            "System.Text",
+            "Panther",
+        };
+
+    private static readonly CSharpCompilationOptions DefaultCompilationOptions =
+        new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+            .WithOverflowChecks(true)
+            .WithPlatform(Platform.X64)
+            .WithOptimizationLevel(OptimizationLevel.Release)
+            .WithSpecificDiagnosticOptions(
+                new Dictionary<string, ReportDiagnostic>
+                {
+                    ["CS8019"] = ReportDiagnostic.Suppress // Unnecessary using directive
+                }
+            )
+            .WithUsings(DefaultNamespaces);
+
+    private static readonly IEnumerable<MetadataReference> DefaultReferences =
+        new[]
+        {
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Panther.Unit).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.GenericUriParser).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly
+                .Location)
+        };
+
+
+    public static string ToCSharpText(SyntaxTree tree)
     {
-        None,
-        Object,
-        Class,
+        using var emitter = new CSharpEmitter(tree);
+        emitter.Visit(tree.Root);
+        return emitter.ToText();
     }
 
-    internal class CSharpEmitter : SyntaxVisitor, IDisposable
+    public static (bool Success, ImmutableArray<Diagnostic>) ToCSharp(string moduleName, string outputPath, params SyntaxTree[] trees)
     {
-        private readonly SyntaxTree _syntaxTree;
-        private readonly StringWriter _stream;
-        private readonly IndentedTextWriter _writer;
-        private readonly DiagnosticBag _diagnostics;
-        private ContainerType _containerType = ContainerType.None;
-        private string _containerName = "";
+        var sourceFileLookup = trees.Select(tree => tree.File).ToDictionary(file => file.FileName);
 
-        private static readonly IEnumerable<string> DefaultNamespaces =
-            new[]
-            {
-                "System",
-                "System.IO",
-                "System.Net",
-                "System.Linq",
-                "System.Text",
-                "Panther",
-            };
-
-        private static readonly CSharpCompilationOptions DefaultCompilationOptions =
-            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
-                .WithOverflowChecks(true)
-                .WithPlatform(Platform.X64)
-                .WithOptimizationLevel(OptimizationLevel.Release)
-                .WithSpecificDiagnosticOptions(
-                    new Dictionary<string, ReportDiagnostic>
-                    {
-                        ["CS8019"] = ReportDiagnostic.Suppress // Unnecessary using directive
-                    }
-                )
-                .WithUsings(DefaultNamespaces);
-
-        private static readonly IEnumerable<MetadataReference> DefaultReferences =
-            new[]
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Panther.Unit).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(System.GenericUriParser).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException).Assembly
-                    .Location)
-            };
-
-
-        public static string ToCSharpText(SyntaxTree tree)
+        var list = new List<CASyntaxTree>();
+        foreach (var tree in trees)
         {
             using var emitter = new CSharpEmitter(tree);
             emitter.Visit(tree.Root);
-            return emitter.ToText();
+            list.Add(emitter.BuildSyntaxTree());
         }
 
-        public static (bool Success, ImmutableArray<Diagnostic>) ToCSharp(string moduleName, string outputPath, params SyntaxTree[] trees)
+        var compilation = CSharpCompilation.Create(moduleName, list.ToArray(), DefaultReferences, DefaultCompilationOptions.WithMainTypeName("Program"))
+            ;
+
+        using var stream = new MemoryStream();
+        var result = compilation.Emit(stream);
+
+        if (result.Success)
         {
-            var sourceFileLookup = trees.Select(tree => tree.File).ToDictionary(file => file.FileName);
-
-            var list = new List<CASyntaxTree>();
-            foreach (var tree in trees)
-            {
-                using var emitter = new CSharpEmitter(tree);
-                emitter.Visit(tree.Root);
-                list.Add(emitter.BuildSyntaxTree());
-            }
-
-            var compilation = CSharpCompilation.Create(moduleName, list.ToArray(), DefaultReferences, DefaultCompilationOptions.WithMainTypeName("Program"))
-                ;
-
-            using var stream = new MemoryStream();
-            var result = compilation.Emit(stream);
-
-            if (result.Success)
-            {
-                File.WriteAllBytes(outputPath, stream.GetBuffer());
-            }
-
-            return (result.Success, result.Diagnostics.SelectMany(diag =>
-            {
-                if (diag.WarningLevel == 4)
-                    return Array.Empty<Diagnostic>();
-
-                var diagLocation = diag.Location;
-                // var diagSpan = diagLocation.SourceSpan;
-                var path = diagLocation.SourceTree?.FilePath;
-
-                var sourceFile = path != null && sourceFileLookup.TryGetValue(path, out var file) ? file : SourceFile.Empty;
-
-
-                var location = new TextLocation(sourceFile, new TextSpan(0, 0));
-
-                return new[] { new Diagnostic(location, diag.GetMessage()) };
-            }).ToImmutableArray());
+            File.WriteAllBytes(outputPath, stream.GetBuffer());
         }
 
-
-        private CSharpEmitter(SyntaxTree syntaxTree)
+        return (result.Success, result.Diagnostics.SelectMany(diag =>
         {
-            _syntaxTree = syntaxTree;
-            _stream = new StringWriter();
-            _writer = new IndentedTextWriter(_stream);
-            _diagnostics = new DiagnosticBag();
-            _diagnostics.AddRange(syntaxTree.Diagnostics);
-        }
+            if (diag.WarningLevel == 4)
+                return Array.Empty<Diagnostic>();
 
-        private string ToText()
+            var diagLocation = diag.Location;
+            // var diagSpan = diagLocation.SourceSpan;
+            var path = diagLocation.SourceTree?.FilePath;
+
+            var sourceFile = path != null && sourceFileLookup.TryGetValue(path, out var file) ? file : SourceFile.Empty;
+
+
+            var location = new TextLocation(sourceFile, new TextSpan(0, 0));
+
+            return new[] { new Diagnostic(location, diag.GetMessage()) };
+        }).ToImmutableArray());
+    }
+
+
+    private CSharpEmitter(SyntaxTree syntaxTree)
+    {
+        _syntaxTree = syntaxTree;
+        _stream = new StringWriter();
+        _writer = new IndentedTextWriter(_stream);
+        _diagnostics = new DiagnosticBag();
+        _diagnostics.AddRange(syntaxTree.Diagnostics);
+    }
+
+    private string ToText()
+    {
+        _writer.Flush();
+        var result = _stream.ToString();
+        return result;
+    }
+
+    private CASyntaxTree BuildSyntaxTree()
+    {
+        _writer.Flush();
+        var result = _stream.ToString();
+        return CSharpSyntaxTree.ParseText(result, null, _syntaxTree.File.FileName);
+    }
+
+    protected override void DefaultVisit(SyntaxNode node)
+    {
+        throw new NotImplementedException(node.Kind.ToString());
+    }
+
+    void VisitChildren(SyntaxNode node)
+    {
+        foreach (var child in node.GetChildren())
         {
-            _writer.Flush();
-            var result = _stream.ToString();
-            return result;
+            child.Accept(this);
         }
+    }
 
-        private CASyntaxTree BuildSyntaxTree()
+    public override void VisitTrivia(SyntaxTrivia node)
+    {
+    }
+
+    public override void VisitToken(SyntaxToken node)
+    {
+    }
+
+    public override void VisitUnitExpression(UnitExpressionSyntax node)
+    {
+    }
+
+
+    public override void VisitGlobalStatement(GlobalStatementSyntax node)
+    {
+        VisitChildren(node);
+    }
+
+    public override void VisitLiteralExpression(LiteralExpressionSyntax node)
+    {
+        switch (node.Value)
         {
-            _writer.Flush();
-            var result = _stream.ToString();
-            return CSharpSyntaxTree.ParseText(result, null, _syntaxTree.File.FileName);
+            case int i:
+                _writer.Write(i.ToString());
+                break;
+            case string s:
+                _writer.Write(node.LiteralToken.Text);
+                break;
+            case bool b:
+                _writer.Write(b ? "true": "false");
+                break;
+            default:
+                throw new InvalidOperationException("Unknown type: " + (node.Value?.GetType().Name ?? "null"));
         }
+    }
 
-        protected override void DefaultVisit(SyntaxNode node)
+    public override void VisitExpressionStatement(ExpressionStatementSyntax node)
+    {
+        VisitChildren(node);
+        _writer.WriteLine(";");
+    }
+
+    public override void VisitCallExpression(CallExpressionSyntax node)
+    {
+        if (node.Arguments.Count == 1 && node.Expression is IdentifierNameSyntax ident && _builtinTypes.Contains(ident.Identifier.Text))
         {
-            throw new NotImplementedException(node.Kind.ToString());
+            WriteConversionExpression(ident, node.Arguments.First());
         }
-
-        void VisitChildren(SyntaxNode node)
-        {
-            foreach (var child in node.GetChildren())
-            {
-                child.Accept(this);
-            }
-        }
-
-        public override void VisitTrivia(SyntaxTrivia node)
-        {
-        }
-
-        public override void VisitToken(SyntaxToken node)
-        {
-        }
-
-        public override void VisitUnitExpression(UnitExpressionSyntax node)
-        {
-        }
-
-
-        public override void VisitGlobalStatement(GlobalStatementSyntax node)
-        {
-            VisitChildren(node);
-        }
-
-        public override void VisitLiteralExpression(LiteralExpressionSyntax node)
-        {
-            switch (node.Value)
-            {
-                case int i:
-                    _writer.Write(i.ToString());
-                    break;
-                case string s:
-                    _writer.Write(node.LiteralToken.Text);
-                    break;
-                case bool b:
-                    _writer.Write(b ? "true": "false");
-                    break;
-                default:
-                    throw new InvalidOperationException("Unknown type: " + (node.Value?.GetType().Name ?? "null"));
-            }
-        }
-
-        public override void VisitExpressionStatement(ExpressionStatementSyntax node)
-        {
-            VisitChildren(node);
-            _writer.WriteLine(";");
-        }
-
-        public override void VisitCallExpression(CallExpressionSyntax node)
-        {
-            if (node.Arguments.Count == 1 && node.Expression is IdentifierNameSyntax ident && _builtinTypes.Contains(ident.Identifier.Text))
-            {
-                WriteConversionExpression(ident, node.Arguments.First());
-            }
-            else
-            {
-                node.Expression.Accept(this);
-                _writer.Write("(");
-                VisitSeparatedCommas(node.Arguments);
-                _writer.Write(")");
-            }
-        }
-
-        private void WriteConversionExpression(IdentifierNameSyntax ident, ExpressionSyntax argument)
-        {
-            var targetType = ident.Identifier.Text;
-            switch (targetType)
-            {
-                case "any":
-                    _writer.Write("(object)(");
-                    argument.Accept(this);
-                    _writer.Write(")");
-                    break;
-
-                case "int":
-                    _writer.Write("Convert.ToInt32(");
-                    argument.Accept(this);
-                    _writer.Write(")");
-                    break;
-
-                case "bool":
-                    _writer.Write("Convert.ToBoolean(");
-                    argument.Accept(this);
-                    _writer.Write(")");
-                    break;
-
-                case "string":
-                    _writer.Write("Convert.ToString(");
-                    argument.Accept(this);
-                    _writer.Write(")");
-                    break;
-
-                case "unit":
-                    break;
-
-                default:
-                    throw new InvalidOperationException("Invalid conversion target: " + targetType);
-            }
-        }
-
-        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
-        {
-            _writer.WriteLine($"class {node.Identifier.Text}");
-            StartBlock();
-
-            // build primary constructor
-
-            _writer.Write($"public {node.Identifier.Text}(");
-            VisitSeparatedCommas(node.Fields);
-            _writer.WriteLine(")");
-            StartBlock();
-            foreach (var parameter in node.Fields)
-            {
-                var p = parameter.Identifier.Text;
-                _writer.WriteLine($"this.{p} = {p};");
-            }
-            EndBlock();
-
-            if(node.Fields.Count > 0)
-            {
-                WriteLine();
-            }
-
-            // emit property fields
-            foreach (var parameter in node.Fields)
-            {
-                var p = parameter.Identifier.Text;
-                _writer.Write("public ");
-                parameter.TypeAnnotation.Accept(this);
-                _writer.WriteLine($" {p} {{ get; }}");
-            }
-
-            if (node.Fields.Count > 0 && node.Template != null)
-            {
-                WriteLine();
-            }
-
-            // emit body if any exists
-
-            using var _ = MarkContainer(node.Identifier.Text, ContainerType.Class);
-            node.Template?.Accept(this);
-
-            // close class
-            EndBlock();
-        }
-
-        public override void VisitTemplate(TemplateSyntax node)
-        {
-            VisitMembers(node.Members);
-        }
-
-        private void VisitMembers(ImmutableArray<MemberSyntax> members)
-        {
-            var decls = members
-                .Where(member => member is not GlobalStatementSyntax)
-                .Where(member => member is not FunctionDeclarationSyntax)
-                .ToImmutableArray();
-
-            var funcs = members.OfType<FunctionDeclarationSyntax>().Where(func => func.Identifier.Text != "main")
-                .ToImmutableArray();
-
-            var main = members.OfType<FunctionDeclarationSyntax>()
-                .FirstOrDefault(func => func.Identifier.Text == "main");
-
-            var statements = members.OfType<GlobalStatementSyntax>().Select(global => global.Statement)
-                .ToImmutableArray();
-
-            var emitStatic = _containerType is ContainerType.None or ContainerType.Object;
-            var emitMainOrStatic = !statements.IsEmpty || main != null;
-            var emitProgram = (emitMainOrStatic || !funcs.IsEmpty) && _containerType == ContainerType.None;
-
-            if (emitProgram)
-            {
-                _writer.WriteLine("public static partial class Program");
-                StartBlock();
-            }
-
-            if (emitMainOrStatic)
-            {
-                // for top level statements we need to iterate twice
-                // 1. defining top-level fields for this class,
-
-                foreach (var assignment in statements.OfType<VariableDeclarationStatementSyntax>())
-                {
-                    _writer.Write("public ");
-                    if(emitStatic)
-                    {
-                        _writer.Write("static ");
-                    }
-
-                    assignment.TypeAnnotation!.Type.Accept(this);
-
-                    _writer.Write(" ");
-                    _writer.Write(assignment.IdentifierToken.Text);
-                    _writer.WriteLine(";");
-                    // we emit the value later in case the expression is too complex for a field initializer
-                }
-
-                // 2. defining the entry point expressions(or static constructor)
-                _writer.WriteLine(emitProgram || main != null ? "public static void main()" : $"static {_containerName}");
-                StartBlock();
-
-                foreach (var statement in statements)
-                {
-                    if (statement is VariableDeclarationStatementSyntax varDecl && varDecl.Initializer != null)
-                    {
-                        // create a temporary assignment expression and emit that
-                        var assignment = new AssignmentExpressionSyntax(varDecl.SyntaxTree,
-                            new IdentifierNameSyntax(varDecl.SyntaxTree, varDecl.IdentifierToken), varDecl.Initializer.EqualsToken,
-                            varDecl.Initializer.Expression);
-
-                        assignment.Accept(this);
-                        _writer.WriteLine(";");
-                    }
-                    else
-                    {
-                        statement.Accept(this);
-                    }
-                }
-
-                // TODO: if topLevelStatements == false this is probably wrong
-                // emit the actual main body if there is one, globals will already be assigned
-                if (main?.Body != null && main.Body.Kind != SyntaxKind.UnitExpression)
-                {
-                    _isUnit = false;
-                    if (main.TypeAnnotation == null)
-                    {
-                        _isUnit = true;
-                    }
-                    else
-                    {
-                        SetIsUnitFromNameSyntax(main.TypeAnnotation.Type);
-                    }
-
-                    main.Body.Accept(this);
-                }
-
-                // end constructor/main
-                EndBlock();
-
-                if (!funcs.IsEmpty)
-                {
-                    WriteLine();
-                }
-            }
-
-            VisitSeparated(funcs, WriteLine);
-
-            if (emitProgram)
-            {
-                EndBlock();
-                if (!decls.IsEmpty)
-                {
-                    WriteLine();
-                }
-            }
-
-            VisitSeparated(decls, WriteLine);
-        }
-
-
-        public override void VisitIdentifierName(IdentifierNameSyntax node)
-        {
-            _writer.Write(node.Identifier.Text);
-        }
-
-        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        else
         {
             node.Expression.Accept(this);
-            _writer.Write(".");
-            node.Name.Accept(this);
-        }
-
-        public override void VisitNewExpression(NewExpressionSyntax node)
-        {
-            _writer.Write("new ");
-            node.Type.Accept(this);
             _writer.Write("(");
             VisitSeparatedCommas(node.Arguments);
             _writer.Write(")");
         }
+    }
 
-        public override void VisitVariableDeclarationStatement(VariableDeclarationStatementSyntax node)
+    private void WriteConversionExpression(IdentifierNameSyntax ident, ExpressionSyntax argument)
+    {
+        var targetType = ident.Identifier.Text;
+        switch (targetType)
         {
-            if (node.Initializer == null)
+            case "any":
+                _writer.Write("(object)(");
+                argument.Accept(this);
+                _writer.Write(")");
+                break;
+
+            case "int":
+                _writer.Write("Convert.ToInt32(");
+                argument.Accept(this);
+                _writer.Write(")");
+                break;
+
+            case "bool":
+                _writer.Write("Convert.ToBoolean(");
+                argument.Accept(this);
+                _writer.Write(")");
+                break;
+
+            case "string":
+                _writer.Write("Convert.ToString(");
+                argument.Accept(this);
+                _writer.Write(")");
+                break;
+
+            case "unit":
+                break;
+
+            default:
+                throw new InvalidOperationException("Invalid conversion target: " + targetType);
+        }
+    }
+
+    public override void VisitClassDeclaration(ClassDeclarationSyntax node)
+    {
+        _writer.WriteLine($"class {node.Identifier.Text}");
+        StartBlock();
+
+        // build primary constructor
+
+        _writer.Write($"public {node.Identifier.Text}(");
+        VisitSeparatedCommas(node.Fields);
+        _writer.WriteLine(")");
+        StartBlock();
+        foreach (var parameter in node.Fields)
+        {
+            var p = parameter.Identifier.Text;
+            _writer.WriteLine($"this.{p} = {p};");
+        }
+        EndBlock();
+
+        if(node.Fields.Count > 0)
+        {
+            WriteLine();
+        }
+
+        // emit property fields
+        foreach (var parameter in node.Fields)
+        {
+            var p = parameter.Identifier.Text;
+            _writer.Write("public ");
+            parameter.TypeAnnotation.Accept(this);
+            _writer.WriteLine($" {p} {{ get; }}");
+        }
+
+        if (node.Fields.Count > 0 && node.Template != null)
+        {
+            WriteLine();
+        }
+
+        // emit body if any exists
+
+        using var _ = MarkContainer(node.Identifier.Text, ContainerType.Class);
+        node.Template?.Accept(this);
+
+        // close class
+        EndBlock();
+    }
+
+    public override void VisitTemplate(TemplateSyntax node)
+    {
+        VisitMembers(node.Members);
+    }
+
+    private void VisitMembers(ImmutableArray<MemberSyntax> members)
+    {
+        var decls = members
+            .Where(member => member is not GlobalStatementSyntax)
+            .Where(member => member is not FunctionDeclarationSyntax)
+            .ToImmutableArray();
+
+        var funcs = members.OfType<FunctionDeclarationSyntax>().Where(func => func.Identifier.Text != "main")
+            .ToImmutableArray();
+
+        var main = members.OfType<FunctionDeclarationSyntax>()
+            .FirstOrDefault(func => func.Identifier.Text == "main");
+
+        var statements = members.OfType<GlobalStatementSyntax>().Select(global => global.Statement)
+            .ToImmutableArray();
+
+        var emitStatic = _containerType is ContainerType.None or ContainerType.Object;
+        var emitMainOrStatic = !statements.IsEmpty || main != null;
+        var emitProgram = (emitMainOrStatic || !funcs.IsEmpty) && _containerType == ContainerType.None;
+
+        if (emitProgram)
+        {
+            _writer.WriteLine("public static partial class Program");
+            StartBlock();
+        }
+
+        if (emitMainOrStatic)
+        {
+            // for top level statements we need to iterate twice
+            // 1. defining top-level fields for this class,
+
+            foreach (var assignment in statements.OfType<VariableDeclarationStatementSyntax>())
             {
-                // int i;
-                if (node.TypeAnnotation != null)
+                _writer.Write("public ");
+                if(emitStatic)
                 {
-                    node.TypeAnnotation.Type.Accept(this);
-                    _writer.Write(" ");
-                    _writer.Write(node.IdentifierToken.Text);
+                    _writer.Write("static ");
+                }
+
+                assignment.TypeAnnotation!.Type.Accept(this);
+
+                _writer.Write(" ");
+                _writer.Write(assignment.IdentifierToken.Text);
+                _writer.WriteLine(";");
+                // we emit the value later in case the expression is too complex for a field initializer
+            }
+
+            // 2. defining the entry point expressions(or static constructor)
+            _writer.WriteLine(emitProgram || main != null ? "public static void main()" : $"static {_containerName}");
+            StartBlock();
+
+            foreach (var statement in statements)
+            {
+                if (statement is VariableDeclarationStatementSyntax varDecl && varDecl.Initializer != null)
+                {
+                    // create a temporary assignment expression and emit that
+                    var assignment = new AssignmentExpressionSyntax(varDecl.SyntaxTree,
+                        new IdentifierNameSyntax(varDecl.SyntaxTree, varDecl.IdentifierToken), varDecl.Initializer.EqualsToken,
+                        varDecl.Initializer.Expression);
+
+                    assignment.Accept(this);
                     _writer.WriteLine(";");
                 }
                 else
                 {
-                    _writer.Write("var ");
-                    _writer.Write(node.IdentifierToken.Text);
-                    _writer.WriteLine(" = <error> ;");
+                    statement.Accept(this);
                 }
+            }
+
+            // TODO: if topLevelStatements == false this is probably wrong
+            // emit the actual main body if there is one, globals will already be assigned
+            if (main?.Body != null && main.Body.Kind != SyntaxKind.UnitExpression)
+            {
+                _isUnit = false;
+                if (main.TypeAnnotation == null)
+                {
+                    _isUnit = true;
+                }
+                else
+                {
+                    SetIsUnitFromNameSyntax(main.TypeAnnotation.Type);
+                }
+
+                main.Body.Accept(this);
+            }
+
+            // end constructor/main
+            EndBlock();
+
+            if (!funcs.IsEmpty)
+            {
+                WriteLine();
+            }
+        }
+
+        VisitSeparated(funcs, WriteLine);
+
+        if (emitProgram)
+        {
+            EndBlock();
+            if (!decls.IsEmpty)
+            {
+                WriteLine();
+            }
+        }
+
+        VisitSeparated(decls, WriteLine);
+    }
+
+
+    public override void VisitIdentifierName(IdentifierNameSyntax node)
+    {
+        _writer.Write(node.Identifier.Text);
+    }
+
+    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+    {
+        node.Expression.Accept(this);
+        _writer.Write(".");
+        node.Name.Accept(this);
+    }
+
+    public override void VisitNewExpression(NewExpressionSyntax node)
+    {
+        _writer.Write("new ");
+        node.Type.Accept(this);
+        _writer.Write("(");
+        VisitSeparatedCommas(node.Arguments);
+        _writer.Write(")");
+    }
+
+    public override void VisitVariableDeclarationStatement(VariableDeclarationStatementSyntax node)
+    {
+        if (node.Initializer == null)
+        {
+            // int i;
+            if (node.TypeAnnotation != null)
+            {
+                node.TypeAnnotation.Type.Accept(this);
+                _writer.Write(" ");
+                _writer.Write(node.IdentifierToken.Text);
+                _writer.WriteLine(";");
             }
             else
             {
-                // var i = 0;
                 _writer.Write("var ");
                 _writer.Write(node.IdentifierToken.Text);
-                _writer.Write(" = ");
-                node.Initializer.Expression.Accept(this);
-                _writer.WriteLine(";");
+                _writer.WriteLine(" = <error> ;");
             }
         }
-
-        public override void VisitObjectDeclaration(ObjectDeclarationSyntax node)
+        else
         {
-            _writer.WriteLine($"public static partial class {node.Identifier.Text}");
-            using var _ = MarkContainer(node.Identifier.Text, ContainerType.Object);
-            StartBlock();
-            node.Template.Accept(this);
-            EndBlock();
+            // var i = 0;
+            _writer.Write("var ");
+            _writer.Write(node.IdentifierToken.Text);
+            _writer.Write(" = ");
+            node.Initializer.Expression.Accept(this);
+            _writer.WriteLine(";");
         }
+    }
 
-        public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
+    public override void VisitObjectDeclaration(ObjectDeclarationSyntax node)
+    {
+        _writer.WriteLine($"public static partial class {node.Identifier.Text}");
+        using var _ = MarkContainer(node.Identifier.Text, ContainerType.Object);
+        StartBlock();
+        node.Template.Accept(this);
+        EndBlock();
+    }
+
+    public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
+    {
+        _writer.Write("public ");
+
+        if (node.Body == null)
         {
-            _writer.Write("public ");
-
-            if (node.Body == null)
-            {
-                _writer.Write("abstract ");
-            }
-
-            if (_containerType is ContainerType.Object or ContainerType.None)
-            {
-                _writer.Write("static ");
-            }
-
-            if (node.TypeAnnotation == null)
-            {
-                // _diagnostics.ReportTypeAnnotationRequired(node.Identifier.Location);
-                // for now lets assume its unit/void
-                _isUnit = true;
-                _writer.Write("void");
-            }
-            else
-            {
-                node.TypeAnnotation.Accept(this);
-                SetIsUnitFromNameSyntax(node.TypeAnnotation.Type);
-            }
-            _writer.Write($" {node.Identifier.Text}(");
-
-            VisitSeparatedCommas(node.Parameters);
-
-
-            if (node.Body == null)
-            {
-                _writer.WriteLine(");");
-            }
-            else
-            {
-                _writer.WriteLine(")");
-                StartBlock();
-                node.Body.Accept(this);
-                EndBlock();
-            }
+            _writer.Write("abstract ");
         }
 
-        private void SetIsUnitFromNameSyntax(NameSyntax nameSyntax)
+        if (_containerType is ContainerType.Object or ContainerType.None)
         {
-            _isUnit = nameSyntax is IdentifierNameSyntax ident && ident.Identifier.Text == "unit";
+            _writer.Write("static ");
         }
 
-        public override void VisitFunctionBody(FunctionBodySyntax node)
+        if (node.TypeAnnotation == null)
         {
-            // flatten
-            var (statements, expression) = ExpressionFlattener.Flatten(node.Body);
-            foreach (var statement in statements)
-            {
-                statement.Accept(this);
-            }
-
-            if (!_isUnit)
-            {
-                _writer.Write("return ");
-                expression.Accept(this);
-                _writer.WriteLine(";");
-            }
-            else if (expression.Kind != SyntaxKind.UnitExpression)
-            {
-                expression.Accept(this);
-                _writer.WriteLine(";");
-            }
+            // _diagnostics.ReportTypeAnnotationRequired(node.Identifier.Location);
+            // for now lets assume its unit/void
+            _isUnit = true;
+            _writer.Write("void");
         }
-
-        private void EndBlock()
-        {
-            _writer.Indent--;
-            _writer.WriteLine("}");
-        }
-
-        private void StartBlock()
-        {
-            _writer.WriteLine("{");
-            _writer.Indent++;
-        }
-
-        public override void VisitTypeAnnotation(TypeAnnotationSyntax node)
-        {
-            if (node.Type is IdentifierNameSyntax identifier)
-            {
-                _writer.Write(TypeToCSharpType(identifier.Identifier.Text));
-            }
-            else
-            {
-                node.Type.Accept(this);
-            }
-        }
-
-        public override void VisitWhileExpression(WhileExpressionSyntax node)
-        {
-            _writer.Write("while (");
-            node.ConditionExpression.Accept(this);
-            _writer.WriteLine(")");
-            EmitBlock(node.Body);
-        }
-
-        void EmitBlock(ExpressionSyntax node)
-        {
-            if (node.Kind == SyntaxKind.BlockExpression)
-            {
-                StartBlock();
-                node.Accept(this);
-                EndBlock();
-            }
-            else
-            {
-                node.Accept(this);
-            }
-        }
-
-        public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-        {
-            var op = SyntaxFacts.GetText(node.OperatorToken.Kind)??
-                     throw new Exception("Invalid operator");
-            var precedence = node.OperatorToken.Kind.GetBinaryOperatorPrecedence() ??
-                             throw new Exception("Invalid operator");
-
-            WriteNestedExpression(node.Left, precedence);
-            _writer.Write(" ");
-            _writer.Write(op);
-            _writer.Write(" ");
-            WriteNestedExpression(node.Right, precedence);
-        }
-
-        public override void VisitUnaryExpression(UnaryExpressionSyntax node)
-        {
-            var op = SyntaxFacts.GetText(node.OperatorToken.Kind)??
-                     throw new Exception("Invalid operator");
-            _writer.Write(op);
-
-            WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
-        }
-
-        public override void VisitParameter(ParameterSyntax node)
+        else
         {
             node.TypeAnnotation.Accept(this);
-            _writer.Write($" {node.Identifier.Text}");
+            SetIsUnitFromNameSyntax(node.TypeAnnotation.Type);
         }
+        _writer.Write($" {node.Identifier.Text}(");
 
-        private void WriteNestedExpression(ExpressionSyntax node, OperatorPrecedence parentPrecedence)
+        VisitSeparatedCommas(node.Parameters);
+
+
+        if (node.Body == null)
         {
-            if (node is BinaryExpressionSyntax binaryExpression)
-            {
-                var precedence = binaryExpression.OperatorToken.Kind.GetBinaryOperatorPrecedence() ??
-                                 throw new Exception("Invalid operator");
-
-                WriteNestedExpression(binaryExpression, parentPrecedence, precedence);
-            }
-            else
-            {
-                node.Accept(this);
-            }
+            _writer.WriteLine(");");
         }
-
-        private void WriteNestedExpression(BinaryExpressionSyntax node, OperatorPrecedence parent, OperatorPrecedence current)
+        else
         {
-            if (parent > current)
-            {
-                _writer.Write("(");
-                node.Accept(this);
-                _writer.Write(")");
-            }
-            else
-            {
-                node.Accept(this);
-            }
-        }
-
-        public override void VisitBlockExpression(BlockExpressionSyntax node)
-        {
-            // StartBlock();
-
-            VisitSeparated(node.Statements, () => { });
-
-            if (node.Expression.Kind != SyntaxKind.UnitExpression)
-            {
-                node.Expression.Accept(this);
-                _writer.WriteLine(";");
-            }
-
-            // EndBlock();
-        }
-
-        public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        {
-            node.Name.Accept(this);
-            _writer.Write(" = ");
-            node.Expression.Accept(this);
-        }
-
-        public override void VisitIfExpression(IfExpressionSyntax node)
-        {
-            // TODO: we need to remove blocks from if-expressions because they cannot be ternary expressions
-            _writer.Write("if (");
-            node.ConditionExpression.Accept(this);
             _writer.WriteLine(")");
-            EmitBlock(node.ThenExpression);
+            StartBlock();
+            node.Body.Accept(this);
+            EndBlock();
+        }
+    }
 
-            if (node.ThenExpression is not BlockExpressionSyntax)
-            {
-                _writer.Write(" ");
-            }
+    private void SetIsUnitFromNameSyntax(NameSyntax nameSyntax)
+    {
+        _isUnit = nameSyntax is IdentifierNameSyntax ident && ident.Identifier.Text == "unit";
+    }
 
-            if (node.ElseExpression is IfExpressionSyntax)
-            {
-                _writer.Write("else ");
-            }
-            else
-            {
-                _writer.WriteLine("else");
-            }
-
-            EmitBlock(node.ElseExpression);
+    public override void VisitFunctionBody(FunctionBodySyntax node)
+    {
+        // flatten
+        var (statements, expression) = ExpressionFlattener.Flatten(node.Body);
+        foreach (var statement in statements)
+        {
+            statement.Accept(this);
         }
 
-        public override void VisitCompilationUnit(CompilationUnitSyntax node)
+        if (!_isUnit)
         {
-            _writer.WriteLine("using System;");
-            _writer.WriteLine("using static Panther.Predef;");
-            WriteLine();
+            _writer.Write("return ");
+            expression.Accept(this);
+            _writer.WriteLine(";");
+        }
+        else if (expression.Kind != SyntaxKind.UnitExpression)
+        {
+            expression.Accept(this);
+            _writer.WriteLine(";");
+        }
+    }
 
-            foreach (var usingDirective in node.Usings)
-            {
-                usingDirective.Accept(this);
-            }
+    private void EndBlock()
+    {
+        _writer.Indent--;
+        _writer.WriteLine("}");
+    }
 
-            VisitMembers(node.Members);
+    private void StartBlock()
+    {
+        _writer.WriteLine("{");
+        _writer.Indent++;
+    }
+
+    public override void VisitTypeAnnotation(TypeAnnotationSyntax node)
+    {
+        if (node.Type is IdentifierNameSyntax identifier)
+        {
+            _writer.Write(TypeToCSharpType(identifier.Identifier.Text));
+        }
+        else
+        {
+            node.Type.Accept(this);
+        }
+    }
+
+    public override void VisitWhileExpression(WhileExpressionSyntax node)
+    {
+        _writer.Write("while (");
+        node.ConditionExpression.Accept(this);
+        _writer.WriteLine(")");
+        EmitBlock(node.Body);
+    }
+
+    void EmitBlock(ExpressionSyntax node)
+    {
+        if (node.Kind == SyntaxKind.BlockExpression)
+        {
+            StartBlock();
+            node.Accept(this);
+            EndBlock();
+        }
+        else
+        {
+            node.Accept(this);
+        }
+    }
+
+    public override void VisitBinaryExpression(BinaryExpressionSyntax node)
+    {
+        var op = SyntaxFacts.GetText(node.OperatorToken.Kind)??
+                 throw new Exception("Invalid operator");
+        var precedence = node.OperatorToken.Kind.GetBinaryOperatorPrecedence() ??
+                         throw new Exception("Invalid operator");
+
+        WriteNestedExpression(node.Left, precedence);
+        _writer.Write(" ");
+        _writer.Write(op);
+        _writer.Write(" ");
+        WriteNestedExpression(node.Right, precedence);
+    }
+
+    public override void VisitUnaryExpression(UnaryExpressionSyntax node)
+    {
+        var op = SyntaxFacts.GetText(node.OperatorToken.Kind)??
+                 throw new Exception("Invalid operator");
+        _writer.Write(op);
+
+        WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
+    }
+
+    public override void VisitParameter(ParameterSyntax node)
+    {
+        node.TypeAnnotation.Accept(this);
+        _writer.Write($" {node.Identifier.Text}");
+    }
+
+    private void WriteNestedExpression(ExpressionSyntax node, OperatorPrecedence parentPrecedence)
+    {
+        if (node is BinaryExpressionSyntax binaryExpression)
+        {
+            var precedence = binaryExpression.OperatorToken.Kind.GetBinaryOperatorPrecedence() ??
+                             throw new Exception("Invalid operator");
+
+            WriteNestedExpression(binaryExpression, parentPrecedence, precedence);
+        }
+        else
+        {
+            node.Accept(this);
+        }
+    }
+
+    private void WriteNestedExpression(BinaryExpressionSyntax node, OperatorPrecedence parent, OperatorPrecedence current)
+    {
+        if (parent > current)
+        {
+            _writer.Write("(");
+            node.Accept(this);
+            _writer.Write(")");
+        }
+        else
+        {
+            node.Accept(this);
+        }
+    }
+
+    public override void VisitBlockExpression(BlockExpressionSyntax node)
+    {
+        // StartBlock();
+
+        VisitSeparated(node.Statements, () => { });
+
+        if (node.Expression.Kind != SyntaxKind.UnitExpression)
+        {
+            node.Expression.Accept(this);
+            _writer.WriteLine(";");
         }
 
-        private void WriteLine()
+        // EndBlock();
+    }
+
+    public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+    {
+        node.Name.Accept(this);
+        _writer.Write(" = ");
+        node.Expression.Accept(this);
+    }
+
+    public override void VisitIfExpression(IfExpressionSyntax node)
+    {
+        // TODO: we need to remove blocks from if-expressions because they cannot be ternary expressions
+        _writer.Write("if (");
+        node.ConditionExpression.Accept(this);
+        _writer.WriteLine(")");
+        EmitBlock(node.ThenExpression);
+
+        if (node.ThenExpression is not BlockExpressionSyntax)
         {
-            _writer.WriteLineNoTabs("");
+            _writer.Write(" ");
         }
 
-        private static HashSet<string> _builtinTypes = new()
+        if (node.ElseExpression is IfExpressionSyntax)
         {
-            "any",
-            "int",
-            "bool",
-            "string",
-            "unit",
+            _writer.Write("else ");
+        }
+        else
+        {
+            _writer.WriteLine("else");
+        }
+
+        EmitBlock(node.ElseExpression);
+    }
+
+    public override void VisitCompilationUnit(CompilationUnitSyntax node)
+    {
+        _writer.WriteLine("using System;");
+        _writer.WriteLine("using static Panther.Predef;");
+        WriteLine();
+
+        foreach (var usingDirective in node.Usings)
+        {
+            usingDirective.Accept(this);
+        }
+
+        VisitMembers(node.Members);
+    }
+
+    private void WriteLine()
+    {
+        _writer.WriteLineNoTabs("");
+    }
+
+    private static HashSet<string> _builtinTypes = new()
+    {
+        "any",
+        "int",
+        "bool",
+        "string",
+        "unit",
+    };
+
+    private bool _isUnit;
+
+    string TypeToCSharpType(string type) =>
+        type switch
+        {
+            "any" => "object",
+            "unit" => "void",
+            _ => type
         };
 
-        private bool _isUnit;
+    void VisitSeparatedCommas<T>(IEnumerable<T> enumerable)
+        where T : SyntaxNode
+    {
+        VisitSeparated(enumerable, () => _writer.Write(", "));
+    }
 
-        string TypeToCSharpType(string type) =>
-            type switch
+    void VisitSeparated<T>(IEnumerable<T> enumerable, Action betweenNodes)
+        where T : SyntaxNode
+    {
+        VisitSeparated(enumerable, _ => betweenNodes());
+    }
+
+    void VisitSeparated<T>(IEnumerable<T> enumerable, Action<T> betweenNodes)
+        where T : SyntaxNode
+    {
+        using var enumerator = enumerable.GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            var node = enumerator.Current;
+
+            while (enumerator.MoveNext())
             {
-                "any" => "object",
-                "unit" => "void",
-                _ => type
-            };
-
-        void VisitSeparatedCommas<T>(IEnumerable<T> enumerable)
-            where T : SyntaxNode
-        {
-            VisitSeparated(enumerable, () => _writer.Write(", "));
-        }
-
-        void VisitSeparated<T>(IEnumerable<T> enumerable, Action betweenNodes)
-            where T : SyntaxNode
-        {
-            VisitSeparated(enumerable, _ => betweenNodes());
-        }
-
-        void VisitSeparated<T>(IEnumerable<T> enumerable, Action<T> betweenNodes)
-            where T : SyntaxNode
-        {
-            using var enumerator = enumerable.GetEnumerator();
-            if (enumerator.MoveNext())
-            {
-                var node = enumerator.Current;
-
-                while (enumerator.MoveNext())
-                {
-                    node.Accept(this);
-                    betweenNodes(node);
-
-                    node = enumerator.Current;
-                }
-
                 node.Accept(this);
+                betweenNodes(node);
+
+                node = enumerator.Current;
             }
+
+            node.Accept(this);
         }
+    }
 
-        private IDisposable MarkContainer(string name, ContainerType type)
+    private IDisposable MarkContainer(string name, ContainerType type)
+    {
+        var saveContainerName = _containerName;
+        var saveContainerType = _containerType;
+        _containerName = name;
+        _containerType = type;
+
+        return Disposable.Create(() =>
         {
-            var saveContainerName = _containerName;
-            var saveContainerType = _containerType;
-            _containerName = name;
-            _containerType = type;
+            _containerName = saveContainerName;
+            _containerType = saveContainerType;
+        });
+    }
 
-            return Disposable.Create(() =>
-            {
-                _containerName = saveContainerName;
-                _containerType = saveContainerType;
-            });
+    public void Dispose()
+    {
+        _writer.Dispose();
+        _stream.Dispose();
+    }
+}
+
+class Disposable
+{
+    public static IDisposable Create(Action action) => new ActionDisposable(action);
+    private class ActionDisposable : IDisposable
+    {
+        private Action _action;
+
+        public ActionDisposable(Action action)
+        {
+            _action = action;
         }
 
         public void Dispose()
         {
-            _writer.Dispose();
-            _stream.Dispose();
-        }
-    }
-
-    class Disposable
-    {
-        public static IDisposable Create(Action action) => new ActionDisposable(action);
-        private class ActionDisposable : IDisposable
-        {
-            private Action _action;
-
-            public ActionDisposable(Action action)
-            {
-                _action = action;
-            }
-
-            public void Dispose()
-            {
-                _action();
-            }
+            _action();
         }
     }
 }

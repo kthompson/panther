@@ -1,10 +1,9 @@
-﻿namespace Panther.CodeAnalysis.Binding
+﻿namespace Panther.CodeAnalysis.Binding;
+
+internal enum BoundUnaryOperatorKind
 {
-    internal enum BoundUnaryOperatorKind
-    {
-        Identity,
-        Negation,        // -
-        LogicalNegation, // !
-        BitwiseNegation, // ~
-    }
+    Identity,
+    Negation,        // -
+    LogicalNegation, // !
+    BitwiseNegation, // ~
 }

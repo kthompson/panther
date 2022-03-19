@@ -4,20 +4,19 @@ using System.IO;
 using System.Reflection;
 using Panther.CodeAnalysis.Syntax;
 
-namespace Panther.CodeAnalysis.Binding
+namespace Panther.CodeAnalysis.Binding;
+
+internal abstract record BoundNode(SyntaxNode Syntax)
 {
-    internal abstract record BoundNode(SyntaxNode Syntax)
+    public abstract BoundNodeKind Kind { get; }
+
+    public string ToPrintString()
     {
-        public abstract BoundNodeKind Kind { get; }
-
-        public string ToPrintString()
-        {
-            using var writer = new StringWriter();
-            this.WriteTo(writer);
-            return writer.ToString();
-        }
-
-        public abstract void Accept(BoundNodeVisitor visitor);
-        public abstract TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor);
+        using var writer = new StringWriter();
+        this.WriteTo(writer);
+        return writer.ToString();
     }
+
+    public abstract void Accept(BoundNodeVisitor visitor);
+    public abstract TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor);
 }

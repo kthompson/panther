@@ -1,8 +1,7 @@
 # Panther
 
-[![Build status](https://img.shields.io/azure-devops/build/automaters/Panther/8/main)](https://automaters.visualstudio.com/Panther/_build?definitionId=8)
-[![Coverage](https://img.shields.io/azure-devops/coverage/automaters/Panther/8/main)](https://automaters.visualstudio.com/Panther/_build?definitionId=8)
-[![Tests](https://img.shields.io/azure-devops/tests/automaters/Panther/8/main)](https://automaters.visualstudio.com/Panther/_build?definitionId=8)
+[![Build status](https://github.com/kthompson/panther/actions/workflows/default.yml/badge.svg)](https://github.com/kthompson/panther/actions/workflows/default.yml)
+[![codecov](https://codecov.io/gh/kthompson/panther/branch/main/graph/badge.svg?token=VMRWNJXVP1)](https://codecov.io/gh/kthompson/panther)
 
 Panther is a general-purpose, multi-paradigm programming language encompassing strong typing, functional, generic, and object-oriented (class-based) programming disciplines.
 
