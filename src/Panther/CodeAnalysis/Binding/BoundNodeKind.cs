@@ -1,46 +1,45 @@
 ﻿using System.Text;
 
-namespace Panther.CodeAnalysis.Binding
+namespace Panther.CodeAnalysis.Binding;
+
+internal enum BoundNodeKind
 {
-    internal enum BoundNodeKind
-    {
-        // Expressions
-        AssignmentExpression,
-        BinaryExpression,
-        BlockExpression,
-        CallExpression,
-        ConversionExpression,
-        ErrorExpression,
-        FieldExpression,
-        ForExpression,
-        GroupExpression,
-        IfExpression,
-        LiteralExpression,
-        MemberAssignmentExpression,
-        MethodExpression,
-        NewExpression,
-        TypeExpression,
-        UnaryExpression,
-        UnitExpression,
-        VariableExpression,
-        WhileExpression,
+    // Expressions
+    AssignmentExpression,
+    BinaryExpression,
+    BlockExpression,
+    CallExpression,
+    ConversionExpression,
+    ErrorExpression,
+    FieldExpression,
+    ForExpression,
+    GroupExpression,
+    IfExpression,
+    LiteralExpression,
+    MemberAssignmentExpression,
+    MethodExpression,
+    NewExpression,
+    TypeExpression,
+    UnaryExpression,
+    UnitExpression,
+    VariableExpression,
+    WhileExpression,
 
-        // Statements
-        AssignmentStatement,
-        BreakStatement,
-        ConditionalGotoStatement,
-        ContinueStatement,
-        ExpressionStatement,
-        GlobalStatement,
-        GotoStatement,
-        LabelStatement,
-        MemberAssignmentStatement,
-        NopStatement,
-        VariableDeclarationStatement,
+    // Statements
+    AssignmentStatement,
+    BreakStatement,
+    ConditionalGotoStatement,
+    ContinueStatement,
+    ExpressionStatement,
+    GlobalStatement,
+    GotoStatement,
+    LabelStatement,
+    MemberAssignmentStatement,
+    NopStatement,
+    VariableDeclarationStatement,
 
-        // Declarations
-        ClassDeclaration,
-        FunctionDeclaration,
-        ObjectDeclaration
-    }
+    // Declarations
+    ClassDeclaration,
+    FunctionDeclaration,
+    ObjectDeclaration
 }

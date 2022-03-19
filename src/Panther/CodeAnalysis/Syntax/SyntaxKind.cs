@@ -1,114 +1,113 @@
-﻿namespace Panther.CodeAnalysis.Syntax
+﻿namespace Panther.CodeAnalysis.Syntax;
+
+public enum SyntaxKind
 {
-    public enum SyntaxKind
-    {
-        // Special Tokens
-        EndOfInputToken,
-        IdentifierToken,
-        CommaToken,
+    // Special Tokens
+    EndOfInputToken,
+    IdentifierToken,
+    CommaToken,
 
-        // Trivia tokens
-        InvalidTokenTrivia,
-        EndOfLineTrivia,
-        WhitespaceTrivia,
-        LineCommentTrivia,
-        BlockCommentTrivia,
+    // Trivia tokens
+    InvalidTokenTrivia,
+    EndOfLineTrivia,
+    WhitespaceTrivia,
+    LineCommentTrivia,
+    BlockCommentTrivia,
 
-        // Literal tokens
-        NumberToken,
-        StringToken,
+    // Literal tokens
+    NumberToken,
+    StringToken,
 
-        // Keywords
-        BreakKeyword,
-        ClassKeyword,
-        ContinueKeyword,
-        DefKeyword,
-        ElseKeyword,
-        FalseKeyword,
-        ForKeyword,
-        IfKeyword,
-        ImplicitKeyword,
-        NamespaceKeyword,
-        NewKeyword,
-        ObjectKeyword,
-        StaticKeyword,
-        ToKeyword,
-        TrueKeyword,
-        UsingKeyword,
-        ValKeyword,
-        VarKeyword,
-        WhileKeyword,
+    // Keywords
+    BreakKeyword,
+    ClassKeyword,
+    ContinueKeyword,
+    DefKeyword,
+    ElseKeyword,
+    FalseKeyword,
+    ForKeyword,
+    IfKeyword,
+    ImplicitKeyword,
+    NamespaceKeyword,
+    NewKeyword,
+    ObjectKeyword,
+    StaticKeyword,
+    ToKeyword,
+    TrueKeyword,
+    UsingKeyword,
+    ValKeyword,
+    VarKeyword,
+    WhileKeyword,
 
-        // Operators
-        AmpersandAmpersandToken,
-        AmpersandToken,
-        BangEqualsToken,
-        BangToken,
-        CaretToken,
-        ColonToken,
-        DashToken,
-        DotToken,
-        EqualsEqualsToken,
-        EqualsToken,
-        GreaterThanEqualsToken,
-        GreaterThanToken,
-        LessThanDashToken,
-        LessThanEqualsToken,
-        LessThanToken,
-        PipePipeToken,
-        PipeToken,
-        PlusToken,
-        SlashToken,
-        StarToken,
-        TildeToken,
+    // Operators
+    AmpersandAmpersandToken,
+    AmpersandToken,
+    BangEqualsToken,
+    BangToken,
+    CaretToken,
+    ColonToken,
+    DashToken,
+    DotToken,
+    EqualsEqualsToken,
+    EqualsToken,
+    GreaterThanEqualsToken,
+    GreaterThanToken,
+    LessThanDashToken,
+    LessThanEqualsToken,
+    LessThanToken,
+    PipePipeToken,
+    PipeToken,
+    PlusToken,
+    SlashToken,
+    StarToken,
+    TildeToken,
 
-        // grouping tokens
-        CloseParenToken,
-        OpenParenToken,
-        OpenBraceToken,
-        CloseBraceToken,
+    // grouping tokens
+    CloseParenToken,
+    OpenParenToken,
+    OpenBraceToken,
+    CloseBraceToken,
 
-        // Expressions
-        AssignmentExpression,
-        BinaryExpression,
-        BlockExpression,
-        CallExpression,
-        ForExpression,
-        GroupExpression,
-        IdentifierName,
-        IfExpression,
-        LiteralExpression,
-        MemberAccessExpression,
-        NewExpression,
-        QualifiedName,
-        UnaryExpression,
-        UnitExpression,
-        WhileExpression,
+    // Expressions
+    AssignmentExpression,
+    BinaryExpression,
+    BlockExpression,
+    CallExpression,
+    ForExpression,
+    GroupExpression,
+    IdentifierName,
+    IfExpression,
+    LiteralExpression,
+    MemberAccessExpression,
+    NewExpression,
+    QualifiedName,
+    UnaryExpression,
+    UnitExpression,
+    WhileExpression,
 
-        // Statements
-        BreakStatement,
-        ContinueStatement,
-        ExpressionStatement,
-        VariableDeclarationStatement,
+    // Statements
+    BreakStatement,
+    ContinueStatement,
+    ExpressionStatement,
+    VariableDeclarationStatement,
 
-        //  Nodes
-        Template,
-        TypeAnnotation,
-        FunctionBody,
-        Parameter,
-        Initializer,
-        CompilationUnit,
+    //  Nodes
+    Template,
+    TypeAnnotation,
+    FunctionBody,
+    Parameter,
+    Initializer,
+    CompilationUnit,
 
-        // Members
-        ClassDeclaration,
-        FunctionDeclaration,
-        ObjectDeclaration,
+    // Members
+    ClassDeclaration,
+    FunctionDeclaration,
+    ObjectDeclaration,
 
-        // Top level items
-        UsingDirective,
-        GlobalStatement,
-        NamespaceDeclaration,
-        NamespaceMembers,
-        NestedNamespace
-    }
+    // Top level items
+    UsingDirective,
+    GlobalStatement,
+    NamespaceDeclaration,
+    NamespaceMembers,
+    NestedNamespace
 }

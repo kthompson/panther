@@ -12,72 +12,71 @@ using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
 
-namespace Panther.Compiler
+namespace Panther.Compiler;
+
+class Program
 {
-    class Program
+    static int Main(string[] args)
     {
-        static int Main(string[] args)
+
+        var rootCommand = new RootCommand
         {
-
-            var rootCommand = new RootCommand
+            new Option<FileInfo>(aliases: new []{"/output", "/o"}, description: "The output path of the assembly to create")
             {
-                new Option<FileInfo>(aliases: new []{"/output", "/o"}, description: "The output path of the assembly to create")
+                Required = true,
+            },
+            new Option<FileInfo[]>(aliases: new[] {"/reference", "/r"}, description: "An assembly reference").ExistingOnly(),
+            new Option<string>(aliases: new[] {"/module", "/m"}, getDefaultValue: () => "main", description: "The module name"),
+            new Argument<FileInfo[]>("sources").ExistingOnly()
+        };
+
+        rootCommand.Handler = CommandHandler.Create(
+            (FileInfo output, FileInfo[] reference, string module, FileInfo[] sources, ParseResult parseResult) =>
+            {
+                if (sources.Length == 0)
                 {
-                    Required = true,
-                },
-                new Option<FileInfo[]>(aliases: new[] {"/reference", "/r"}, description: "An assembly reference").ExistingOnly(),
-                new Option<string>(aliases: new[] {"/module", "/m"}, getDefaultValue: () => "main", description: "The module name"),
-                new Argument<FileInfo[]>("sources").ExistingOnly()
-            };
+                    Console.Error.WriteLine("usage: pantherc <source-paths>");
+                    return 1;
+                }
 
-            rootCommand.Handler = CommandHandler.Create(
-                (FileInfo output, FileInfo[] reference, string module, FileInfo[] sources, ParseResult parseResult) =>
+                var syntaxTrees = sources.Select(source => SyntaxTree.LoadFile(source.FullName)).ToArray();
+                var references = reference.Select(x => x.FullName).ToArray();
+                var (referenceDiags, compilation) = Compilation.Create(references, syntaxTrees);
+
+                if (referenceDiags.Any() || compilation == null)
                 {
-                    if (sources.Length == 0)
-                    {
-                        Console.Error.WriteLine("usage: pantherc <source-paths>");
-                        return 1;
-                    }
+                    Console.Error.WriteDiagnostics(referenceDiags);
+                    return 1;
+                }
 
-                    var syntaxTrees = sources.Select(source => SyntaxTree.LoadFile(source.FullName)).ToArray();
-                    var references = reference.Select(x => x.FullName).ToArray();
-                    var (referenceDiags, compilation) = Compilation.Create(references, syntaxTrees);
+                // var (_, diagnostics) = compilation.EmitCSharp(module, output.FullName);
+                // if (diagnostics.Any())
+                // {
+                //     Console.Error.WriteDiagnostics(diagnostics);
+                //     return 1;
+                // }
 
-                    if (referenceDiags.Any() || compilation == null)
-                    {
-                        Console.Error.WriteDiagnostics(referenceDiags);
-                        return 1;
-                    }
+                var result = compilation.Emit(module, output.FullName);
+                if (result.Diagnostics.Any())
+                {
+                    Console.Error.WriteDiagnostics(result.Diagnostics);
+                    return 1;
+                }
 
-                    // var (_, diagnostics) = compilation.EmitCSharp(module, output.FullName);
-                    // if (diagnostics.Any())
-                    // {
-                    //     Console.Error.WriteDiagnostics(diagnostics);
-                    //     return 1;
-                    // }
+                //
+                // var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
+                // if (result.Diagnostics.Any())
+                // {
+                //     Console.Error.WriteDiagnostics(result.Diagnostics);
+                //     return 1;
+                // }
+                //
+                // if (result.Value != null)
+                //     Console.WriteLine(result.Value);
 
-                    var result = compilation.Emit(module, output.FullName);
-                    if (result.Diagnostics.Any())
-                    {
-                        Console.Error.WriteDiagnostics(result.Diagnostics);
-                        return 1;
-                    }
+                return 0;
+            });
 
-                    //
-                    // var result = compilation.Evaluate(new Dictionary<VariableSymbol, object>());
-                    // if (result.Diagnostics.Any())
-                    // {
-                    //     Console.Error.WriteDiagnostics(result.Diagnostics);
-                    //     return 1;
-                    // }
-                    //
-                    // if (result.Value != null)
-                    //     Console.WriteLine(result.Value);
-
-                    return 0;
-                });
-
-            return rootCommand.InvokeAsync(args).Result;
-        }
+        return rootCommand.InvokeAsync(args).Result;
     }
 }

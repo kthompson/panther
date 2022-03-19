@@ -1,15 +1,14 @@
-﻿namespace Panther.CodeAnalysis.Emit
+﻿namespace Panther.CodeAnalysis.Emit;
+
+enum Arithmetic
 {
-    enum Arithmetic
-    {
-        Add,
-        And,
-        Eq,
-        Gt,
-        Lt,
-        Neg,
-        Not,
-        Or,
-        Sub,
-    }
+    Add,
+    And,
+    Eq,
+    Gt,
+    Lt,
+    Neg,
+    Not,
+    Or,
+    Sub,
 }

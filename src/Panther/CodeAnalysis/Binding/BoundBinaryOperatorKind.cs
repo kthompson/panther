@@ -1,21 +1,20 @@
-﻿namespace Panther.CodeAnalysis.Binding
+﻿namespace Panther.CodeAnalysis.Binding;
+
+internal enum BoundBinaryOperatorKind
 {
-    internal enum BoundBinaryOperatorKind
-    {
-        Addition,
-        BitwiseAnd,
-        BitwiseOr,
-        BitwiseXor,
-        Division,
-        Equal,
-        GreaterThan,
-        GreaterThanOrEqual,
-        LessThan,
-        LessThanOrEqual,
-        LogicalAnd,
-        LogicalOr,
-        Multiplication,
-        NotEqual,
-        Subtraction,
-    }
+    Addition,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    Division,
+    Equal,
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+    LogicalAnd,
+    LogicalOr,
+    Multiplication,
+    NotEqual,
+    Subtraction,
 }

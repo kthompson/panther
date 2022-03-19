@@ -1,9 +1,8 @@
 using System.Collections.Immutable;
 
-namespace Panther.CodeAnalysis.Emit
+namespace Panther.CodeAnalysis.Emit;
+
+public interface IEmitResult
 {
-    public interface IEmitResult
-    {
-        ImmutableArray<Diagnostic> Diagnostics { get; }
-    }
+    ImmutableArray<Diagnostic> Diagnostics { get; }
 }

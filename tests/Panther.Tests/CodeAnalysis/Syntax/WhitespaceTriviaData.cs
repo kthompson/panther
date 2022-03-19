@@ -1,12 +1,11 @@
-﻿namespace Panther.Tests.CodeAnalysis.Syntax
-{
-    public class WhitespaceTriviaData
-    {
-        public string Text { get; }
+﻿namespace Panther.Tests.CodeAnalysis.Syntax;
 
-        public WhitespaceTriviaData(string text)
-        {
-            Text = text;
-        }
+public class WhitespaceTriviaData
+{
+    public string Text { get; }
+
+    public WhitespaceTriviaData(string text)
+    {
+        Text = text;
     }
 }

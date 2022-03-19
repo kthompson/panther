@@ -1,14 +1,13 @@
-﻿namespace Panther.CodeAnalysis.Emit
+﻿namespace Panther.CodeAnalysis.Emit;
+
+enum Segment
 {
-    enum Segment
-    {
-        Argument,
-        Constant,
-        Local,
-        Pointer,
-        Static,
-        Temp,
-        That,
-        This
-    }
+    Argument,
+    Constant,
+    Local,
+    Pointer,
+    Static,
+    Temp,
+    That,
+    This
 }

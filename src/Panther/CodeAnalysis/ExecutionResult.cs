@@ -1,17 +1,16 @@
 ﻿using System.Collections.Immutable;
 
-namespace Panther.CodeAnalysis
+namespace Panther.CodeAnalysis;
+
+public class ExecutionResult
 {
-    public class ExecutionResult
+    public ExecutionResult(ImmutableArray<Diagnostic> diagnostics, object? value)
     {
-        public ExecutionResult(ImmutableArray<Diagnostic> diagnostics, object? value)
-        {
-            Diagnostics = diagnostics;
-            Value = value;
-        }
-
-        public object? Value { get; }
-
-        public ImmutableArray<Diagnostic> Diagnostics { get; }
+        Diagnostics = diagnostics;
+        Value = value;
     }
+
+    public object? Value { get; }
+
+    public ImmutableArray<Diagnostic> Diagnostics { get; }
 }

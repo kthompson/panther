@@ -12,7 +12,6 @@
         },
         "Configuration": {
           "type": "string",
-          "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)",
           "enum": [
             "Debug",
             "Release"
@@ -21,6 +20,10 @@
         "Continue": {
           "type": "boolean",
           "description": "Indicates to continue a previously failed build attempt"
+        },
+        "GitHubRegistryApiKey": {
+          "type": "string",
+          "default": "Secrets must be entered via 'nuke :secret [profile]'"
         },
         "Help": {
           "type": "boolean",
@@ -69,6 +72,10 @@
             "type": "string"
           }
         },
+        "PublicNuGetApiKey": {
+          "type": "string",
+          "default": "Secrets must be entered via 'nuke :secret [profile]'"
+        },
         "Root": {
           "type": "string",
           "description": "Root directory during build execution"
@@ -81,7 +88,11 @@
             "enum": [
               "Clean",
               "Compile",
+              "Pack",
+              "Publish",
               "ReportCoverage",
+              "ReportDuplicates",
+              "ReportIssues",
               "Restore",
               "Test"
             ]
@@ -99,7 +110,11 @@
             "enum": [
               "Clean",
               "Compile",
+              "Pack",
+              "Publish",
               "ReportCoverage",
+              "ReportDuplicates",
+              "ReportIssues",
               "Restore",
               "Test"
             ]
