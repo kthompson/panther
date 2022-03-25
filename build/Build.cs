@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Nuke.Common;
 using Nuke.Common.CI;
-using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
-using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
@@ -88,6 +86,8 @@ class Build : NukeBuild,
     IEnumerable<Project> ITest.TestProjects => Partition.GetCurrent(Solution.GetProjects("*.Tests"));
 
     bool IReportCoverage.CreateCoverageHtmlReport => true;
+
+    // only the windows image on GitHub has the 3.0.0 dotnet runtime that the Codecov tool needs
     bool IReportCoverage.ReportToCodecov => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
     IEnumerable<(string PackageId, string Version)> IReportIssues.InspectCodePlugins

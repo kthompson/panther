@@ -3,6 +3,7 @@
   <PropertyGroup>
     <RootNamespace>Panther</RootNamespace>
     <WarningLevel>4</WarningLevel>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
 </Project>

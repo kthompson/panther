@@ -16,9 +16,9 @@
             <PantherCompilerArgs>$(PantherCompilerArgs) /o "@(IntermediateAssembly)"</PantherCompilerArgs>
             <PantherCompilerArgs>$(PantherCompilerArgs) @(ReferencePath->'/r "%(Identity)"', ' ')</PantherCompilerArgs>
 
-            <PantherScriptExt Condition="$([MSBuild]::IsOSUnixLike())">.sh</PantherScriptExt>
-            <PantherScriptExt Condition="$([MSBuild]::IsOSPlatform('Windows'))">.cmd</PantherScriptExt>
-            <PantherCompilerScript Condition="'$(PantherCompilerScript)' == ''">pnc$(PantherScriptExt)</PantherCompilerScript>
+            <PantherScriptExt Condition="$([MSBuild]::IsOSUnixLike())" />
+            <PantherScriptExt Condition="$([MSBuild]::IsOSPlatform('Windows'))">.exe</PantherScriptExt>
+            <PantherCompilerScript Condition="'$(PantherCompilerScript)' == ''">src\Panther\bin\Debug\net6.0\pnc$(PantherScriptExt)</PantherCompilerScript>
             <PantherCompileCommand>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\', '$(PantherCompilerScript)'))" $(PantherCompilerArgs)</PantherCompileCommand>
         </PropertyGroup>
 

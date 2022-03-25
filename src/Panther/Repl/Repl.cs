@@ -5,13 +5,9 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Panther.CodeAnalysis;
-using Panther.CodeAnalysis.Symbols;
-using Panther.CodeAnalysis.Syntax;
-using Panther.CodeAnalysis.Text;
 using Panther.IO;
 
-namespace Panther;
+namespace Panther.Repl;
 
 internal abstract class Repl
 {

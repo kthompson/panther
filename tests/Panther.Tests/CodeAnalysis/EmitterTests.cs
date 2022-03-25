@@ -11,7 +11,6 @@ using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
 using Panther.CodeAnalysis;
-using Panther.CodeAnalysis.CSharp;
 using Panther.CodeAnalysis.Syntax;
 using Xunit;
 using Xunit.Sdk;
@@ -33,26 +32,6 @@ public class EmitterTests
         Directory.CreateDirectory(outputDirectory);
 
         return (moduleName, outputDirectory);
-    }
-
-
-    [Theory]
-    [MemberData(nameof(GetCSharpEmitterTests))]
-    public void CSharpEmitterOutputsCSharp(string pantherSource, string csharpSource)
-    {
-        var tree = SyntaxTree.LoadFile(pantherSource);
-        Assert.Empty(tree.Diagnostics);
-
-        var output = CSharpEmitter.ToCSharpText(tree);
-
-        var expectedSource = File.ReadAllText(csharpSource)
-            .Split(Environment.NewLine)
-            .ToArray();
-
-        var actualSource = output.Split(Environment.NewLine).ToArray();
-        AssertFileLines(expectedSource, actualSource);
-
-        Assert.Equal(expectedSource.Length, actualSource.Length);
     }
 
     [Theory]
@@ -198,12 +177,4 @@ public class EmitterTests
         let expected = Directory.GetFiles(directory, "*.il").SingleOrDefault()
         where expected != null
         select new object?[] { directory, sources, expected };
-
-    public static IEnumerable<object?[]> GetCSharpEmitterTests() =>
-        from directory in Directory.GetDirectories(OutputPath)
-        from pantherSource in Directory.GetFiles(directory, "*.pn")
-        let name = Path.GetFileNameWithoutExtension(pantherSource)
-        let csharpSource = Path.Combine(directory, name + ".cs")
-        where File.Exists(csharpSource)
-        select new object?[] { pantherSource, csharpSource };
 }
