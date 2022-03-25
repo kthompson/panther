@@ -3,17 +3,14 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Mono.Cecil;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Authoring;
-using Panther.CodeAnalysis.Binding;
-using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
 using Panther.IO;
 
-namespace Panther;
+namespace Panther.Repl;
 
 internal class PantherRepl : Repl
 {

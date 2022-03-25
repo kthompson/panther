@@ -4,16 +4,12 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Microsoft.CodeAnalysis.CSharp;
 using Mono.Cecil;
 using Panther.CodeAnalysis.Binding;
-using Panther.CodeAnalysis.CSharp;
 using Panther.CodeAnalysis.Emit;
-using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
-using CASyntaxTree = Microsoft.CodeAnalysis.SyntaxTree;
 
 namespace Panther.CodeAnalysis;
 
@@ -156,20 +152,8 @@ public class Compilation
         block.WriteTo(writer);
     }
 
-    public IEmitResult EmitVM(string outputPath) =>
-        VMEmitter.Emit(BoundAssembly, outputPath);
-
     public EmitResult Emit(string moduleName, string outputPath) =>
         Emitter.Emit(BoundAssembly, moduleName, outputPath);
-
-    public (bool Success, ImmutableArray<Diagnostic>) EmitCSharp(string moduleName, string outputPath)
-    {
-        var diagnostics = BoundAssembly.Diagnostics;
-        if (!diagnostics.IsEmpty)
-            return (false, diagnostics);
-
-        return CSharpEmitter.ToCSharp(moduleName, outputPath, SyntaxTrees.ToArray());
-    }
 
     internal EmitResult Emit(string moduleName, string outputPath, Dictionary<Symbol, FieldReference> previousGlobals, Dictionary<Symbol, MethodReference> previousMethods) =>
         Emitter.Emit(BoundAssembly, moduleName, outputPath, previousGlobals, previousMethods);
