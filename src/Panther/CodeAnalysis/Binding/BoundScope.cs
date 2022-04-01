@@ -12,7 +12,7 @@ internal sealed class BoundScope
     public Symbol Symbol { get; }
 
     // symbols that have not been defined but are needed in scope for resolving types etc
-    private readonly Dictionary<string, ImmutableArray<Symbol>> _importedSymbols = new Dictionary<string, ImmutableArray<Symbol>>();
+    private readonly Dictionary<string, ImmutableArray<Symbol>> _importedSymbols = new();
 
     public BoundScope Parent { get; }
 
@@ -93,6 +93,22 @@ internal sealed class BoundScope
             return null;
 
         return Parent.LookupType(name);
+    }
+
+    public Symbol? LookupNamespace(string name)
+    {
+        var symbol = Symbol.LookupNamespace(name);
+        if (symbol != null) return symbol;
+
+        if (_importedSymbols.TryGetValue(name, out var importedSymbols))
+        {
+            return importedSymbols.FirstOrDefault(t => t.IsNamespace);
+        }
+
+        if (IsRootScope)
+            return null;
+
+        return Parent.LookupNamespace(name);
     }
 
     public ImmutableArray<Symbol> LookupSymbol(string name, bool deep = true)

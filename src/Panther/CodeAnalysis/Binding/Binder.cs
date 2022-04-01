@@ -328,17 +328,20 @@ internal sealed class Binder
                 // TODO: global statements are not supported with a namespace
             }
 
-            // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
-            // {
-            //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
-            //     scope = scope.EnterNamespace(namespaceSymbol);
-            // }
-
             foreach (var @using in compilationUnit.Usings)
             {
                 var namespaceOrTypeSymbol = binder.BindUsingDirective(@using);
                 scope.ImportMembers(namespaceOrTypeSymbol);
             }
+
+            // TODO: change member order. namespace directive should always be first.
+            // namespace should probably not be a "MemberSyntax" maybe it makes sense for a
+            //
+            // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
+            // {
+            //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
+            //     scope = scope.EnterNamespace(namespaceSymbol);
+            // }
 
             // should only be one set of global statements
             // otherwise there would be an error
@@ -398,7 +401,7 @@ internal sealed class Binder
 
         diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
-        var rootTypes = root.Types.ToImmutableArray();
+        var rootTypes = root.Types.Where(t => !t.IsImport).ToImmutableArray();
 
         var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
 
@@ -445,13 +448,13 @@ internal sealed class Binder
         diagnostics.AddRange(binder.Diagnostics);
 
         return new BoundAssembly(
-            previous,
-            diagnostics.ToImmutableArray(),
-            entryPoint,
-            defaultType,
-            rootTypes,
-            methodDefinitions.ToImmutable(),
-            references
+            Previous: previous,
+            Diagnostics: diagnostics.ToImmutableArray(),
+            EntryPoint: entryPoint,
+            DefaultType: defaultType,
+            Types: rootTypes,
+            MethodDefinitions: methodDefinitions.ToImmutable(),
+            References: references
         );
     }
 
@@ -850,6 +853,10 @@ internal sealed class Binder
 
                     case { IsMethod: true }:
                         return new BoundMethodExpression(syntax, name, expr, members.Where(m => m.IsMethod).ToImmutableArray());
+
+                    case { IsMember: true }:
+                        return new BoundTypeExpression(syntax, members[0].Type);
+
                     default:
                         // TODO: new error message as we have members but they are not of any expected type
                         Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
@@ -958,56 +965,71 @@ internal sealed class Binder
     private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
     {
         // TODO: we should be able to refactor this a bit by extracting all of the IdentifierNameSyntax steps
-        switch (syntax.Expression)
+
+        var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToImmutableArray();
+
+        if (syntax.Expression is IdentifierNameSyntax identifierNameSyntax)
         {
-            case IdentifierNameSyntax identifierNameSyntax:
-            {
-                return BindIdentifierCallExpression(syntax, identifierNameSyntax, scope);
-            }
-            case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
-            {
-                var expression = BindMemberAccess(memberAccessExpressionSyntax, scope);
-                if (expression is BoundErrorExpression errorExpression)
-                    return errorExpression;
+            return BindIdentifierCallExpression(syntax, identifierNameSyntax, boundArguments, scope);
+        }
 
-                if (expression is BoundMethodExpression boundMethodExpression)
+        if (syntax.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+        {
+            var expression = BindMemberAccess(memberAccessExpressionSyntax, scope);
+            if (expression is BoundErrorExpression errorExpression)
+                return errorExpression;
+
+            if (expression is BoundMethodExpression boundMethodExpression)
+            {
+                var methods = boundMethodExpression.Methods
+                    .Where(x => x.Parameters.Length == boundArguments.Length)
+                    .ToImmutableArray();
+
+                if (methods.Length == 0)
                 {
-                    var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope))
-                        .ToList();
-                    var methods = boundMethodExpression.Methods
-                        .Where(x => x.Parameters.Length == boundArguments.Count)
-                        .ToImmutableArray();
+                    Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
+                        boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
 
-                    if (methods.Length == 0)
-                    {
-                        Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
-                            boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
-
-                        return new BoundErrorExpression(syntax);
-                    }
-
-                    if (methods.Length > 1)
-                    {
-                        // TODO: improve type detection and binding when multiple valid methods exist
-                        Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
-                            boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
-
-                        return new BoundErrorExpression(syntax);
-                    }
-
-                    return BindCallExpressionToMethodSymbol(syntax, methods[0], boundMethodExpression.Expression, boundArguments);
+                    return new BoundErrorExpression(syntax);
                 }
 
-                Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
-                return new BoundErrorExpression(syntax);
+                if (methods.Length == 1)
+                {
+                    return BindCallExpressionToMethodSymbol(syntax, methods[0], boundMethodExpression.Expression,
+                        boundArguments);
+                }
+
+                return ResolveMethodOverload(syntax, methods, boundMethodExpression, boundArguments);
             }
 
-            default:
-                throw new ArgumentOutOfRangeException(nameof(syntax));
+            Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
+            return new BoundErrorExpression(syntax);
+
         }
+
+        throw new ArgumentOutOfRangeException(nameof(syntax));
     }
 
-    private BoundExpression BindIdentifierCallExpression(CallExpressionSyntax syntax, IdentifierNameSyntax identifierNameSyntax, BoundScope scope)
+    private BoundExpression ResolveMethodOverload(CallExpressionSyntax syntax, ImmutableArray<Symbol> methods,
+        BoundMethodExpression boundMethodExpression, ImmutableArray<BoundExpression> boundArguments)
+    {
+
+        var symbol = MethodBindCost.Analyze(methods, boundArguments);
+        if (symbol == null)
+        {
+
+            // TODO: improve type detection and binding when multiple valid methods exist
+            Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
+                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+
+            return new BoundErrorExpression(syntax);
+        }
+
+        return BindCallExpressionToMethodSymbol(syntax, symbol, boundMethodExpression.Expression,
+            boundArguments);
+    }
+
+    private BoundExpression BindIdentifierCallExpression(CallExpressionSyntax syntax, NameSyntax identifierNameSyntax, ImmutableArray<BoundExpression> boundArguments, BoundScope scope)
     {
         // Bind Conversion
         var symbolName = identifierNameSyntax.ToText();
@@ -1016,14 +1038,14 @@ internal sealed class Binder
             return boundExpression;
 
         // Bind method
-        var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
+        var symbol = BindIdentifierForCallExpression(symbolName, identifierNameSyntax.Location, boundArguments, scope);
+        if (symbol == null)
+            return new BoundErrorExpression(syntax);
 
-        return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope);
+        return BindCallExpressionToSymbol(syntax, symbol, null, boundArguments);
     }
 
-    private BoundExpression BindIdentifierCallExpressionFromScope(CallExpressionSyntax syntax,
-        IdentifierNameSyntax identifierNameSyntax, string symbolName,
-        List<BoundExpression> boundArguments, BoundScope scope)
+    private Symbol? BindIdentifierForCallExpression(string symbolName, TextLocation nameLocation, ImmutableArray<BoundExpression> boundArguments, BoundScope scope)
     {
         var symbols = scope.LookupSymbol(symbolName, false);
 
@@ -1033,43 +1055,44 @@ internal sealed class Binder
                 if (scope.IsRootScope)
                 {
                     Diagnostics.ReportNoOverloads(
-                        identifierNameSyntax.Location,
+                        nameLocation,
                         symbolName,
                         boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                     );
 
-                    return new BoundErrorExpression(syntax);
+                    return null;
                 }
                 else
                 {
-                    return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope.Parent);
+                    // check in parent scope
+                    return BindIdentifierForCallExpression(symbolName, nameLocation, boundArguments, scope.Parent);
                 }
             case 1:
-                return BindCallExpressionToSymbol(syntax, symbols[0], null,  boundArguments);
+                return symbols[0];
 
             default:
                 // TODO: see if we have method symbols and try to prune them to the correct one
                 var filteredSymbols = symbols.Where(sym =>
-                    (sym.IsMethod && sym.Parameters.Length == boundArguments.Count)
+                    sym.IsMethod && sym.Parameters.Length == boundArguments.Length
                 ).ToImmutableArray();
 
                 switch (filteredSymbols.Length)
                 {
                     case 0:
                         Diagnostics.ReportNoOverloads(
-                            identifierNameSyntax.Location,
+                            nameLocation,
                             symbolName,
                             boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                         );
-                        return new BoundErrorExpression(syntax);
+                        return null;
 
                     case 1:
-                        return BindCallExpressionToSymbol(syntax, filteredSymbols[0], null, boundArguments);
+                        return filteredSymbols[0];
 
                     default:
-                        Diagnostics.ReportAmbiguousMethod(identifierNameSyntax.Location, symbolName,
+                        Diagnostics.ReportAmbiguousMethod(nameLocation, symbolName,
                             boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
-                        return new BoundErrorExpression(syntax);
+                        return null;
                 }
         }
     }
@@ -1290,6 +1313,7 @@ internal sealed class Binder
         var rootScope = new BoundScope(root);
 
         // define default symbols
+        // should be alias symbols that map to the real symbols
         rootScope.Import(root.NewClass(TextLocation.None, "any").WithType(Type.Any));
         rootScope.Import(root.NewClass(TextLocation.None, "int").WithType(Type.Int));
         rootScope.Import(root.NewClass(TextLocation.None, "bool").WithType(Type.Bool));
@@ -1304,7 +1328,7 @@ internal sealed class Binder
             where predef != null
             // TODO: keep track of this import so we can know we need the assembly reference
             // TODO: this should be imported into the `Panther` namespace
-            select new ImportedTypeSymbol("Predef", predef);
+            select new ImportedTypeSymbol(root, "Predef", predef);
 
         var importedTypeSymbol = importedTypes.FirstOrDefault();
         if (importedTypeSymbol != null)
@@ -1313,7 +1337,49 @@ internal sealed class Binder
             rootScope.ImportMembers(importedTypeSymbol);
         }
 
+        var namespaceLookup = new Dictionary<string, Symbol>();
+
+        // import all symbols from our references
+        foreach (var reference in references)
+        foreach (var module in reference.Modules)
+        foreach (var type in module.Types)
+        {
+            if(!type.IsClass) continue;
+
+            var namespaceSymbol = GetOrCreateNamespaceSymbol(namespaceLookup, root, type.Namespace);
+            namespaceSymbol.DefineSymbol(new ImportedTypeSymbol(namespaceSymbol, type.Name, type));
+        }
+
         return (root, rootScope);
+    }
+
+    private static Symbol GetOrCreateNamespaceSymbol(Dictionary<string, Symbol> namespaceLookup, Symbol root, string @namespace)
+    {
+        if (string.IsNullOrEmpty(@namespace)) return root;
+
+        if (namespaceLookup.TryGetValue(@namespace, out var namespaceSymbol))
+        {
+            return namespaceSymbol;
+        }
+
+        var allNamespaces = @namespace.Split(".");
+        var symbol = root;
+        foreach (var ns in allNamespaces)
+        {
+            var maybeNamespace = symbol.LookupNamespace(ns);
+            if (maybeNamespace == null)
+            {
+                // create it
+                symbol = symbol.NewNamespace(TextLocation.None, ns).Declare();
+                continue;
+            }
+
+            symbol = maybeNamespace;
+        }
+
+        namespaceLookup[@namespace] = symbol;
+
+        return symbol;
     }
 
     private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)
@@ -1340,6 +1406,10 @@ internal sealed class Binder
             var type = scope.LookupType(name);
             if (type != null)
                 return new BoundTypeExpression(syntax, type.Type);
+
+            var ns = scope.LookupNamespace(name);
+            if (ns != null)
+                return new BoundNamespaceExpression(syntax, ns);
 
             Diagnostics.ReportUndefinedName(ident.Location, name);
             return new BoundErrorExpression(syntax);

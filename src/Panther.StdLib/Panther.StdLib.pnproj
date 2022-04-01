@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <!-- Panther doesnt support some features that are required by NBGV so disable it -->
+    <ItemGroup>
+      <PackageReference Remove="Nerdbank.GitVersioning" />
+    </ItemGroup>
+
+    <!--Below are the changes to get this to compile Panther code instead of C# -->
+
+    <PropertyGroup>
+        <Language>Panther</Language>
+        <DefaultLanguageSourceExtension>.pn</DefaultLanguageSourceExtension>
+    </PropertyGroup>
+
+    <!--
+        Since we're only targeting single framework, we don't need to append
+        the short TFM and RID to the output paths.
+    -->
+    <PropertyGroup>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+
+    <Target Name="CreateManifestResourceNames" />
+
+    <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
+        <ItemGroup>
+            <ReferencePath Remove="@(ReferencePath)" Condition="'%(FileName)' != 'System.Console' AND&#xD;&#xA;                                '%(FileName)' != 'System.Runtime' AND&#xD;&#xA;                                '%(FileName)' != 'System.Runtime.Extensions' AND&#xD;&#xA;                                '%(FileName)' != 'Panther.StdLib'" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <PantherCompilerArgs>@(Compile->'"%(Identity)"', ' ')</PantherCompilerArgs>
+            <PantherCompilerArgs>$(PantherCompilerArgs) /o "@(IntermediateAssembly)"</PantherCompilerArgs>
+            <PantherCompilerArgs>$(PantherCompilerArgs) @(ReferencePath->'/r "%(Identity)"', ' ')</PantherCompilerArgs>
+
+            <PantherScriptExt Condition="$([MSBuild]::IsOSUnixLike())" />
+            <PantherScriptExt Condition="$([MSBuild]::IsOSPlatform('Windows'))">.exe</PantherScriptExt>
+            <PantherCompilerScript Condition="'$(PantherCompilerScript)' == ''">Panther\bin\Debug\net6.0\pnc$(PantherScriptExt)</PantherCompilerScript>
+            <PantherCompileCommand>"$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\', '$(PantherCompilerScript)'))" $(PantherCompilerArgs)</PantherCompileCommand>
+        </PropertyGroup>
+
+        <Exec Command="$(PantherCompileCommand)" />
+    </Target>
+</Project>

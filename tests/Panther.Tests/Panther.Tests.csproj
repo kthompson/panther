@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Panther.StdLib\Panther.StdLib.csproj">
+    <ProjectReference Include="..\..\src\Panther.StdLib.CS\Panther.StdLib.CS.csproj">
       <Aliases>StdLib</Aliases>
     </ProjectReference>
     <ProjectReference Include="..\..\src\Panther\Panther.csproj" />

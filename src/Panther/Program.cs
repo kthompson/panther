@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Panther;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
@@ -85,7 +84,11 @@ if (output == null)
     return -1;
 }
 
-var syntaxTrees = sources.Select(SyntaxTree.LoadFile).ToArray();
+var syntaxTrees = sources.Select(file =>
+{
+    Console.WriteLine($"parsing file {file}...");
+    return SyntaxTree.LoadFile(file);
+}).ToArray();
 
 var (referenceDiags, compilation) = Compilation.Create(references.ToArray(), syntaxTrees);
 

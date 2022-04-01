@@ -8,11 +8,14 @@ using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
 
 using static Nuke.Common.IO.FileSystemTasks;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
 
 [CheckBuildProjectConfigurations]
@@ -22,24 +25,22 @@ using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
     // InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPublish.Publish) },
     InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPack.Pack) },
     OnPushBranches = new[] { "main" },
-    EnableGitHubContext = true,
     ImportSecrets = new[]
     {
         nameof(IReportCoverage.CodecovToken),
         nameof(PublicNuGetApiKey),
         nameof(GitHubRegistryApiKey)
     },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
+    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj", "src/**/*.pnproj" }
 )]
 [GitHubActions("pr", GitHubActionsImage.WindowsLatest, GitHubActionsImage.UbuntuLatest, GitHubActionsImage.MacOsLatest,
     InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPack.Pack) },
     OnPullRequestBranches = new[] { "main" },
-    EnableGitHubContext = true,
     ImportSecrets = new[]
     {
         nameof(IReportCoverage.CodecovToken)
     },
-    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
+    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj", "src/**/*.pnproj" }
 )]
 class Build : NukeBuild,
     IHazChangelog,
@@ -84,6 +85,15 @@ class Build : NukeBuild,
         });
 
     IEnumerable<Project> ITest.TestProjects => Partition.GetCurrent(Solution.GetProjects("*.Tests"));
+
+    Target RestorePantherStdLib => _ => _
+        .DependentFor(From<IRestore>().Restore)
+        .Executes(() =>
+        {
+            DotNetRestore(_ => _
+                .Apply(From<IRestore>().RestoreSettingsBase)
+                .Apply(_ => _.SetProjectFile(SourceDirectory / "Panther.StdLib" / "Panther.StdLib.pnproj")));
+        });
 
     bool IReportCoverage.CreateCoverageHtmlReport => true;
 

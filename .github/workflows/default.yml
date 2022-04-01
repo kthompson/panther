@@ -33,14 +33,13 @@ jobs:
           path: |
             .nuke/temp
             ~/.nuget/packages
-          key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
+          key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj', 'src/**/*.pnproj') }}
       - name: Run './build.cmd Test ReportCoverage Pack'
         run: ./build.cmd Test ReportCoverage Pack
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
           GitHubRegistryApiKey: ${{ secrets.GITHUB_REGISTRY_API_KEY }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
       - uses: actions/upload-artifact@v1
         with:
           name: test-results
@@ -64,14 +63,13 @@ jobs:
           path: |
             .nuke/temp
             ~/.nuget/packages
-          key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
+          key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj', 'src/**/*.pnproj') }}
       - name: Run './build.cmd Test ReportCoverage Pack'
         run: ./build.cmd Test ReportCoverage Pack
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
           GitHubRegistryApiKey: ${{ secrets.GITHUB_REGISTRY_API_KEY }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
       - uses: actions/upload-artifact@v1
         with:
           name: test-results
@@ -95,14 +93,13 @@ jobs:
           path: |
             .nuke/temp
             ~/.nuget/packages
-          key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
+          key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj', 'src/**/*.pnproj') }}
       - name: Run './build.cmd Test ReportCoverage Pack'
         run: ./build.cmd Test ReportCoverage Pack
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
           GitHubRegistryApiKey: ${{ secrets.GITHUB_REGISTRY_API_KEY }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
       - uses: actions/upload-artifact@v1
         with:
           name: test-results

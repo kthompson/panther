@@ -81,9 +81,6 @@ public class ScriptHost : IDisposable
 
     public void Dispose()
     {
-        foreach (var assemblyDefinition in _references)
-            assemblyDefinition.Dispose();
-
         var alcWeakRef = Unload(_loadContext);
         WaitForReferenceToDie(alcWeakRef);
 

@@ -94,6 +94,7 @@
               "ReportDuplicates",
               "ReportIssues",
               "Restore",
+              "RestorePantherStdLib",
               "Test"
             ]
           }
@@ -116,6 +117,7 @@
               "ReportDuplicates",
               "ReportIssues",
               "Restore",
+              "RestorePantherStdLib",
               "Test"
             ]
           }

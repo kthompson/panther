@@ -4,6 +4,7 @@
     <RootNamespace>Panther</RootNamespace>
     <WarningLevel>4</WarningLevel>
     <DebugType>embedded</DebugType>
+    <AssemblyName>Panther.StdLib</AssemblyName>
   </PropertyGroup>
 
 </Project>

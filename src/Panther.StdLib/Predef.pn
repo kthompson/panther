@@ -3,15 +3,15 @@
 namespace Panther
 
 object Predef {
-    def print(object value): unit => Console.Write(value)
+    def print(object value): unit => System.Console.Write(value)
 
-    def println(object value): unit => Console.WriteLine(value)
+    def println(object value): unit => System.Console.WriteLine(value)
 
-    def println(): unit => Console.WriteLine()
+    def println(): unit => System.Console.WriteLine()
 
-    def readLine(): string => Console.ReadLine()
+    def readLine(): string => System.Console.ReadLine()
 
-    val _random = new Random()
+    val _random = new System.Random()
 
     def rnd(max: int): int => _random.Next(max)
 }
