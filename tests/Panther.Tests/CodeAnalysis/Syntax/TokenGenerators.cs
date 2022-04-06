@@ -32,6 +32,8 @@ public class TokenGenerators
                 new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "a"),
                 new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc"),
                 new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc123"),
+                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "_abc123"),
+                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "_abc_123"),
                 new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
                 new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
                 new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
