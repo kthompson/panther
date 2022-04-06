@@ -208,43 +208,15 @@ internal sealed class Binder
             ? BindScriptEntryPoint(boundScope, globalStatements)
             : BindMainEntryPoint(boundScope, syntaxTrees, globalStatements, mainFunction, binder);
 
-    private static EntryPoint BindMainEntryPoint(BoundScope boundScope, ImmutableArray<SyntaxTree> syntaxTrees,
+    private static EntryPoint? BindMainEntryPoint(BoundScope boundScope, ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<BoundStatement> globalStatements, Symbol? mainFunction, Binder binder)
     {
-        var hasGlobalStatements = globalStatements.Any();
-
         var firstStatementPerSyntaxTree =
             (from tree in syntaxTrees
                 let firstStatement = tree.Root.Members.OfType<GlobalStatementSyntax>().FirstOrDefault()
                 where firstStatement != null
                 select firstStatement)
             .ToImmutableArray();
-
-        if (mainFunction != null)
-        {
-            // ensure main function signature is correct
-            if (mainFunction.Parameters.Any() || (mainFunction.ReturnType != Type.Unit && mainFunction.ReturnType != Type.Int))
-            {
-                binder.Diagnostics.ReportMainMustHaveCorrectSignature(
-                    mainFunction.Location
-                );
-            }
-
-            // if a main function exists, global statements cannot
-            if (hasGlobalStatements)
-            {
-                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(
-                    mainFunction.Location
-                );
-
-                foreach (var firstStatement1 in firstStatementPerSyntaxTree)
-                {
-                    binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
-                }
-            }
-
-            return new EntryPoint(false, mainFunction, null);
-        }
 
         // Global statements can only exist in one syntax tree
         if (firstStatementPerSyntaxTree.Length > 1)
@@ -253,13 +225,51 @@ internal sealed class Binder
             {
                 binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(firstStatement2!.Location);
             }
+
+            return null;
         }
 
+        var hasGlobalStatements = globalStatements.Any();
 
-        var main = boundScope.Symbol
+
+        // if a main function exists, global statements cannot
+        if (mainFunction != null && hasGlobalStatements)
+        {
+            binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(
+                mainFunction.Location
+            );
+
+            foreach (var firstStatement1 in firstStatementPerSyntaxTree)
+            {
+                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
+            }
+
+            return null;
+        }
+
+        // ensure main function signature is correct
+        if (mainFunction != null && (mainFunction.Parameters.Any() || (mainFunction.ReturnType != Type.Unit && mainFunction.ReturnType != Type.Int)))
+        {
+            binder.Diagnostics.ReportMainMustHaveCorrectSignature(
+                mainFunction.Location
+            );
+
+            return null;
+        }
+
+        if (!hasGlobalStatements)
+        {
+            if (mainFunction != null)
+                return new EntryPoint(false, mainFunction, null);
+
+            return null;
+        }
+
+        var main = mainFunction ?? boundScope.Symbol
             .NewMethod(TextLocation.None, "main")
             .WithType(new MethodType(ImmutableArray<Symbol>.Empty, Type.Unit))
             .WithFlags(SymbolFlags.Static);
+
         var compilationUnit = globalStatements.First().Syntax;
         var body = LoweringPipeline.Lower(main, BoundStatementFromStatements(compilationUnit, globalStatements));
 
