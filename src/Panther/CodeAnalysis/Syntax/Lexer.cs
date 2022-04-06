@@ -129,7 +129,7 @@ internal class Lexer
         return trivia.ToImmutable();
     }
 
-    private bool IsInvalidTokenTrivia() => !_lexFunctions.ContainsKey(Current) && !char.IsLetter(Current);
+    private bool IsInvalidTokenTrivia() => !_lexFunctions.ContainsKey(Current) && !IsIdentCharacter(Current, true);
 
     private SyntaxTrivia ParseInvalidTokenTrivia()
     {
@@ -188,11 +188,16 @@ internal class Lexer
             return function();
         }
 
-        if (char.IsLetter(Current))
+        if (IsIdentCharacter(Current, true))
             return ParseIdentOrKeyword();
 
         return ReturnInvalidTokenTrivia();
     }
+
+    private static bool IsIdentCharacter(char current, bool leading) =>
+        leading
+            ? char.IsLetter(current) || current == '_'
+            : char.IsLetterOrDigit(current) || current == '_';
 
     private (SyntaxKind kind, int start, string text, object? value) ReturnInvalidTokenTrivia()
     {
@@ -264,7 +269,7 @@ internal class Lexer
     {
         var start = _position;
         Next(); // skip first letter
-        while (char.IsLetterOrDigit(Current))
+        while (IsIdentCharacter(Current, false))
         {
             Next();
         }
