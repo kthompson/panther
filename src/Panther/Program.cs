@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Panther;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
