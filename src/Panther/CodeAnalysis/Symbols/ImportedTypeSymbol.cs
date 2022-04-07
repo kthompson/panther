@@ -8,16 +8,24 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols;
 
-internal sealed class ImportedTypeSymbol : TypeSymbol
+internal sealed class ImportedTypeSymbol : Symbol
 {
     private readonly TypeDefinition _typeDefinition;
 
     private readonly Lazy<ImmutableArray<Symbol>> _members;
     private readonly Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>> _membersByName;
 
-    public ImportedTypeSymbol(string name, TypeDefinition typeDefinition)
-        : base(Symbol.None, TextLocation.None, name)
+    public ImportedTypeSymbol(Symbol parent, string name, TypeDefinition typeDefinition)
+        : base(parent, TextLocation.None, name)
     {
+
+        if (typeDefinition.IsClass)
+            this.Flags |= SymbolFlags.Class;
+
+        this.Flags |= SymbolFlags.Import;
+
+        this.Type = new ClassType(this);
+
         _typeDefinition = typeDefinition;
         _members = new Lazy<ImmutableArray<Symbol>>(() =>
         {
@@ -59,6 +67,8 @@ internal sealed class ImportedTypeSymbol : TypeSymbol
             .NewMethod(TextLocation.None, methodDefinition.Name)
             .Declare();
 
+        var parameters = ImmutableArray.CreateBuilder<Symbol>();
+
         for (var i = 0; i < methodDefinition.Parameters.Count; i++)
         {
             var p = methodDefinition.Parameters[i];
@@ -67,16 +77,17 @@ internal sealed class ImportedTypeSymbol : TypeSymbol
             if (pType == null)
                 return null;
 
-            method
-                .NewParameter(TextLocation.None, p.Name, i)
-                .WithType(pType)
-                .Declare();
+            parameters.Add(
+                method
+                    .NewParameter(TextLocation.None, p.Name, i)
+                    .WithType(pType)
+                    .Declare());
         }
 
         var returnType = LookupTypeByMetadataName(methodDefinition.ReturnType.FullName);
         if (returnType != null)
         {
-            method.Type = returnType;
+            method.Type = new MethodType(parameters.ToImmutable(), returnType);
         }
 
         return method;

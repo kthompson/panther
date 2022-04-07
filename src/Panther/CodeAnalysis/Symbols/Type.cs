@@ -22,6 +22,7 @@ public sealed record ErrorType() : Type(TypeSymbol.Error);
 public sealed record Unresolved() : Type(Symbol.None);
 public sealed record NoType() : Type(Symbol.None);
 public sealed record ClassType(Symbol Symbol) : Type(Symbol);
+public sealed record NamespaceType(Symbol Symbol) : Type(Symbol);
 
 public sealed record TypeConstructor(string Name, Symbol Symbol) : Type(Symbol)
 {

@@ -28,11 +28,13 @@ public abstract class Symbol
 
     public bool IsStatic => this.Flags.HasFlag(SymbolFlags.Static);
     public bool IsReadOnly => this.Flags.HasFlag(SymbolFlags.Readonly);
+    public bool IsImport  => this.Flags.HasFlag(SymbolFlags.Import);
 
     public virtual Symbol Owner { get; }
     public int Index { get; set; } = 0;
     public virtual Type Type { get; set; } = Type.Unresolved;
     public virtual TextLocation Location { get; }
+
 
     public string FullName
     {
@@ -86,13 +88,16 @@ public abstract class Symbol
     public static Symbol NewRoot() => new RootSymbol();
     public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);
 
+
     public Symbol NewTerm(TextLocation location, string name, SymbolFlags flags) =>
         new TermSymbol(this, location, name)
             .WithFlags(flags);
 
-    public Symbol NewNamespace(TextLocation location, string name) =>
-        new TermSymbol(this, location, name)
-            .WithFlags(SymbolFlags.Namespace);
+    public Symbol NewNamespace(TextLocation location, string name)
+    {
+        var symbol = NewTerm(location, name, SymbolFlags.Namespace);
+        return symbol.WithType(new NamespaceType(symbol));
+    }
 
     public Symbol NewClass(TextLocation location, string name)
     {
@@ -102,6 +107,7 @@ public abstract class Symbol
 
     public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name)
         .WithFlags(SymbolFlags.Object);
+
     public Symbol NewField(TextLocation location, string name, bool isReadOnly) =>
         new TermSymbol(this, location, name)
             .WithFlags(SymbolFlags.Field| (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
@@ -120,6 +126,7 @@ public abstract class Symbol
     private readonly Dictionary<string, ImmutableArray<Symbol>> _symbolMap;
     private readonly List<Symbol> _symbols;
 
+
     public Symbol Declare()
     {
         Owner.DefineSymbol(this);
@@ -127,6 +134,7 @@ public abstract class Symbol
     }
 
     public void Delete() => Owner.Delete(this);
+
 
     public void Delete(Symbol child)
     {
@@ -183,6 +191,7 @@ public abstract class Symbol
         Members.Where(m => m.IsNamespace).ToImmutableArray();
 
     public virtual ImmutableArray<Symbol> Members => _symbols.ToImmutableArray();
+
 
     public Type ReturnType
     {

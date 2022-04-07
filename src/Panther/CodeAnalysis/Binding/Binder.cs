@@ -338,17 +338,20 @@ internal sealed class Binder
                 // TODO: global statements are not supported with a namespace
             }
 
-            // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
-            // {
-            //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
-            //     scope = scope.EnterNamespace(namespaceSymbol);
-            // }
-
             foreach (var @using in compilationUnit.Usings)
             {
                 var namespaceOrTypeSymbol = binder.BindUsingDirective(@using);
                 scope.ImportMembers(namespaceOrTypeSymbol);
             }
+
+            // TODO: change member order. namespace directive should always be first.
+            // namespace should probably not be a "MemberSyntax" maybe it makes sense for a
+            //
+            // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
+            // {
+            //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
+            //     scope = scope.EnterNamespace(namespaceSymbol);
+            // }
 
             // should only be one set of global statements
             // otherwise there would be an error
@@ -408,7 +411,7 @@ internal sealed class Binder
 
         diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
-        var rootTypes = root.Types.ToImmutableArray();
+        var rootTypes = root.Types.Where(t => !t.IsImport).ToImmutableArray();
 
         var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
 
@@ -455,13 +458,13 @@ internal sealed class Binder
         diagnostics.AddRange(binder.Diagnostics);
 
         return new BoundAssembly(
-            previous,
-            diagnostics.ToImmutableArray(),
-            entryPoint,
-            defaultType,
-            rootTypes,
-            methodDefinitions.ToImmutable(),
-            references
+            Previous: previous,
+            Diagnostics: diagnostics.ToImmutableArray(),
+            EntryPoint: entryPoint,
+            DefaultType: defaultType,
+            Types: rootTypes,
+            MethodDefinitions: methodDefinitions.ToImmutable(),
+            References: references
         );
     }
 
@@ -860,6 +863,10 @@ internal sealed class Binder
 
                     case { IsMethod: true }:
                         return new BoundMethodExpression(syntax, name, expr, members.Where(m => m.IsMethod).ToImmutableArray());
+
+                    case { IsMember: true }:
+                        return new BoundTypeExpression(syntax, members[0].Type);
+
                     default:
                         // TODO: new error message as we have members but they are not of any expected type
                         Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
@@ -1096,7 +1103,7 @@ internal sealed class Binder
                         {
 
                             // TODO: improve type detection and binding when multiple valid methods exist
-                            Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, symbolName,
+                            Diagnostics.ReportAmbiguousMethod(nameLocation, symbolName,
                                 boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
 
                             return null;
@@ -1323,6 +1330,7 @@ internal sealed class Binder
         var rootScope = new BoundScope(root);
 
         // define default symbols
+        // should be alias symbols that map to the real symbols
         rootScope.Import(root.NewClass(TextLocation.None, "any").WithType(Type.Any));
         rootScope.Import(root.NewClass(TextLocation.None, "int").WithType(Type.Int));
         rootScope.Import(root.NewClass(TextLocation.None, "bool").WithType(Type.Bool));
@@ -1337,7 +1345,7 @@ internal sealed class Binder
             where predef != null
             // TODO: keep track of this import so we can know we need the assembly reference
             // TODO: this should be imported into the `Panther` namespace
-            select new ImportedTypeSymbol("Predef", predef);
+            select new ImportedTypeSymbol(root, "Predef", predef);
 
         var importedTypeSymbol = importedTypes.FirstOrDefault();
         if (importedTypeSymbol != null)
@@ -1346,7 +1354,49 @@ internal sealed class Binder
             rootScope.ImportMembers(importedTypeSymbol);
         }
 
+        var namespaceLookup = new Dictionary<string, Symbol>();
+
+        // import all symbols from our references
+        foreach (var reference in references)
+        foreach (var module in reference.Modules)
+        foreach (var type in module.Types)
+        {
+            if(!type.IsClass) continue;
+
+            var namespaceSymbol = GetOrCreateNamespaceSymbol(namespaceLookup, root, type.Namespace);
+            namespaceSymbol.DefineSymbol(new ImportedTypeSymbol(namespaceSymbol, type.Name, type));
+        }
+
         return (root, rootScope);
+    }
+
+    private static Symbol GetOrCreateNamespaceSymbol(Dictionary<string, Symbol> namespaceLookup, Symbol root, string @namespace)
+    {
+        if (string.IsNullOrEmpty(@namespace)) return root;
+
+        if (namespaceLookup.TryGetValue(@namespace, out var namespaceSymbol))
+        {
+            return namespaceSymbol;
+        }
+
+        var allNamespaces = @namespace.Split(".");
+        var symbol = root;
+        foreach (var ns in allNamespaces)
+        {
+            var maybeNamespace = symbol.LookupNamespace(ns);
+            if (maybeNamespace == null)
+            {
+                // create it
+                symbol = symbol.NewNamespace(TextLocation.None, ns).Declare();
+                continue;
+            }
+
+            symbol = maybeNamespace;
+        }
+
+        namespaceLookup[@namespace] = symbol;
+
+        return symbol;
     }
 
     private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)
@@ -1373,6 +1423,10 @@ internal sealed class Binder
             var type = scope.LookupType(name);
             if (type != null)
                 return new BoundTypeExpression(syntax, type.Type);
+
+            var ns = scope.LookupNamespace(name);
+            if (ns != null)
+                return new BoundNamespaceExpression(syntax, ns);
 
             Diagnostics.ReportUndefinedName(ident.Location, name);
             return new BoundErrorExpression(syntax);
