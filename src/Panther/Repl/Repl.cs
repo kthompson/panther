@@ -9,7 +9,7 @@ using Panther.IO;
 
 namespace Panther.Repl;
 
-internal abstract class Repl
+internal abstract class Repl : IDisposable
 {
     private readonly List<MetaCommand> _metaCommands = new List<MetaCommand>();
     private readonly List<string> _submissionHistory = new List<string>();
@@ -687,5 +687,15 @@ internal abstract class Repl
                 return false;
             }
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

@@ -97,8 +97,20 @@ internal class PantherRepl : Repl
         ClearSubmissions();
     }
 
-    private static ScriptHost BuildDefaultScriptHost()
+    private ScriptHost BuildDefaultScriptHost()
     {
+        var result = LoadReferences();
+
+        return new ScriptHost(result, null, "Repl");
+    }
+
+    private ImmutableArray<AssemblyDefinition>? _references;
+
+    private ImmutableArray<AssemblyDefinition> LoadReferences()
+    {
+        if (_references != null) return _references.Value;
+
+
         var references = new string[]
         {
             typeof(object).Assembly.Location,
@@ -106,17 +118,9 @@ internal class PantherRepl : Repl
             typeof(Unit).Assembly.Location
         };
 
-        var assemblies = ImmutableArray.CreateBuilder<AssemblyDefinition>();
+        _references = references.Select(AssemblyDefinition.ReadAssembly).ToImmutableArray();
 
-        foreach (var reference in references)
-        {
-            var asm = AssemblyDefinition.ReadAssembly(reference);
-            assemblies.Add(asm);
-        }
-
-        var result = assemblies.ToImmutable();
-
-        return new ScriptHost(result, null, "Repl");
+        return _references.Value;
     }
 
     [MetaCommand("showTree", "Toggle showing the parse tree")]
@@ -277,5 +281,21 @@ internal class PantherRepl : Repl
         var name = $"submission-{count:0000}.pn";
         var submissionFile = Path.Combine(SubmissionsFolder, name);
         File.WriteAllText(submissionFile, text);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+
+        if (!disposing) return;
+
+        this._scriptHost.Dispose();
+
+        if (_references == null) return;
+
+        foreach (var reference in _references.Value)
+        {
+            reference.Dispose();
+        }
     }
 }
