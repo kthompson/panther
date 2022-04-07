@@ -20,6 +20,8 @@ public class Compilation
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
     public ImmutableArray<AssemblyDefinition> References { get; }
     public ImmutableArray<Symbol> Types => BoundAssembly.Types;
+    public ImmutableArray<Diagnostic> Diagnostics =>
+        SyntaxTrees.SelectMany(tree => tree.Diagnostics).Concat(BoundAssembly.Diagnostics).ToImmutableArray();
 
     private BoundAssembly? _boundAssembly;
     private BoundAssembly BoundAssembly

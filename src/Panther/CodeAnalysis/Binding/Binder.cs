@@ -749,7 +749,7 @@ internal sealed class Binder
 
             case 1:
                 var constructor = filteredSymbols[0];
-                var convertedArguments = BindArguments(syntax.Arguments, constructor, boundArguments);
+                var convertedArguments = BindArgumentsWithConversions(syntax.Arguments, constructor, boundArguments);
 
                 return new BoundNewExpression(syntax, constructor, convertedArguments);
 
@@ -968,56 +968,69 @@ internal sealed class Binder
     private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
     {
         // TODO: we should be able to refactor this a bit by extracting all of the IdentifierNameSyntax steps
-        switch (syntax.Expression)
+
+        var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToImmutableArray();
+
+        if (syntax.Expression is IdentifierNameSyntax identifierNameSyntax)
         {
-            case IdentifierNameSyntax identifierNameSyntax:
-            {
-                return BindIdentifierCallExpression(syntax, identifierNameSyntax, scope);
-            }
-            case MemberAccessExpressionSyntax memberAccessExpressionSyntax:
-            {
-                var expression = BindMemberAccess(memberAccessExpressionSyntax, scope);
-                if (expression is BoundErrorExpression errorExpression)
-                    return errorExpression;
+            return BindIdentifierCallExpression(syntax, identifierNameSyntax, boundArguments, scope);
+        }
 
-                if (expression is BoundMethodExpression boundMethodExpression)
+        if (syntax.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+        {
+            var expression = BindMemberAccess(memberAccessExpressionSyntax, scope);
+            if (expression is BoundErrorExpression errorExpression)
+                return errorExpression;
+
+            if (expression is BoundMethodExpression boundMethodExpression)
+            {
+                var methods = boundMethodExpression.Methods
+                    .Where(x => x.Parameters.Length == boundArguments.Length)
+                    .ToImmutableArray();
+
+                if (methods.Length == 0)
                 {
-                    var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope))
-                        .ToList();
-                    var methods = boundMethodExpression.Methods
-                        .Where(x => x.Parameters.Length == boundArguments.Count)
-                        .ToImmutableArray();
+                    Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
+                        boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
 
-                    if (methods.Length == 0)
-                    {
-                        Diagnostics.ReportNoOverloads(syntax.Expression.Location, boundMethodExpression.Name,
-                            boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
-
-                        return new BoundErrorExpression(syntax);
-                    }
-
-                    if (methods.Length > 1)
-                    {
-                        // TODO: improve type detection and binding when multiple valid methods exist
-                        Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
-                            boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
-
-                        return new BoundErrorExpression(syntax);
-                    }
-
-                    return BindCallExpressionToMethodSymbol(syntax, methods[0], boundMethodExpression.Expression, boundArguments);
+                    return new BoundErrorExpression(syntax);
                 }
 
-                Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
-                return new BoundErrorExpression(syntax);
+                if (methods.Length == 1)
+                {
+                    return BindCallExpressionToMethodSymbol(syntax, methods[0], boundMethodExpression.Expression,
+                        boundArguments);
+                }
+
+                return ResolveMethodOverload(syntax, methods, boundMethodExpression, boundArguments);
             }
 
-            default:
-                throw new ArgumentOutOfRangeException(nameof(syntax));
+            Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
+            return new BoundErrorExpression(syntax);
+
         }
+
+        throw new ArgumentOutOfRangeException(nameof(syntax));
     }
 
-    private BoundExpression BindIdentifierCallExpression(CallExpressionSyntax syntax, IdentifierNameSyntax identifierNameSyntax, BoundScope scope)
+    private BoundExpression ResolveMethodOverload(CallExpressionSyntax syntax, ImmutableArray<Symbol> methods,
+        BoundMethodExpression boundMethodExpression, ImmutableArray<BoundExpression> boundArguments)
+    {
+        var symbol = MethodBindCost.Analyze(methods, boundArguments);
+        if (symbol == null)
+        {
+
+            // TODO: improve type detection and binding when multiple valid methods exist
+            Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, boundMethodExpression.Name,
+                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+
+            return new BoundErrorExpression(syntax);
+        }
+
+        return BindCallExpressionToMethodSymbol(syntax, symbol, boundMethodExpression.Expression, boundArguments);
+    }
+
+    private BoundExpression BindIdentifierCallExpression(CallExpressionSyntax syntax, NameSyntax identifierNameSyntax, ImmutableArray<BoundExpression> boundArguments, BoundScope scope)
     {
         // Bind Conversion
         var symbolName = identifierNameSyntax.ToText();
@@ -1026,14 +1039,14 @@ internal sealed class Binder
             return boundExpression;
 
         // Bind method
-        var boundArguments = syntax.Arguments.Select(argument => BindExpression(argument, scope)).ToList();
+        var symbol = BindIdentifierForCallExpression(syntax, symbolName, identifierNameSyntax.Location, boundArguments, scope);
+        if (symbol == null)
+            return new BoundErrorExpression(syntax);
 
-        return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope);
+        return BindCallExpressionToSymbol(syntax, symbol, null, boundArguments);
     }
 
-    private BoundExpression BindIdentifierCallExpressionFromScope(CallExpressionSyntax syntax,
-        IdentifierNameSyntax identifierNameSyntax, string symbolName,
-        List<BoundExpression> boundArguments, BoundScope scope)
+    private Symbol? BindIdentifierForCallExpression(CallExpressionSyntax syntax, string symbolName, TextLocation nameLocation, ImmutableArray<BoundExpression> boundArguments, BoundScope scope)
     {
         var symbols = scope.LookupSymbol(symbolName, false);
 
@@ -1043,43 +1056,53 @@ internal sealed class Binder
                 if (scope.IsRootScope)
                 {
                     Diagnostics.ReportNoOverloads(
-                        identifierNameSyntax.Location,
+                        nameLocation,
                         symbolName,
                         boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                     );
 
-                    return new BoundErrorExpression(syntax);
+                    return null;
                 }
                 else
                 {
-                    return BindIdentifierCallExpressionFromScope(syntax, identifierNameSyntax, symbolName, boundArguments, scope.Parent);
+                    // check in parent scope
+                    return BindIdentifierForCallExpression(syntax, symbolName, nameLocation, boundArguments, scope.Parent);
                 }
             case 1:
-                return BindCallExpressionToSymbol(syntax, symbols[0], null,  boundArguments);
+                return symbols[0];
 
             default:
                 // TODO: see if we have method symbols and try to prune them to the correct one
                 var filteredSymbols = symbols.Where(sym =>
-                    (sym.IsMethod && sym.Parameters.Length == boundArguments.Count)
+                    sym.IsMethod && sym.Parameters.Length == boundArguments.Length
                 ).ToImmutableArray();
 
                 switch (filteredSymbols.Length)
                 {
                     case 0:
                         Diagnostics.ReportNoOverloads(
-                            identifierNameSyntax.Location,
+                            nameLocation,
                             symbolName,
                             boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                         );
-                        return new BoundErrorExpression(syntax);
+                        return null;
 
                     case 1:
-                        return BindCallExpressionToSymbol(syntax, filteredSymbols[0], null, boundArguments);
+                        return filteredSymbols[0];
 
                     default:
-                        Diagnostics.ReportAmbiguousMethod(identifierNameSyntax.Location, symbolName,
-                            boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
-                        return new BoundErrorExpression(syntax);
+                        var symbol = MethodBindCost.Analyze(filteredSymbols, boundArguments);
+                        if (symbol == null)
+                        {
+
+                            // TODO: improve type detection and binding when multiple valid methods exist
+                            Diagnostics.ReportAmbiguousMethod(syntax.Expression.Location, symbolName,
+                                boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray());
+
+                            return null;
+                        }
+
+                        return symbol;
                 }
         }
     }
@@ -1121,12 +1144,12 @@ internal sealed class Binder
 
     private BoundExpression BindCallExpressionToMethodSymbol(CallExpressionSyntax syntax, Symbol method, BoundExpression? expression, IReadOnlyList<BoundExpression> boundArguments)
     {
-        var convertedArgs = BindArguments(syntax.Arguments, method, boundArguments);
+        var convertedArgs = BindArgumentsWithConversions(syntax.Arguments, method, boundArguments);
 
         return new BoundCallExpression(syntax, method, expression, convertedArgs);
     }
 
-    private ImmutableArray<BoundExpression> BindArguments(SeparatedSyntaxList<ExpressionSyntax> arguments, Symbol method, IReadOnlyList<BoundExpression> boundArguments)
+    private ImmutableArray<BoundExpression> BindArgumentsWithConversions(SeparatedSyntaxList<ExpressionSyntax> arguments, Symbol method, IReadOnlyList<BoundExpression> boundArguments)
     {
         var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
         for (var i = 0; i < arguments.Count; i++)

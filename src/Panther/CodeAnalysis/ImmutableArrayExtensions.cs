@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Panther.CodeAnalysis;
 
 public static class ImmutableArrayExtensions
 {
-    public static (ImmutableArray<A> matches, ImmutableArray<A> nonMatches) Partition<A>(this ImmutableArray<A> array,
+    public static (ImmutableArray<A> matches, ImmutableArray<A> nonMatches) Partition<A>(this IEnumerable<A> array,
         Predicate<A> predicate)
     {
         var lefts = ImmutableArray.CreateBuilder<A>();

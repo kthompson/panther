@@ -6,6 +6,36 @@ namespace Panther.Tests.CodeAnalysis.Binding;
 
 public class ObjectTests
 {
+    [Fact]
+    public void CanBindOverload()
+    {
+        var code = AnnotatedText.Parse(@"
+                object Hello {
+                    def a(b: any) = b
+                    def a(b: string) = b
+                    def main() = println(a(""Hello World""))
+                }"
+        );
+        var compilation = Compile(code.Text);
+
+        Assert.Collection(compilation.Types, symbol =>
+        {
+            Assert.Equal("Hello", symbol.Name);
+            Assert.Collection(symbol.Methods,
+                a =>
+                {
+                    var p = Assert.Single(a.Parameters);
+                    Assert.Equal("b", p.Name);
+                },
+                a =>
+                {
+                    var p = Assert.Single(a.Parameters);
+                    Assert.Equal("b", p.Name);
+                },
+                main => { }
+                );
+        });
+    }
 
     [Fact]
     public void ObjectNameIsCorrect()

@@ -665,26 +665,45 @@ internal class Emitter
         foreach (var argExpr in callExpression.Arguments)
             EmitExpression(ilProcessor, argExpr);
 
-        if (_methods.TryGetValue(callExpression.Method, out var method))
+        var methodSymbol = callExpression.Method;
+        if (_methods.TryGetValue(methodSymbol, out var method))
         {
             ilProcessor.Emit(OpCodes.Call, method);
+            return;
         }
-        else if (_methodReferences.TryGetValue(callExpression.Method, out var methodRef))
+
+        var methodReference = ResolveMethod(methodSymbol);
+        if (methodReference != null)
         {
-            ilProcessor.Emit(OpCodes.Call, methodRef);
+            ilProcessor.Emit(OpCodes.Call, methodReference);
+            return;
+        }
+
+        throw new InvalidProgramException();
+    }
+
+    private MethodReference? ResolveMethod(Symbol methodSymbol)
+    {
+        if (_methodReferences.TryGetValue(methodSymbol, out var method))
+        {
+            return method;
+        }
+
+        var parameterTypeNames = methodSymbol.Parameters.Select(p => LookupType(p.Type.Symbol).FullName).ToArray();
+        var methodName = methodSymbol.Name;
+        var methodReference = ResolveMethod(methodSymbol.Owner.FullName, methodName, parameterTypeNames, false) ??
+                              ResolveMethod("Panther.Predef", methodName, parameterTypeNames, false);
+
+        if (methodReference != null)
+        {
+            _methodReferences[methodSymbol] = methodReference;
         }
         else
         {
-            // search for the method in Predef for now
-            var methodReference = ResolveMethod("Panther.Predef", callExpression.Method.Name,
-                callExpression.Method.Parameters.Select(p => LookupType(p.Type.Symbol).FullName).ToArray());
-
-            if (methodReference != null)
-            {
-                ilProcessor.Emit(OpCodes.Call, methodReference);
-                return;
-            }
+            _diagnostics.ReportRequiredMethodNotFound(methodSymbol.Owner.FullName, methodName, parameterTypeNames);
         }
+
+        return methodReference;
     }
 
     private void EmitConversionExpression(ILProcessor ilProcessor, BoundConversionExpression conversionExpression)
@@ -850,13 +869,13 @@ internal class Emitter
         return null;
     }
 
-    private TypeDefinition? FindTypeByName(string typeName)
+    private TypeDefinition? FindTypeByName(string typeName, bool reportTypeDiagnostics = true)
     {
         var foundTypes = FindTypesByName(typeName);
 
         switch (foundTypes.Length)
         {
-            case 0:
+            case 0 when reportTypeDiagnostics:
                 _diagnostics.ReportTypeNotFound(typeName);
                 break;
 
@@ -864,7 +883,8 @@ internal class Emitter
                 return foundTypes[0];
 
             default:
-                _diagnostics.ReportAmbiguousType(typeName, foundTypes);
+                if (reportTypeDiagnostics)
+                    _diagnostics.ReportAmbiguousType(typeName, foundTypes);
                 break;
         }
 
@@ -886,10 +906,10 @@ internal class Emitter
         return null;
     }
 
-    private MethodReference? ResolveMethod(string typeName, string methodName, string[] parameterTypeNames)
+    private MethodReference? ResolveMethod(string typeName, string methodName, string[] parameterTypeNames, bool reportNotFoundDiagnostic = true)
     {
         // var types = FindTypesByName(typeName);
-        var type = FindTypeByName(typeName);
+        var type = FindTypeByName(typeName, reportNotFoundDiagnostic);
         if (type == null)
             return null;
 
@@ -915,7 +935,9 @@ internal class Emitter
             return _assemblyDefinition.MainModule.ImportReference(methodDefinition);
         }
 
-        _diagnostics.ReportRequiredMethodNotFound(typeName, methodName, parameterTypeNames);
+        if (reportNotFoundDiagnostic)
+            _diagnostics.ReportRequiredMethodNotFound(typeName, methodName, parameterTypeNames);
+
         return null;
     }
 
