@@ -1,26 +1,27 @@
 ﻿using Panther.CodeAnalysis.Symbols;
-using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal class Conversion
+internal abstract record Conversion
 {
-    public static readonly Conversion None = new Conversion(exists: false, isIdentity: false, isImplicit: false);
-    public static readonly Conversion Identity = new Conversion(exists: true, isIdentity: true, isImplicit: true);
-    public static readonly Conversion Implicit = new Conversion(exists: true, isIdentity: false, isImplicit: true);
-    public static readonly Conversion Explicit = new Conversion(exists: true, isIdentity: false, isImplicit: false);
+    public static readonly Conversion None = new NoConversion();
+    public static readonly Conversion Identity = new IdentityConversion();
+    public static readonly Conversion Implicit = new ImplicitConversion();
+    public static readonly Conversion Explicit = new ExplicitConversion();
 
-    public bool Exists { get; }
-    public bool IsIdentity { get; }
-    public bool IsImplicit { get; }
-    public bool IsExplicit => Exists && !IsImplicit;
+    sealed record NoConversion : Conversion;
+    sealed record IdentityConversion : Conversion;
+    sealed record ExplicitConversion : Conversion;
+    sealed record ImplicitConversion : Conversion;
 
-    private Conversion(bool exists, bool isIdentity, bool isImplicit)
+    protected Conversion()
     {
-        Exists = exists;
-        IsIdentity = isIdentity;
-        IsImplicit = isImplicit;
     }
+
+    public bool Exists => this is not NoConversion;
+    public bool IsImplicit => this is ImplicitConversion;
+    public bool IsExplicit => this is ExplicitConversion;
+    public bool IsIdentity => this is IdentityConversion;
 
     public static Conversion Classify(Type from, Type to)
     {

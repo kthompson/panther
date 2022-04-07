@@ -9,7 +9,8 @@ using Panther.Repl;
 
 if (args.Length > 0 && args[0] == "console")
 {
-    new PantherRepl().Run();
+    using var repl = new PantherRepl();
+    repl.Run();
     return 0;
 }
 
@@ -84,7 +85,11 @@ if (output == null)
     return -1;
 }
 
-var syntaxTrees = sources.Select(SyntaxTree.LoadFile).ToArray();
+var syntaxTrees = sources.Select(file =>
+{
+    Console.WriteLine($"parsing file {file}...");
+    return SyntaxTree.LoadFile(file);
+}).ToArray();
 
 var (referenceDiags, compilation) = Compilation.Create(references.ToArray(), syntaxTrees);
 
