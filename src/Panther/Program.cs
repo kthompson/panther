@@ -162,8 +162,9 @@ void PrintError(string error)
     PrintUsage();
 }
 
-void PrintUsage() => Console.Error.WriteLine(@"
+void PrintUsage() => Console.Error.WriteLine($@"
 usage: pnc <source-paths> /o <output> /r <reference> [/m <module>]
+version: {ThisAssembly.AssemblyInformationalVersion}
 
     -o, --output       Required. The output path of the assembly to create
 

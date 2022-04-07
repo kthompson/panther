@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.CI.GitHubActions;
@@ -8,6 +9,8 @@ using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
@@ -19,20 +22,18 @@ using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
 [UnsetVisualStudioEnvironmentVariables]
 [GitHubActions("default", GitHubActionsImage.WindowsLatest, GitHubActionsImage.UbuntuLatest,
     GitHubActionsImage.MacOsLatest,
-    // InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPublish.Publish) },
-    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPack.Pack) },
+    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPublish.Publish) },
     OnPushBranches = new[] { "main" },
     EnableGitHubContext = true,
     ImportSecrets = new[]
     {
         nameof(IReportCoverage.CodecovToken),
         nameof(PublicNuGetApiKey),
-        nameof(GitHubRegistryApiKey)
     },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
 )]
 [GitHubActions("pr", GitHubActionsImage.WindowsLatest, GitHubActionsImage.UbuntuLatest, GitHubActionsImage.MacOsLatest,
-    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPack.Pack) },
+    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), nameof(IPublish.Publish) },
     OnPullRequestBranches = new[] { "main" },
     EnableGitHubContext = true,
     ImportSecrets = new[]
@@ -78,6 +79,8 @@ class Build : NukeBuild,
         .Before<IRestore>()
         .Executes(() =>
         {
+            Serilog.Log.Information("GitHub Context: {Context}", GitHubActions.GitHubContext.ToString(Formatting.Indented));
+
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             EnsureCleanDirectory(From<IHazArtifacts>().ArtifactsDirectory);
@@ -108,11 +111,15 @@ class Build : NukeBuild,
         ? $"https://nuget.pkg.github.com/{GitHubActions.RepositoryOwner}/index.json"
         : null;
 
-
     [Parameter] [Secret] readonly string PublicNuGetApiKey;
-    [Parameter] [Secret] readonly string GitHubRegistryApiKey;
 
-    string IPublish.NuGetApiKey => GitRepository.IsOnMainBranch() ? PublicNuGetApiKey : GitHubRegistryApiKey;
+    // only publish from one of the three platforms
+    IEnumerable<AbsolutePath> IPublish.PushPackageFiles =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+            ? From<IPack>().PackagesDirectory.GlobFiles("*.nupkg")
+            : Array.Empty<AbsolutePath>();
+
+    string IPublish.NuGetApiKey => GitRepository.IsOnMainBranch() ? PublicNuGetApiKey : GitHubActions.Token;
     string IPublish.NuGetSource => GitRepository.IsOnMainBranch() ? PublicNuGetSource : GitHubRegistrySource;
 
     T From<T>()

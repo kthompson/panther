@@ -1,12 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <WarningLevel>4</WarningLevel>
-        <PackAsTool>true</PackAsTool>
         <NoWarn>1701;1702;0612</NoWarn>
         <OutputType>Exe</OutputType>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <DebugType>embedded</DebugType>
         <AssemblyName>pnc</AssemblyName>
+
+        <PackAsTool>true</PackAsTool>
+        <PackageId>Panther</PackageId>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <ToolCommandName>pnc</ToolCommandName>
+        <PackageOutputPath>$(OutDir)</PackageOutputPath>
+        <RepositoryUrl>https://github.com/panther-lang/panther</RepositoryUrl>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Description>Panther programming language compiler</Description>
+        <Company>panther-lang.org</Company>
+        <Copyright>Copyright Â© Kevin Thompson</Copyright>
     </PropertyGroup>
 
     <ItemGroup>
