@@ -34,12 +34,11 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
-      - name: Run './build.cmd Test ReportCoverage Pack'
-        run: ./build.cmd Test ReportCoverage Pack
+      - name: Run './build.cmd Test ReportCoverage Publish'
+        run: ./build.cmd Test ReportCoverage Publish
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
-          GitHubRegistryApiKey: ${{ secrets.GITHUB_REGISTRY_API_KEY }}
           GITHUB_CONTEXT: ${{ toJSON(github) }}
       - uses: actions/upload-artifact@v1
         with:
@@ -65,12 +64,11 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
-      - name: Run './build.cmd Test ReportCoverage Pack'
-        run: ./build.cmd Test ReportCoverage Pack
+      - name: Run './build.cmd Test ReportCoverage Publish'
+        run: ./build.cmd Test ReportCoverage Publish
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
-          GitHubRegistryApiKey: ${{ secrets.GITHUB_REGISTRY_API_KEY }}
           GITHUB_CONTEXT: ${{ toJSON(github) }}
       - uses: actions/upload-artifact@v1
         with:
@@ -96,12 +94,11 @@ jobs:
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
-      - name: Run './build.cmd Test ReportCoverage Pack'
-        run: ./build.cmd Test ReportCoverage Pack
+      - name: Run './build.cmd Test ReportCoverage Publish'
+        run: ./build.cmd Test ReportCoverage Publish
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
-          GitHubRegistryApiKey: ${{ secrets.GITHUB_REGISTRY_API_KEY }}
           GITHUB_CONTEXT: ${{ toJSON(github) }}
       - uses: actions/upload-artifact@v1
         with:

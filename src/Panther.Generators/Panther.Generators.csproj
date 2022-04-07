@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <WarningLevel>4</WarningLevel>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

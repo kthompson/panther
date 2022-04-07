@@ -3,9 +3,9 @@
 namespace Panther
 
 object Predef {
-    def print(object value): unit => Console.Write(value)
+    def print(value: any): unit => Console.Write(value)
 
-    def println(object value): unit => Console.WriteLine(value)
+    def println(value: any): unit => Console.WriteLine(value)
 
     def println(): unit => Console.WriteLine()
 
