@@ -36,9 +36,11 @@ public class EmitterTests
 
     [Theory]
     [MemberData(nameof(GetEmitterTests))]
-    public void EmitterOutputsIL(string testDirectory, string[] sources, string expectedILPath)
+    public void EmitterOutputsIL(string testDirectory, string[] sources, string? expectedILPath)
     {
-        var expectedSource = File.ReadAllLines(expectedILPath).Where(line => !line.TrimStart().StartsWith("//")).ToArray();
+        var expectedSource = expectedILPath == null
+            ? null
+            : File.ReadAllLines(expectedILPath).Where(line => !line.TrimStart().StartsWith("//")).ToArray();
 
         var trees = sources.Select(SyntaxTree.LoadFile).ToArray();
 
@@ -85,14 +87,17 @@ public class EmitterTests
         // Directory.CreateDirectory(vmOutput);
         // var emitVm = compilation.EmitVM(vmOutput);
 
-        var il = DumpIl(assemblyLocation);
-        var actualSource = il.Split('\n').Where(line => !line.TrimStart().StartsWith("//")).ToArray();
-        AssertFileLines(expectedSource, actualSource);
+        if (expectedSource != null)
+        {
+            var il = DumpIl(assemblyLocation);
+            var actualSource = il.Split('\n').Where(line => !line.TrimStart().StartsWith("//")).ToArray();
+            AssertFileLines(expectedSource, actualSource);
 
-        Assert.Equal(expectedSource.Length, actualSource.Length);
+            Assert.Equal(expectedSource.Length, actualSource.Length);
+        }
 
         // verify command output
-        AssertCommandOutput(testDirectory, outputDirectory, assemblyLocation);
+        AssertCommandOutput(testDirectory, assemblyLocation);
 
         Directory.Delete(outputDirectory, true);
     }
@@ -109,7 +114,7 @@ public class EmitterTests
         }
     }
 
-    private static void AssertCommandOutput(string testDirectory, string outputDirectory, string assemblyLocation)
+    private static void AssertCommandOutput(string testDirectory, string assemblyLocation)
     {
         var outputTxtPath = Path.Combine(testDirectory, "output.txt");
         if (!File.Exists(outputTxtPath)) return;
@@ -175,6 +180,5 @@ public class EmitterTests
         // compilation order for our sources
         let sources = Directory.GetFiles(directory, "*.pn").OrderBy(x => x).ToArray()
         let expected = Directory.GetFiles(directory, "*.il").SingleOrDefault()
-        where expected != null
         select new object?[] { directory, sources, expected };
 }

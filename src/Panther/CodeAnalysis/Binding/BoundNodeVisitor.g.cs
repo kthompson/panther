@@ -69,6 +69,9 @@ namespace Panther.CodeAnalysis.Binding
         public virtual void VisitMethodExpression(BoundMethodExpression node) =>
             this.DefaultVisit(node);
 
+        public virtual void VisitNamespaceExpression(BoundNamespaceExpression node) =>
+            this.DefaultVisit(node);
+
         public virtual void VisitNewExpression(BoundNewExpression node) =>
             this.DefaultVisit(node);
 
@@ -150,6 +153,9 @@ namespace Panther.CodeAnalysis.Binding
             this.DefaultVisit(node);
 
         public virtual TResult VisitMethodExpression(BoundMethodExpression node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitNamespaceExpression(BoundNamespaceExpression node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitNewExpression(BoundNewExpression node) =>
