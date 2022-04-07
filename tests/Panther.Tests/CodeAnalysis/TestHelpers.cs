@@ -143,6 +143,9 @@ internal static partial class TestHelpers
         using var host = BuildScriptHost();
 
         var compilation = host.Compile(tree);
+
+        Assert.Empty(compilation.Diagnostics);
+
         return compilation;
     }
 
