@@ -146,7 +146,7 @@ internal class Emitter
 
     private void IterateTypes(BoundAssembly assembly, Action<Symbol> action)
     {
-        foreach (var type in assembly.Types)
+        foreach (var type in assembly.RootSymbol.Types.Where(symbol => !symbol.IsImport))
         {
             _currentType = type;
             action(type);

@@ -69,12 +69,6 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node) =>
             this.DefaultVisit(node);
 
-        public virtual void VisitNamespaceMembers(NamespaceMembersSyntax node) =>
-            this.DefaultVisit(node);
-
-        public virtual void VisitNestedNamespace(NestedNamespaceSyntax node) =>
-            this.DefaultVisit(node);
-
         public virtual void VisitNewExpression(NewExpressionSyntax node) =>
             this.DefaultVisit(node);
 
@@ -174,12 +168,6 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual TResult VisitNamespaceDeclaration(NamespaceDeclarationSyntax node) =>
-            this.DefaultVisit(node);
-
-        public virtual TResult VisitNamespaceMembers(NamespaceMembersSyntax node) =>
-            this.DefaultVisit(node);
-
-        public virtual TResult VisitNestedNamespace(NestedNamespaceSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitNewExpression(NewExpressionSyntax node) =>

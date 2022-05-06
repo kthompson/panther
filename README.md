@@ -33,6 +33,8 @@ def main() = {
 
 # Road map
 
+- complete basics in order to start writing code in Panther
+- rewrite compiler in Panther(self-hosting)
 - type aliases (u8 = System.Byte, ...)
 - optimize programs before emitting
 - floats?

@@ -68,6 +68,7 @@ public class SyntaxTree
                 {
                     root = new CompilationUnitSyntax(
                         syntaxTree,
+                        null,
                         ImmutableArray<UsingDirectiveSyntax>.Empty,
                         ImmutableArray<MemberSyntax>.Empty,
                         token

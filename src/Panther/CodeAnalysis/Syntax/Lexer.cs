@@ -313,7 +313,7 @@ internal class Lexer
 
     private (SyntaxKind kind, int start, string text, object value) ParseStringToken()
     {
-        int start = _position;
+        var start = _position;
         Next(); // start "
         var sb = new StringBuilder();
         while (true)

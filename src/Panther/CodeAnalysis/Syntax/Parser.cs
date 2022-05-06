@@ -135,12 +135,13 @@ internal class Parser
 
     public CompilationUnitSyntax ParseCompilationUnit()
     {
+        var namespaceDeclaration = ParseNamespaceDeclaration();
         var usingDirectives = ParseUsings();
         var namespaceSyntax = ParseMembers();
 
         var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-        return new CompilationUnitSyntax(_syntaxTree, usingDirectives, namespaceSyntax, endToken);
+        return new CompilationUnitSyntax(_syntaxTree, namespaceDeclaration, usingDirectives, namespaceSyntax, endToken);
     }
 
     private ImmutableArray<UsingDirectiveSyntax> ParseUsings()
@@ -171,54 +172,23 @@ internal class Parser
         return members.ToImmutable();
     }
 
-    private bool IsMemberKind => CurrentKind
-        is SyntaxKind.DefKeyword
-        or SyntaxKind.ObjectKeyword
-        or SyntaxKind.ClassKeyword
-        or SyntaxKind.NamespaceKeyword;
-
     private MemberSyntax ParseMember() =>
         CurrentKind switch
         {
             SyntaxKind.DefKeyword => ParseFunctionDeclaration(),
             SyntaxKind.ClassKeyword => ParseClassDeclaration(),
-            SyntaxKind.NamespaceKeyword => ParseNamespaceDeclaration(),
             SyntaxKind.ObjectKeyword => ParseObjectDeclaration(),
             _ => ParseGlobalStatement(),
         };
 
-    private MemberSyntax ParseNamespaceDeclaration()
+    private NamespaceDeclarationSyntax? ParseNamespaceDeclaration()
     {
+        if (CurrentKind != SyntaxKind.NamespaceKeyword) return null;
+        
         var namespaceKeyword = Accept();
-        var identifier = Accept(SyntaxKind.IdentifierToken);
-        var namespaceBody = ParseNamespaceBody();
+        var name = ParseNameSyntax();
 
-        return new NamespaceDeclarationSyntax(_syntaxTree, namespaceKeyword, identifier, namespaceBody);
-    }
-
-    private NamespaceBodySyntax ParseNamespaceBody()
-    {
-        if (CurrentKind == SyntaxKind.DotToken)
-        {
-            return ParseNestedNamespace();
-        }
-
-        return ParseNamespaceMembers();
-    }
-
-    private NamespaceBodySyntax ParseNamespaceMembers()
-    {
-        var members = ParseMembers();
-        return new NamespaceMembersSyntax(_syntaxTree, members);
-    }
-
-    private NamespaceBodySyntax ParseNestedNamespace()
-    {
-        var dotToken = Accept();
-        var identifier = Accept(SyntaxKind.IdentifierToken);
-        var namespaceBody = ParseNamespaceBody();
-
-        return new NestedNamespaceSyntax(_syntaxTree, dotToken, identifier, namespaceBody);
+        return new NamespaceDeclarationSyntax(_syntaxTree, namespaceKeyword, name);
     }
 
     private TemplateSyntax ParseTemplate()

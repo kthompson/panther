@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection;
 using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal sealed class BoundScope
+internal sealed class BoundScope : SymbolContainer
 {
     public Symbol Symbol { get; }
 
@@ -47,69 +46,31 @@ internal sealed class BoundScope
 
     public void Import(Symbol symbol)
     {
-        if (_importedSymbols.TryGetValue(symbol.Name, out var symbols))
-        {
-            _importedSymbols[symbol.Name] = symbols.Add(symbol);
-            return;
-        }
-
-        _importedSymbols.Add(symbol.Name, ImmutableArray.Create(symbol));
+        base.DefineSymbol(symbol);
     }
 
-    public bool DefineSymbol(Symbol symbol)
+    public override bool DefineSymbol(Symbol symbol)
     {
         return Symbol.DefineSymbol(symbol);
     }
 
-    public Symbol? LookupVariable(string name)
+    public override Symbol? LookupSingle(string name, Predicate<Symbol> predicate)
     {
-        var variable = Symbol.LookupMembers(name).FirstOrDefault(v => v.IsValue);
-        if (variable != null)
-            return variable;
+        var symbol = Symbol.LookupSingle(name, predicate);
 
-        if (_importedSymbols.TryGetValue(name, out var importedSymbols))
-        {
-            return importedSymbols.FirstOrDefault();
-        }
+        if (symbol != null)
+            return symbol;
+
+        var import = base.LookupSingle(name, predicate);
+        if (import != null)
+            return import;
 
         if (IsRootScope)
             return null;
 
-        return Parent.LookupVariable(name);
+        return Parent.LookupSingle(name, predicate);
     }
 
-    public Symbol? LookupType(string name)
-    {
-        var type = Symbol.LookupType(name);
-        if (type != null)
-            return type;
-
-        if (_importedSymbols.TryGetValue(name, out var importedSymbols))
-        {
-            return importedSymbols.FirstOrDefault(t => t.IsType);
-        }
-
-        if (IsRootScope)
-            return null;
-
-        return Parent.LookupType(name);
-    }
-
-    public Symbol? LookupNamespace(string name)
-    {
-        var symbol = Symbol.LookupNamespace(name);
-        if (symbol != null) return symbol;
-
-        if (_importedSymbols.TryGetValue(name, out var importedSymbols))
-        {
-            return importedSymbols.FirstOrDefault(t => t.IsNamespace);
-        }
-
-        if (IsRootScope)
-            return null;
-
-        return Parent.LookupNamespace(name);
-    }
 
     public ImmutableArray<Symbol> LookupSymbol(string name, bool deep = true)
     {
@@ -117,54 +78,37 @@ internal sealed class BoundScope
         if (members.Any())
             return members;
 
-        if (_importedSymbols.TryGetValue(name, out var symbols))
-        {
-            return symbols.ToImmutableArray();
-        }
+        var imports = base.LookupMembers(name);
+        if (!imports.IsEmpty)
+            return imports;
 
-        if (deep)
-        {
-            if (IsRootScope)
-                return ImmutableArray<Symbol>.Empty;
+        if (!deep)
+            return ImmutableArray<Symbol>.Empty;
 
-            return Parent.LookupSymbol(name);
-        }
+        if (IsRootScope)
+            return ImmutableArray<Symbol>.Empty;
 
-        return ImmutableArray<Symbol>.Empty;
+        return Parent.LookupSymbol(name, deep);
     }
 
-    public ImmutableArray<Symbol> LookupMethod(string name, bool deep = true)
-    {
-        var methods = Symbol.LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();
-
-        if (methods.Any())
-            return methods;
-
-        if (_importedSymbols.TryGetValue(name, out var symbols))
-        {
-            return symbols.Where(m => m.IsMethod).ToImmutableArray();
-        }
-
-        if (deep)
-        {
-            if (IsRootScope)
-                return ImmutableArray<Symbol>.Empty;
-
-            return Parent.LookupMethod(name);
-        }
-
-        return ImmutableArray<Symbol>.Empty;
-    }
-
-    public ImmutableArray<Symbol> GetDeclaredVariables()
-    {
-        // TODO. do we even need this if we have the container type?
-        // return _ownedSymbols.Values.SelectMany(symbols => symbols).OfType<VariableSymbol>().ToImmutableArray();
-        return ImmutableArray<Symbol>.Empty;
-    }
-
-    public BoundScope EnterNamespace(Symbol namespaceSymbol)
-    {
-        throw new System.NotImplementedException();
-    }
+    // public ImmutableArray<Symbol> LookupMethod(string name, bool deep = true)
+    // {
+    //     var methods = Symbol.LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();
+    //
+    //     if (methods.Any())
+    //         return methods;
+    //
+    //     if (_importedSymbols.TryGetValue(name, out var symbols))
+    //     {
+    //         return symbols.Where(m => m.IsMethod).ToImmutableArray();
+    //     }
+    //
+    //     if (!deep)
+    //         return ImmutableArray<Symbol>.Empty;
+    //
+    //     if (IsRootScope)
+    //         return ImmutableArray<Symbol>.Empty;
+    //
+    //     return Parent.LookupMethod(name, deep);
+    // }
 }

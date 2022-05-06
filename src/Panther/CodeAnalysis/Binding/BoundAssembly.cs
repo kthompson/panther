@@ -10,7 +10,7 @@ internal sealed record BoundAssembly(
     ImmutableArray<Diagnostic> Diagnostics,
     EntryPoint? EntryPoint,
     BoundType DefaultType,
-    ImmutableArray<Symbol> Types,
+    Symbol RootSymbol,
     ImmutableDictionary<Symbol, BoundBlockExpression> MethodDefinitions,
     ImmutableArray<AssemblyDefinition> References
 );

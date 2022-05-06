@@ -312,8 +312,7 @@ internal sealed class Binder
     }
 
     private static bool IsTopLevelDeclaration(SyntaxNode member) =>
-        member.Kind is SyntaxKind.NamespaceDeclaration or SyntaxKind.ClassDeclaration or SyntaxKind
-            .ObjectDeclaration;
+        member.Kind is SyntaxKind.ClassDeclaration or SyntaxKind.ObjectDeclaration;
 
     public static BoundAssembly BindAssembly(bool isScript, ImmutableArray<SyntaxTree> syntaxTrees, BoundAssembly? previous,  ImmutableArray<AssemblyDefinition> references)
     {
@@ -330,6 +329,7 @@ internal sealed class Binder
         foreach (var tree in syntaxTrees)
         {
             var compilationUnit = tree.Root;
+            var thisScope = scope;
             var allTopLevel = compilationUnit.Members.All(IsTopLevelDeclaration);
             var allGlobalStatements = compilationUnit.Members.All(member => member is GlobalStatementSyntax);
 
@@ -338,20 +338,17 @@ internal sealed class Binder
                 // TODO: global statements are not supported with a namespace
             }
 
+            if (compilationUnit.Namespace != null)
+            {
+                var namespaceSymbol = binder.BindNamespace(compilationUnit.Namespace, root);
+                thisScope = new BoundScope(thisScope, namespaceSymbol);
+            }
+
             foreach (var @using in compilationUnit.Usings)
             {
                 var namespaceOrTypeSymbol = binder.BindUsingDirective(@using);
-                scope.ImportMembers(namespaceOrTypeSymbol);
+                thisScope.ImportMembers(namespaceOrTypeSymbol);
             }
-
-            // TODO: change member order. namespace directive should always be first.
-            // namespace should probably not be a "MemberSyntax" maybe it makes sense for a
-            //
-            // foreach (var namespaceDirective in compilationUnit.NamespaceDirectives)
-            // {
-            //     var namespaceSymbol = binder.BindNamespace(namespaceDirective);
-            //     scope = scope.EnterNamespace(namespaceSymbol);
-            // }
 
             // should only be one set of global statements
             // otherwise there would be an error
@@ -361,7 +358,7 @@ internal sealed class Binder
             var functions = rest.Where(member => member is FunctionDeclarationSyntax).ToImmutableArray();
 
             // bind classes and objects first
-            binder.BindMembers(objectsAndClasses, compilationUnit,  scope);
+            binder.BindMembers(objectsAndClasses, compilationUnit, thisScope);
 
             // functions go into our default type scope
             // everything else can go in our global scope
@@ -372,14 +369,6 @@ internal sealed class Binder
             globalStatements
                 .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, defaultTypeScope))
                 .ToImmutableArray();
-
-        // top level variables get converted to fields on the default type
-        var variables = defaultTypeScope.GetDeclaredVariables().Where(sym => sym.IsField);
-
-        foreach (var variable in variables)
-        {
-            defaultType.DefineSymbol(variable);
-        }
 
         if (defaultType.Members.Any())
         {
@@ -411,12 +400,12 @@ internal sealed class Binder
 
         diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
-        var rootTypes = root.Types.Where(t => !t.IsImport).ToImmutableArray();
+        // var rootTypes = root.Types.Where(t => !t.IsImport).ToImmutableArray();
 
         var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
 
         // Map and lower all function definitions
-        foreach (var boundType in rootTypes)
+        foreach (var boundType in root.Types)
         {
             var typeScope = new BoundScope(parentScope, boundType);
 
@@ -462,10 +451,34 @@ internal sealed class Binder
             Diagnostics: diagnostics.ToImmutableArray(),
             EntryPoint: entryPoint,
             DefaultType: defaultType,
-            Types: rootTypes,
+            RootSymbol: root,
             MethodDefinitions: methodDefinitions.ToImmutable(),
             References: references
         );
+    }
+
+    private Symbol BindNamespace(NamespaceDeclarationSyntax compilationUnitNamespace, Symbol symbol) => 
+        BindNamespace(compilationUnitNamespace.Name, symbol);
+
+    private Symbol BindNamespace(NameSyntax name, Symbol symbol)
+    {
+        if (name is QualifiedNameSyntax(_, var left, _, var right))
+        {
+            var nestedSymbol = BindNamespace(left, symbol);
+
+            return BindNamespace(right, nestedSymbol);
+        }
+
+        return BindNamespace((IdentifierNameSyntax)name, symbol);
+    }
+
+    private static Symbol BindNamespace(IdentifierNameSyntax identifierNameSyntax, Symbol symbol)
+    {
+        var identifier = identifierNameSyntax.Identifier;
+        var textName = identifier.Text;
+        var existing = symbol.LookupNamespace(textName);
+        
+        return existing ?? symbol.NewNamespace(identifier.Location, textName).Declare();
     }
 
     private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax,
@@ -894,21 +907,14 @@ internal sealed class Binder
         {
             case IdentifierNameSyntax identifier:
             {
-                var matchingSymbols = scope
-                    .LookupSymbol(identifier.ToText())
-                    .Where(x => x.IsType)
-                    .ToImmutableArray();
-                switch (matchingSymbols.Length)
+                var type = scope.LookupType(identifier.ToText());
+                if (type == null)
                 {
-                    case 0:
-                        Diagnostics.ReportTypeNotFound(identifier.Location, identifier.ToText());
-                        return null;
-                    case 1:
-                        return matchingSymbols[0];
-                    default:
-                        // we should never have the same type name in the same scope
-                        throw new InvalidOperationException();
+                    Diagnostics.ReportTypeNotFound(identifier.Location, identifier.ToText());
+                    return null;
                 }
+
+                return type;
             }
             case QualifiedNameSyntax qualified:
             {
@@ -1046,14 +1052,14 @@ internal sealed class Binder
             return boundExpression;
 
         // Bind method
-        var symbol = BindIdentifierForCallExpression(syntax, symbolName, identifierNameSyntax.Location, boundArguments, scope);
+        var symbol = BindIdentifierForCallExpression(symbolName, identifierNameSyntax.Location, boundArguments, scope);
         if (symbol == null)
             return new BoundErrorExpression(syntax);
 
         return BindCallExpressionToSymbol(syntax, symbol, null, boundArguments);
     }
 
-    private Symbol? BindIdentifierForCallExpression(CallExpressionSyntax syntax, string symbolName, TextLocation nameLocation, ImmutableArray<BoundExpression> boundArguments, BoundScope scope)
+    private Symbol? BindIdentifierForCallExpression(string symbolName, TextLocation nameLocation, ImmutableArray<BoundExpression> boundArguments, BoundScope scope)
     {
         var symbols = scope.LookupSymbol(symbolName, false);
 
@@ -1073,7 +1079,7 @@ internal sealed class Binder
                 else
                 {
                     // check in parent scope
-                    return BindIdentifierForCallExpression(syntax, symbolName, nameLocation, boundArguments, scope.Parent);
+                    return BindIdentifierForCallExpression(symbolName, nameLocation, boundArguments, scope.Parent);
                 }
             case 1:
                 return symbols[0];
@@ -1313,7 +1319,7 @@ internal sealed class Binder
                 scope.ImportMembers(declaringType);
             }
 
-            foreach (var type in previous.Types)
+            foreach (var type in previous.RootSymbol.Types)
             {
                 scope.Import(type);
             }
@@ -1361,7 +1367,7 @@ internal sealed class Binder
         foreach (var module in reference.Modules)
         foreach (var type in module.Types)
         {
-            if(!type.IsClass) continue;
+            if(!type.IsClass || !type.IsPublic) continue;
 
             var namespaceSymbol = GetOrCreateNamespaceSymbol(namespaceLookup, root, type.Namespace);
             namespaceSymbol.DefineSymbol(new ImportedTypeSymbol(namespaceSymbol, type.Name, type));
@@ -1414,10 +1420,14 @@ internal sealed class Binder
             var variable = scope.LookupVariable(name);
             if (variable != null)
             {
-                if (variable.IsField)
-                    return new BoundFieldExpression(syntax, null, variable);
-
+                Debug.Assert(!variable.IsField);
                 return new BoundVariableExpression(syntax, variable);
+            }
+            
+            var field = scope.LookupField(name);
+            if (field != null)
+            {
+                return new BoundFieldExpression(syntax, null, field);
             }
 
             var type = scope.LookupType(name);

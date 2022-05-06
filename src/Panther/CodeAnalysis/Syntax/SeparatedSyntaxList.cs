@@ -25,7 +25,7 @@ public class SeparatedSyntaxList<T> : SeparatedSyntaxList, IReadOnlyList<T> wher
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (int i = 0; i < Count; i++)
+        for (var i = 0; i < Count; i++)
             yield return this[i];
     }
 

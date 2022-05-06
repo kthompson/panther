@@ -70,7 +70,7 @@ internal static class SymbolPrinter
                 WriteValueSymbol(symbol, writer);
                 break;
 
-            case {IsField: true}:
+            case { IsField: true}:
                 WriteValueSymbol(symbol, writer);
                 break;
 

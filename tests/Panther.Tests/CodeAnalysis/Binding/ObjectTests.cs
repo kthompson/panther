@@ -18,7 +18,7 @@ public class ObjectTests
         );
         var compilation = Compile(code.Text);
 
-        Assert.Collection(compilation.Types, symbol =>
+        Assert.Collection(compilation.RootSymbol.Types, symbol =>
         {
             Assert.Equal("Hello", symbol.Name);
             Assert.Collection(symbol.Methods,
@@ -47,7 +47,7 @@ public class ObjectTests
         );
         var compilation = Compile(code.Text);
 
-        Assert.Collection(compilation.Types, symbol =>
+        Assert.Collection(compilation.RootSymbol.Types, symbol =>
         {
             Assert.Equal("Hello", symbol.Name);
         });
@@ -66,7 +66,7 @@ public class ObjectTests
         );
         var compilation = Compile(code.Text);
 
-        Assert.Collection(compilation.Types, hello =>
+        Assert.Collection(compilation.RootSymbol.Types, hello =>
         {
             Assert.Equal("Hello", hello.Name);
 
@@ -87,7 +87,7 @@ public class ObjectTests
         );
         var compilation = Compile(code.Text);
 
-        Assert.Collection(compilation.Types,
+        Assert.Collection(compilation.RootSymbol.Types,
             symbol => Assert.Collection(symbol.Methods,
                 methodSymbol => Assert.Equal("world", methodSymbol.Name)));
     }
@@ -102,7 +102,7 @@ public class ObjectTests
         );
         var compilation = Compile(code.Text);
 
-        Assert.Collection(compilation.Types,
+        Assert.Collection(compilation.RootSymbol.Types,
             symbol => Assert.Collection(symbol.Methods,
                 methodSymbol => Assert.Equal("unit", methodSymbol.ReturnType.Symbol.Name)));
     }

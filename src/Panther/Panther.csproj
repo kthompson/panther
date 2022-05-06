@@ -29,4 +29,13 @@
     <ItemGroup>
         <ProjectReference Include="..\Panther.StdLib\Panther.StdLib.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="CodeAnalysis\Symbols\Symbol.RootSymbol.cs">
+        <DependentUpon>Symbol.cs</DependentUpon>
+      </Compile>
+      <Compile Update="CodeAnalysis\Symbols\Symbol.TermSymbol.cs">
+        <DependentUpon>Symbol.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
 </Project>
