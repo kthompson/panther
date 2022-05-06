@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols;
 
-public abstract class Symbol
+public abstract partial class Symbol : SymbolContainer
 {
     public virtual SymbolFlags Flags { get; set; }
     public string Name { get; }
@@ -22,13 +20,13 @@ public abstract class Symbol
     public bool IsMethod => this.Flags.HasFlag(SymbolFlags.Method);
     public bool IsConstructor => this.Name is ".ctor" or ".cctor";
     public bool IsField => this.Flags.HasFlag(SymbolFlags.Field);
+    public bool IsImport => this.Flags.HasFlag(SymbolFlags.Import);
     public bool IsParameter => this.Flags.HasFlag(SymbolFlags.Parameter);
     public bool IsLocal => this.Flags.HasFlag(SymbolFlags.Local);
     public bool IsValue => IsLocal || IsParameter || IsField;
 
     public bool IsStatic => this.Flags.HasFlag(SymbolFlags.Static);
     public bool IsReadOnly => this.Flags.HasFlag(SymbolFlags.Readonly);
-    public bool IsImport  => this.Flags.HasFlag(SymbolFlags.Import);
 
     public virtual Symbol Owner { get; }
     public int Index { get; set; } = 0;
@@ -66,8 +64,6 @@ public abstract class Symbol
         Owner = owner ?? this;
         Name = name;
         Location = location;
-        _symbolMap = new Dictionary<string, ImmutableArray<Symbol>>();
-        _symbols = new List<Symbol>();
     }
 
     public override string ToString()
@@ -123,9 +119,6 @@ public abstract class Symbol
         new TermSymbol(this, location, name)
             .WithFlags(SymbolFlags.Local | (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
 
-    private readonly Dictionary<string, ImmutableArray<Symbol>> _symbolMap;
-    private readonly List<Symbol> _symbols;
-
 
     public Symbol Declare()
     {
@@ -134,63 +127,6 @@ public abstract class Symbol
     }
 
     public void Delete() => Owner.Delete(this);
-
-
-    public void Delete(Symbol child)
-    {
-        if (_symbols.Remove(child))
-        {
-            _symbolMap[child.Name] = _symbolMap[child.Name].Remove(child);
-        }
-    }
-
-    public bool DefineSymbol(Symbol symbol)
-    {
-        // only one field symbol per name
-        if ((symbol.Flags & SymbolFlags.Field) != 0)
-        {
-            if (_symbolMap.ContainsKey(symbol.Name))
-                return false;
-
-            _symbolMap.Add(symbol.Name, ImmutableArray.Create(symbol));
-            _symbols.Add(symbol);
-            return true;
-        }
-
-        if (_symbolMap.TryGetValue(symbol.Name, out var symbols))
-        {
-            _symbolMap[symbol.Name] = symbols.Add(symbol);
-            _symbols.Add(symbol);
-            return true;
-        }
-
-        _symbolMap.Add(symbol.Name, ImmutableArray.Create(symbol));
-        _symbols.Add(symbol);
-        return true;
-    }
-
-    public ImmutableArray<Symbol> Locals  =>
-        Members.Where(m => m.IsLocal).ToImmutableArray();
-
-    public ImmutableArray<Symbol> Parameters =>
-        Members.Where(m => m.IsParameter).ToImmutableArray();
-
-    public ImmutableArray<Symbol> Constructors =>
-        Members.Where(m => m.IsConstructor).ToImmutableArray();
-
-    public ImmutableArray<Symbol> Methods =>
-        Members.Where(sym => sym.IsMethod).ToImmutableArray();
-
-    public ImmutableArray<Symbol> Fields =>
-        Members.Where(sym => sym.IsField).ToImmutableArray();
-
-    public ImmutableArray<Symbol> Types =>
-        Members.Where(m => m.IsType).ToImmutableArray();
-
-    public ImmutableArray<Symbol> Namespaces =>
-        Members.Where(m => m.IsNamespace).ToImmutableArray();
-
-    public virtual ImmutableArray<Symbol> Members => _symbols.ToImmutableArray();
 
 
     public Type ReturnType
@@ -203,85 +139,6 @@ public abstract class Symbol
             }
 
             return Type;
-        }
-    }
-
-    public virtual ImmutableArray<Symbol> LookupMembers(string name) =>
-        _symbolMap.TryGetValue(name, out var symbols)
-            ? symbols
-            : ImmutableArray<Symbol>.Empty;
-
-    public Symbol? LookupSingle(string name, Predicate<Symbol> predicate) =>
-        LookupMembers(name).SingleOrDefault(m => predicate(m));
-
-    public Symbol? LookupNamespace(string name) =>
-        LookupSingle(name, m => m.IsNamespace);
-
-    public Symbol? LookupParameter(string name) =>
-        LookupSingle(name, m => m.IsParameter);
-
-    public Symbol? LookupVariable(string name) =>
-        LookupSingle(name, m => m.IsLocal);
-
-    public Symbol? LookupType(string name) =>
-        LookupSingle(name, m => m.IsType);
-
-    public ImmutableArray<Symbol> LookupMethod(string name) =>
-        LookupMembers(name).Where(m => m.IsMethod).ToImmutableArray();
-
-    private sealed class RootSymbol : Symbol
-    {
-        public override Symbol Owner => this;
-        public override bool IsRoot => true;
-
-        public RootSymbol() : base(null, TextLocation.None,  "global::")
-        {
-            this.Type = Type.NoType;
-        }
-    }
-
-    private sealed class NoSymbol : Symbol
-    {
-        public NoSymbol() : base(null, TextLocation.None, "<none>")
-        {
-            this.Type = Type.NoType;
-        }
-    }
-
-    private sealed class TermSymbol : Symbol
-    {
-        public TermSymbol(Symbol owner, TextLocation location, string name)
-            : base(owner, location, name)
-        {
-        }
-    }
-
-    /// <summary>
-    /// An alias symbol is one like `string` that really represents the System.String
-    ///
-    /// Also allows us to rename something such as:
-    /// type u64 = System.UInt64
-    /// </summary>
-    private sealed class AliasSymbol : Symbol
-    {
-        public Symbol Target { get; }
-
-        public override SymbolFlags Flags
-        {
-            get => Target.Flags;
-            set { }
-        }
-
-        public override Type Type
-        {
-            get => Target.Type;
-            set { }
-        }
-
-        public AliasSymbol(Symbol owner, TextLocation location, string name, Symbol target)
-            : base(owner, location, name)
-        {
-            Target = target;
         }
     }
 }

@@ -104,7 +104,7 @@ public static class TextWriterExtensions
                 if (!(text is ScriptSourceFile sourceFile))
                     continue;
 
-                for (int currentLine = textLocation.StartLine;
+                for (var currentLine = textLocation.StartLine;
                      currentLine <= textLocation.EndLine;
                      currentLine++)
                 {

@@ -19,7 +19,7 @@ public class Compilation
     public Compilation? Previous { get; }
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
     public ImmutableArray<AssemblyDefinition> References { get; }
-    public ImmutableArray<Symbol> Types => BoundAssembly.Types;
+    public Symbol RootSymbol => BoundAssembly.RootSymbol;
     public ImmutableArray<Diagnostic> Diagnostics =>
         SyntaxTrees.SelectMany(tree => tree.Diagnostics).Concat(BoundAssembly.Diagnostics).ToImmutableArray();
 
@@ -80,12 +80,12 @@ public class Compilation
 
     public IEnumerable<Symbol> GetSymbols()
     {
-        Compilation? compilation = this;
+        var compilation = this;
         var symbolNames = new HashSet<string>();
 
         while (compilation != null)
         {
-            foreach (var type in compilation.Types.Where(type => symbolNames.Add(type.Name)))
+            foreach (var type in compilation.RootSymbol.Types.Where(type => symbolNames.Add(type.Name)))
             {
                 yield return type;
 
@@ -102,21 +102,18 @@ public class Compilation
     public void EmitTree(TextWriter writer)
     {
         var entryPoint = BoundAssembly.EntryPoint?.Symbol;
-        foreach (var type in BoundAssembly.Types)
-        {
-            // TODO: print type symbol
-            foreach (var function in type.Methods)
-            {
-                // emit entry point last
-                if (entryPoint == function)
-                    continue;
+        var methods =
+            from type in BoundAssembly.RootSymbol.Types
+            from method in type.Methods
+            where method != entryPoint
+            let body = BoundAssembly.MethodDefinitions.GetValueOrDefault(method)
+            where body != null
+            select new { method, body };
 
-                if (BoundAssembly.MethodDefinitions.TryGetValue(function, out var body))
-                {
-                    EmitTree(function,  body, writer);
-                    writer.WriteLine();
-                }
-            }
+        foreach (var function in methods)
+        {
+            EmitTree(function.method, function.body!, writer);
+            writer.WriteLine();
         }
 
 
@@ -129,7 +126,7 @@ public class Compilation
 
     public void EmitTree(Symbol method, TextWriter writer)
     {
-        BoundAssembly? assembly = BoundAssembly;
+        var assembly = BoundAssembly;
 
         while (assembly != null)
         {

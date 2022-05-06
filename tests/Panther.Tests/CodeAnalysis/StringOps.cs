@@ -39,7 +39,7 @@ static class StringOps
             minIndentation = Math.Min(minIndentation, indentation);
         }
 
-        for (int i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
             if (lines[i] == string.Empty)
                 continue;

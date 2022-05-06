@@ -133,7 +133,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         Report(location, $"Duplicate type '{typeName}' detected");
 
     public void ReportMissingDefinition(TextLocation location, Type type, string name) =>
-        Report(location, $"'{type}' does not contain a definition for '{name}'");
+        Report(location, $"'{type.Symbol.Name}' does not contain a definition for '{name}'");
 
     public void ReportInvalidReference(string reference) =>
         Report(null, $"The specified reference is not valid: {reference}");

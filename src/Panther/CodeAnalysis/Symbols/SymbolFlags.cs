@@ -20,8 +20,6 @@ public enum SymbolFlags
     // Access
     Static = 1 << 8, // methods and fields
     Readonly = 1 << 9,
-
-    // Special
     Import = 1 << 10,
 
     Member = Object | Class,

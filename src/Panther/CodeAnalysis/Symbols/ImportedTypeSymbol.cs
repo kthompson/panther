@@ -21,7 +21,7 @@ internal sealed class ImportedTypeSymbol : Symbol
 
         if (typeDefinition.IsClass)
             this.Flags |= SymbolFlags.Class;
-
+        
         this.Flags |= SymbolFlags.Import;
 
         this.Type = new ClassType(this);

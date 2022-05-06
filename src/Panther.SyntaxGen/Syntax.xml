@@ -131,9 +131,9 @@
     <Node Name="QualifiedNameSyntax" Base="NameSyntax">
         <Kind Name="QualifiedName"/>
 
-        <Field Name="Left" Type="NameSyntax" />
+        <Field Name="Left" Type="IdentifierNameSyntax" />
         <Field Name="DotToken" Type="SyntaxToken" />
-        <Field Name="Right" Type="IdentifierNameSyntax" />
+        <Field Name="Right" Type="NameSyntax" />
     </Node>
 
     <AbstractNode Name="StatementSyntax" />
@@ -174,34 +174,18 @@
     <Node Name="CompilationUnitSyntax">
         <Kind Name="CompilationUnit"/>
 
+        <Field Name="Namespace" Type="NamespaceDeclarationSyntax?" />
         <Field Name="Usings" Type="ImmutableArray&lt;UsingDirectiveSyntax&gt;" />
         <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
 
         <Field Name="EndOfFileToken" Type="SyntaxToken" />
     </Node>
-
-    <AbstractNode Name="NamespaceBodySyntax" />
-
-    <Node Name="NamespaceMembersSyntax" Base="NamespaceBodySyntax">
-        <Kind Name="NamespaceMembers"/>
-
-        <Field Name="Members" Type="ImmutableArray&lt;MemberSyntax&gt;" />
-    </Node>
-
-    <Node Name="NestedNamespaceSyntax" Base="NamespaceBodySyntax">
-        <Kind Name="NestedNamespace"/>
-
-        <Field Name="DotToken" Type="SyntaxToken" />
-        <Field Name="Name" Type="SyntaxToken" />
-        <Field Name="Body" Type="NamespaceBodySyntax" />
-    </Node>
-
-    <Node Name="NamespaceDeclarationSyntax" Base="MemberSyntax">
+    
+    <Node Name="NamespaceDeclarationSyntax">
         <Kind Name="NamespaceDeclaration"/>
 
         <Field Name="NamespaceKeyword" Type="SyntaxToken" />
-        <Field Name="Name" Type="SyntaxToken" />
-        <Field Name="Body" Type="NamespaceBodySyntax" />
+        <Field Name="Name" Type="NameSyntax" />
     </Node>
 
     <Node Name="ParameterSyntax">
