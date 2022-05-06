@@ -1,16 +1,15 @@
-﻿namespace Panther
+﻿namespace Panther;
+
+public class Unit
 {
-    public class Unit
+    private Unit()
     {
-        private Unit()
-        {
-        }
+    }
 
-        public static readonly Unit Default = new Unit();
+    public static readonly Unit Default = new Unit();
 
-        public override string ToString()
-        {
-            return "unit";
-        }
+    public override string ToString()
+    {
+        return "unit";
     }
 }
