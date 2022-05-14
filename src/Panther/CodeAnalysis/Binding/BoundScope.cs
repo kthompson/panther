@@ -15,26 +15,32 @@ internal sealed class BoundScope : SymbolContainer
 
     public BoundScope Parent { get; }
 
-    public BoundScope(BoundScope parent)
-        : this(parent, parent.Symbol)
+    public BoundScope(BoundScope parent, string? name = null)
+        : this(parent.Symbol, parent, name)
     {
     }
 
-    public BoundScope(Symbol symbol)
+    public BoundScope(Symbol symbol, string? name = null)
+        : this(symbol, null, name)
     {
-        this.Symbol = symbol;
-        this.Parent = this;
     }
 
-    public BoundScope(BoundScope parent, Symbol container)
+    public BoundScope(BoundScope parent, Symbol symbol, string? name = null)
+        : this(symbol, parent, name)
     {
-        Symbol = container;
-        Parent = parent;
     }
 
+    private BoundScope(Symbol symbol, BoundScope? parent, string? name = null)
+    {
+        this.Name = name ?? symbol.Name;
+        Symbol = symbol;
+        Parent = parent ?? this;
+    }
+
+    public override string Name { get; }
     public bool IsRootScope => Parent == this;
-
     public bool IsGlobalScope => Symbol.IsType && Symbol.Name == "$Program";
+
 
     public void ImportMembers(Symbol namespaceOrTypeSymbol)
     {

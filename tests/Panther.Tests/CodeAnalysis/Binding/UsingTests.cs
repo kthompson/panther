@@ -5,7 +5,7 @@ namespace Panther.Tests.CodeAnalysis.Binding;
 
 public class UsingTests
 {
-    [Fact(Skip = "TODO")]
+    [Fact]
     public void CanUseConsole()
     {
         var code = AnnotatedText.Parse(@"

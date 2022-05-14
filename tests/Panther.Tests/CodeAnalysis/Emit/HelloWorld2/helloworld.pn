@@ -1,4 +1,9 @@
-﻿def main() = {
+﻿def main(): unit = {
     val name: string = getName()
     println("Hello " + name + "!")
+}
+
+def getName(): string = {
+    println("What is your name?")
+    readLine()
 }
