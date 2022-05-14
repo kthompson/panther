@@ -758,6 +758,7 @@ internal sealed class Binder
             ForExpressionSyntax forExpressionSyntax => BindForExpression(forExpressionSyntax, scope),
             GroupExpressionSyntax groupExpressionSyntax => BindGroupExpression(groupExpressionSyntax, scope),
             IfExpressionSyntax ifExpressionSyntax => BindIfExpression(ifExpressionSyntax, scope),
+            IndexExpressionSyntax indexExpressionSyntax => BindIndexExpression(indexExpressionSyntax, scope),
             LiteralExpressionSyntax literalExpressionSyntax => BindLiteralExpression(literalExpressionSyntax),
             MemberAccessExpressionSyntax memberAccessExpressionSyntax => BindMemberAccessExpression(memberAccessExpressionSyntax, scope),
             NameSyntax nameExpressionSyntax => BindNameExpression(nameExpressionSyntax, scope),
@@ -809,41 +810,45 @@ internal sealed class Binder
     {
         // TODO support member access
         var boundLHS = BindExpression(syntax.Name, scope);
-        if (boundLHS is BoundErrorExpression)
-            return boundLHS;
-
-        if (boundLHS is BoundVariableExpression variableExpression)
+        switch (boundLHS)
         {
-            var variable = variableExpression.Variable;
-            if (variable.IsReadOnly)
-            {
-                Diagnostics.ReportReassignmentToVal(syntax.Name.Location, variable.Name);
-
+            case BoundErrorExpression:
+                return boundLHS;
+            
+            case BoundVariableExpression variableExpression:
+                return BoundAssignmentExpression(syntax, scope, variableExpression.Variable, boundLHS);
+            
+            case BoundFieldExpression fieldExpression:
+                return BoundAssignmentExpression(syntax, scope, fieldExpression.Field, boundLHS);
+            
+            case BoundIndexExpression:
+                return BindAssignmentExpression(syntax, boundLHS, scope);
+            
+            default:
+                Diagnostics.ReportNotAssignable(syntax.Name.Location);
                 return new BoundErrorExpression(syntax);
-            }
+        }
+    }
 
-            var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
+    private BoundExpression BoundAssignmentExpression(AssignmentExpressionSyntax syntax, BoundScope scope, Symbol symbol,
+        BoundExpression boundLHS)
+    {
+        if (symbol.IsReadOnly)
+        {
+            Diagnostics.ReportReassignmentToVal(syntax.Name.Location, symbol.Name);
 
-            return new BoundAssignmentExpression(syntax, boundLHS, boundRHS);
+            return new BoundErrorExpression(syntax);
         }
 
-        if (boundLHS is BoundFieldExpression fieldExpression)
-        {
-            var field = fieldExpression.Field;
-            if (field.IsReadOnly)
-            {
-                Diagnostics.ReportReassignmentToVal(syntax.Name.Location, field.Name);
+        return BindAssignmentExpression(syntax, boundLHS, scope);
+    }
 
-                return new BoundErrorExpression(syntax);
-            }
+    private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax, BoundExpression boundLHS,
+        BoundScope scope)
+    {
+        var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
 
-            var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
-
-            return new BoundAssignmentExpression(syntax, boundLHS, boundRHS);
-        }
-
-        Diagnostics.ReportNotAssignable(syntax.Name.Location);
-        return new BoundErrorExpression(syntax);
+        return new BoundAssignmentExpression(syntax, boundLHS, boundRHS);
     }
 
     private BoundExpression BindExpression(ExpressionSyntax syntax, Type type, BoundScope scope,
@@ -1494,6 +1499,34 @@ internal sealed class Binder
         }
 
         return new BoundUnaryExpression(syntax, boundOperator, boundOperand);
+    }
+
+    private BoundExpression BindIndexExpression(IndexExpressionSyntax syntax, BoundScope scope)
+    {
+        var expr = BindExpression(syntax.Expression, scope);
+        var index = BindExpression(syntax.Index, scope);
+        
+        if (expr.Type == Type.Error || index.Type == Type.Error)
+            return new BoundErrorExpression(syntax);
+
+        var symbol = expr.Type.Symbol;
+        
+        // TODO: support subtyping
+        // HACK: add find by `get_` prefix since string has a different name for the default index operator
+        // TODO: once we support attributes we would need to look for the type with the DefaultMember attribute
+        var getters = symbol.Members.Where(m => m.IsMethod && m.Name.StartsWith("get_"));
+        var getter = getters
+            .FirstOrDefault(m => m.Parameters.Length == 1 && m.Parameters[0].Type == index.Type);
+        var setter = symbol.Members.Where(m => m.IsMethod && m.Name.StartsWith("set_"))
+            .FirstOrDefault(m => m.Parameters.Length == 2 && m.Parameters[0].Type == index.Type);
+
+        if (getter == null && setter == null)
+        {
+            Diagnostics.ReportExpressionDoesNotSupportIndexOperator(syntax.Expression.Location);
+            return new BoundErrorExpression(syntax);
+        }
+        
+        return new BoundIndexExpression(syntax, expr, index, getter, setter);
     }
 
     private BoundExpression BindBinaryExpression(BinaryExpressionSyntax syntax, BoundScope scope)

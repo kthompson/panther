@@ -57,6 +57,9 @@ namespace Panther.CodeAnalysis.Syntax
         public virtual void VisitIfExpression(IfExpressionSyntax node) =>
             this.DefaultVisit(node);
 
+        public virtual void VisitIndexExpression(IndexExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
         public virtual void VisitInitializer(InitializerSyntax node) =>
             this.DefaultVisit(node);
 
@@ -156,6 +159,9 @@ namespace Panther.CodeAnalysis.Syntax
             this.DefaultVisit(node);
 
         public virtual TResult VisitIfExpression(IfExpressionSyntax node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitIndexExpression(IndexExpressionSyntax node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitInitializer(InitializerSyntax node) =>

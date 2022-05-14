@@ -183,4 +183,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportDuplicateDefinition(TextLocation location, string name) =>
         Report(location, $"Duplicate definition '{name}'");
+
+    public void ReportExpressionDoesNotSupportIndexOperator(TextLocation location) => 
+        Report(location, "Expression does not support index operator");
 }

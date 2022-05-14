@@ -30,7 +30,13 @@ public abstract partial class Symbol : SymbolContainer
 
     public virtual Symbol Owner { get; }
     public int Index { get; set; } = 0;
-    public virtual Type Type { get; set; } = Type.Unresolved;
+
+    public virtual Type Type
+    {
+        get => TypeResolver.Resolve(_type);
+        set => _type = value;
+    }
+
     public virtual TextLocation Location { get; }
 
 
@@ -80,6 +86,8 @@ public abstract partial class Symbol : SymbolContainer
     /// The None symbol is a symbol to represent a value for when no valid symbol exists
     /// </summary>
     public static readonly Symbol None = new NoSymbol();
+
+    private Type _type = Type.Unresolved;
 
     public static Symbol NewRoot() => new RootSymbol();
     public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);

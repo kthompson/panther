@@ -130,6 +130,22 @@ namespace Panther.CodeAnalysis.Binding
         public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitFieldExpression(this);
     }
 
+    internal sealed partial record BoundIndexExpression(SyntaxNode Syntax, BoundExpression Expression, BoundExpression Index, Symbol? Getter, Symbol? Setter)
+        : BoundExpression(Syntax) {
+        public override BoundNodeKind Kind => BoundNodeKind.IndexExpression;
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(BoundNodeVisitor visitor) => visitor.VisitIndexExpression(this);
+
+        public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitIndexExpression(this);
+    }
+
     internal sealed partial record BoundNamespaceExpression(SyntaxNode Syntax, Symbol Namespace)
         : BoundExpression(Syntax) {
         public override BoundNodeKind Kind => BoundNodeKind.NamespaceExpression;

@@ -495,13 +495,24 @@ public class EvaluationTests
 
         AssertEvaluation("a", n, scriptHost);
     }
+    
+    
+    [Property]
+    public void EvaluatesIndexExpression(NonEmptyString str)
+    {
+        var code = $"{escapeString(str.Item)}[0]";
+        var expected = str.Item[0];
+        using var scriptHost = BuildScriptHost();
+        AssertEvaluation(code, expected, scriptHost);
+    }
 
+    string escapeString(NonNull<string> str) => escapeString(str.Item);
 
-    string escapeString(NonNull<string> str)
+    static string escapeString(string strItem)
     {
         var sb = new StringBuilder();
         sb.Append('"');
-        foreach (var c in str.Item)
+        foreach (var c in strItem)
         {
             switch (c)
             {
