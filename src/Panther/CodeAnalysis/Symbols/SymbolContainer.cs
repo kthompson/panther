@@ -10,6 +10,8 @@ public abstract class SymbolContainer
     private readonly Dictionary<string, ImmutableArray<Symbol>> _symbolMap = new();
     private readonly List<Symbol> _symbols = new();
 
+    public abstract string Name { get; }
+
     protected void Delete(Symbol child)
     {
         if (_symbols.Remove(child))

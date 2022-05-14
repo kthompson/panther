@@ -83,11 +83,6 @@ internal sealed class Binder
         }
     }
 
-    private Symbol BindUsingDirective(UsingDirectiveSyntax usingDirective)
-    {
-        throw new NotImplementedException();
-    }
-
     private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
     {
         var typeSymbol = parent.Symbol
@@ -320,16 +315,20 @@ internal sealed class Binder
         var scope = new BoundScope(parentScope, root);
         var binder = new Binder(isScript);
 
-        var defaultType = new BoundType(root, TextLocation.None, "$Program") {Flags = SymbolFlags.Object};
         var defaultTypeAddedToNamespace = false;
-        var defaultTypeScope = new BoundScope(scope, defaultType);
-
+        BoundType? defaultType = null;
+        BoundScope? defaultTypeScope = null;
+        
         var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
+        var fileScopes = new Dictionary<SourceFile, BoundScope>();
 
         foreach (var tree in syntaxTrees)
         {
             var compilationUnit = tree.Root;
-            var thisScope = scope;
+            var fileScope = new BoundScope(scope, $"FileScope[{tree.File.FileName}]");
+            fileScopes[tree.File] = fileScope;
+            
+            var thisScope = fileScope;
             var allTopLevel = compilationUnit.Members.All(IsTopLevelDeclaration);
             var allGlobalStatements = compilationUnit.Members.All(member => member is GlobalStatementSyntax);
 
@@ -341,25 +340,34 @@ internal sealed class Binder
             if (compilationUnit.Namespace != null)
             {
                 var namespaceSymbol = binder.BindNamespace(compilationUnit.Namespace, root);
-                thisScope = new BoundScope(thisScope, namespaceSymbol);
+                thisScope = new BoundScope(thisScope, namespaceSymbol, "declarations");
             }
 
             foreach (var @using in compilationUnit.Usings)
             {
-                var namespaceOrTypeSymbol = binder.BindUsingDirective(@using);
-                thisScope.ImportMembers(namespaceOrTypeSymbol);
+                // TODO: doing things this way assumes only allows us to import from external libraries
+                // this should be fine for now
+                var namespaceOrTypeSymbol = binder.BindUsing(@using, root);
+                if (namespaceOrTypeSymbol != Symbol.None)
+                    fileScope.ImportMembers(namespaceOrTypeSymbol);
             }
+
+            var (objectsAndClasses, rest) =  compilationUnit.Members.Partition(member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax);
+            var (functions, rest2) = rest.Partition(member => member is FunctionDeclarationSyntax);
+            var theseGlobalStatements = rest2.OfType<GlobalStatementSyntax>().ToImmutableArray();
 
             // should only be one set of global statements
             // otherwise there would be an error
-            globalStatements.AddRange(compilationUnit.Members.OfType<GlobalStatementSyntax>());
-
-            var (objectsAndClasses, rest) =  compilationUnit.Members.Partition(member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax);
-            var functions = rest.Where(member => member is FunctionDeclarationSyntax).ToImmutableArray();
-
+            globalStatements.AddRange(theseGlobalStatements);
+            
             // bind classes and objects first
             binder.BindMembers(objectsAndClasses, compilationUnit, thisScope);
 
+            if (functions.IsEmpty && theseGlobalStatements.IsEmpty) continue;
+            
+            defaultType = new BoundType(root, TextLocation.None, "$Program") { Flags = SymbolFlags.Object };
+            defaultTypeScope = new BoundScope(fileScope, defaultType);
+                
             // functions go into our default type scope
             // everything else can go in our global scope
             binder.BindMembers(functions, compilationUnit, defaultTypeScope);
@@ -367,10 +375,10 @@ internal sealed class Binder
 
         var statements =
             globalStatements
-                .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, defaultTypeScope))
+                .Select(globalStatementSyntax => binder.BindGlobalStatement(globalStatementSyntax.Statement, defaultTypeScope!))
                 .ToImmutableArray();
 
-        if (defaultType.Members.Any())
+        if (defaultType != null)
         {
             root.DefineSymbol(defaultType);
             defaultTypeAddedToNamespace = true;
@@ -383,16 +391,22 @@ internal sealed class Binder
 
         var mainFunction = mains.FirstOrDefault();
 
-        var entryPoint = BindEntryPoint(defaultTypeScope, isScript, syntaxTrees, statements, mainFunction, binder);
+        var entryPoint = BindEntryPoint(
+            defaultTypeScope ??
+            (mainFunction == null ? new BoundScope(scope) : new BoundScope(scope, mainFunction.Owner)),
+            isScript,
+            syntaxTrees,
+            statements,
+            mainFunction,
+            binder
+        );
 
-        if (!defaultTypeAddedToNamespace && defaultType.Members.Any())
+        if (!defaultTypeAddedToNamespace && defaultType != null)
         {
             root.DefineSymbol(defaultType);
         }
 
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
-        // var diagnostics = binder.Diagnostics.ToImmutableArray();
-
         if (previous != null)
         {
             diagnostics.AddRange(previous.Diagnostics);
@@ -400,14 +414,18 @@ internal sealed class Binder
 
         diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
-        // var rootTypes = root.Types.Where(t => !t.IsImport).ToImmutableArray();
-
         var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
 
         // Map and lower all function definitions
         foreach (var boundType in root.Types)
         {
-            var typeScope = new BoundScope(parentScope, boundType);
+            // if this type is the "main" $Program type then we use the `defaultTypeScope` here otherwise
+            // lookup the file scope(file that this type is declared in) as it has all the imports associated with
+            // the file registered already. attach this type's scope to the file scope
+            
+            var fileScope = boundType.Name == "$Program" ? defaultTypeScope : fileScopes[boundType.Location.File];
+            Debug.Assert(fileScope != null);
+            var typeScope = new BoundScope(fileScope!, boundType);
 
             foreach (var methodSymbol in boundType.Methods)
             {
@@ -458,28 +476,39 @@ internal sealed class Binder
     }
 
     private Symbol BindNamespace(NamespaceDeclarationSyntax compilationUnitNamespace, Symbol symbol) => 
-        BindNamespace(compilationUnitNamespace.Name, symbol);
+        BindNamespace(compilationUnitNamespace.Name, symbol, true);
 
-    private Symbol BindNamespace(NameSyntax name, Symbol symbol)
+    private Symbol BindNamespace(NameSyntax name, Symbol symbol, bool create)
     {
         if (name is QualifiedNameSyntax(_, var left, _, var right))
         {
-            var nestedSymbol = BindNamespace(left, symbol);
+            var nestedSymbol = BindNamespace(left, symbol, create);
 
-            return BindNamespace(right, nestedSymbol);
+            return BindNamespace(right, nestedSymbol, create);
         }
 
-        return BindNamespace((IdentifierNameSyntax)name, symbol);
+        return BindNamespace((IdentifierNameSyntax)name, symbol, create);
     }
 
-    private static Symbol BindNamespace(IdentifierNameSyntax identifierNameSyntax, Symbol symbol)
+    private static Symbol BindNamespace(IdentifierNameSyntax identifierNameSyntax, Symbol symbol, bool create)
     {
         var identifier = identifierNameSyntax.Identifier;
         var textName = identifier.Text;
         var existing = symbol.LookupNamespace(textName);
-        
-        return existing ?? symbol.NewNamespace(identifier.Location, textName).Declare();
+
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        if (!create)
+            return Symbol.None;
+
+        return symbol.NewNamespace(identifier.Location, textName).Declare();
     }
+
+    private Symbol BindUsing(UsingDirectiveSyntax usingDirective, Symbol symbol) => 
+        BindNamespace(usingDirective.Name, symbol, false);
 
     private static BoundExpressionStatement BoundStatementFromStatements(SyntaxNode syntax,
         IReadOnlyCollection<BoundStatement> statements)
@@ -1333,7 +1362,7 @@ internal sealed class Binder
     private static (Symbol root, BoundScope rootScope) CreateRootScope(ImmutableArray<AssemblyDefinition> references)
     {
         var root = Symbol.NewRoot();
-        var rootScope = new BoundScope(root);
+        var rootScope = new BoundScope(root, "root");
 
         // define default symbols
         // should be alias symbols that map to the real symbols

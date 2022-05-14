@@ -8,7 +8,7 @@ namespace Panther.CodeAnalysis.Symbols;
 public abstract partial class Symbol : SymbolContainer
 {
     public virtual SymbolFlags Flags { get; set; }
-    public string Name { get; }
+    public override string Name { get; }
 
     public virtual bool IsRoot => false;
 
