@@ -60,11 +60,11 @@ public static class SyntaxFacts
                 return (OperatorPrecedence)8;
 
             // Unary/Prefix expressions are 9
+            
             case SyntaxKind.OpenParenToken:
-                return (OperatorPrecedence)10;
-
+            case SyntaxKind.OpenBracketToken:
             case SyntaxKind.DotToken:
-                return (OperatorPrecedence)11;
+                return (OperatorPrecedence)10;
 
             default:
                 return null;
@@ -109,6 +109,7 @@ public static class SyntaxFacts
             SyntaxKind.CaretToken => "^",
             SyntaxKind.ClassKeyword => "class",
             SyntaxKind.CloseBraceToken => "}",
+            SyntaxKind.CloseBracketToken => "]",
             SyntaxKind.CloseParenToken => ")",
             SyntaxKind.ColonToken => ":",
             SyntaxKind.CommaToken => ",",
@@ -128,9 +129,10 @@ public static class SyntaxFacts
             SyntaxKind.LessThanEqualsToken => "<=",
             SyntaxKind.LessThanToken => "<",
             SyntaxKind.NamespaceKeyword => "namespace",
-            SyntaxKind.ObjectKeyword => "object",
             SyntaxKind.NewKeyword => "new",
+            SyntaxKind.ObjectKeyword => "object",
             SyntaxKind.OpenBraceToken => "{",
+            SyntaxKind.OpenBracketToken => "[",
             SyntaxKind.OpenParenToken => "(",
             SyntaxKind.PipePipeToken => "||",
             SyntaxKind.PipeToken => "|",
@@ -159,8 +161,11 @@ public static class SyntaxFacts
     public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
         Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
             .Where(kind =>
-                kind != SyntaxKind.EqualsToken && kind != SyntaxKind.OpenParenToken &&
-                kind != SyntaxKind.DotToken && GetBinaryOperatorPrecedence(kind) > 0);
+                kind != SyntaxKind.EqualsToken &&
+                kind != SyntaxKind.OpenParenToken &&
+                kind != SyntaxKind.DotToken &&
+                kind != SyntaxKind.OpenBracketToken &&
+                GetBinaryOperatorPrecedence(kind) > 0);
 
     public static bool IsTrivia(this SyntaxKind kind) =>
         kind switch

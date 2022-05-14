@@ -55,6 +55,15 @@
         <Field Name="Field" Type="Symbol" />
     </Node>
 
+    <Node Name="BoundIndexExpression" Base="BoundExpression">
+        <Kind Name="IndexExpression"/>
+
+        <Field Name="Expression" Type="BoundExpression" />
+        <Field Name="Index" Type="BoundExpression" />
+        <Field Name="Getter" Type="Symbol?" />
+        <Field Name="Setter" Type="Symbol?" />
+    </Node>
+
     <Node Name="BoundNamespaceExpression" Base="BoundExpression">
         <Kind Name="NamespaceExpression"/>
 

@@ -60,6 +60,9 @@ namespace Panther.CodeAnalysis.Binding
         public virtual void VisitIfExpression(BoundIfExpression node) =>
             this.DefaultVisit(node);
 
+        public virtual void VisitIndexExpression(BoundIndexExpression node) =>
+            this.DefaultVisit(node);
+
         public virtual void VisitLabelStatement(BoundLabelStatement node) =>
             this.DefaultVisit(node);
 
@@ -144,6 +147,9 @@ namespace Panther.CodeAnalysis.Binding
             this.DefaultVisit(node);
 
         public virtual TResult VisitIfExpression(BoundIfExpression node) =>
+            this.DefaultVisit(node);
+
+        public virtual TResult VisitIndexExpression(BoundIndexExpression node) =>
             this.DefaultVisit(node);
 
         public virtual TResult VisitLabelStatement(BoundLabelStatement node) =>

@@ -15,6 +15,7 @@ internal enum BoundNodeKind
     ForExpression,
     GroupExpression,
     IfExpression,
+    IndexExpression,
     LiteralExpression,
     MethodExpression,
     NamespaceExpression,

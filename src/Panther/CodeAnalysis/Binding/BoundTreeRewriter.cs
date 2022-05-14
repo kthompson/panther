@@ -19,6 +19,7 @@ internal abstract class BoundTreeRewriter
             BoundFieldExpression boundFieldExpression => RewriteFieldExpression(boundFieldExpression),
             BoundForExpression boundForExpression => RewriteForExpression(boundForExpression),
             BoundIfExpression boundIfExpression => RewriteIfExpression(boundIfExpression),
+            BoundIndexExpression boundIndexExpression => RewriteIndexExpression(boundIndexExpression),
             BoundLiteralExpression boundLiteralExpression => RewriteLiteralExpression(boundLiteralExpression),
             BoundNewExpression boundLiteralExpression => RewriteNewExpression(boundLiteralExpression),
             BoundTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
@@ -63,6 +64,17 @@ internal abstract class BoundTreeRewriter
             return node;
 
         return new BoundNewExpression(node.Syntax, node.Constructor, newArguments?.ToImmutableArray() ?? node.Arguments);
+    }
+
+    protected virtual BoundExpression RewriteIndexExpression(BoundIndexExpression node)
+    {
+        var expression = RewriteExpression(node.Expression);
+        var index = RewriteExpression(node.Index);
+
+        if (node.Expression == expression && node.Index == index)
+            return node;
+
+        return new BoundIndexExpression(node.Syntax, expression, index, node.Getter, node.Setter);
     }
 
     protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)

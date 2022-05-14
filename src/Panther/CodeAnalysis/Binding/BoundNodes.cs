@@ -32,6 +32,11 @@ internal partial record BoundFieldExpression
     public override Type Type { get; init; } = Field.Type;
 }
 
+internal partial record BoundIndexExpression
+{
+    public override Type Type { get; init; } = new IndexType(Expression.Type, Index.Type);
+}
+
 internal partial record BoundNamespaceExpression
 {
     public override Type Type { get; init; } = Namespace.Type;

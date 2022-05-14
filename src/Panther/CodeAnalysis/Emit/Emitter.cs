@@ -61,6 +61,7 @@ internal class Emitter
         {
             (TypeSymbol.Any, "System.Object"),
             (TypeSymbol.Bool, "System.Boolean"),
+            (TypeSymbol.Char, "System.Char"),
             (TypeSymbol.Int, "System.Int32"),
             (TypeSymbol.String, "System.String"),
             (TypeSymbol.Unit, "Panther.Unit"),
@@ -479,13 +480,13 @@ internal class Emitter
             case BoundCallExpression callExpression:
                 EmitCallExpression(ilProcessor, callExpression);
                 break;
-
-            case BoundFieldExpression fieldExpression:
-                EmitFieldExpression(ilProcessor, fieldExpression);
-                break;
-
+            
             case BoundConversionExpression conversionExpression:
                 EmitConversionExpression(ilProcessor, conversionExpression);
+                break;
+            
+            case BoundFieldExpression fieldExpression:
+                EmitFieldExpression(ilProcessor, fieldExpression);
                 break;
 
             case BoundNewExpression newExpression:
@@ -691,7 +692,13 @@ internal class Emitter
 
         var parameterTypeNames = methodSymbol.Parameters.Select(p => LookupType(p.Type.Symbol).FullName).ToArray();
         var methodName = methodSymbol.Name;
-        var methodReference = ResolveMethod(methodSymbol.Owner.FullName, methodName, parameterTypeNames, false) ??
+
+
+        // convert builtin types to real types ie `string` to `System.String`
+        var methodOwnerFullName = _knownTypes.TryGetValue(methodSymbol.Owner, out var knownType)
+            ? knownType.FullName
+            : methodSymbol.Owner.FullName;
+        var methodReference = ResolveMethod(methodOwnerFullName, methodName, parameterTypeNames, false) ??
                               ResolveMethod("Panther.Predef", methodName, parameterTypeNames, false);
 
         if (methodReference != null)
@@ -700,7 +707,7 @@ internal class Emitter
         }
         else
         {
-            _diagnostics.ReportRequiredMethodNotFound(methodSymbol.Owner.FullName, methodName, parameterTypeNames);
+            _diagnostics.ReportRequiredMethodNotFound(methodOwnerFullName, methodName, parameterTypeNames);
         }
 
         return methodReference;
@@ -738,6 +745,12 @@ internal class Emitter
             if (fromType == Type.Int)
             {
                 ilProcessor.Emit(OpCodes.Box, _knownTypes[TypeSymbol.Int]);
+                return;
+            }
+
+            if (fromType == Type.Char)
+            {
+                ilProcessor.Emit(OpCodes.Box, _knownTypes[TypeSymbol.Char]);
                 return;
             }
 

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
-using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
@@ -42,6 +40,8 @@ internal class Lexer
         _lexFunctions['<'] = ReturnLessThanToken;
         _lexFunctions['='] = ReturnEqualsToken;
         _lexFunctions['>'] = ReturnGreaterThanToken;
+        _lexFunctions['['] = ReturnOpenBracketToken;
+        _lexFunctions[']'] = ReturnCloseBracketToken;
         _lexFunctions['^'] = ReturnCaretToken;
         _lexFunctions['{'] = ReturnOpenBraceToken;
         _lexFunctions['|'] = ReturnPipeToken;
@@ -248,6 +248,10 @@ internal class Lexer
 
     private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBraceToken() => ReturnKindOneChar(SyntaxKind.CloseBraceToken);
 
+    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBracketToken() => ReturnKindOneChar(SyntaxKind.OpenBracketToken);
+    
+    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBracketToken() => ReturnKindOneChar(SyntaxKind.CloseBracketToken);
+    
     private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBraceToken() => ReturnKindOneChar(SyntaxKind.OpenBraceToken);
 
     private (SyntaxKind kind, int start, string text, object? value) ReturnCloseParenToken() => ReturnKindOneChar(SyntaxKind.CloseParenToken);

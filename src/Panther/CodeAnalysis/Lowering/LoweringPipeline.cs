@@ -22,7 +22,14 @@ internal sealed class LoweringPipeline
             boundStatement.WriteTo(Console.Out);
         }
 
-        var tac = ThreeAddressCode.Lower(method, boundStatement);
+        var noIndexExpr = IndexExpressions.Lower(method, boundStatement);
+        if (debug)
+        {
+            Console.WriteLine("==== Index Expressions ===");
+            noIndexExpr.WriteTo(Console.Out);
+        }
+        
+        var tac = ThreeAddressCode.Lower(method, noIndexExpr);
         if (debug)
         {
             Console.WriteLine("==== Three Address Code ===");

@@ -67,6 +67,8 @@ public enum SyntaxKind
     OpenParenToken,
     OpenBraceToken,
     CloseBraceToken,
+    OpenBracketToken,
+    CloseBracketToken,
 
     // Expressions
     AssignmentExpression,
@@ -77,6 +79,7 @@ public enum SyntaxKind
     GroupExpression,
     IdentifierName,
     IfExpression,
+    IndexExpression,
     LiteralExpression,
     MemberAccessExpression,
     NewExpression,

@@ -89,6 +89,7 @@ internal class Parser
         _infixParseFunctions[SyntaxKind.GreaterThanToken] = ParseInfixExpression;
         _infixParseFunctions[SyntaxKind.LessThanEqualsToken] = ParseInfixExpression;
         _infixParseFunctions[SyntaxKind.LessThanToken] = ParseInfixExpression;
+        _infixParseFunctions[SyntaxKind.OpenBracketToken] = ParseIndexExpression;
         _infixParseFunctions[SyntaxKind.OpenParenToken] = ParseCallExpression;
         _infixParseFunctions[SyntaxKind.PipePipeToken] = ParseInfixExpression;
         _infixParseFunctions[SyntaxKind.PipeToken] = ParseInfixExpression;
@@ -440,6 +441,15 @@ internal class Parser
         var expr = ParseExpression(OperatorPrecedence.Lowest);
 
         return new ForExpressionSyntax(_syntaxTree, forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
+    }
+
+    private ExpressionSyntax ParseIndexExpression(ExpressionSyntax left)
+    {
+        var openBracketToken = Accept();
+        var expr = ParseExpression(OperatorPrecedence.Lowest);
+        var closeBracketToken = Accept(SyntaxKind.CloseBracketToken);
+
+        return new IndexExpressionSyntax(_syntaxTree, left, openBracketToken, expr, closeBracketToken);
     }
 
     private ExpressionSyntax ParseCallExpression(ExpressionSyntax name)

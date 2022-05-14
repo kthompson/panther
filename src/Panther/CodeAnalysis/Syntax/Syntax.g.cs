@@ -271,6 +271,35 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIfExpression(this);
     }
 
+    public sealed partial record IndexExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken OpenBracket, ExpressionSyntax Index, SyntaxToken CloseBracket)
+        : ExpressionSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.IndexExpression;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Expression, OpenBracket, Index, CloseBracket);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Expression;
+            yield return OpenBracket;
+            yield return Index;
+            yield return CloseBracket;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitIndexExpression(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIndexExpression(this);
+    }
+
     public sealed partial record MemberAccessExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken DotToken, IdentifierNameSyntax Name)
         : ExpressionSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.MemberAccessExpression;

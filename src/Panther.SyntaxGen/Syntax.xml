@@ -88,6 +88,15 @@
         <Field Name="ElseExpression" Type="ExpressionSyntax" />
     </Node>
 
+    <Node Name="IndexExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="IndexExpression"/>
+
+        <Field Name="Expression" Type="ExpressionSyntax" />
+        <Field Name="OpenBracket" Type="SyntaxToken" />
+        <Field Name="Index" Type="ExpressionSyntax" />
+        <Field Name="CloseBracket" Type="SyntaxToken" />
+    </Node>
+
     <Node Name="MemberAccessExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="MemberAccessExpression"/>
 
@@ -131,9 +140,9 @@
     <Node Name="QualifiedNameSyntax" Base="NameSyntax">
         <Kind Name="QualifiedName"/>
 
-        <Field Name="Left" Type="IdentifierNameSyntax" />
+        <Field Name="Left" Type="NameSyntax" />
         <Field Name="DotToken" Type="SyntaxToken" />
-        <Field Name="Right" Type="NameSyntax" />
+        <Field Name="Right" Type="IdentifierNameSyntax" />
     </Node>
 
     <AbstractNode Name="StatementSyntax" />

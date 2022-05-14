@@ -1,0 +1,6 @@
+using System.IO
+
+File.WriteAllText("temp.txt", "Hello file world")
+val text = File.ReadAllText("temp.txt")
+
+println(text)
