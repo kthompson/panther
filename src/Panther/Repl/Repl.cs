@@ -529,10 +529,10 @@ internal abstract class Repl : IDisposable
 
         public IEnumerable<string> Diagnostics => _diagnostics.ToArray();
 
-        private char Current => Peek(_position);
-        private char Lookahead => Peek(_position + 1);
+        private char? Current => Peek(_position);
+        private char? Lookahead => Peek(_position + 1);
 
-        private char Peek(int position) => position >= _text.Length ? '\0' : _text[position];
+        private char? Peek(int position) => position >= _text.Length ? null : _text[position];
 
         private void Next()
         {
@@ -541,10 +541,10 @@ internal abstract class Repl : IDisposable
 
         private bool IfWhile(Func<char, bool> predicate)
         {
-            if (!predicate(Current))
+            if (Current == null || !predicate(Current.Value))
                 return false;
 
-            while (predicate(Current))
+            while (Current.HasValue && predicate(Current.Value))
             {
                 Next();
             }
@@ -558,11 +558,10 @@ internal abstract class Repl : IDisposable
             {
                 var start = _position;
 
-                switch (Current)
-                {
-                    case '\0':
-                        return null;
+                if (Current == null) return null;
 
+                switch (Current.Value)
+                {
                     case '"':
                         return ParseStringToken(start);
 
@@ -570,7 +569,7 @@ internal abstract class Repl : IDisposable
                         if (IfWhile(char.IsWhiteSpace))
                             continue;
 
-                        while (Current != '"' && Current != '\0' && !char.IsWhiteSpace(Current))
+                        while (Current != null && Current != '"' && !char.IsWhiteSpace(Current.Value))
                         {
                             Next();
                         }
@@ -600,7 +599,7 @@ internal abstract class Repl : IDisposable
                         continue;
                     case '\n':
                     case '\r':
-                    case '\0':
+                    case null:
                         _diagnostics.Add($"Unterminated string at {start}");
                         break;
 
@@ -633,6 +632,10 @@ internal abstract class Repl : IDisposable
                 case 't':
                     Next();
                     return "\t";
+
+                case '0':
+                    Next();
+                    return "\0";
 
                 case '\\':
                     Next();
@@ -678,7 +681,7 @@ internal abstract class Repl : IDisposable
         {
             try
             {
-                value = int.Parse(Current.ToString(), System.Globalization.NumberStyles.HexNumber);
+                value = int.Parse(Current!.Value.ToString(), System.Globalization.NumberStyles.HexNumber);
                 return true;
             }
             catch

@@ -9,6 +9,7 @@ namespace Panther.CodeAnalysis.Syntax;
 
 internal class Lexer
 {
+    private const char EndOfInputCharacter = '\u0003';
     private readonly SyntaxTree _syntaxTree;
     private readonly SourceFile _file;
     private readonly DiagnosticBag _diagnostics = new();
@@ -24,7 +25,7 @@ internal class Lexer
 
     private void InitializeLexFunctions()
     {
-        _lexFunctions['\0'] = ReturnEndOfInput;
+        _lexFunctions[EndOfInputCharacter] = ReturnEndOfInput;
         _lexFunctions['!'] = ReturnBangToken;
         _lexFunctions['"'] = ParseStringToken;
         _lexFunctions['&'] = ReturnAmpersandToken;
@@ -54,10 +55,10 @@ internal class Lexer
 
     public IEnumerable<Diagnostic> Diagnostics => _diagnostics;
 
-    private char Current => Peek(_position);
-    private char Lookahead => Peek(_position + 1);
+    private char? Current => Peek(_position);
+    private char? Lookahead => Peek(_position + 1);
 
-    private char Peek(int position) => position >= _file.Length ? '\0' : _file[position];
+    private char? Peek(int position) => position >= _file.Length ? null : _file[position];
 
     private void Next()
     {
@@ -67,7 +68,7 @@ internal class Lexer
     private (int start, int end) ParsePredicate(Func<char, bool> predicate)
     {
         var start = _position;
-        while (predicate(Current))
+        while (Current != null && predicate(Current.Value))
         {
             Next();
         }
@@ -79,9 +80,9 @@ internal class Lexer
     private ImmutableArray<SyntaxTrivia> ParseTrivia(bool leadingTrivia)
     {
         var trivia = ImmutableArray.CreateBuilder<SyntaxTrivia>();
-        while (true)
+        while (Current != null)
         {
-            if (IsEndOfLine(Current))
+            if (IsEndOfLine(Current.Value))
             {
                 var (start, end) = ParsePredicate(IsEndOfLine);
 
@@ -97,7 +98,7 @@ internal class Lexer
                 continue;
             }
 
-            if (IsNonNewLineWhiteSpace(Current))
+            if (Current != null && IsNonNewLineWhiteSpace(Current.Value))
             {
                 var (start, end) = ParsePredicate(IsNonNewLineWhiteSpace);
 
@@ -129,7 +130,7 @@ internal class Lexer
         return trivia.ToImmutable();
     }
 
-    private bool IsInvalidTokenTrivia() => !_lexFunctions.ContainsKey(Current) && !IsIdentCharacter(Current, true);
+    private bool IsInvalidTokenTrivia() => Current != null && !_lexFunctions.ContainsKey(Current.Value) && !IsIdentCharacter(Current.Value, true);
 
     private SyntaxTrivia ParseInvalidTokenTrivia()
     {
@@ -146,7 +147,7 @@ internal class Lexer
 
         while (true)
         {
-            if (Current == '\0')
+            if (Current == EndOfInputCharacter)
             {
                 _diagnostics.ReportUnterminatedBlockComment(new TextLocation(_file, new TextSpan(start, _position)));
                 return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _file[start.._position], start);
@@ -183,12 +184,17 @@ internal class Lexer
 
     private (SyntaxKind kind, int start, string text, object? value) ParseToken()
     {
-        if (_lexFunctions.TryGetValue(Current, out var function))
+        if (Current == null)
+        {
+            return ReturnEndOfInput();
+        }
+        
+        if (_lexFunctions.TryGetValue(Current.Value, out var function))
         {
             return function();
         }
 
-        if (IsIdentCharacter(Current, true))
+        if (IsIdentCharacter(Current.Value, true))
             return ParseIdentOrKeyword();
 
         return ReturnInvalidTokenTrivia();
@@ -201,7 +207,7 @@ internal class Lexer
 
     private (SyntaxKind kind, int start, string text, object? value) ReturnInvalidTokenTrivia()
     {
-        _diagnostics.ReportBadCharacter(new TextLocation(_file, new TextSpan(_position, 1)), Current);
+        _diagnostics.ReportBadCharacter(new TextLocation(_file, new TextSpan(_position, 1)), Current!.Value);
         return ReturnKindOneChar(SyntaxKind.InvalidTokenTrivia);
     }
 
@@ -273,7 +279,7 @@ internal class Lexer
     {
         var start = _position;
         Next(); // skip first letter
-        while (IsIdentCharacter(Current, false))
+        while (Current != null && IsIdentCharacter(Current.Value, false))
         {
             Next();
         }
@@ -307,7 +313,7 @@ internal class Lexer
 
         Next(); // '/'
         Next(); // '/'
-        while (Current != '\r' && Current != '\n' && Current != '\0')
+        while (Current != '\r' && Current != '\n' && Current != null)
         {
             Next();
         }
@@ -336,7 +342,7 @@ internal class Lexer
                     continue;
                 case '\n':
                 case '\r':
-                case '\0':
+                case null:
                     _diagnostics.ReportUnterminatedString(new TextLocation(_file, new TextSpan(start, 1)));
                     break;
 
@@ -379,6 +385,10 @@ internal class Lexer
             case '"':
                 Next();
                 return "\"";
+            
+            case '0':
+                Next();
+                return "\0";
 
             case 'u':
                 Next(); //u
@@ -390,7 +400,7 @@ internal class Lexer
 
             default:
                 _diagnostics.ReportInvalidEscapeSequence(
-                    new TextLocation(_file, new TextSpan(escapeStart, _position)), Current);
+                    new TextLocation(_file, new TextSpan(escapeStart, _position)), Current!.Value);
                 return null;
         }
     }
@@ -402,7 +412,7 @@ internal class Lexer
         {
             if (!HexValue(out var hexValue))
             {
-                _diagnostics.ReportInvalidEscapeSequence(new TextLocation(_file, new TextSpan(escapeStart, _position)), Current);
+                _diagnostics.ReportInvalidEscapeSequence(new TextLocation(_file, new TextSpan(escapeStart, _position)), Current!.Value);
                 return null;
             }
 
@@ -417,7 +427,7 @@ internal class Lexer
     {
         try
         {
-            value = int.Parse(Current.ToString(), System.Globalization.NumberStyles.HexNumber);
+            value = int.Parse(Current!.Value.ToString(), System.Globalization.NumberStyles.HexNumber);
             return true;
         }
         catch

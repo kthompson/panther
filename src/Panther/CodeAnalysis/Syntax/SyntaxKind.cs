@@ -111,6 +111,4 @@ public enum SyntaxKind
     UsingDirective,
     GlobalStatement,
     NamespaceDeclaration,
-    NamespaceMembers,
-    NestedNamespace
 }
