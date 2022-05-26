@@ -8,4 +8,4 @@ dotnet build "$slndir/Panther" --nologo || exit
 dotnet build "$slndir/Panther.StdLib" --nologo || exit
 
 # Run
-dotnet run -p "$slndir/Panther" --no-build -- "$@"
+dotnet run --project "$slndir/Panther" --no-build -- "$@"
