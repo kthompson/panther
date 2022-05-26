@@ -8,4 +8,4 @@ dotnet build "%SLNDIR%\Panther" --nologo || exit /b
 dotnet build "%SLNDIR%\Panther.StdLib" --nologo || exit /b
 
 REM Run
-dotnet run -p "%SLNDIR%\Panther" --no-build -- %*
+dotnet run --project "%SLNDIR%\Panther" --no-build -- %*
