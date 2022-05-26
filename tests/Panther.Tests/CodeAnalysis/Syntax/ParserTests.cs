@@ -547,4 +547,23 @@ public class ParserTests
         e.AssertToken(SyntaxKind.CloseBraceToken, "}");
         e.AssertToken(SyntaxKind.EndOfInputToken, "");
     }
+    
+    [Fact]
+    public void ParseZeroString()
+    {
+        var text = AnnotatedText.Parse("\"\0\"");
+        var tree = SyntaxTree.Parse(text.Text);
+        Assert.Empty(tree.Diagnostics);
+
+        var expression = tree.Root;
+
+        using var e = new AssertingEnumerator(expression);
+
+        e.AssertNode(SyntaxKind.CompilationUnit);
+        e.AssertNode(SyntaxKind.GlobalStatement);
+        e.AssertNode(SyntaxKind.ExpressionStatement);
+        e.AssertNode(SyntaxKind.LiteralExpression);
+        e.AssertToken(SyntaxKind.StringToken, "\"\0\"");
+        e.AssertToken(SyntaxKind.EndOfInputToken, "");
+    }
 }
