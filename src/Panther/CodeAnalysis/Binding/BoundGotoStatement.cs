@@ -15,6 +15,6 @@ sealed record BoundGotoStatement : BoundStatement
 
     public override void Accept(BoundNodeVisitor visitor) => visitor.VisitGotoStatement(this);
 
-    public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitGotoStatement(this);
-
+    public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) =>
+        visitor.VisitGotoStatement(this);
 }

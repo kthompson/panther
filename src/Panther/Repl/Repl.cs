@@ -26,7 +26,15 @@ internal abstract class Repl : IDisposable
 
     private void InitializeMetaCommands()
     {
-        foreach (var method in GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+        foreach (
+            var method in GetType()
+                .GetMethods(
+                    BindingFlags.NonPublic
+                        | BindingFlags.Static
+                        | BindingFlags.Instance
+                        | BindingFlags.FlattenHierarchy
+                )
+        )
         {
             var attribute = method.GetCustomAttribute<MetaCommandAttribute>();
             if (attribute == null)
@@ -54,7 +62,11 @@ internal abstract class Repl : IDisposable
         }
     }
 
-    private delegate object? LineRenderHandler(IReadOnlyList<string> lines, int lineIndex, object? state);
+    private delegate object? LineRenderHandler(
+        IReadOnlyList<string> lines,
+        int lineIndex,
+        object? state
+    );
 
     private sealed class SubmissionView
     {
@@ -65,7 +77,10 @@ internal abstract class Repl : IDisposable
         private int _currentLine;
         private int _currentCharacter;
 
-        public SubmissionView(LineRenderHandler lineRenderer, ObservableCollection<string> submissionDocument)
+        public SubmissionView(
+            LineRenderHandler lineRenderer,
+            ObservableCollection<string> submissionDocument
+        )
         {
             _lineRenderer = lineRenderer;
             _submissionDocument = submissionDocument;
@@ -138,7 +153,10 @@ internal abstract class Repl : IDisposable
                 if (_currentLine != value)
                 {
                     _currentLine = value;
-                    _currentCharacter = Math.Min(_submissionDocument[_currentLine].Length, _currentCharacter);
+                    _currentCharacter = Math.Min(
+                        _submissionDocument[_currentLine].Length,
+                        _currentCharacter
+                    );
 
                     UpdateCursorPosition();
                 }
@@ -179,7 +197,11 @@ internal abstract class Repl : IDisposable
         return string.Join(Environment.NewLine, document);
     }
 
-    private void HandleKey(ConsoleKeyInfo key, ObservableCollection<string> document, SubmissionView view)
+    private void HandleKey(
+        ConsoleKeyInfo key,
+        ObservableCollection<string> document,
+        SubmissionView view
+    )
     {
         if (key.Modifiers == default(ConsoleModifiers))
         {
@@ -383,10 +405,16 @@ internal abstract class Repl : IDisposable
         UpdateDocumentFromHistory(document, view);
     }
 
-    private void UpdateDocumentFromHistory(ObservableCollection<string> document, SubmissionView view)
+    private void UpdateDocumentFromHistory(
+        ObservableCollection<string> document,
+        SubmissionView view
+    )
     {
         document.Clear();
-        var historyItem = _submissionHistoryIndex == _submissionHistory.Count ? "" : _submissionHistory[_submissionHistoryIndex];
+        var historyItem =
+            _submissionHistoryIndex == _submissionHistory.Count
+                ? ""
+                : _submissionHistory[_submissionHistoryIndex];
         var lines = historyItem.Split(Environment.NewLine);
         foreach (var line in lines)
             document.Add(line);
@@ -395,7 +423,11 @@ internal abstract class Repl : IDisposable
         view.CurrentCharacter = document[view.CurrentLine].Length;
     }
 
-    private void HandleTyping(ObservableCollection<string> document, SubmissionView view, string text)
+    private void HandleTyping(
+        ObservableCollection<string> document,
+        SubmissionView view,
+        string text
+    )
     {
         var lineIndex = view.CurrentLine;
         var start = view.CurrentCharacter;
@@ -558,7 +590,8 @@ internal abstract class Repl : IDisposable
             {
                 var start = _position;
 
-                if (Current == null) return null;
+                if (Current == null)
+                    return null;
 
                 switch (Current.Value)
                 {
@@ -569,7 +602,9 @@ internal abstract class Repl : IDisposable
                         if (IfWhile(char.IsWhiteSpace))
                             continue;
 
-                        while (Current != null && Current != '"' && !char.IsWhiteSpace(Current.Value))
+                        while (
+                            Current != null && Current != '"' && !char.IsWhiteSpace(Current.Value)
+                        )
                         {
                             Next();
                         }
@@ -681,7 +716,10 @@ internal abstract class Repl : IDisposable
         {
             try
             {
-                value = int.Parse(Current!.Value.ToString(), System.Globalization.NumberStyles.HexNumber);
+                value = int.Parse(
+                    Current!.Value.ToString(),
+                    System.Globalization.NumberStyles.HexNumber
+                );
                 return true;
             }
             catch
@@ -692,9 +730,7 @@ internal abstract class Repl : IDisposable
         }
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-    }
+    protected virtual void Dispose(bool disposing) { }
 
     public void Dispose()
     {

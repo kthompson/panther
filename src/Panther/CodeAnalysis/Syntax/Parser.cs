@@ -29,7 +29,8 @@ internal class Parser
     private readonly SyntaxTree _syntaxTree;
     public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
 
-    private readonly Dictionary<SyntaxKind, PrefixParseFunction> _prefixParseFunctions = new Dictionary<SyntaxKind, PrefixParseFunction>();
+    private readonly Dictionary<SyntaxKind, PrefixParseFunction> _prefixParseFunctions =
+        new Dictionary<SyntaxKind, PrefixParseFunction>();
 
     private readonly Dictionary<SyntaxKind, InfixParseFunction> _infixParseFunctions =
         new Dictionary<SyntaxKind, InfixParseFunction>();
@@ -74,7 +75,6 @@ internal class Parser
         _prefixParseFunctions[SyntaxKind.DashToken] = ParsePrefixExpression;
         _prefixParseFunctions[SyntaxKind.PlusToken] = ParsePrefixExpression;
         _prefixParseFunctions[SyntaxKind.TildeToken] = ParsePrefixExpression;
-
 
         // a + b
         _infixParseFunctions[SyntaxKind.AmpersandAmpersandToken] = ParseInfixExpression;
@@ -142,7 +142,13 @@ internal class Parser
 
         var endToken = Accept(SyntaxKind.EndOfInputToken);
 
-        return new CompilationUnitSyntax(_syntaxTree, namespaceDeclaration, usingDirectives, namespaceSyntax, endToken);
+        return new CompilationUnitSyntax(
+            _syntaxTree,
+            namespaceDeclaration,
+            usingDirectives,
+            namespaceSyntax,
+            endToken
+        );
     }
 
     private ImmutableArray<UsingDirectiveSyntax> ParseUsings()
@@ -159,7 +165,9 @@ internal class Parser
     private ImmutableArray<MemberSyntax> ParseMembers()
     {
         var members = ImmutableArray.CreateBuilder<MemberSyntax>();
-        while (CurrentKind != SyntaxKind.EndOfInputToken && CurrentKind != SyntaxKind.CloseBraceToken)
+        while (
+            CurrentKind != SyntaxKind.EndOfInputToken && CurrentKind != SyntaxKind.CloseBraceToken
+        )
         {
             var startToken = CurrentToken;
 
@@ -184,8 +192,9 @@ internal class Parser
 
     private NamespaceDeclarationSyntax? ParseNamespaceDeclaration()
     {
-        if (CurrentKind != SyntaxKind.NamespaceKeyword) return null;
-        
+        if (CurrentKind != SyntaxKind.NamespaceKeyword)
+            return null;
+
         var namespaceKeyword = Accept();
         var name = ParseNameSyntax();
 
@@ -211,8 +220,17 @@ internal class Parser
 
         var template = CurrentKind == SyntaxKind.OpenBraceToken ? ParseTemplate() : null;
 
-        return new ClassDeclarationSyntax(_syntaxTree, keyword, identifier, openParenToken, parameters, closeParenToken, template);
+        return new ClassDeclarationSyntax(
+            _syntaxTree,
+            keyword,
+            identifier,
+            openParenToken,
+            parameters,
+            closeParenToken,
+            template
+        );
     }
+
     private MemberSyntax ParseObjectDeclaration()
     {
         var objectKeyword = Accept(SyntaxKind.ObjectKeyword);
@@ -231,9 +249,10 @@ internal class Parser
     private UsingDirectiveSyntax ParseUsingDirective()
     {
         var usingKeyword = Accept();
-        var special = (CurrentKind == SyntaxKind.ImplicitKeyword || CurrentKind == SyntaxKind.StaticKeyword)
-            ? Accept()
-            : null;
+        var special =
+            (CurrentKind == SyntaxKind.ImplicitKeyword || CurrentKind == SyntaxKind.StaticKeyword)
+                ? Accept()
+                : null;
 
         var name = ParseNameSyntax();
 
@@ -266,8 +285,16 @@ internal class Parser
         var typeAnnotation = ParseOptionalTypeAnnotation();
         var body = ParseFunctionBody();
 
-        return new FunctionDeclarationSyntax(_syntaxTree, defKeyword, identifier, openParenToken, parameters,
-            closeParenToken, typeAnnotation, body);
+        return new FunctionDeclarationSyntax(
+            _syntaxTree,
+            defKeyword,
+            identifier,
+            openParenToken,
+            parameters,
+            closeParenToken,
+            typeAnnotation,
+            body
+        );
     }
 
     private FunctionBodySyntax? ParseFunctionBody()
@@ -423,7 +450,14 @@ internal class Parser
 
         var expr = ParseExpression(OperatorPrecedence.Lowest);
 
-        return new WhileExpressionSyntax(_syntaxTree, whileKeyword, openParenToken, condition, closeParenToken, expr);
+        return new WhileExpressionSyntax(
+            _syntaxTree,
+            whileKeyword,
+            openParenToken,
+            condition,
+            closeParenToken,
+            expr
+        );
     }
 
     private ExpressionSyntax ParseForExpression()
@@ -440,7 +474,18 @@ internal class Parser
 
         var expr = ParseExpression(OperatorPrecedence.Lowest);
 
-        return new ForExpressionSyntax(_syntaxTree, forKeyword, openParenToken, variable, leftArrow, fromExpression, toKeyword, toExpression, closeParenToken, expr);
+        return new ForExpressionSyntax(
+            _syntaxTree,
+            forKeyword,
+            openParenToken,
+            variable,
+            leftArrow,
+            fromExpression,
+            toKeyword,
+            toExpression,
+            closeParenToken,
+            expr
+        );
     }
 
     private ExpressionSyntax ParseIndexExpression(ExpressionSyntax left)
@@ -449,7 +494,13 @@ internal class Parser
         var expr = ParseExpression(OperatorPrecedence.Lowest);
         var closeBracketToken = Accept(SyntaxKind.CloseBracketToken);
 
-        return new IndexExpressionSyntax(_syntaxTree, left, openBracketToken, expr, closeBracketToken);
+        return new IndexExpressionSyntax(
+            _syntaxTree,
+            left,
+            openBracketToken,
+            expr,
+            closeBracketToken
+        );
     }
 
     private ExpressionSyntax ParseCallExpression(ExpressionSyntax name)
@@ -458,7 +509,13 @@ internal class Parser
         var arguments = ParseArguments();
         var closeParenToken = Accept(SyntaxKind.CloseParenToken);
 
-        return new CallExpressionSyntax(_syntaxTree, name, openParenToken, arguments, closeParenToken);
+        return new CallExpressionSyntax(
+            _syntaxTree,
+            name,
+            openParenToken,
+            arguments,
+            closeParenToken
+        );
     }
 
     private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
@@ -474,7 +531,10 @@ internal class Parser
             items.Add(arg);
 
             var currentToken = CurrentToken;
-            if (currentToken.Kind == SyntaxKind.CloseParenToken || currentToken.Kind == SyntaxKind.EndOfInputToken)
+            if (
+                currentToken.Kind == SyntaxKind.CloseParenToken
+                || currentToken.Kind == SyntaxKind.EndOfInputToken
+            )
                 break;
 
             var comma = Accept(SyntaxKind.CommaToken);
@@ -494,7 +554,16 @@ internal class Parser
         var elseKeyword = Accept(SyntaxKind.ElseKeyword);
         var elseExpr = ParseExpression(OperatorPrecedence.Lowest);
 
-        return new IfExpressionSyntax(_syntaxTree, ifKeyword, openParenToken, condition, closeParenToken, thenExpr, elseKeyword, elseExpr);
+        return new IfExpressionSyntax(
+            _syntaxTree,
+            ifKeyword,
+            openParenToken,
+            condition,
+            closeParenToken,
+            thenExpr,
+            elseKeyword,
+            elseExpr
+        );
     }
 
     private ExpressionSyntax ParseGroupOrUnitExpression()
@@ -524,7 +593,14 @@ internal class Parser
         var arguments = ParseArguments();
         var closeToken = Accept(SyntaxKind.CloseParenToken);
 
-        return new NewExpressionSyntax(_syntaxTree, newToken, type, openToken, arguments, closeToken);
+        return new NewExpressionSyntax(
+            _syntaxTree,
+            newToken,
+            type,
+            openToken,
+            arguments,
+            closeToken
+        );
     }
 
     private LiteralExpressionSyntax ParseLiteralExpression()
@@ -573,7 +649,10 @@ internal class Parser
         while (true)
         {
             var currentToken = CurrentToken;
-            if (currentToken.Kind == SyntaxKind.EndOfInputToken || currentToken.Kind == SyntaxKind.CloseBraceToken)
+            if (
+                currentToken.Kind == SyntaxKind.EndOfInputToken
+                || currentToken.Kind == SyntaxKind.CloseBraceToken
+            )
                 break;
 
             statements.Add(ParseStatement());
@@ -595,7 +674,13 @@ internal class Parser
 
         var closeBraceToken = Accept(SyntaxKind.CloseBraceToken);
 
-        return new BlockExpressionSyntax(_syntaxTree, openBraceToken, stmts.ToImmutableArray(), expr, closeBraceToken);
+        return new BlockExpressionSyntax(
+            _syntaxTree,
+            openBraceToken,
+            stmts.ToImmutableArray(),
+            expr,
+            closeBraceToken
+        );
     }
 
     private StatementSyntax ParseStatement() =>
@@ -637,7 +722,7 @@ internal class Parser
         var initializer = ParseOptionalInitializer();
 
         var endOfStatement = (SyntaxNode?)initializer ?? typeAnnotationSyntax;
-        if(endOfStatement != null)
+        if (endOfStatement != null)
         {
             AssertStatementTerminator(endOfStatement);
         }
@@ -646,9 +731,14 @@ internal class Parser
             Diagnostics.ReportUndefinedTypeOrInitializer(identToken.Location);
         }
 
-        return new VariableDeclarationStatementSyntax(_syntaxTree, valToken, identToken, typeAnnotationSyntax, initializer);
+        return new VariableDeclarationStatementSyntax(
+            _syntaxTree,
+            valToken,
+            identToken,
+            typeAnnotationSyntax,
+            initializer
+        );
     }
-
 
     private InitializerSyntax? ParseOptionalInitializer()
     {
@@ -656,7 +746,7 @@ internal class Parser
             return null;
 
         var equals = Accept();
-        var expression =  ParseExpression(OperatorPrecedence.Lowest);
+        var expression = ParseExpression(OperatorPrecedence.Lowest);
 
         return new InitializerSyntax(_syntaxTree, equals, expression);
     }

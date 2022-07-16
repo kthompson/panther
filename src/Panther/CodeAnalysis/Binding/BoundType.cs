@@ -6,8 +6,7 @@ namespace Panther.CodeAnalysis.Binding;
 
 internal sealed class BoundType : TypeSymbol
 {
-    public BoundType(Symbol owner, TextLocation location, string name)
-        : base(owner, location, name)
+    public BoundType(Symbol owner, TextLocation location, string name) : base(owner, location, name)
     {
         this.Type = new ClassType(this);
     }

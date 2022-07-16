@@ -7,8 +7,7 @@ public sealed class ScriptSourceFile : SourceFile
     public override int LineCount => Lines.Count;
     private IReadOnlyList<TextLine> Lines { get; }
 
-    internal ScriptSourceFile(string text, string fileName)
-        : base(fileName, text)
+    internal ScriptSourceFile(string text, string fileName) : base(fileName, text)
     {
         Lines = ParseLines(this, text);
     }
@@ -73,7 +72,13 @@ public sealed class ScriptSourceFile : SourceFile
         return list;
     }
 
-    private static void AddLine(ICollection<TextLine> list, SourceFile sourceFile, in int position, in int lineStart, in int lineBreakWidth)
+    private static void AddLine(
+        ICollection<TextLine> list,
+        SourceFile sourceFile,
+        in int position,
+        in int lineStart,
+        in int lineBreakWidth
+    )
     {
         var lineLength = position - lineStart;
         var lineLengthIncludingLineBreak = lineStart + lineBreakWidth;

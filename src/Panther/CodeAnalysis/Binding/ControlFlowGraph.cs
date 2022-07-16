@@ -17,7 +17,12 @@ internal sealed class ControlFlowGraph
     public List<BasicBlock> Blocks { get; }
     public List<BasicBlockBranch> Branches { get; }
 
-    private ControlFlowGraph(BasicBlock start, BasicBlock end, List<BasicBlock> blocks, List<BasicBlockBranch> branches)
+    private ControlFlowGraph(
+        BasicBlock start,
+        BasicBlock end,
+        List<BasicBlock> blocks,
+        List<BasicBlockBranch> branches
+    )
     {
         Start = start;
         End = end;
@@ -27,9 +32,7 @@ internal sealed class ControlFlowGraph
 
     public sealed class BasicBlock
     {
-        public BasicBlock()
-        {
-        }
+        public BasicBlock() { }
 
         public BasicBlock(bool isStart)
         {
@@ -109,7 +112,10 @@ internal sealed class ControlFlowGraph
                         break;
 
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(statement), statement.Kind.ToString());
+                        throw new ArgumentOutOfRangeException(
+                            nameof(statement),
+                            statement.Kind.ToString()
+                        );
                 }
             }
 
@@ -138,7 +144,8 @@ internal sealed class ControlFlowGraph
 
     public sealed class GraphBuilder
     {
-        private readonly Dictionary<BoundLabel, BasicBlock> _blockFromLabel = new Dictionary<BoundLabel, BasicBlock>();
+        private readonly Dictionary<BoundLabel, BasicBlock> _blockFromLabel =
+            new Dictionary<BoundLabel, BasicBlock>();
         private readonly List<BasicBlockBranch> _branches = new List<BasicBlockBranch>();
         private readonly BasicBlock _start = new BasicBlock(isStart: true);
         private readonly BasicBlock _end = new BasicBlock(isStart: false);
@@ -204,13 +211,23 @@ internal sealed class ControlFlowGraph
             blocks.Remove(block);
         }
 
-        private void Walk(BoundStatement statement, BasicBlock current, BasicBlock next, in bool isLastStatementInBlock)
+        private void Walk(
+            BoundStatement statement,
+            BasicBlock current,
+            BasicBlock next,
+            in bool isLastStatementInBlock
+        )
         {
             switch (statement)
             {
                 case BoundConditionalGotoStatement conditionalGotoStatement:
                 {
-                    if (_blockFromLabel.TryGetValue(conditionalGotoStatement.BoundLabel, out var thenBlock))
+                    if (
+                        _blockFromLabel.TryGetValue(
+                            conditionalGotoStatement.BoundLabel,
+                            out var thenBlock
+                        )
+                    )
                     {
                         var negatedCondition = Negate(conditionalGotoStatement.Condition);
                         var thenCondition = conditionalGotoStatement.JumpIfTrue
@@ -254,7 +271,10 @@ internal sealed class ControlFlowGraph
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(statement), statement.Kind.ToString());
+                    throw new ArgumentOutOfRangeException(
+                        nameof(statement),
+                        statement.Kind.ToString()
+                    );
             }
         }
 
@@ -266,12 +286,18 @@ internal sealed class ControlFlowGraph
                 return new BoundLiteralExpression(condition.Syntax, !value);
             }
 
-            var op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, Type.Bool) ?? throw new Exception("invalid operator");
+            var op =
+                BoundUnaryOperator.Bind(SyntaxKind.BangToken, Type.Bool)
+                ?? throw new Exception("invalid operator");
 
             return new BoundUnaryExpression(condition.Syntax, op, condition);
         }
 
-        private void Connect(BasicBlock @from, BasicBlock to, BoundExpression? boundCondition = null)
+        private void Connect(
+            BasicBlock @from,
+            BasicBlock to,
+            BoundExpression? boundCondition = null
+        )
         {
             if (boundCondition is BoundLiteralExpression lit)
             {

@@ -12,16 +12,18 @@ class Dotnet
     public static string[] Invoke(string assemblyLocation)
     {
         var dotnet = FindDotnet();
-        using var proc = Process.Start(new ProcessStartInfo(dotnet)
-        {
-            Arguments = assemblyLocation,
-            CreateNoWindow = true,
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-        });
+        using var proc = Process.Start(
+            new ProcessStartInfo(dotnet)
+            {
+                Arguments = assemblyLocation,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            }
+        );
         var errorOutput = new List<string>();
         var output = new List<string>();
-        if(proc == null)
+        if (proc == null)
             throw new XunitException("Failed to run dotnet command");
 
         proc.ErrorDataReceived += (sender, args) =>
@@ -52,7 +54,8 @@ class Dotnet
     {
         if (NukeLocation != null)
         {
-            if (string.Empty == NukeLocation) return null;
+            if (string.Empty == NukeLocation)
+                return null;
             return NukeLocation;
         }
         // set to empty so we only run once
@@ -69,7 +72,8 @@ class Dotnet
             }
 
             var parent = Path.GetDirectoryName(currentDirectory);
-            if (parent == null) return null;
+            if (parent == null)
+                return null;
 
             currentDirectory = parent;
         }
@@ -78,7 +82,7 @@ class Dotnet
     private static string FindDotnet()
     {
         // if we have a temp install from nuke, on a *nix os lets use the temp install of dotnet there
-        if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             var nuke = FindDotNuke();
             if (nuke != null)

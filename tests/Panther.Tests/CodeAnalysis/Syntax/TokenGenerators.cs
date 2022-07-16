@@ -18,40 +18,44 @@ public class TokenGenerators
             .Select(x => new UnaryOperatorSyntaxKind(x))
             .ToArbitrary();
 
-    public static Arbitrary<TokenTestData> TokenTestData() => Gen
-        .OneOf(
-            Arb.Generate<NonSeparatorTokenTestData>().Select(x => (TokenTestData)x),
-            Arb.Generate<SeparatorTokenTestData>().Select(x => (TokenTestData)x)
-        )
-        .ToArbitrary();
+    public static Arbitrary<TokenTestData> TokenTestData() =>
+        Gen.OneOf(
+                Arb.Generate<NonSeparatorTokenTestData>().Select(x => (TokenTestData)x),
+                Arb.Generate<SeparatorTokenTestData>().Select(x => (TokenTestData)x)
+            )
+            .ToArbitrary();
 
     public static Arbitrary<NonSeparatorTokenTestData> NonSeparatorTokenTestData() =>
         Gen.Elements(
-            new[]
-            {
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "a"),
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc"),
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc123"),
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "_abc123"),
-                new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "_abc_123"),
-                new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
-                new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
-                new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
-            }.Concat(
-                Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
-                    .SelectMany(kind =>
-                    {
-                        var text = SyntaxFacts.GetText(kind);
-                        if (text != null)
-                            return new[] { new NonSeparatorTokenTestData(kind, text) };
+                new[]
+                {
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "a"),
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc"),
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "abc123"),
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "_abc123"),
+                    new NonSeparatorTokenTestData(SyntaxKind.IdentifierToken, "_abc_123"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
+                }.Concat(
+                    Enum.GetValues(typeof(SyntaxKind))
+                        .Cast<SyntaxKind>()
+                        .SelectMany(kind =>
+                        {
+                            var text = SyntaxFacts.GetText(kind);
+                            if (text != null)
+                                return new[] { new NonSeparatorTokenTestData(kind, text) };
 
-                        return Enumerable.Empty<NonSeparatorTokenTestData>();
-                    }))
-        ).ToArbitrary();
+                            return Enumerable.Empty<NonSeparatorTokenTestData>();
+                        })
+                )
+            )
+            .ToArbitrary();
 
     public static Arbitrary<TokenPairTestData> TokenPairTestData()
     {
-        var gen = from t1 in Arb.Generate<NonSeparatorTokenTestData>()
+        var gen =
+            from t1 in Arb.Generate<NonSeparatorTokenTestData>()
             from t2 in Arb.Generate<NonSeparatorTokenTestData>()
             where !TokensCoalesce(t1.Kind, t2.Kind)
             select new TokenPairTestData(t1, t2);
@@ -62,9 +66,10 @@ public class TokenGenerators
     public static Arbitrary<SeparatorTokenTestData> SeparatorTokenTestData()
     {
         return Gen.Elements(
-            new SeparatorTokenTestData(SyntaxKind.WhitespaceTrivia, " "),
-            new SeparatorTokenTestData(SyntaxKind.WhitespaceTrivia, "\t")
-        ).ToArbitrary();
+                new SeparatorTokenTestData(SyntaxKind.WhitespaceTrivia, " "),
+                new SeparatorTokenTestData(SyntaxKind.WhitespaceTrivia, "\t")
+            )
+            .ToArbitrary();
     }
 
     public static Arbitrary<WhitespaceTriviaData> WhitespaceTriviaData() =>
@@ -83,7 +88,9 @@ public class TokenGenerators
 
     private static readonly SyntaxKind[] CoalescingKinds = new[]
     {
-        SyntaxKind.NumberToken, SyntaxKind.EqualsToken, SyntaxKind.IdentifierToken
+        SyntaxKind.NumberToken,
+        SyntaxKind.EqualsToken,
+        SyntaxKind.IdentifierToken
     };
 
     private static bool TokensCoalesce(SyntaxKind kind1, SyntaxKind kind2)
@@ -97,7 +104,9 @@ public class TokenGenerators
         if (kind1Keyword && (kind2Keyword || kind2 == SyntaxKind.IdentifierToken))
             return true;
 
-        if ((kind1Keyword || kind1 == SyntaxKind.IdentifierToken) && kind2 == SyntaxKind.NumberToken)
+        if (
+            (kind1Keyword || kind1 == SyntaxKind.IdentifierToken) && kind2 == SyntaxKind.NumberToken
+        )
             return true;
 
         if (kind1 == SyntaxKind.IdentifierToken && kind2Keyword)
@@ -117,28 +126,47 @@ public class TokenGenerators
 
         // '/' + '*' => '/*'
         // '/' + '/' => '//'
-        if (kind1 == SyntaxKind.SlashToken && (kind2 == SyntaxKind.SlashToken || kind2 == SyntaxKind.StarToken))
+        if (
+            kind1 == SyntaxKind.SlashToken
+            && (kind2 == SyntaxKind.SlashToken || kind2 == SyntaxKind.StarToken)
+        )
             return true;
 
         // '<' + '=' => '<='
         // '<' + '-' => '<-'
         // '<' + '==' => '<=' + '='
-        if (kind1 == SyntaxKind.LessThanToken && (kind2 == SyntaxKind.EqualsToken || kind2 == SyntaxKind.EqualsEqualsToken || kind2 == SyntaxKind.DashToken))
+        if (
+            kind1 == SyntaxKind.LessThanToken
+            && (
+                kind2 == SyntaxKind.EqualsToken
+                || kind2 == SyntaxKind.EqualsEqualsToken
+                || kind2 == SyntaxKind.DashToken
+            )
+        )
             return true;
 
         // '>' + '=' => '>='
         // '>' + '==' => '>=' + '='
-        if (kind1 == SyntaxKind.GreaterThanToken && (kind2 == SyntaxKind.EqualsToken || kind2 == SyntaxKind.EqualsEqualsToken))
+        if (
+            kind1 == SyntaxKind.GreaterThanToken
+            && (kind2 == SyntaxKind.EqualsToken || kind2 == SyntaxKind.EqualsEqualsToken)
+        )
             return true;
 
         // '|' + '|' => '||'
         // '|' + '||' => '||' + '|'
-        if (kind1 == SyntaxKind.PipeToken && (kind2 == SyntaxKind.PipeToken || kind2 == SyntaxKind.PipePipeToken))
+        if (
+            kind1 == SyntaxKind.PipeToken
+            && (kind2 == SyntaxKind.PipeToken || kind2 == SyntaxKind.PipePipeToken)
+        )
             return true;
 
         // '&' + '&' => '&&'
         // '&' + '&&' => '&&' + '&'
-        if (kind1 == SyntaxKind.AmpersandToken && (kind2 == SyntaxKind.AmpersandToken || kind2 == SyntaxKind.AmpersandAmpersandToken))
+        if (
+            kind1 == SyntaxKind.AmpersandToken
+            && (kind2 == SyntaxKind.AmpersandToken || kind2 == SyntaxKind.AmpersandAmpersandToken)
+        )
             return true;
 
         return false;

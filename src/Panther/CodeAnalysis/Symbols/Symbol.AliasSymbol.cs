@@ -4,7 +4,6 @@ namespace Panther.CodeAnalysis.Symbols;
 
 public abstract partial class Symbol
 {
-
     /// <summary>
     /// An alias symbol is one like `string` that really represents the System.String
     ///

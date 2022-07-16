@@ -8,29 +8,70 @@ namespace Panther.CodeAnalysis.Syntax;
 
 public sealed record SyntaxToken : SyntaxNode
 {
-    public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position, string text, object? value)
-        : this(syntaxTree, kind, position, position, text, value, false, ImmutableArray<SyntaxTrivia>.Empty,
-            ImmutableArray<SyntaxTrivia>.Empty)
-    {
-    }
+    public SyntaxToken(
+        SyntaxTree syntaxTree,
+        SyntaxKind kind,
+        int position,
+        string text,
+        object? value
+    )
+        : this(
+            syntaxTree,
+            kind,
+            position,
+            position,
+            text,
+            value,
+            false,
+            ImmutableArray<SyntaxTrivia>.Empty,
+            ImmutableArray<SyntaxTrivia>.Empty
+        ) { }
 
-    public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position, string text, object? value,
-        ImmutableArray<SyntaxTrivia> leadingTrivia, ImmutableArray<SyntaxTrivia> trailingTrivia)
-        : this(syntaxTree, kind, position, position + text.Length, text, value, false, leadingTrivia,
-            trailingTrivia)
-    {
-    }
+    public SyntaxToken(
+        SyntaxTree syntaxTree,
+        SyntaxKind kind,
+        int position,
+        string text,
+        object? value,
+        ImmutableArray<SyntaxTrivia> leadingTrivia,
+        ImmutableArray<SyntaxTrivia> trailingTrivia
+    )
+        : this(
+            syntaxTree,
+            kind,
+            position,
+            position + text.Length,
+            text,
+            value,
+            false,
+            leadingTrivia,
+            trailingTrivia
+        ) { }
 
     public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position)
-        : this(syntaxTree, kind, position, position, string.Empty, null, true, ImmutableArray<SyntaxTrivia>.Empty,
-            ImmutableArray<SyntaxTrivia>.Empty)
-    {
-    }
+        : this(
+            syntaxTree,
+            kind,
+            position,
+            position,
+            string.Empty,
+            null,
+            true,
+            ImmutableArray<SyntaxTrivia>.Empty,
+            ImmutableArray<SyntaxTrivia>.Empty
+        ) { }
 
-    private SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position, int end, string text, object? value,
-        bool isInsertedToken, ImmutableArray<SyntaxTrivia> leadingTrivia,
-        ImmutableArray<SyntaxTrivia> trailingTrivia)
-        : base(syntaxTree)
+    private SyntaxToken(
+        SyntaxTree syntaxTree,
+        SyntaxKind kind,
+        int position,
+        int end,
+        string text,
+        object? value,
+        bool isInsertedToken,
+        ImmutableArray<SyntaxTrivia> leadingTrivia,
+        ImmutableArray<SyntaxTrivia> trailingTrivia
+    ) : base(syntaxTree)
     {
         Kind = kind;
         Position = position;

@@ -39,7 +39,6 @@ public abstract partial class Symbol : SymbolContainer
 
     public virtual TextLocation Location { get; }
 
-
     public string FullName
     {
         get
@@ -79,8 +78,7 @@ public abstract partial class Symbol : SymbolContainer
         return writer.ToString();
     }
 
-    public void WriteTo(TextWriter writer) =>
-        SymbolPrinter.WriteTo(this, writer);
+    public void WriteTo(TextWriter writer) => SymbolPrinter.WriteTo(this, writer);
 
     /// <summary>
     /// The None symbol is a symbol to represent a value for when no valid symbol exists
@@ -90,12 +88,12 @@ public abstract partial class Symbol : SymbolContainer
     private Type _type = Type.Unresolved;
 
     public static Symbol NewRoot() => new RootSymbol();
-    public Symbol NewAlias(TextLocation location, string name, Symbol target) => new AliasSymbol(this, location, name, target);
 
+    public Symbol NewAlias(TextLocation location, string name, Symbol target) =>
+        new AliasSymbol(this, location, name, target);
 
     public Symbol NewTerm(TextLocation location, string name, SymbolFlags flags) =>
-        new TermSymbol(this, location, name)
-            .WithFlags(flags);
+        new TermSymbol(this, location, name).WithFlags(flags);
 
     public Symbol NewNamespace(TextLocation location, string name)
     {
@@ -109,24 +107,26 @@ public abstract partial class Symbol : SymbolContainer
         return symbol.WithType(new ClassType(symbol));
     }
 
-    public Symbol NewObject(TextLocation location, string name) => new TermSymbol(this, location, name)
-        .WithFlags(SymbolFlags.Object);
+    public Symbol NewObject(TextLocation location, string name) =>
+        new TermSymbol(this, location, name).WithFlags(SymbolFlags.Object);
 
     public Symbol NewField(TextLocation location, string name, bool isReadOnly) =>
-        new TermSymbol(this, location, name)
-            .WithFlags(SymbolFlags.Field| (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
+        new TermSymbol(this, location, name).WithFlags(
+            SymbolFlags.Field | (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None)
+        );
 
     public Symbol NewMethod(TextLocation location, string name) =>
         new TermSymbol(this, location, name).WithFlags(SymbolFlags.Method);
 
     public Symbol NewParameter(TextLocation location, string name, int index) =>
-        new TermSymbol(this, location, name) { Index = index }
-            .WithFlags(SymbolFlags.Parameter | SymbolFlags.Readonly);
+        new TermSymbol(this, location, name) { Index = index }.WithFlags(
+            SymbolFlags.Parameter | SymbolFlags.Readonly
+        );
 
     public Symbol NewLocal(TextLocation location, string name, bool isReadOnly) =>
-        new TermSymbol(this, location, name)
-            .WithFlags(SymbolFlags.Local | (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None));
-
+        new TermSymbol(this, location, name).WithFlags(
+            SymbolFlags.Local | (isReadOnly ? SymbolFlags.Readonly : SymbolFlags.None)
+        );
 
     public Symbol Declare()
     {
@@ -135,7 +135,6 @@ public abstract partial class Symbol : SymbolContainer
     }
 
     public void Delete() => Owner.Delete(this);
-
 
     public Type ReturnType
     {

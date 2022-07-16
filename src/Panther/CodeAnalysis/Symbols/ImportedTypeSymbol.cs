@@ -18,10 +18,9 @@ internal sealed class ImportedTypeSymbol : Symbol
     public ImportedTypeSymbol(Symbol parent, string name, TypeDefinition typeDefinition)
         : base(parent, TextLocation.None, name)
     {
-
         if (typeDefinition.IsClass)
             this.Flags |= SymbolFlags.Class;
-        
+
         this.Flags |= SymbolFlags.Import;
 
         this.Type = new ClassType(this);
@@ -46,12 +45,19 @@ internal sealed class ImportedTypeSymbol : Symbol
             return builder.ToImmutable();
         });
 
-        _membersByName = new Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>>(() =>
-            Members
-                .GroupBy(x => x.Name,
-                    (key, symbols) =>
-                        new KeyValuePair<string, ImmutableArray<Symbol>>(key, symbols.ToImmutableArray()))
-                .ToImmutableDictionary());
+        _membersByName = new Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>>(
+            () =>
+                Members
+                    .GroupBy(
+                        x => x.Name,
+                        (key, symbols) =>
+                            new KeyValuePair<string, ImmutableArray<Symbol>>(
+                                key,
+                                symbols.ToImmutableArray()
+                            )
+                    )
+                    .ToImmutableDictionary()
+        );
     }
 
     public override ImmutableArray<Symbol> Members => _members.Value;
@@ -63,9 +69,7 @@ internal sealed class ImportedTypeSymbol : Symbol
 
     private Symbol? ImportMethodDefinition(MethodDefinition methodDefinition)
     {
-        var method = this
-            .NewMethod(TextLocation.None, methodDefinition.Name)
-            .Declare();
+        var method = this.NewMethod(TextLocation.None, methodDefinition.Name).Declare();
 
         var parameters = ImmutableArray.CreateBuilder<Symbol>();
 
@@ -78,10 +82,8 @@ internal sealed class ImportedTypeSymbol : Symbol
                 return null;
 
             parameters.Add(
-                method
-                    .NewParameter(TextLocation.None, p.Name, i)
-                    .WithType(pType)
-                    .Declare());
+                method.NewParameter(TextLocation.None, p.Name, i).WithType(pType).Declare()
+            );
         }
 
         var returnType = LookupTypeByMetadataName(methodDefinition.ReturnType.FullName);

@@ -7,12 +7,10 @@ namespace Panther.CodeAnalysis.Symbols;
 
 public abstract class TypeSymbol : Symbol
 {
-    public TypeSymbol(Symbol owner, TextLocation location, string name) : base(owner, location, name)
-    {
-    }
+    public TypeSymbol(Symbol owner, TextLocation location, string name)
+        : base(owner, location, name) { }
 
     public override string ToString() => this.Name;
-
 
     public static readonly TypeSymbol Error = new BoundType(Symbol.None, TextLocation.None, "err");
 
@@ -48,11 +46,11 @@ public abstract class TypeSymbol : Symbol
             .WithType(Type.String);
 
         var getItem = String.NewMethod(TextLocation.None, "get_Chars").Declare();
-        var i = getItem.NewParameter(TextLocation.None, "i", 0)
+        var i = getItem
+            .NewParameter(TextLocation.None, "i", 0)
             .WithType(Type.Delayed(() => Type.Int))
             .Declare();
-        
-        
+
         getItem.Type = new MethodType(getItem.Parameters, Type.Delayed(() => Type.Char));
     }
 }

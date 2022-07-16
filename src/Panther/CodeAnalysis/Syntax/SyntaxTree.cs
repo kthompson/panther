@@ -8,9 +8,11 @@ namespace Panther.CodeAnalysis.Syntax;
 
 public class SyntaxTree
 {
-    private delegate void ParseHandler(SyntaxTree syntaxTree,
+    private delegate void ParseHandler(
+        SyntaxTree syntaxTree,
         out CompilationUnitSyntax root,
-        out ImmutableArray<Diagnostic> diagnostics);
+        out ImmutableArray<Diagnostic> diagnostics
+    );
 
     public ImmutableArray<Diagnostic> Diagnostics { get; }
     public SourceFile File { get; }
@@ -33,9 +35,11 @@ public class SyntaxTree
         return Parse(sourceText);
     }
 
-    private static void Parse(SyntaxTree syntaxTree,
+    private static void Parse(
+        SyntaxTree syntaxTree,
         out CompilationUnitSyntax root,
-        out ImmutableArray<Diagnostic> diagnostics)
+        out ImmutableArray<Diagnostic> diagnostics
+    )
     {
         var parser = new Parser(syntaxTree);
         root = parser.ParseCompilationUnit();
@@ -46,18 +50,24 @@ public class SyntaxTree
 
     public static SyntaxTree Parse(SourceFile source) => new SyntaxTree(source, Parse);
 
-    public static IEnumerable<SyntaxToken> ParseTokens(string source) => ParseTokens(SourceFile.From(source));
+    public static IEnumerable<SyntaxToken> ParseTokens(string source) =>
+        ParseTokens(SourceFile.From(source));
 
     public static IEnumerable<SyntaxToken> ParseTokens(SourceFile sourceFile) =>
         ParseTokens(sourceFile, out var _);
 
-    public static IEnumerable<SyntaxToken> ParseTokens(SourceFile sourceFile, out ImmutableArray<Diagnostic> diagnostics)
+    public static IEnumerable<SyntaxToken> ParseTokens(
+        SourceFile sourceFile,
+        out ImmutableArray<Diagnostic> diagnostics
+    )
     {
         var tokens = new List<SyntaxToken>();
 
-        void ParseTokens(SyntaxTree syntaxTree,
+        void ParseTokens(
+            SyntaxTree syntaxTree,
             out CompilationUnitSyntax root,
-            out ImmutableArray<Diagnostic> diags)
+            out ImmutableArray<Diagnostic> diags
+        )
         {
             var lexer = new Lexer(syntaxTree);
 

@@ -14,7 +14,10 @@ internal class Lexer
     private readonly SourceFile _file;
     private readonly DiagnosticBag _diagnostics = new();
     private int _position;
-    private readonly Dictionary<char, Func<(SyntaxKind kind, int start, string text, object? value)>> _lexFunctions = new();
+    private readonly Dictionary<
+        char,
+        Func<(SyntaxKind kind, int start, string text, object? value)>
+    > _lexFunctions = new();
 
     public Lexer(SyntaxTree syntaxTree)
     {
@@ -130,7 +133,10 @@ internal class Lexer
         return trivia.ToImmutable();
     }
 
-    private bool IsInvalidTokenTrivia() => Current != null && !_lexFunctions.ContainsKey(Current.Value) && !IsIdentCharacter(Current.Value, true);
+    private bool IsInvalidTokenTrivia() =>
+        Current != null
+        && !_lexFunctions.ContainsKey(Current.Value)
+        && !IsIdentCharacter(Current.Value, true);
 
     private SyntaxTrivia ParseInvalidTokenTrivia()
     {
@@ -149,15 +155,27 @@ internal class Lexer
         {
             if (Current == EndOfInputCharacter)
             {
-                _diagnostics.ReportUnterminatedBlockComment(new TextLocation(_file, new TextSpan(start, _position)));
-                return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _file[start.._position], start);
+                _diagnostics.ReportUnterminatedBlockComment(
+                    new TextLocation(_file, new TextSpan(start, _position))
+                );
+                return new SyntaxTrivia(
+                    _syntaxTree,
+                    SyntaxKind.BlockCommentTrivia,
+                    _file[start.._position],
+                    start
+                );
             }
 
             if (Current == '*' && Lookahead == '/')
             {
                 Next(); // '*'
                 Next(); // '/'
-                return new SyntaxTrivia(_syntaxTree, SyntaxKind.BlockCommentTrivia, _file[start.._position], start);
+                return new SyntaxTrivia(
+                    _syntaxTree,
+                    SyntaxKind.BlockCommentTrivia,
+                    _file[start.._position],
+                    start
+                );
             }
 
             Next();
@@ -188,7 +206,7 @@ internal class Lexer
         {
             return ReturnEndOfInput();
         }
-        
+
         if (_lexFunctions.TryGetValue(Current.Value, out var function))
         {
             return function();
@@ -207,7 +225,10 @@ internal class Lexer
 
     private (SyntaxKind kind, int start, string text, object? value) ReturnInvalidTokenTrivia()
     {
-        _diagnostics.ReportBadCharacter(new TextLocation(_file, new TextSpan(_position, 1)), Current!.Value);
+        _diagnostics.ReportBadCharacter(
+            new TextLocation(_file, new TextSpan(_position, 1)),
+            Current!.Value
+        );
         return ReturnKindOneChar(SyntaxKind.InvalidTokenTrivia);
     }
 
@@ -244,36 +265,53 @@ internal class Lexer
             ? ReturnKindTwoChar(SyntaxKind.GreaterThanEqualsToken)
             : ReturnKindOneChar(SyntaxKind.GreaterThanToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnColonToken() => ReturnKindOneChar(SyntaxKind.ColonToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnColonToken() =>
+        ReturnKindOneChar(SyntaxKind.ColonToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnCommaToken() => ReturnKindOneChar(SyntaxKind.CommaToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnCommaToken() =>
+        ReturnKindOneChar(SyntaxKind.CommaToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnTildeToken() => ReturnKindOneChar(SyntaxKind.TildeToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnTildeToken() =>
+        ReturnKindOneChar(SyntaxKind.TildeToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnCaretToken() => ReturnKindOneChar(SyntaxKind.CaretToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnCaretToken() =>
+        ReturnKindOneChar(SyntaxKind.CaretToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBraceToken() => ReturnKindOneChar(SyntaxKind.CloseBraceToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBraceToken() =>
+        ReturnKindOneChar(SyntaxKind.CloseBraceToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBracketToken() => ReturnKindOneChar(SyntaxKind.OpenBracketToken);
-    
-    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBracketToken() => ReturnKindOneChar(SyntaxKind.CloseBracketToken);
-    
-    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBraceToken() => ReturnKindOneChar(SyntaxKind.OpenBraceToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBracketToken() =>
+        ReturnKindOneChar(SyntaxKind.OpenBracketToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseParenToken() => ReturnKindOneChar(SyntaxKind.CloseParenToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseBracketToken() =>
+        ReturnKindOneChar(SyntaxKind.CloseBracketToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenParenToken() => ReturnKindOneChar(SyntaxKind.OpenParenToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenBraceToken() =>
+        ReturnKindOneChar(SyntaxKind.OpenBraceToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnStarToken() => ReturnKindOneChar(SyntaxKind.StarToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnCloseParenToken() =>
+        ReturnKindOneChar(SyntaxKind.CloseParenToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnSlashToken() => ReturnKindOneChar(SyntaxKind.SlashToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnOpenParenToken() =>
+        ReturnKindOneChar(SyntaxKind.OpenParenToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnDashToken() => ReturnKindOneChar(SyntaxKind.DashToken);
-    private (SyntaxKind kind, int start, string text, object? value) ReturnDotToken() => ReturnKindOneChar(SyntaxKind.DotToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnStarToken() =>
+        ReturnKindOneChar(SyntaxKind.StarToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnPlusToken() => ReturnKindOneChar(SyntaxKind.PlusToken);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnSlashToken() =>
+        ReturnKindOneChar(SyntaxKind.SlashToken);
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnEndOfInput() => (SyntaxKind.EndOfInputToken, _position, string.Empty, null);
+    private (SyntaxKind kind, int start, string text, object? value) ReturnDashToken() =>
+        ReturnKindOneChar(SyntaxKind.DashToken);
+
+    private (SyntaxKind kind, int start, string text, object? value) ReturnDotToken() =>
+        ReturnKindOneChar(SyntaxKind.DotToken);
+
+    private (SyntaxKind kind, int start, string text, object? value) ReturnPlusToken() =>
+        ReturnKindOneChar(SyntaxKind.PlusToken);
+
+    private (SyntaxKind kind, int start, string text, object? value) ReturnEndOfInput() =>
+        (SyntaxKind.EndOfInputToken, _position, string.Empty, null);
 
     private (SyntaxKind kind, int start, string text, object? value) ParseIdentOrKeyword()
     {
@@ -302,7 +340,8 @@ internal class Lexer
             _diagnostics.ReportInvalidNumber(
                 new TextLocation(_file, new TextSpan(start, _position - start)),
                 span.AsSpan().ToString(),
-                Type.Int);
+                Type.Int
+            );
 
         return (SyntaxKind.NumberToken, start, span, value);
     }
@@ -318,7 +357,12 @@ internal class Lexer
             Next();
         }
 
-        return new SyntaxTrivia(_syntaxTree, SyntaxKind.LineCommentTrivia, _file[start.._position], start);
+        return new SyntaxTrivia(
+            _syntaxTree,
+            SyntaxKind.LineCommentTrivia,
+            _file[start.._position],
+            start
+        );
     }
 
     private (SyntaxKind kind, int start, string text, object value) ParseStringToken()
@@ -343,7 +387,9 @@ internal class Lexer
                 case '\n':
                 case '\r':
                 case null:
-                    _diagnostics.ReportUnterminatedString(new TextLocation(_file, new TextSpan(start, 1)));
+                    _diagnostics.ReportUnterminatedString(
+                        new TextLocation(_file, new TextSpan(start, 1))
+                    );
                     break;
 
                 default:
@@ -385,7 +431,7 @@ internal class Lexer
             case '"':
                 Next();
                 return "\"";
-            
+
             case '0':
                 Next();
                 return "\0";
@@ -400,7 +446,9 @@ internal class Lexer
 
             default:
                 _diagnostics.ReportInvalidEscapeSequence(
-                    new TextLocation(_file, new TextSpan(escapeStart, _position)), Current!.Value);
+                    new TextLocation(_file, new TextSpan(escapeStart, _position)),
+                    Current!.Value
+                );
                 return null;
         }
     }
@@ -412,7 +460,10 @@ internal class Lexer
         {
             if (!HexValue(out var hexValue))
             {
-                _diagnostics.ReportInvalidEscapeSequence(new TextLocation(_file, new TextSpan(escapeStart, _position)), Current!.Value);
+                _diagnostics.ReportInvalidEscapeSequence(
+                    new TextLocation(_file, new TextSpan(escapeStart, _position)),
+                    Current!.Value
+                );
                 return null;
             }
 
@@ -427,7 +478,10 @@ internal class Lexer
     {
         try
         {
-            value = int.Parse(Current!.Value.ToString(), System.Globalization.NumberStyles.HexNumber);
+            value = int.Parse(
+                Current!.Value.ToString(),
+                System.Globalization.NumberStyles.HexNumber
+            );
             return true;
         }
         catch
@@ -437,7 +491,9 @@ internal class Lexer
         }
     }
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnKindTwoChar(SyntaxKind kind)
+    private (SyntaxKind kind, int start, string text, object? value) ReturnKindTwoChar(
+        SyntaxKind kind
+    )
     {
         var start = _position;
         var text = _file[_position..(_position + 2)];
@@ -445,7 +501,9 @@ internal class Lexer
         return (kind, start, text, null);
     }
 
-    private (SyntaxKind kind, int start, string text, object? value) ReturnKindOneChar(SyntaxKind kind)
+    private (SyntaxKind kind, int start, string text, object? value) ReturnKindOneChar(
+        SyntaxKind kind
+    )
     {
         var start = _position;
         var text = _file[_position..(_position + 1)];

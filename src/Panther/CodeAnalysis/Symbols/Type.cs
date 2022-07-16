@@ -11,7 +11,7 @@ public abstract record Type
     {
         Symbol = symbol;
     }
-    
+
     public static readonly Type Error = new TypeConstructor("err", TypeSymbol.Error);
 
     public static readonly Type Any = new TypeConstructor("any", TypeSymbol.Any);
@@ -24,15 +24,23 @@ public abstract record Type
 
     public static readonly Type Unresolved = new Unresolved();
     public static readonly Type NoType = new NoType();
+
     public static Type Delayed(Func<Type> f) => new DelayType(f);
 }
 
-public sealed record MethodType(ImmutableArray<Symbol> Parameters, Type ResultType) : Type(Symbol.None);
+public sealed record MethodType(ImmutableArray<Symbol> Parameters, Type ResultType)
+    : Type(Symbol.None);
+
 public sealed record IndexType(Type Left, Type Index) : Type(Symbol.None);
+
 public sealed record ErrorType() : Type(TypeSymbol.Error);
+
 public sealed record Unresolved() : Type(Symbol.None);
+
 public sealed record NoType() : Type(Symbol.None);
+
 public sealed record ClassType(Symbol Symbol) : Type(Symbol);
+
 public sealed record NamespaceType(Symbol Symbol) : Type(Symbol);
 
 public sealed record DelayType(Func<Type> F) : Type(Symbol.None)
@@ -52,8 +60,15 @@ public static class TypeResolver
         {
             DelayType delayType => Resolve(delayType.F()),
             IndexType indexType => new IndexType(Resolve(indexType.Left), Resolve(indexType.Index)),
-            MethodType methodType => new MethodType(methodType.Parameters, Resolve(methodType.ResultType)),
-            ClassType or ErrorType or NamespaceType or NoType or TypeConstructor or Unresolved => type,
+            MethodType methodType
+                => new MethodType(methodType.Parameters, Resolve(methodType.ResultType)),
+            ClassType
+            or ErrorType
+            or NamespaceType
+            or NoType
+            or TypeConstructor
+            or Unresolved
+                => type,
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
 }

@@ -4,12 +4,11 @@ partial class BoundNodeVisitor
 {
     public virtual void Visit(BoundNode node) => node.Accept(this);
 
-    protected virtual void DefaultVisit(BoundNode node)
-    {
-    }
+    protected virtual void DefaultVisit(BoundNode node) { }
 
     public virtual void VisitTypeExpression(BoundTypeExpression node) => DefaultVisit(node);
 }
+
 partial class BoundNodeVisitor<TResult>
 {
     public virtual TResult Visit(BoundNode node) => node.Accept(this);

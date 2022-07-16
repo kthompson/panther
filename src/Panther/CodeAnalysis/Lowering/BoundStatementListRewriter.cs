@@ -10,9 +10,7 @@ internal class BoundStatementListRewriter : BoundTreeRewriter
 {
     protected readonly List<BoundStatement> _statements = new List<BoundStatement>();
 
-    protected BoundStatementListRewriter()
-    {
-    }
+    protected BoundStatementListRewriter() { }
 
     protected BoundBlockExpression GetBlock(SyntaxNode syntax)
     {
@@ -23,7 +21,6 @@ internal class BoundStatementListRewriter : BoundTreeRewriter
 
         return new BoundBlockExpression(syntax, stmts.ToImmutableArray(), expr);
     }
-
 
     protected BoundBlockExpression Rewrite(BoundBlockExpression block)
     {

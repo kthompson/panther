@@ -17,16 +17,24 @@ namespace Panther.CodeAnalysis.Binding;
 /// <typeparam name="TResult"></typeparam>
 static class MethodBindCost
 {
-    private static MethodBindCostResult Analyze(int id, Symbol method, ImmutableArray<BoundExpression> arguments)
+    private static MethodBindCostResult Analyze(
+        int id,
+        Symbol method,
+        ImmutableArray<BoundExpression> arguments
+    )
     {
         if (method.Type is not MethodType methodType)
             return new MethodBindCostResult.SymbolNot(id);
 
         var methodParamTypes = methodType.Parameters.Select(p => p.Type).ToImmutableArray();
-        if(methodParamTypes.Length != arguments.Length)
+        if (methodParamTypes.Length != arguments.Length)
             return new MethodBindCostResult.ParameterNumberMismatch(id);
 
-        var conversions = arguments.Select(arg => arg.Type).Zip(methodParamTypes).Select(tup => Conversion.Classify(tup.First, tup.Second)).ToImmutableArray();
+        var conversions = arguments
+            .Select(arg => arg.Type)
+            .Zip(methodParamTypes)
+            .Select(tup => Conversion.Classify(tup.First, tup.Second))
+            .ToImmutableArray();
         var cost = 0;
         for (var index = 0; index < conversions.Length; index++)
         {
@@ -46,9 +54,13 @@ static class MethodBindCost
         return new MethodBindCostResult.MethodBindCostValue(id, cost);
     }
 
-    public static Symbol? Analyze(ImmutableArray<Symbol> methods, ImmutableArray<BoundExpression> arguments)
+    public static Symbol? Analyze(
+        ImmutableArray<Symbol> methods,
+        ImmutableArray<BoundExpression> arguments
+    )
     {
-        var (errors, results) = methods.Select((method, index) => Analyze(index, method, arguments))
+        var (errors, results) = methods
+            .Select((method, index) => Analyze(index, method, arguments))
             .Partition(cost => cost is MethodBindCostResult.MethodBindCostError);
 
         if (results.IsEmpty)
@@ -73,14 +85,18 @@ static class MethodBindCost
         // ambiguous
         return null;
     }
-
 }
 
 abstract record MethodBindCostResult(int Id)
 {
     internal abstract record MethodBindCostError(int Id) : MethodBindCostResult(Id);
+
     internal record MethodBindCostValue(int Id, int Value) : MethodBindCostResult(Id);
+
     internal record SymbolNot(int Id) : MethodBindCostError(Id);
+
     internal record ParameterNumberMismatch(int Id) : MethodBindCostError(Id);
-    internal record ParameterTypeMismatch(int Id, int Index, bool ExplicitConversionAvailable) : MethodBindCostError(Id);
+
+    internal record ParameterTypeMismatch(int Id, int Index, bool ExplicitConversionAvailable)
+        : MethodBindCostError(Id);
 }

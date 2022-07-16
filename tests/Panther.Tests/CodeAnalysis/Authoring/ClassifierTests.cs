@@ -65,9 +65,11 @@ public class ClassifierTests
     [Fact]
     public void ClassifierSupportsABlock()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                         {
-                        }");
+                        }"
+        );
 
         var tree = SyntaxTree.Parse(text.Text);
         var fullSpan = tree.Root.FullSpan;

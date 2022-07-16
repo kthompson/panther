@@ -7,9 +7,13 @@ namespace Panther.CodeAnalysis.Emit;
 
 public sealed class EmitResult : IEmitResult
 {
-    internal EmitResult(ImmutableArray<Diagnostic> diagnostics,
-        Dictionary<Symbol, FieldReference> globals, Dictionary<Symbol, MethodReference> methods,
-        AssemblyDefinition? assembly, string? outputPath)
+    internal EmitResult(
+        ImmutableArray<Diagnostic> diagnostics,
+        Dictionary<Symbol, FieldReference> globals,
+        Dictionary<Symbol, MethodReference> methods,
+        AssemblyDefinition? assembly,
+        string? outputPath
+    )
     {
         Diagnostics = diagnostics;
         Globals = globals;

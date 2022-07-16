@@ -18,5 +18,6 @@ internal abstract record BoundNode(SyntaxNode Syntax)
     }
 
     public abstract void Accept(BoundNodeVisitor visitor);
+
     public abstract TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor);
 }

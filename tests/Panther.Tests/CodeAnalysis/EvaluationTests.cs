@@ -20,7 +20,6 @@ namespace Panther.Tests.CodeAnalysis;
 // library we want
 extern alias StdLib;
 
-
 [Properties(MaxTest = 10)]
 public class EvaluationTests
 {
@@ -46,14 +45,17 @@ public class EvaluationTests
         // mock readLine
         Execute($"mockReadLine(\"Kevin\")", scriptHost);
 
-        AssertEvaluation(@"{
+        AssertEvaluation(
+            @"{
                                    println(""What is your name?"")
                                    val name = readLine()
                                    val message = ""Hello, "" + name
                                    println(message)
                                    message
-                               }", "Hello, Kevin", scriptHost);
-
+                               }",
+            "Hello, Kevin",
+            scriptHost
+        );
 
         var expectedOutput = BuildExpectedOutput("What is your name?", "Hello, Kevin");
         // verify mock
@@ -83,7 +85,6 @@ public class EvaluationTests
         AssertEvaluation(code, value, scriptHost);
     }
 
-
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
@@ -91,7 +92,8 @@ public class EvaluationTests
     [InlineData(37)]
     public void EvaluatesMutualRecursion(int number)
     {
-        var code = $@"
+        var code =
+            $@"
             even({number})
 
             def even(number: int): bool = if(number == 0) true else odd(number - 1)
@@ -133,7 +135,6 @@ public class EvaluationTests
     [Property]
     public void EvaluatesStringConcatenation(NonNull<string> str1, NonNull<string> str2)
     {
-
         var code = $"{escapeString(str1)} + {escapeString(str2)}";
         var expected = str1.Item + str2.Item;
         using var scriptHost = BuildScriptHost();
@@ -268,7 +269,8 @@ public class EvaluationTests
     [Property]
     public void EvaluatesMultiLineIf(bool condition, int number, int number2)
     {
-        var code = $@"if ({b(condition)})
+        var code =
+            $@"if ({b(condition)})
                                 {number}
                                 else {number2}";
         object value = condition ? number : number2;
@@ -279,10 +281,15 @@ public class EvaluationTests
     [Property]
     public void EvaluatesNestedIf(bool condition, bool condition2, int number)
     {
-        var code = $@"if ({b(condition)})
+        var code =
+            $@"if ({b(condition)})
                                 {number}
                                 else if ({b(condition2)}) 5 else 1";
-        object value = condition ? number : condition2 ? 5 : 1;
+        object value = condition
+            ? number
+            : condition2
+                ? 5
+                : 1;
         using var scriptHost = BuildScriptHost();
         AssertEvaluation(code, value, scriptHost);
     }
@@ -290,7 +297,8 @@ public class EvaluationTests
     [Property]
     public void EvaluatesNestedIfBinding(bool conditionA, bool conditionB)
     {
-        var code = $@"if ({b(conditionA)})
+        var code =
+            $@"if ({b(conditionA)})
                                 if ({b(conditionB)}) 1 else 2
                                 else 5";
         object value = conditionA ? (conditionB ? 1 : 2) : 5;
@@ -301,15 +309,14 @@ public class EvaluationTests
     [Property]
     public void EvaluatesNestedIfBinding2(bool conditionA, bool conditionB)
     {
-        var code = $@"if ({b(conditionA)})
+        var code =
+            $@"if ({b(conditionA)})
                                 2
                                 else if ({b(conditionB)}) 1 else 5";
         object value = conditionA ? 2 : (conditionB ? 1 : 5);
         using var scriptHost = BuildScriptHost();
         AssertEvaluation(code, value, scriptHost);
     }
-
-
 
     [Property]
     public void EvaluatesDivision(int number, NonZeroInt number2)
@@ -321,7 +328,8 @@ public class EvaluationTests
     [Property]
     public void EvaluatesAssignment(int number)
     {
-        var code = $@"{{
+        var code =
+            $@"{{
                                     var x = {number}
                                     x = 1
                                 }}";
@@ -332,7 +340,8 @@ public class EvaluationTests
     [Property]
     public void EvaluatesNestedAssignment(int number)
     {
-        var code = $@"{{
+        var code =
+            $@"{{
                                     var x = 0
                                     val y = x = {number}
                                     x
@@ -344,7 +353,8 @@ public class EvaluationTests
     [Property]
     public void EvaluatesWhile(PositiveInt number)
     {
-        var code = $@"{{
+        var code =
+            $@"{{
                                     var times = {number.Item}
                                     var count = 0
                                     while (times > 0) {{
@@ -366,7 +376,8 @@ public class EvaluationTests
             result += i;
         }
 
-        var code = $@"{{
+        var code =
+            $@"{{
                                     var count = 0
                                     for (x <- {@from} to {to}) count = count + x
                                     count
@@ -495,8 +506,7 @@ public class EvaluationTests
 
         AssertEvaluation("a", n, scriptHost);
     }
-    
-    
+
     [Property]
     public void EvaluatesIndexExpression(NonEmptyString str)
     {

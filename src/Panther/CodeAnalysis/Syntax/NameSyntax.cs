@@ -15,7 +15,8 @@ public sealed partial record QualifiedNameSyntax
 {
     public override string ToText() => $"{Left.ToText()}.{Right.ToText()}";
 
-    public override IEnumerable<IdentifierNameSyntax> ToIdentifierNames() => this.Left.ToIdentifierNames().Append(Right);
+    public override IEnumerable<IdentifierNameSyntax> ToIdentifierNames() =>
+        this.Left.ToIdentifierNames().Append(Right);
 }
 
 public sealed partial record IdentifierNameSyntax

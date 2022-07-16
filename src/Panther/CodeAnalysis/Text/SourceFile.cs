@@ -25,8 +25,11 @@ public abstract class SourceFile
     public abstract int LineToOffset(int index);
     public abstract int GetLineIndex(int position);
 
-    public static SourceFile From(string text, string fileName = "") => new ScriptSourceFile(text, fileName);
-    public static SourceFile FromFile(string fileName) => new ScriptSourceFile(File.ReadAllText(fileName), fileName);
+    public static SourceFile From(string text, string fileName = "") =>
+        new ScriptSourceFile(text, fileName);
+
+    public static SourceFile FromFile(string fileName) =>
+        new ScriptSourceFile(File.ReadAllText(fileName), fileName);
 
     public string ToString(int start, int length) => Content.Substring(start, length);
 

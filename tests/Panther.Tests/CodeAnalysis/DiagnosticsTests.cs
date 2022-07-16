@@ -11,7 +11,8 @@ public class DiagnosticsTests
     [Property]
     public void ReportUndefinedBinaryOperatorForMixedTypes(int left, bool right)
     {
-        var text = $@"
+        var text =
+            $@"
                 {{
                     val x = {left}
                     val y = {b(right)}
@@ -20,7 +21,8 @@ public class DiagnosticsTests
                 }}
             ";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Binary operator '+' is not defined for types 'int' and 'bool'
             ";
 
@@ -30,7 +32,8 @@ public class DiagnosticsTests
     [Property]
     public void ReportUndefinedUnaryOperatorForIntType(int left)
     {
-        var text = $@"
+        var text =
+            $@"
                 {{
                     val x = {left}
 
@@ -38,7 +41,8 @@ public class DiagnosticsTests
                 }}
             ";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unary operator '!' is not defined for type 'int'
             ";
 
@@ -48,7 +52,8 @@ public class DiagnosticsTests
     [Property]
     public void ReportUndefinedUnaryOperatorForBoolType(bool value)
     {
-        var text = $@"
+        var text =
+            $@"
                 {{
                     val x = {b(value)}
 
@@ -57,7 +62,8 @@ public class DiagnosticsTests
                 }}
             ";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unary operator '-' is not defined for type 'bool'
                 Unary operator '+' is not defined for type 'bool'
             ";
@@ -74,7 +80,8 @@ public class DiagnosticsTests
                     [x](1)
                 ";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Variable 'x' is not a function
             ";
 
@@ -86,7 +93,8 @@ public class DiagnosticsTests
     {
         var text = @"(true [*] 1) + 7";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Binary operator '*' is not defined for types 'bool' and 'int'
             ";
 
@@ -98,7 +106,8 @@ public class DiagnosticsTests
     {
         var text = @"[x] + [y]";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Variable 'x' does not exist
                 Variable 'y' does not exist
             ";
@@ -109,10 +118,12 @@ public class DiagnosticsTests
     [Fact]
     public void ReportIncompleteBlock()
     {
-        var text = @"{
+        var text =
+            @"{
                             []";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unexpected token EndOfInputToken, expected CloseBraceToken
             ";
 
@@ -122,10 +133,12 @@ public class DiagnosticsTests
     [Fact]
     public void ReportUnterminatedString()
     {
-        var text = @"[""]
+        var text =
+            @"[""]
                          ";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unterminated string literal
             ";
 
@@ -137,7 +150,8 @@ public class DiagnosticsTests
     {
         var text = @"[""]";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unterminated string literal
             ";
 
@@ -149,7 +163,8 @@ public class DiagnosticsTests
     {
         var text = @"([][]";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unexpected token EndOfInputToken, expected Expression
                 Unexpected token EndOfInputToken, expected CloseParenToken
             ";
@@ -160,12 +175,14 @@ public class DiagnosticsTests
     [Fact]
     public void ReportAlreadyDefinedVariable()
     {
-        var text = @"{
+        var text =
+            @"{
                     val a = 1
                     val [a] = 2
                 }";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Variable 'a' is already defined in the current scope
             ";
 
@@ -177,7 +194,8 @@ public class DiagnosticsTests
     {
         var text = @"[1.name] = 12";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 'int' does not contain a definition for 'name'
             ";
 
@@ -187,13 +205,15 @@ public class DiagnosticsTests
     [Fact]
     public void ReportInvalidIfCondition()
     {
-        var text = @"{
+        var text =
+            @"{
                     if ([5])
                     7
                     else 3
                 }";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Type mismatch. Required 'bool', found 'int'
             ";
 
@@ -205,7 +225,8 @@ public class DiagnosticsTests
     {
         var text = @"while ([5 + 1]) 7";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Cannot convert from 'int' to 'bool'
             ";
 
@@ -217,7 +238,8 @@ public class DiagnosticsTests
     {
         var text = @"def function(arg:int, [)] = 0";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Unexpected token CloseParenToken, expected IdentifierToken
             ";
 
@@ -229,7 +251,8 @@ public class DiagnosticsTests
     {
         var text = @"[println](""hey"", [=])";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 No overloads matching function name 'println' and argument types 'string', 'err'
                 Unexpected token EqualsToken, expected Expression
             ";
@@ -242,7 +265,8 @@ public class DiagnosticsTests
     {
         var text = $@"for (x <- [{b(lower)}] to 12) 7";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Type mismatch. Required 'int', found 'bool'
             ";
 
@@ -254,7 +278,8 @@ public class DiagnosticsTests
     {
         var text = $@"for (x <- 7 to [{b(upper)}]) 7";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Type mismatch. Required 'int', found 'bool'
             ";
 
@@ -264,13 +289,15 @@ public class DiagnosticsTests
     [Fact]
     public void ReportMismatchedBranches()
     {
-        var text = @"{
+        var text =
+            @"{
                     if (true)
                     true
                     else [3]
                 }";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Type mismatch. Required 'bool', found 'int'
             ";
 
@@ -280,13 +307,15 @@ public class DiagnosticsTests
     [Fact]
     public void ReportMismatchedBranches2()
     {
-        var text = @"{
+        var text =
+            @"{
                     if (true)
                     1
                     else [true]
                 }";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Type mismatch. Required 'int', found 'bool'
             ";
 
@@ -298,7 +327,8 @@ public class DiagnosticsTests
     {
         var text = @"[a] = 1";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Variable 'a' does not exist
             ";
 
@@ -308,7 +338,8 @@ public class DiagnosticsTests
     [Fact]
     public void ReportDeclarationInNewScope()
     {
-        var text = @"{
+        var text =
+            @"{
                     val a = 1
                     {
                         val a = 2
@@ -323,12 +354,14 @@ public class DiagnosticsTests
     [Fact]
     public void ReportReassignmentToVal()
     {
-        var text = @"{
+        var text =
+            @"{
                     val a = 1
                     [a] = 2
                 }";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Reassignment to val 'a'
             ";
 
@@ -338,12 +371,14 @@ public class DiagnosticsTests
     [Fact]
     public void ReportTypeMismatch()
     {
-        var text = @"{
+        var text =
+            @"{
                     var a = 1
                     a = [true]
                 }";
 
-        var diagnostic = @"
+        var diagnostic =
+            @"
                 Cannot convert from 'bool' to 'int'
             ";
 

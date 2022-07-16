@@ -12,15 +12,12 @@ internal sealed class LoopLowerer : BoundTreeRewriter
     private int _labelCount;
     private int _variableCount;
 
-    private enum LabelToken
-    {
-    }
+    private enum LabelToken { }
 
     private LoopLowerer(Symbol method)
     {
         _method = method;
     }
-
 
     public static BoundStatement Lower(Symbol method, BoundStatement statement) =>
         new LoopLowerer(method).RewriteStatement(statement);
@@ -45,13 +42,12 @@ internal sealed class LoopLowerer : BoundTreeRewriter
         _variableCount++;
         var name = $"variable${_variableCount}";
 
-        return _method
-            .NewLocal(TextLocation.None, name, false)
-            .WithType(type)
-            .Declare();
+        return _method.NewLocal(TextLocation.None, name, false).WithType(type).Declare();
     }
 
-    protected override BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
+    protected override BoundStatement RewriteBoundConditionalGotoStatement(
+        BoundConditionalGotoStatement node
+    )
     {
         var constant = ConstantFolding.Fold(node.Condition);
         if (constant == null)
@@ -89,7 +85,8 @@ internal sealed class LoopLowerer : BoundTreeRewriter
         var body = RewriteExpression(node.Body);
         var condition = RewriteExpression(node.Condition);
         return RewriteExpression(
-            new BoundBlockExpression(node.Syntax,
+            new BoundBlockExpression(
+                node.Syntax,
                 ImmutableArray.Create<BoundStatement>(
                     new BoundLabelStatement(node.Syntax, node.ContinueLabel),
                     new BoundConditionalGotoStatement(node.Syntax, node.BreakLabel, condition),
@@ -134,7 +131,8 @@ internal sealed class LoopLowerer : BoundTreeRewriter
         var then = RewriteExpression(node.Then);
         var @else = RewriteExpression(node.Else);
         var variableExpression = new BoundVariableExpression(node.Syntax, variable);
-        var block = new BoundBlockExpression(node.Syntax,
+        var block = new BoundBlockExpression(
+            node.Syntax,
             ImmutableArray.Create<BoundStatement>(
                 new BoundVariableDeclarationStatement(node.Syntax, variable, null),
                 new BoundConditionalGotoStatement(node.Syntax, elseLabel, condition),
@@ -177,10 +175,15 @@ internal sealed class LoopLowerer : BoundTreeRewriter
         var upperBound = RewriteExpression(node.UpperBound);
         var body = RewriteExpression(node.Body);
 
-        var declareX = new BoundVariableDeclarationStatement(node.Syntax, node.Variable, lowerBound);
+        var declareX = new BoundVariableDeclarationStatement(
+            node.Syntax,
+            node.Variable,
+            lowerBound
+        );
 
         var variableExpression = ValueExpression(node.Syntax, node.Variable);
-        var condition = new BoundBinaryExpression(node.Syntax,
+        var condition = new BoundBinaryExpression(
+            node.Syntax,
             variableExpression,
             BoundBinaryOperator.BindOrThrow(SyntaxKind.LessThanToken, Type.Int, Type.Int),
             upperBound
@@ -188,26 +191,37 @@ internal sealed class LoopLowerer : BoundTreeRewriter
         var continueLabelStatement = new BoundLabelStatement(node.Syntax, node.ContinueLabel);
         var incrementX = new BoundExpressionStatement(
             node.Syntax,
-            new BoundAssignmentExpression(node.Syntax, variableExpression,
+            new BoundAssignmentExpression(
+                node.Syntax,
+                variableExpression,
                 new BoundBinaryExpression(
                     node.Syntax,
                     variableExpression,
                     BoundBinaryOperator.BindOrThrow(SyntaxKind.PlusToken, Type.Int, Type.Int),
                     new BoundLiteralExpression(node.Syntax, 1)
-                )));
+                )
+            )
+        );
         var whileBody = new BoundBlockExpression(
             node.Syntax,
             ImmutableArray.Create<BoundStatement>(
                 new BoundExpressionStatement(body.Syntax, body),
                 continueLabelStatement,
                 incrementX
-            ), new BoundUnitExpression(node.Syntax)
+            ),
+            new BoundUnitExpression(node.Syntax)
         );
 
         var newBlock = new BoundBlockExpression(
             node.Syntax,
             ImmutableArray.Create<BoundStatement>(declareX),
-            new BoundWhileExpression(node.Syntax, condition, whileBody, node.BreakLabel, new BoundLabel("continue"))
+            new BoundWhileExpression(
+                node.Syntax,
+                condition,
+                whileBody,
+                node.BreakLabel,
+                new BoundLabel("continue")
+            )
         );
         return RewriteExpression(newBlock);
     }

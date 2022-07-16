@@ -38,18 +38,35 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportBadCharacter(TextLocation location, in char character) =>
         Report(location, $"Invalid character in input: {character}");
 
-    public void ReportUnexpectedToken(TextLocation location, SyntaxKind currentKind, SyntaxKind expectedKind) =>
-        Report(location, $"Unexpected token {currentKind}, expected {expectedKind}");
+    public void ReportUnexpectedToken(
+        TextLocation location,
+        SyntaxKind currentKind,
+        SyntaxKind expectedKind
+    ) => Report(location, $"Unexpected token {currentKind}, expected {expectedKind}");
 
     public void ReportUnexpectedEndOfLineTrivia(TextLocation location) =>
         Report(location, $"Unexpected end of line trivia but none found");
 
-    public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, Type operandType) =>
-        Report(location, $"Unary operator '{operatorText}' is not defined for type '{operandType}'");
+    public void ReportUndefinedUnaryOperator(
+        TextLocation location,
+        string operatorText,
+        Type operandType
+    ) =>
+        Report(
+            location,
+            $"Unary operator '{operatorText}' is not defined for type '{operandType}'"
+        );
 
-    public void ReportUndefinedBinaryOperator(TextLocation location, string operatorText, Type leftType,
-        Type rightType) =>
-        Report(location, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'");
+    public void ReportUndefinedBinaryOperator(
+        TextLocation location,
+        string operatorText,
+        Type leftType,
+        Type rightType
+    ) =>
+        Report(
+            location,
+            $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'"
+        );
 
     public void ReportUndefinedName(TextLocation location, string name) =>
         Report(location, $"Variable '{name}' does not exist");
@@ -72,17 +89,34 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportUnterminatedString(TextLocation location) =>
         Report(location, "Unterminated string literal");
 
-    public void ReportNoOverloads(TextLocation location, string name, ImmutableArray<string> argumentTypes) =>
-        Report(location, $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
+    public void ReportNoOverloads(
+        TextLocation location,
+        string name,
+        ImmutableArray<string> argumentTypes
+    ) =>
+        Report(
+            location,
+            $"No overloads matching function name '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'"))}"
+        );
 
-    public void ReportAmbiguousMethod(TextLocation location, string name, ImmutableArray<string> argumentTypes) =>
-        Report(location, $"Ambiguous method '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'")) }");
+    public void ReportAmbiguousMethod(
+        TextLocation location,
+        string name,
+        ImmutableArray<string> argumentTypes
+    ) =>
+        Report(
+            location,
+            $"Ambiguous method '{name}' and argument types {string.Join(", ", argumentTypes.Select(arg => $"'{arg}'"))}"
+        );
 
     public void ReportCannotConvert(TextLocation location, Type fromType, Type toType) =>
         Report(location, $"Cannot convert from '{fromType}' to '{toType}'");
 
     public void ReportCannotConvertImplicitly(TextLocation location, Type fromType, Type toType) =>
-        Report(location, $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?");
+        Report(
+            location,
+            $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?"
+        );
 
     public void ReportUndefinedTypeOrInitializer(TextLocation location) =>
         Report(location, $"A type of initializer is required for a Variable/Value declaration");
@@ -147,35 +181,50 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportTypeNotFound(string typeName) =>
         Report(null, $"The required type '{typeName}' could not be found");
 
-    public void ReportAmbiguousBuiltinType(string builtinName, IEnumerable<TypeDefinition> foundTypes)
+    public void ReportAmbiguousBuiltinType(
+        string builtinName,
+        IEnumerable<TypeDefinition> foundTypes
+    )
     {
-        var assemblyNames = from type in foundTypes
+        var assemblyNames =
+            from type in foundTypes
             let asmName = type.Module.Assembly.Name.Name
-            group type by asmName
-            into g
+            group type by asmName into g
             select g.Key;
         var assemblyNameList = string.Join(", ", assemblyNames);
 
-        Report(null, $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}");
+        Report(
+            null,
+            $"Ambiguous builtin type '{builtinName}' was found in the given assemblies: {assemblyNameList}"
+        );
     }
-
 
     public void ReportAmbiguousType(string typeName, ImmutableArray<TypeDefinition> foundTypes)
     {
-        var assemblyNames = from type in foundTypes
+        var assemblyNames =
+            from type in foundTypes
             let asmName = type.Module.Assembly.Name.Name
-            group type by asmName
-            into g
+            group type by asmName into g
             select g.Key;
         var assemblyNameList = string.Join(", ", assemblyNames);
 
-        Report(null, $"Ambiguous type '{typeName}' was found in the given assemblies: {assemblyNameList}");
+        Report(
+            null,
+            $"Ambiguous type '{typeName}' was found in the given assemblies: {assemblyNameList}"
+        );
     }
 
-    public void ReportRequiredMethodNotFound(string typeName, string methodName, string[] parameterTypeNames)
+    public void ReportRequiredMethodNotFound(
+        string typeName,
+        string methodName,
+        string[] parameterTypeNames
+    )
     {
         var parameterTypeNamesList = string.Join(", ", parameterTypeNames);
-        Report(null, $"Required method {typeName}.{methodName}({parameterTypeNamesList}) was not found");
+        Report(
+            null,
+            $"Required method {typeName}.{methodName}({parameterTypeNamesList}) was not found"
+        );
     }
 
     public void ReportRequiredFieldNotFound(string typeName, string fieldName) =>
@@ -184,6 +233,6 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportDuplicateDefinition(TextLocation location, string name) =>
         Report(location, $"Duplicate definition '{name}'");
 
-    public void ReportExpressionDoesNotSupportIndexOperator(TextLocation location) => 
+    public void ReportExpressionDoesNotSupportIndexOperator(TextLocation location) =>
         Report(location, "Expression does not support index operator");
 }

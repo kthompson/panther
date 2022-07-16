@@ -19,13 +19,11 @@ public sealed partial record LiteralExpressionSyntax : ExpressionSyntax
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
         visitor.VisitLiteralExpression(this);
 
-
     public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken)
-        : this(syntaxTree, literalToken, literalToken.Value)
-    {
-    }
+        : this(syntaxTree, literalToken, literalToken.Value) { }
 
-    public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken, object? value) : base(syntaxTree)
+    public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken, object? value)
+        : base(syntaxTree)
     {
         LiteralToken = literalToken;
         Value = value;
