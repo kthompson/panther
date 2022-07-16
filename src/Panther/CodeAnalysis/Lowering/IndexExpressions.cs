@@ -16,14 +16,14 @@ sealed class IndexExpressions
         _method = method;
     }
 
-
     public static BoundStatement Lower(Symbol method, BoundStatement statement) =>
         Getters.Lower(Setters.Lower(statement));
 
     class Setters : BoundTreeRewriter
     {
-
-        protected override BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
+        protected override BoundExpression RewriteAssignmentExpression(
+            BoundAssignmentExpression node
+        )
         {
             if (node.Left is BoundIndexExpression indexExpression)
             {
@@ -31,22 +31,25 @@ sealed class IndexExpressions
                     node.Syntax,
                     indexExpression.Setter!,
                     RewriteExpression(indexExpression.Expression),
-                    ImmutableArray.Create(RewriteExpression(indexExpression.Index), RewriteExpression(node.Right))
+                    ImmutableArray.Create(
+                        RewriteExpression(indexExpression.Index),
+                        RewriteExpression(node.Right)
+                    )
                 );
             }
 
             return node;
         }
-        
-        
+
         public static BoundStatement Lower(BoundStatement statement) =>
             new Setters().RewriteStatement(statement);
     }
-    
-    
+
     class Getters : BoundTreeRewriter
     {
-        protected override BoundExpression RewriteIndexExpression(BoundIndexExpression indexExpression) =>
+        protected override BoundExpression RewriteIndexExpression(
+            BoundIndexExpression indexExpression
+        ) =>
             new BoundCallExpression(
                 indexExpression.Syntax,
                 indexExpression.Getter!,

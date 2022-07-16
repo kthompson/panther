@@ -13,13 +13,19 @@ internal sealed record BoundLiteralExpression : BoundExpression
             int _ => Type.Int,
             bool _ => Type.Bool,
             string _ => Type.String,
-            _ => throw new System.Exception($"Unexpected literal '{value}' of type {value.GetType()}"),
+            _
+                => throw new System.Exception(
+                    $"Unexpected literal '{value}' of type {value.GetType()}"
+                ),
         };
     }
 
     public object Value { get; }
     public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
-    public override Type Type { get ; init; }
+    public override Type Type { get; init; }
+
     public override void Accept(BoundNodeVisitor visitor) => visitor.VisitLiteralExpression(this);
-    public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.VisitLiteralExpression(this);
+
+    public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) =>
+        visitor.VisitLiteralExpression(this);
 }

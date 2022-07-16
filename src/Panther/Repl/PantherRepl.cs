@@ -108,8 +108,8 @@ internal class PantherRepl : Repl
 
     private ImmutableArray<AssemblyDefinition> LoadReferences()
     {
-        if (_references != null) return _references.Value;
-
+        if (_references != null)
+            return _references.Value;
 
         var references = new string[]
         {
@@ -164,7 +164,10 @@ internal class PantherRepl : Repl
         if (_previous == null)
             return;
 
-        var function = _previous.GetSymbols().Where(m => m.IsMethod).FirstOrDefault(func => func.Name == functionName);
+        var function = _previous
+            .GetSymbols()
+            .Where(m => m.IsMethod)
+            .FirstOrDefault(func => func.Name == functionName);
 
         if (function == null)
         {
@@ -226,12 +229,13 @@ internal class PantherRepl : Repl
         {
             Console.WriteLine(e);
         }
-
     }
 
-    private static readonly string SubmissionsFolder =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Panther",
-            "Submissions");
+    private static readonly string SubmissionsFolder = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Panther",
+        "Submissions"
+    );
 
     private bool _saveSubmissions = false;
 
@@ -251,7 +255,8 @@ internal class PantherRepl : Repl
                 EvaluateSubmission(text);
             }
 
-            if (files.Length <= 0) return;
+            if (files.Length <= 0)
+                return;
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine($"Loaded {files.Length} submissions");
@@ -287,11 +292,13 @@ internal class PantherRepl : Repl
     {
         base.Dispose(disposing);
 
-        if (!disposing) return;
+        if (!disposing)
+            return;
 
         this._scriptHost.Dispose();
 
-        if (_references == null) return;
+        if (_references == null)
+            return;
 
         foreach (var reference in _references.Value)
         {

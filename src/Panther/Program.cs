@@ -76,20 +76,23 @@ for (var i = 0; i < args.Length; i++)
     sources.Add(arg);
 }
 
-
-if (!ValidateSources()) return -1;
-if (!ValidateReferences()) return -1;
+if (!ValidateSources())
+    return -1;
+if (!ValidateReferences())
+    return -1;
 if (output == null)
 {
     PrintError("output not defined");
     return -1;
 }
 
-var syntaxTrees = sources.Select(file =>
-{
-    Console.WriteLine($"parsing file {file}...");
-    return SyntaxTree.LoadFile(file);
-}).ToArray();
+var syntaxTrees = sources
+    .Select(file =>
+    {
+        Console.WriteLine($"parsing file {file}...");
+        return SyntaxTree.LoadFile(file);
+    })
+    .ToArray();
 
 var (referenceDiags, compilation) = Compilation.Create(references.ToArray(), syntaxTrees);
 
@@ -126,7 +129,6 @@ bool ValidateReferences()
     return true;
 }
 
-
 bool ValidateSources()
 {
     if (sources.Count == 0)
@@ -151,9 +153,11 @@ bool ValidateSources()
     return true;
 }
 
-
 bool CheckArg(string arg, string shortName, string longName) =>
-    arg == $"/{shortName}" || arg == $"/{longName}" || arg == $"-{shortName}" || arg == $"--{longName}";
+    arg == $"/{shortName}"
+    || arg == $"/{longName}"
+    || arg == $"-{shortName}"
+    || arg == $"--{longName}";
 
 void PrintError(string error)
 {
@@ -162,7 +166,9 @@ void PrintError(string error)
     PrintUsage();
 }
 
-void PrintUsage() => Console.Error.WriteLine($@"
+void PrintUsage() =>
+    Console.Error.WriteLine(
+        $@"
 usage: pnc <source-paths> /o <output> /r <reference> [/m <module>]
 version: {ThisAssembly.AssemblyInformationalVersion}
 
@@ -175,4 +181,5 @@ version: {ThisAssembly.AssemblyInformationalVersion}
     --help             Display this help screen.
 
     --version          Display version information.
-");
+"
+    );

@@ -23,8 +23,7 @@ public class Tree
     public List<TreeType> Types;
 
     public IEnumerable<TreeType> ConcreteNodes =>
-        Types.Where(type => type is not AbstractNode)
-            .OrderBy(node => node.Name);
+        Types.Where(type => type is not AbstractNode).OrderBy(node => node.Name);
 }
 
 public class Node : TreeType
@@ -56,18 +55,14 @@ public class TreeType
     public List<TreeTypeChild> Children = new List<TreeTypeChild>();
 }
 
-public class PredefinedNode : TreeType
-{
-}
+public class PredefinedNode : TreeType { }
 
 public class AbstractNode : TreeType
 {
     public readonly List<Field> Fields = new List<Field>();
 }
 
-public class TreeTypeChild
-{
-}
+public class TreeTypeChild { }
 
 public class Field : TreeTypeChild
 {
@@ -104,14 +99,10 @@ public class Kind
     [XmlAttribute]
     public string Name;
 
-    public override bool Equals(object obj)
-        => obj is Kind kind &&
-           Name == kind.Name;
+    public override bool Equals(object obj) => obj is Kind kind && Name == kind.Name;
 
-    public override int GetHashCode()
-        => Name.GetHashCode();
+    public override int GetHashCode() => Name.GetHashCode();
 }
-
 
 class Program
 {
@@ -129,8 +120,6 @@ class Program
         GenerateBoundTree();
         GenerateBoundVisitor();
     }
-
-
 
     private static void GenerateBoundTree()
     {
@@ -210,11 +199,20 @@ class Program
 
         var contents = writer.ToString();
 
-
-        var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Binding", "Binding.g.cs");
+        var path = Path.Combine(
+            "..",
+            "..",
+            "..",
+            "..",
+            "Panther",
+            "CodeAnalysis",
+            "Binding",
+            "Binding.g.cs"
+        );
         File.WriteAllText(path, contents);
         Console.WriteLine($"Wrote bound nodes to {path}");
     }
+
     private static void GenerateBoundVisitor()
     {
         using var writer = new StringWriter();
@@ -234,7 +232,6 @@ class Program
         indentedTextWriter.WriteLine("internal partial class BoundNodeVisitor");
         indentedTextWriter.WriteLine("{");
         indentedTextWriter.Indent++;
-
 
         using (var enumerator = _boundTree.ConcreteNodes.GetEnumerator())
         {
@@ -285,10 +282,18 @@ class Program
         indentedTextWriter.Indent--;
         indentedTextWriter.WriteLine("}");
 
-
         var contents = writer.ToString();
 
-        var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Binding", "BoundNodeVisitor.g.cs");
+        var path = Path.Combine(
+            "..",
+            "..",
+            "..",
+            "..",
+            "Panther",
+            "CodeAnalysis",
+            "Binding",
+            "BoundNodeVisitor.g.cs"
+        );
         File.WriteAllText(path, contents);
         Console.WriteLine($"Wrote bound visitor to {path}");
     }
@@ -312,7 +317,6 @@ class Program
         indentedTextWriter.WriteLine("public partial class SyntaxVisitor");
         indentedTextWriter.WriteLine("{");
         indentedTextWriter.Indent++;
-
 
         using (var enumerator = _tree.ConcreteNodes.GetEnumerator())
         {
@@ -363,20 +367,34 @@ class Program
         indentedTextWriter.Indent--;
         indentedTextWriter.WriteLine("}");
 
-
         var contents = writer.ToString();
 
-        var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Syntax", "SyntaxVisitor.g.cs");
+        var path = Path.Combine(
+            "..",
+            "..",
+            "..",
+            "..",
+            "Panther",
+            "CodeAnalysis",
+            "Syntax",
+            "SyntaxVisitor.g.cs"
+        );
         File.WriteAllText(path, contents);
         Console.WriteLine($"Wrote syntax visitor to {path}");
     }
 
-    private static void WriteVisitorMethod(IndentedTextWriter indentedTextWriter, TreeType node, bool generic)
+    private static void WriteVisitorMethod(
+        IndentedTextWriter indentedTextWriter,
+        TreeType node,
+        bool generic
+    )
     {
         var name = node.Name;
         var methodName = Regex.Replace(Regex.Replace(name, "^Bound", ""), "(Syntax$|^Syntax)", "");
         var returnType = generic ? "TResult" : "void";
-        indentedTextWriter.WriteLine($"public virtual {returnType} Visit{methodName}({name} node) =>");
+        indentedTextWriter.WriteLine(
+            $"public virtual {returnType} Visit{methodName}({name} node) =>"
+        );
         indentedTextWriter.Indent++;
         indentedTextWriter.WriteLine("this.DefaultVisit(node);");
         indentedTextWriter.Indent--;
@@ -401,7 +419,9 @@ class Program
         foreach (var node in _tree.Types.OfType<AbstractNode>())
         {
             var name = node.Name;
-            indentedTextWriter.Write($"public abstract partial record {name}(SyntaxTree SyntaxTree");
+            indentedTextWriter.Write(
+                $"public abstract partial record {name}(SyntaxTree SyntaxTree"
+            );
 
             foreach (var field in node.Fields)
             {
@@ -462,8 +482,16 @@ class Program
 
         var contents = writer.ToString();
 
-
-        var path = Path.Combine("..", "..", "..", "..", "Panther", "CodeAnalysis", "Syntax", "Syntax.g.cs");
+        var path = Path.Combine(
+            "..",
+            "..",
+            "..",
+            "..",
+            "Panther",
+            "CodeAnalysis",
+            "Syntax",
+            "Syntax.g.cs"
+        );
         File.WriteAllText(path, contents);
         Console.WriteLine($"Wrote syntax to {path}");
     }
@@ -472,18 +500,26 @@ class Program
     {
         var methodName = Regex.Replace(name, "^Bound", "");
         writer.WriteLineNoTabs("");
-        writer.WriteLine($"public override void Accept(BoundNodeVisitor visitor) => visitor.Visit{methodName}(this);");
+        writer.WriteLine(
+            $"public override void Accept(BoundNodeVisitor visitor) => visitor.Visit{methodName}(this);"
+        );
         writer.WriteLineNoTabs("");
-        writer.WriteLine($"public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.Visit{methodName}(this);");
+        writer.WriteLine(
+            $"public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.Visit{methodName}(this);"
+        );
     }
 
     private static void EmitAcceptSyntaxVisitor(IndentedTextWriter writer, string name)
     {
         var methodName = Regex.Replace(name, "(Syntax$|^Syntax)", "");
         writer.WriteLineNoTabs("");
-        writer.WriteLine($"public override void Accept(SyntaxVisitor visitor) => visitor.Visit{methodName}(this);");
+        writer.WriteLine(
+            $"public override void Accept(SyntaxVisitor visitor) => visitor.Visit{methodName}(this);"
+        );
         writer.WriteLineNoTabs("");
-        writer.WriteLine($"public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.Visit{methodName}(this);");
+        writer.WriteLine(
+            $"public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.Visit{methodName}(this);"
+        );
     }
 
     private static void EmitBoundKind(Node node, IndentedTextWriter indentedTextWriter)
@@ -491,7 +527,9 @@ class Program
         var kind = node.Kinds.FirstOrDefault();
         if (kind != null)
         {
-            indentedTextWriter.WriteLine($"public override BoundNodeKind Kind => BoundNodeKind.{kind.Name};");
+            indentedTextWriter.WriteLine(
+                $"public override BoundNodeKind Kind => BoundNodeKind.{kind.Name};"
+            );
             indentedTextWriter.WriteLineNoTabs("");
         }
     }
@@ -501,7 +539,9 @@ class Program
         var kind = node.Kinds.FirstOrDefault();
         if (kind != null)
         {
-            indentedTextWriter.WriteLine($"public override SyntaxKind Kind => SyntaxKind.{kind.Name};");
+            indentedTextWriter.WriteLine(
+                $"public override SyntaxKind Kind => SyntaxKind.{kind.Name};"
+            );
             indentedTextWriter.WriteLineNoTabs("");
         }
     }
@@ -518,7 +558,11 @@ class Program
         indentedTextWriter.WriteLine("}");
     }
 
-    private static void EmitGetChildren(IndentedTextWriter indentedTextWriter, Node node, StringWriter writer)
+    private static void EmitGetChildren(
+        IndentedTextWriter indentedTextWriter,
+        Node node,
+        StringWriter writer
+    )
     {
         indentedTextWriter.WriteLine("public override IEnumerable<SyntaxNode> GetChildren()");
         indentedTextWriter.WriteLine("{");
@@ -544,7 +588,9 @@ class Program
             }
             else if (field.Type.StartsWith("SeparatedSyntaxList<"))
             {
-                indentedTextWriter.WriteLine($"foreach (var child in {field.Name}.GetWithSeparators())");
+                indentedTextWriter.WriteLine(
+                    $"foreach (var child in {field.Name}.GetWithSeparators())"
+                );
                 indentedTextWriter.Indent++;
                 indentedTextWriter.WriteLine($"yield return child;");
                 indentedTextWriter.Indent--;
@@ -605,7 +651,6 @@ class Program
         var fields = node.Fields.ToList();
         if (fields.Count > 8)
         {
-
             indentedTextWriter.WriteLine("var hc = new HashCode();");
             foreach (var field in fields)
             {
@@ -640,10 +685,12 @@ class Program
         indentedTextWriter.WriteLineNoTabs("");
     }
 
-
     private static Tree ReadTree(string inputFile)
     {
-        var reader = XmlReader.Create(inputFile, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit });
+        var reader = XmlReader.Create(
+            inputFile,
+            new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit }
+        );
         var serializer = new XmlSerializer(typeof(Tree));
         return (Tree)serializer.Deserialize(reader);
     }

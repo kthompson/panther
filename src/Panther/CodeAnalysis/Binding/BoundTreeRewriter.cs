@@ -10,23 +10,34 @@ internal abstract class BoundTreeRewriter
     protected virtual BoundExpression RewriteExpression(BoundExpression node) =>
         node switch
         {
-            BoundAssignmentExpression boundAssignmentExpression => RewriteAssignmentExpression(boundAssignmentExpression),
-            BoundBinaryExpression boundBinaryExpression => RewriteBinaryExpression(boundBinaryExpression),
-            BoundBlockExpression boundBlockExpression => RewriteBlockExpression(boundBlockExpression),
+            BoundAssignmentExpression boundAssignmentExpression
+                => RewriteAssignmentExpression(boundAssignmentExpression),
+            BoundBinaryExpression boundBinaryExpression
+                => RewriteBinaryExpression(boundBinaryExpression),
+            BoundBlockExpression boundBlockExpression
+                => RewriteBlockExpression(boundBlockExpression),
             BoundCallExpression callExpression => RewriteCallExpression(callExpression),
-            BoundConversionExpression conversionExpression => RewriteConversionExpression(conversionExpression),
+            BoundConversionExpression conversionExpression
+                => RewriteConversionExpression(conversionExpression),
             BoundErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
-            BoundFieldExpression boundFieldExpression => RewriteFieldExpression(boundFieldExpression),
+            BoundFieldExpression boundFieldExpression
+                => RewriteFieldExpression(boundFieldExpression),
             BoundForExpression boundForExpression => RewriteForExpression(boundForExpression),
             BoundIfExpression boundIfExpression => RewriteIfExpression(boundIfExpression),
-            BoundIndexExpression boundIndexExpression => RewriteIndexExpression(boundIndexExpression),
-            BoundLiteralExpression boundLiteralExpression => RewriteLiteralExpression(boundLiteralExpression),
-            BoundNewExpression boundLiteralExpression => RewriteNewExpression(boundLiteralExpression),
+            BoundIndexExpression boundIndexExpression
+                => RewriteIndexExpression(boundIndexExpression),
+            BoundLiteralExpression boundLiteralExpression
+                => RewriteLiteralExpression(boundLiteralExpression),
+            BoundNewExpression boundLiteralExpression
+                => RewriteNewExpression(boundLiteralExpression),
             BoundTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
-            BoundUnaryExpression boundUnaryExpression => RewriteUnaryExpression(boundUnaryExpression),
+            BoundUnaryExpression boundUnaryExpression
+                => RewriteUnaryExpression(boundUnaryExpression),
             BoundUnitExpression boundUnitExpression => RewriteUnitExpression(boundUnitExpression),
-            BoundVariableExpression boundVariableExpression => RewriteVariableExpression(boundVariableExpression),
-            BoundWhileExpression boundWhileExpression => RewriteWhileExpression(boundWhileExpression),
+            BoundVariableExpression boundVariableExpression
+                => RewriteVariableExpression(boundVariableExpression),
+            BoundWhileExpression boundWhileExpression
+                => RewriteWhileExpression(boundWhileExpression),
             _ => throw new ArgumentOutOfRangeException(nameof(node))
         };
 
@@ -63,7 +74,11 @@ internal abstract class BoundTreeRewriter
         if (newArguments == null)
             return node;
 
-        return new BoundNewExpression(node.Syntax, node.Constructor, newArguments?.ToImmutableArray() ?? node.Arguments);
+        return new BoundNewExpression(
+            node.Syntax,
+            node.Constructor,
+            newArguments?.ToImmutableArray() ?? node.Arguments
+        );
     }
 
     protected virtual BoundExpression RewriteIndexExpression(BoundIndexExpression node)
@@ -117,7 +132,12 @@ internal abstract class BoundTreeRewriter
         if (newArguments == null && node.Expression == lhs)
             return node;
 
-        return new BoundCallExpression(node.Syntax, node.Method, lhs, newArguments?.ToImmutableArray() ?? node.Arguments);
+        return new BoundCallExpression(
+            node.Syntax,
+            node.Method,
+            lhs,
+            newArguments?.ToImmutableArray() ?? node.Arguments
+        );
     }
 
     protected virtual BoundExpression RewriteWhileExpression(BoundWhileExpression node)
@@ -128,7 +148,13 @@ internal abstract class BoundTreeRewriter
         if (node.Condition == cond && node.Body == body)
             return node;
 
-        return new BoundWhileExpression(node.Syntax, cond, body, node.BreakLabel, node.ContinueLabel);
+        return new BoundWhileExpression(
+            node.Syntax,
+            cond,
+            body,
+            node.BreakLabel,
+            node.ContinueLabel
+        );
     }
 
     protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
@@ -162,7 +188,15 @@ internal abstract class BoundTreeRewriter
         if (node.LowerBound == lowerBound && node.UpperBound == upperBound && node.Body == body)
             return node;
 
-        return new BoundForExpression(node.Syntax, node.Variable, lowerBound, upperBound, body, node.BreakLabel, node.ContinueLabel);
+        return new BoundForExpression(
+            node.Syntax,
+            node.Variable,
+            lowerBound,
+            upperBound,
+            body,
+            node.BreakLabel,
+            node.ContinueLabel
+        );
     }
 
     protected virtual BoundExpression RewriteBlockExpression(BoundBlockExpression node)
@@ -227,14 +261,22 @@ internal abstract class BoundTreeRewriter
     protected virtual BoundStatement RewriteStatement(BoundStatement node) =>
         node switch
         {
-            BoundAssignmentStatement assignmentStatement => RewriteAssignmentStatement(assignmentStatement),
-            BoundExpressionStatement expressionStatement => RewriteExpressionStatement(expressionStatement),
+            BoundAssignmentStatement assignmentStatement
+                => RewriteAssignmentStatement(assignmentStatement),
+            BoundExpressionStatement expressionStatement
+                => RewriteExpressionStatement(expressionStatement),
             BoundNopStatement nopStatement => RewriteNopStatement(nopStatement),
-            BoundVariableDeclarationStatement variableDeclarationStatement => RewriteVariableDeclarationStatement(variableDeclarationStatement),
+            BoundVariableDeclarationStatement variableDeclarationStatement
+                => RewriteVariableDeclarationStatement(variableDeclarationStatement),
             BoundLabelStatement labelStatement => RewriteBoundLabelStatement(labelStatement),
             BoundGotoStatement gotoStatement => RewriteBoundGotoStatement(gotoStatement),
-            BoundConditionalGotoStatement conditionalGotoStatement => RewriteBoundConditionalGotoStatement(conditionalGotoStatement),
-            _ => throw new ArgumentOutOfRangeException(nameof(node), $"Unexpected kind: {node.Kind}")
+            BoundConditionalGotoStatement conditionalGotoStatement
+                => RewriteBoundConditionalGotoStatement(conditionalGotoStatement),
+            _
+                => throw new ArgumentOutOfRangeException(
+                    nameof(node),
+                    $"Unexpected kind: {node.Kind}"
+                )
         };
 
     protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
@@ -247,13 +289,20 @@ internal abstract class BoundTreeRewriter
         return new BoundAssignmentStatement(node.Syntax, left, right);
     }
 
-    protected virtual BoundStatement RewriteBoundConditionalGotoStatement(BoundConditionalGotoStatement node)
+    protected virtual BoundStatement RewriteBoundConditionalGotoStatement(
+        BoundConditionalGotoStatement node
+    )
     {
         var cond = RewriteExpression(node.Condition);
         if (node.Condition == cond)
             return node;
 
-        return new BoundConditionalGotoStatement(node.Syntax, node.BoundLabel, cond, node.JumpIfTrue);
+        return new BoundConditionalGotoStatement(
+            node.Syntax,
+            node.BoundLabel,
+            cond,
+            node.JumpIfTrue
+        );
     }
 
     protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
@@ -265,7 +314,9 @@ internal abstract class BoundTreeRewriter
         return new BoundExpressionStatement(node.Syntax, expr);
     }
 
-    protected virtual BoundStatement RewriteVariableDeclarationStatement(BoundVariableDeclarationStatement node)
+    protected virtual BoundStatement RewriteVariableDeclarationStatement(
+        BoundVariableDeclarationStatement node
+    )
     {
         var expr = node.Expression == null ? null : RewriteExpression(node.Expression);
         if (expr == node.Expression)
@@ -284,7 +335,8 @@ internal abstract class BoundTreeRewriter
 
     protected virtual BoundUnaryOperator RewriteUnaryOperator(BoundUnaryOperator node) => node;
 
-    protected virtual BoundExpression RewriteVariableExpression(BoundVariableExpression node) => node;
+    protected virtual BoundExpression RewriteVariableExpression(BoundVariableExpression node) =>
+        node;
 
     protected virtual BoundExpression RewriteUnitExpression(BoundUnitExpression node) => node;
 

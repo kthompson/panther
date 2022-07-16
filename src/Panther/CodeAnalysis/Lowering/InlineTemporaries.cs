@@ -9,7 +9,8 @@ namespace Panther.CodeAnalysis.Lowering;
 internal sealed class InlineTemporaries : BoundStatementListRewriter
 {
     private readonly Symbol _method;
-    private readonly Dictionary<Symbol, BoundExpression> _expressionsToInline = new Dictionary<Symbol, BoundExpression>();
+    private readonly Dictionary<Symbol, BoundExpression> _expressionsToInline =
+        new Dictionary<Symbol, BoundExpression>();
 
     private InlineTemporaries(Symbol method)
     {
@@ -18,9 +19,13 @@ internal sealed class InlineTemporaries : BoundStatementListRewriter
 
     protected override BoundStatement RewriteStatement(BoundStatement node)
     {
-        if (node is BoundVariableDeclarationStatement { Expression: { } } varDecl && (varDecl.Variable.Name.StartsWith("temp$")
-                //|| varDecl.Variable.Name.StartsWith("ctemp$")
-            ))
+        if (
+            node is BoundVariableDeclarationStatement { Expression: { } } varDecl
+            && (
+                varDecl.Variable.Name.StartsWith("temp$")
+            //|| varDecl.Variable.Name.StartsWith("ctemp$")
+            )
+        )
         {
             varDecl.Variable.Delete();
             _expressionsToInline[varDecl.Variable] = varDecl.Expression;
@@ -32,7 +37,10 @@ internal sealed class InlineTemporaries : BoundStatementListRewriter
 
     protected override BoundExpression RewriteExpression(BoundExpression node)
     {
-        if (node is BoundVariableExpression variableExpression && _expressionsToInline.TryGetValue(variableExpression.Variable, out var expression))
+        if (
+            node is BoundVariableExpression variableExpression
+            && _expressionsToInline.TryGetValue(variableExpression.Variable, out var expression)
+        )
         {
             _expressionsToInline.Remove(variableExpression.Variable);
             return RewriteExpression(expression);
@@ -43,9 +51,7 @@ internal sealed class InlineTemporaries : BoundStatementListRewriter
 
     protected override BoundExpression RewriteBlockExpression(BoundBlockExpression node)
     {
-        if (node.Statements.IsEmpty)
-        {
-        }
+        if (node.Statements.IsEmpty) { }
         return base.RewriteBlockExpression(node);
     }
 

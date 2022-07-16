@@ -19,25 +19,33 @@ using Panther.CodeAnalysis.Text;
 using Xunit;
 using Xunit.Sdk;
 
-
 namespace Panther.Tests.CodeAnalysis;
 
 internal static partial class TestHelpers
 {
     public static ImmutableArray<AssemblyDefinition> AssembliesWithStdLib { get; }
     public static ImmutableArray<AssemblyDefinition> AssembliesWithTestStdLib { get; }
+
     public static string b(bool value) => value ? "true" : "false";
 
     static TestHelpers()
     {
-        AssembliesWithTestStdLib = GetAssemblyDefinitions(typeof(object).Assembly.Location,
-            typeof(Console).Assembly.Location, typeof(TestLib::Panther.Unit).Assembly.Location);
+        AssembliesWithTestStdLib = GetAssemblyDefinitions(
+            typeof(object).Assembly.Location,
+            typeof(Console).Assembly.Location,
+            typeof(TestLib::Panther.Unit).Assembly.Location
+        );
 
-        AssembliesWithStdLib = GetAssemblyDefinitions(typeof(object).Assembly.Location,
-            typeof(Console).Assembly.Location, typeof(StdLib::Panther.Unit).Assembly.Location);
+        AssembliesWithStdLib = GetAssemblyDefinitions(
+            typeof(object).Assembly.Location,
+            typeof(Console).Assembly.Location,
+            typeof(StdLib::Panther.Unit).Assembly.Location
+        );
     }
 
-    private static ImmutableArray<AssemblyDefinition> GetAssemblyDefinitions(params string[] references)
+    private static ImmutableArray<AssemblyDefinition> GetAssemblyDefinitions(
+        params string[] references
+    )
     {
         var assemblies = ImmutableArray.CreateBuilder<AssemblyDefinition>();
 
@@ -51,8 +59,11 @@ internal static partial class TestHelpers
         return result;
     }
 
-
-    public static void AssertHasDiagnostics(string text, string diagnosticText, [CallerMemberName] string? testName = null)
+    public static void AssertHasDiagnostics(
+        string text,
+        string diagnosticText,
+        [CallerMemberName] string? testName = null
+    )
     {
         var annotatedText = AnnotatedText.Parse(text);
 
@@ -66,27 +77,39 @@ internal static partial class TestHelpers
         AssertDiagnostics(diagnosticText, annotatedText, diagnostics);
     }
 
-    public static void AssertDiagnostics(string diagnosticText, AnnotatedText annotatedText, ImmutableArray<Diagnostic> diagnostics)
+    public static void AssertDiagnostics(
+        string diagnosticText,
+        AnnotatedText annotatedText,
+        ImmutableArray<Diagnostic> diagnostics
+    )
     {
         var expectedDiagnosticMessages = diagnosticText.UnindentLines();
 
-        Assert.True(annotatedText.Spans.Length == expectedDiagnosticMessages.Length,
-            "Test invalid, must have equal number of diagnostics as text spans");
+        Assert.True(
+            annotatedText.Spans.Length == expectedDiagnosticMessages.Length,
+            "Test invalid, must have equal number of diagnostics as text spans"
+        );
 
-        var expectedDiagnostics = expectedDiagnosticMessages.Zip(annotatedText.Spans)
+        var expectedDiagnostics = expectedDiagnosticMessages
+            .Zip(annotatedText.Spans)
             .Select(tuple => new { Span = tuple.Second, Message = tuple.First })
             .OrderBy(diagnostic => diagnostic.Span.Start)
             .ToArray();
 
-
-        var actualDiagnostics = diagnostics.OrderBy(diagnostic => diagnostic.Location?.Span.Start ?? -1).ToArray();
+        var actualDiagnostics = diagnostics
+            .OrderBy(diagnostic => diagnostic.Location?.Span.Start ?? -1)
+            .ToArray();
 
         for (var i = 0; i < expectedDiagnosticMessages.Length; i++)
         {
-            Assert.True(i < expectedDiagnostics.Length,
-                $"Expected at least {i + 1} expected diagnostics only found {expectedDiagnostics.Length}");
-            Assert.True(i < actualDiagnostics.Length,
-                $"Expected at least {i + 1} actual diagnostics only found {actualDiagnostics.Length}");
+            Assert.True(
+                i < expectedDiagnostics.Length,
+                $"Expected at least {i + 1} expected diagnostics only found {expectedDiagnostics.Length}"
+            );
+            Assert.True(
+                i < actualDiagnostics.Length,
+                $"Expected at least {i + 1} actual diagnostics only found {actualDiagnostics.Length}"
+            );
 
             var expectedMessage = expectedDiagnostics[i].Message;
             var actualMessage = actualDiagnostics[i].Message;
@@ -134,7 +157,6 @@ internal static partial class TestHelpers
         return sb.ToString();
     }
 
-
     public static Compilation Compile(string code)
     {
         var tree = SyntaxTree.Parse(code);
@@ -149,28 +171,29 @@ internal static partial class TestHelpers
         return compilation;
     }
 
-
-    public static void AssertByteArrays(IList<byte> expected, IList<byte> actual, string message = "")
+    public static void AssertByteArrays(
+        IList<byte> expected,
+        IList<byte> actual,
+        string message = ""
+    )
     {
         string BinaryValue(IList<byte> bytes, int i) =>
-            i < bytes.Count
-                ? "0b" + Convert.ToString(bytes[i], 2).PadLeft(8, '0')
-                : "MISSING";
+            i < bytes.Count ? "0b" + Convert.ToString(bytes[i], 2).PadLeft(8, '0') : "MISSING";
 
         string BuildErrString(int i, IList<byte> expectedBytes, IList<byte> actualBytes)
         {
             var expectedBinary = BinaryValue(expectedBytes, i);
             var actualBinary = BinaryValue(actualBytes, i);
 
-            return message +
-                   $"Expected: {string.Join(", ", expectedBytes.Select(x => $"0x{x:X2}"))}\r\n" +
-                   $"Actual:   {string.Join(", ", actualBytes.Select(x => $"0x{x:X2}"))}\r\n" +
-                   new string('-', 10 + i * 6) + "^^^^\r\n" +
-                   "\r\n" +
-                   $"At offset: {i}\r\n" +
-                   $"Expected: {expectedBinary}\r\n" +
-                   $"Actual:   {actualBinary}"
-                ;
+            return message
+                + $"Expected: {string.Join(", ", expectedBytes.Select(x => $"0x{x:X2}"))}\r\n"
+                + $"Actual:   {string.Join(", ", actualBytes.Select(x => $"0x{x:X2}"))}\r\n"
+                + new string('-', 10 + i * 6)
+                + "^^^^\r\n"
+                + "\r\n"
+                + $"At offset: {i}\r\n"
+                + $"Expected: {expectedBinary}\r\n"
+                + $"Actual:   {actualBinary}";
         }
 
         for (var i = 0; i < expected.Count; i++)

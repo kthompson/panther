@@ -28,7 +28,7 @@ internal sealed class LoweringPipeline
             Console.WriteLine("==== Index Expressions ===");
             noIndexExpr.WriteTo(Console.Out);
         }
-        
+
         var tac = ThreeAddressCode.Lower(method, noIndexExpr);
         if (debug)
         {

@@ -11,7 +11,10 @@ namespace Panther.Tests.CodeAnalysis.Syntax;
 public class ParserTests
 {
     [Property]
-    public void BinaryExpressionHonorsPrecedences(BinaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
+    public void BinaryExpressionHonorsPrecedences(
+        BinaryOperatorSyntaxKind op1,
+        BinaryOperatorSyntaxKind op2
+    )
     {
         var op1Precedence = op1.Kind.GetBinaryOperatorPrecedence();
         var op2Precedence = op2.Kind.GetBinaryOperatorPrecedence();
@@ -90,7 +93,10 @@ public class ParserTests
     }
 
     [Property]
-    public void UnaryExpressionHonorsPrecedences(UnaryOperatorSyntaxKind op1, BinaryOperatorSyntaxKind op2)
+    public void UnaryExpressionHonorsPrecedences(
+        UnaryOperatorSyntaxKind op1,
+        BinaryOperatorSyntaxKind op2
+    )
     {
         var unaryText = SyntaxFacts.GetText(op1.Kind);
         var binaryText = SyntaxFacts.GetText(op2.Kind);
@@ -166,11 +172,13 @@ public class ParserTests
     [Fact]
     public void ParseNestedNonUnitBlockExpression()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                          {
                             val x = 5
                             5
-                         }");
+                         }"
+        );
         var tree = SyntaxTree.Parse(text.Text);
         Assert.Empty(tree.Diagnostics);
 
@@ -314,12 +322,14 @@ public class ParserTests
     [Fact]
     public void ParseUnaryExpressionAfterLineBreak()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                 {
                     val x = 3
                     -x
                 }
-            ");
+            "
+        );
         var tree = SyntaxTree.Parse(text.Text);
         Assert.Empty(tree.Diagnostics);
 
@@ -356,15 +366,16 @@ public class ParserTests
         e.AssertToken(SyntaxKind.EndOfInputToken, "");
     }
 
-
     [Fact]
     public void ParseBinaryExpressionWithLineBreakInsideGroup()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                 (false
                     || (false
                            || true))
-            ");
+            "
+        );
         var tree = SyntaxTree.Parse(text.Text);
         Assert.Empty(tree.Diagnostics);
 
@@ -403,11 +414,13 @@ public class ParserTests
     [Fact]
     public void ParseUsingDirectives()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                 using System
                 using System.Collections.Immutable
                 using System.Diagnostics
-            ");
+            "
+        );
         var tree = SyntaxTree.Parse(text.Text);
         Assert.Empty(tree.Diagnostics);
 
@@ -451,14 +464,15 @@ public class ParserTests
         e.AssertToken(SyntaxKind.EndOfInputToken, "");
     }
 
-
     [Fact]
     public void ParseForExpressionWithLineBreaks()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                 for (x <- 0 to 5)
                     x
-            ");
+            "
+        );
         var tree = SyntaxTree.Parse(text.Text);
         Assert.Empty(tree.Diagnostics);
 
@@ -513,10 +527,12 @@ public class ParserTests
     [Fact]
     public void ParseWhileExpression()
     {
-        var text = AnnotatedText.Parse(@"
+        var text = AnnotatedText.Parse(
+            @"
                           {
                             while ( true ) 1
-                          }");
+                          }"
+        );
         var tree = SyntaxTree.Parse(text.Text);
         Assert.Empty(tree.Diagnostics);
 
@@ -547,7 +563,7 @@ public class ParserTests
         e.AssertToken(SyntaxKind.CloseBraceToken, "}");
         e.AssertToken(SyntaxKind.EndOfInputToken, "");
     }
-    
+
     [Fact]
     public void ParseZeroString()
     {

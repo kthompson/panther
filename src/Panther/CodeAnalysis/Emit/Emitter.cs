@@ -40,21 +40,30 @@ internal class Emitter
     private readonly Dictionary<Symbol, MethodReference> _methodReferences;
 
     private readonly Dictionary<BoundLabel, int> _labels = new();
-    private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch = new();
+    private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch =
+        new();
 
-    private Emitter(string moduleName, ImmutableArray<AssemblyDefinition> references, Dictionary<Symbol, FieldReference>? previousFields = null, Dictionary<Symbol, MethodReference>? previousMethods = null)
+    private Emitter(
+        string moduleName,
+        ImmutableArray<AssemblyDefinition> references,
+        Dictionary<Symbol, FieldReference>? previousFields = null,
+        Dictionary<Symbol, MethodReference>? previousMethods = null
+    )
     {
         _typeCache = (
             from asm in references
             from module in asm.Modules
             from type in module.Types
-            group type by type.FullName
-            into g
+            group type by type.FullName into g
             select g
         ).ToDictionary(g => g.Key, g => g.ToImmutableArray());
 
         var assemblyName = new AssemblyNameDefinition(moduleName, new Version(1, 0));
-        _assemblyDefinition = AssemblyDefinition.CreateAssembly(assemblyName, moduleName, ModuleKind.Console);
+        _assemblyDefinition = AssemblyDefinition.CreateAssembly(
+            assemblyName,
+            moduleName,
+            ModuleKind.Console
+        );
 
         // import known types
         var builtinTypes = new List<(TypeSymbol type, string MetadataType)>
@@ -77,20 +86,32 @@ internal class Emitter
         }
 
         // import fields from previous compilation
-        _globals = (previousFields ?? new Dictionary<Symbol, FieldReference>()).Select(kv =>
-                (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
+        _globals = (previousFields ?? new Dictionary<Symbol, FieldReference>())
+            .Select(kv => (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
             .ToDictionary(kv => kv.Item1, kv => kv.Item2);
 
-        _methodReferences = (previousMethods ?? new Dictionary<Symbol, MethodReference>()).Select(kv =>
-                (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
+        _methodReferences = (previousMethods ?? new Dictionary<Symbol, MethodReference>())
+            .Select(kv => (kv.Key, _assemblyDefinition.MainModule.ImportReference(kv.Value)))
             .ToDictionary(kv => kv.Item1, kv => kv.Item2);
 
         _voidType = ResolveBuiltinType(TypeSymbol.Unit.Name, "System.Void");
 
-        _stringConcatReference = ResolveMethod("System.String", "Concat", new[] { "System.String", "System.String" });
+        _stringConcatReference = ResolveMethod(
+            "System.String",
+            "Concat",
+            new[] { "System.String", "System.String" }
+        );
 
-        _convertBoolToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Boolean" });
-        _convertInt32ToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Int32" });
+        _convertBoolToString = ResolveMethod(
+            "System.Convert",
+            "ToString",
+            new[] { "System.Boolean" }
+        );
+        _convertInt32ToString = ResolveMethod(
+            "System.Convert",
+            "ToString",
+            new[] { "System.Int32" }
+        );
         _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
         _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
         _unit = ResolveField("Panther.Unit", "Default");
@@ -99,21 +120,42 @@ internal class Emitter
     private TypeReference LookupType(Symbol symbol) =>
         _knownTypes.TryGetValue(symbol, out var knownType) ? knownType : _types[symbol];
 
-    public static EmitResult Emit(BoundAssembly assembly, string moduleName, string outputPath, Dictionary<Symbol, FieldReference>? previousGlobals = null, Dictionary<Symbol, MethodReference>? previousMethods = null)
+    public static EmitResult Emit(
+        BoundAssembly assembly,
+        string moduleName,
+        string outputPath,
+        Dictionary<Symbol, FieldReference>? previousGlobals = null,
+        Dictionary<Symbol, MethodReference>? previousMethods = null
+    )
     {
         if (assembly.Diagnostics.Any())
-            return new EmitResult(assembly.Diagnostics,
+            return new EmitResult(
+                assembly.Diagnostics,
                 previousGlobals ?? new Dictionary<Symbol, FieldReference>(),
-                previousMethods ?? new Dictionary<Symbol, MethodReference>(), null, null);
+                previousMethods ?? new Dictionary<Symbol, MethodReference>(),
+                null,
+                null
+            );
 
-        var emitter = new Emitter(moduleName, assembly.References, previousGlobals, previousMethods);
+        var emitter = new Emitter(
+            moduleName,
+            assembly.References,
+            previousGlobals,
+            previousMethods
+        );
         return emitter.Emit(assembly, outputPath);
     }
 
     public EmitResult Emit(BoundAssembly assembly, string outputPath)
     {
         if (_diagnostics.Any())
-            return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, null, null);
+            return new EmitResult(
+                _diagnostics.ToImmutableArray(),
+                _globals,
+                _methodReferences,
+                null,
+                null
+            );
 
         // ensure all functions exist first so we can reference them
         // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
@@ -123,17 +165,20 @@ internal class Emitter
         IterateTypes(assembly, EmitFields);
 
         // emit the function bodies now
-        IterateTypes(assembly, type =>
-        {
-            var typeDef = _types[type];
-            _currentType = type;
-
-            foreach (var functionSignature in type.Methods)
+        IterateTypes(
+            assembly,
+            type =>
             {
-                var boundBlockExpression = assembly.MethodDefinitions[functionSignature];
-                EmitFunctionBody(typeDef, functionSignature, boundBlockExpression);
+                var typeDef = _types[type];
+                _currentType = type;
+
+                foreach (var functionSignature in type.Methods)
+                {
+                    var boundBlockExpression = assembly.MethodDefinitions[functionSignature];
+                    EmitFunctionBody(typeDef, functionSignature, boundBlockExpression);
+                }
             }
-        });
+        );
 
         if (assembly.EntryPoint != null)
         {
@@ -142,7 +187,13 @@ internal class Emitter
 
         _assemblyDefinition.Write(outputPath);
 
-        return new EmitResult(_diagnostics.ToImmutableArray(), _globals, _methodReferences, _assemblyDefinition, outputPath);
+        return new EmitResult(
+            _diagnostics.ToImmutableArray(),
+            _globals,
+            _methodReferences,
+            _assemblyDefinition,
+            outputPath
+        );
     }
 
     private void IterateTypes(BoundAssembly assembly, Action<Symbol> action)
@@ -158,9 +209,10 @@ internal class Emitter
     {
         var typeDef = _types[type];
         // _fields.Clear();
-        var fieldAttributes = (type.Flags & SymbolFlags.Object) != 0
-            ? FieldAttributes.Public | FieldAttributes.Static
-            : FieldAttributes.Public;
+        var fieldAttributes =
+            (type.Flags & SymbolFlags.Object) != 0
+                ? FieldAttributes.Public | FieldAttributes.Static
+                : FieldAttributes.Public;
         var defaultType = type.Name == "$Program";
         foreach (var fieldMember in type.Fields)
         {
@@ -188,7 +240,12 @@ internal class Emitter
         var objectType = _knownTypes[TypeSymbol.Any];
 
         // TODO keep track of current namespace
-        var typeDef = new TypeDefinition("", type.Name, TypeAttributes.Sealed | TypeAttributes.Public, objectType);
+        var typeDef = new TypeDefinition(
+            "",
+            type.Name,
+            TypeAttributes.Sealed | TypeAttributes.Public,
+            objectType
+        );
 
         // PERF: this order by isn't necessary but its here so that tests pass
         foreach (var functionSignature in type.Methods.OrderBy(x => x.Name))
@@ -209,8 +266,10 @@ internal class Emitter
         var methodAttributes = MethodAttributes.Public;
         if (method.IsConstructor)
         {
-            methodAttributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName |
-                                MethodAttributes.HideBySig;
+            methodAttributes |=
+                MethodAttributes.SpecialName
+                | MethodAttributes.RTSpecialName
+                | MethodAttributes.HideBySig;
 
             if (isStatic)
             {
@@ -242,7 +301,11 @@ internal class Emitter
         typeDef.Methods.Add(methodDefinition);
     }
 
-    private void EmitFunctionBody(TypeDefinition declaringType, Symbol method, BoundBlockExpression block)
+    private void EmitFunctionBody(
+        TypeDefinition declaringType,
+        Symbol method,
+        BoundBlockExpression block
+    )
     {
         var methodDefinition = _methods[method];
         var ilProcessor = methodDefinition.Body.GetILProcessor();
@@ -279,7 +342,11 @@ internal class Emitter
         methodDefinition.Body.InitLocals = _locals.Any();
     }
 
-    private void EmitStatement(TypeDefinition declaringType, ILProcessor ilProcessor, BoundStatement statement)
+    private void EmitStatement(
+        TypeDefinition declaringType,
+        ILProcessor ilProcessor,
+        BoundStatement statement
+    )
     {
         switch (statement)
         {
@@ -321,7 +388,10 @@ internal class Emitter
         ilProcessor.Emit(OpCodes.Nop);
     }
 
-    private void EmitAssignmentStatement(ILProcessor ilProcessor, BoundAssignmentStatement assignmentStatement)
+    private void EmitAssignmentStatement(
+        ILProcessor ilProcessor,
+        BoundAssignmentStatement assignmentStatement
+    )
     {
         var current = assignmentStatement.Left;
 
@@ -367,7 +437,8 @@ internal class Emitter
             {
                 EmitExpression(ilProcessor, assignmentStatement.Right);
                 ilProcessor.Emit(OpCodes.Stsfld, field);
-            } else if (leftOfField == null)
+            }
+            else if (leftOfField == null)
             {
                 ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
                 EmitExpression(ilProcessor, assignmentStatement.Right);
@@ -386,7 +457,10 @@ internal class Emitter
         }
     }
 
-    private void EmitVariableDeclarationStatement(ILProcessor ilProcessor, BoundVariableDeclarationStatement variableDeclarationStatement)
+    private void EmitVariableDeclarationStatement(
+        ILProcessor ilProcessor,
+        BoundVariableDeclarationStatement variableDeclarationStatement
+    )
     {
         var pantherVar = variableDeclarationStatement.Variable;
         var variableType = LookupType(pantherVar.Type.Symbol);
@@ -403,10 +477,10 @@ internal class Emitter
             return;
         }
 
-
         switch (pantherVar)
         {
-            case {IsLocal: true} or {IsParameter: true}:
+            case { IsLocal: true }
+            or { IsParameter: true }:
             {
                 if (!_locals.ContainsKey(pantherVar))
                 {
@@ -439,20 +513,30 @@ internal class Emitter
 
     private void EmitGotoStatement(ILProcessor ilProcessor, BoundGotoStatement gotoStatement)
     {
-        _branchInstructionsToPatch.Add((ilProcessor.Body.Instructions.Count, gotoStatement.BoundLabel));
+        _branchInstructionsToPatch.Add(
+            (ilProcessor.Body.Instructions.Count, gotoStatement.BoundLabel)
+        );
         ilProcessor.Emit(OpCodes.Br, Instruction.Create(OpCodes.Nop));
     }
 
-    private void EmitConditionalGotoStatement(ILProcessor ilProcessor, BoundConditionalGotoStatement conditionalGotoStatement)
+    private void EmitConditionalGotoStatement(
+        ILProcessor ilProcessor,
+        BoundConditionalGotoStatement conditionalGotoStatement
+    )
     {
         EmitExpression(ilProcessor, conditionalGotoStatement.Condition);
 
         var op = conditionalGotoStatement.JumpIfTrue ? OpCodes.Brtrue : OpCodes.Brfalse;
-        _branchInstructionsToPatch.Add((ilProcessor.Body.Instructions.Count, conditionalGotoStatement.BoundLabel));
+        _branchInstructionsToPatch.Add(
+            (ilProcessor.Body.Instructions.Count, conditionalGotoStatement.BoundLabel)
+        );
         ilProcessor.Emit(op, Instruction.Create(OpCodes.Nop));
     }
 
-    private void EmitExpressionStatement(ILProcessor ilProcessor, BoundExpressionStatement expressionStatement)
+    private void EmitExpressionStatement(
+        ILProcessor ilProcessor,
+        BoundExpressionStatement expressionStatement
+    )
     {
         EmitExpression(ilProcessor, expressionStatement.Expression);
 
@@ -480,11 +564,11 @@ internal class Emitter
             case BoundCallExpression callExpression:
                 EmitCallExpression(ilProcessor, callExpression);
                 break;
-            
+
             case BoundConversionExpression conversionExpression:
                 EmitConversionExpression(ilProcessor, conversionExpression);
                 break;
-            
+
             case BoundFieldExpression fieldExpression:
                 EmitFieldExpression(ilProcessor, fieldExpression);
                 break;
@@ -506,7 +590,10 @@ internal class Emitter
                 break;
 
             default:
-                throw new ArgumentOutOfRangeException(nameof(expression), expression.GetType().FullName);
+                throw new ArgumentOutOfRangeException(
+                    nameof(expression),
+                    expression.GetType().FullName
+                );
         }
     }
 
@@ -529,7 +616,11 @@ internal class Emitter
         }
     }
 
-    private void EmitConstantExpression(ILProcessor ilProcessor, BoundExpression node, BoundConstant constant)
+    private void EmitConstantExpression(
+        ILProcessor ilProcessor,
+        BoundExpression node,
+        BoundConstant constant
+    )
     {
         if (node.Type == Type.Bool)
         {
@@ -549,7 +640,10 @@ internal class Emitter
         }
     }
 
-    private void EmitBinaryExpression(ILProcessor ilProcessor, BoundBinaryExpression binaryExpression)
+    private void EmitBinaryExpression(
+        ILProcessor ilProcessor,
+        BoundBinaryExpression binaryExpression
+    )
     {
         EmitExpression(ilProcessor, binaryExpression.Left);
         EmitExpression(ilProcessor, binaryExpression.Right);
@@ -658,7 +752,10 @@ internal class Emitter
 
     private void EmitCallExpression(ILProcessor ilProcessor, BoundCallExpression callExpression)
     {
-        if (callExpression.Expression != null && callExpression.Expression is not BoundTypeExpression)
+        if (
+            callExpression.Expression != null
+            && callExpression.Expression is not BoundTypeExpression
+        )
         {
             EmitExpression(ilProcessor, callExpression.Expression);
         }
@@ -690,16 +787,18 @@ internal class Emitter
             return method;
         }
 
-        var parameterTypeNames = methodSymbol.Parameters.Select(p => LookupType(p.Type.Symbol).FullName).ToArray();
+        var parameterTypeNames = methodSymbol.Parameters
+            .Select(p => LookupType(p.Type.Symbol).FullName)
+            .ToArray();
         var methodName = methodSymbol.Name;
-
 
         // convert builtin types to real types ie `string` to `System.String`
         var methodOwnerFullName = _knownTypes.TryGetValue(methodSymbol.Owner, out var knownType)
             ? knownType.FullName
             : methodSymbol.Owner.FullName;
-        var methodReference = ResolveMethod(methodOwnerFullName, methodName, parameterTypeNames, false) ??
-                              ResolveMethod("Panther.Predef", methodName, parameterTypeNames, false);
+        var methodReference =
+            ResolveMethod(methodOwnerFullName, methodName, parameterTypeNames, false)
+            ?? ResolveMethod("Panther.Predef", methodName, parameterTypeNames, false);
 
         if (methodReference != null)
         {
@@ -707,13 +806,20 @@ internal class Emitter
         }
         else
         {
-            _diagnostics.ReportRequiredMethodNotFound(methodOwnerFullName, methodName, parameterTypeNames);
+            _diagnostics.ReportRequiredMethodNotFound(
+                methodOwnerFullName,
+                methodName,
+                parameterTypeNames
+            );
         }
 
         return methodReference;
     }
 
-    private void EmitConversionExpression(ILProcessor ilProcessor, BoundConversionExpression conversionExpression)
+    private void EmitConversionExpression(
+        ILProcessor ilProcessor,
+        BoundConversionExpression conversionExpression
+    )
     {
         EmitExpression(ilProcessor, conversionExpression.Expression);
 
@@ -778,7 +884,10 @@ internal class Emitter
             }
         }
 
-        throw new ArgumentOutOfRangeException(nameof(conversionExpression), $"Could not find conversion from '{fromType}' to '{toType}'");
+        throw new ArgumentOutOfRangeException(
+            nameof(conversionExpression),
+            $"Could not find conversion from '{fromType}' to '{toType}'"
+        );
     }
 
     private void EmitUnaryExpression(ILProcessor ilProcessor, BoundUnaryExpression unaryExpression)
@@ -821,9 +930,7 @@ internal class Emitter
         // TODO: field can be a global which is in the `_globals` array
         // _fields are all possible fields for any type
         var variable = node.Field;
-        var field = _globals.TryGetValue(variable, out var aField)
-            ? aField
-            : _fields[variable];
+        var field = _globals.TryGetValue(variable, out var aField) ? aField : _fields[variable];
 
         if (node.Expression is BoundTypeExpression(_, _) || variable.IsStatic)
         {
@@ -843,7 +950,10 @@ internal class Emitter
         }
     }
 
-    private void EmitVariableExpression(ILProcessor ilProcessor, BoundVariableExpression variableExpression)
+    private void EmitVariableExpression(
+        ILProcessor ilProcessor,
+        BoundVariableExpression variableExpression
+    )
     {
         var variable = variableExpression.Variable;
         switch (variable)
@@ -919,7 +1029,12 @@ internal class Emitter
         return null;
     }
 
-    private MethodReference? ResolveMethod(string typeName, string methodName, string[] parameterTypeNames, bool reportNotFoundDiagnostic = true)
+    private MethodReference? ResolveMethod(
+        string typeName,
+        string methodName,
+        string[] parameterTypeNames,
+        bool reportNotFoundDiagnostic = true
+    )
     {
         // var types = FindTypesByName(typeName);
         var type = FindTypeByName(typeName, reportNotFoundDiagnostic);
@@ -931,14 +1046,15 @@ internal class Emitter
             if (methodDefinition.Parameters.Count != parameterTypeNames.Length)
                 continue;
 
-            var matches = methodDefinition
-                .Parameters
+            var matches = methodDefinition.Parameters
                 .Select(p => p.ParameterType.FullName)
-                .Zip(parameterTypeNames, (methodParam, searchParamName) => methodParam == searchParamName)
+                .Zip(
+                    parameterTypeNames,
+                    (methodParam, searchParamName) => methodParam == searchParamName
+                )
                 .ToArray();
 
-            var allParamsMatch = matches
-                .All(matches => matches);
+            var allParamsMatch = matches.All(matches => matches);
 
             if (!allParamsMatch)
             {

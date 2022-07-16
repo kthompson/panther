@@ -22,7 +22,9 @@ public class EmitterTests
 {
     public static readonly string OutputPath = Path.Combine("CodeAnalysis", "Emit");
 
-    (string moduleName, string outputDirectory) GetModuleNameAndOutputDirectory(string testDirectory)
+    (string moduleName, string outputDirectory) GetModuleNameAndOutputDirectory(
+        string testDirectory
+    )
     {
         var moduleName = Path.GetFileName(testDirectory);
         Assert.NotNull(moduleName);
@@ -38,9 +40,12 @@ public class EmitterTests
     [MemberData(nameof(GetEmitterTests))]
     public void EmitterOutputsIL(string testDirectory, string[] sources, string? expectedILPath)
     {
-        var expectedSource = expectedILPath == null
-            ? null
-            : File.ReadAllLines(expectedILPath).Where(line => !line.TrimStart().StartsWith("//")).ToArray();
+        var expectedSource =
+            expectedILPath == null
+                ? null
+                : File.ReadAllLines(expectedILPath)
+                    .Where(line => !line.TrimStart().StartsWith("//"))
+                    .ToArray();
 
         var trees = sources.Select(SyntaxTree.LoadFile).ToArray();
 
@@ -66,13 +71,12 @@ public class EmitterTests
 
         var (diagnostics, compilation) = Compilation.Create(references, trees);
         Assert.Empty(diagnostics);
-        Assert.NotNull(compilation); Debug.Assert(compilation != null);
+        Assert.NotNull(compilation);
+        Debug.Assert(compilation != null);
 
         var assemblyLocation = Path.Combine(outputDirectory, moduleName + ".dll");
 
-        var result = compilation.Emit(
-            moduleName,
-            assemblyLocation);
+        var result = compilation.Emit(moduleName, assemblyLocation);
 
         Assert.Empty(result.Diagnostics);
 
@@ -90,7 +94,9 @@ public class EmitterTests
         if (expectedSource != null)
         {
             var il = DumpIl(assemblyLocation);
-            var actualSource = il.Split('\n').Where(line => !line.TrimStart().StartsWith("//")).ToArray();
+            var actualSource = il.Split('\n')
+                .Where(line => !line.TrimStart().StartsWith("//"))
+                .ToArray();
             AssertFileLines(expectedSource, actualSource);
 
             Assert.Equal(expectedSource.Length, actualSource.Length);
@@ -117,14 +123,17 @@ public class EmitterTests
     private static void AssertCommandOutput(string testDirectory, string assemblyLocation)
     {
         var outputTxtPath = Path.Combine(testDirectory, "output.txt");
-        if (!File.Exists(outputTxtPath)) return;
+        if (!File.Exists(outputTxtPath))
+            return;
 
         // create runtimeconfig.json
 
-        var runtimeConfig = assemblyLocation.Substring(0, assemblyLocation.Length - 3) + "runtimeconfig.json";
+        var runtimeConfig =
+            assemblyLocation.Substring(0, assemblyLocation.Length - 3) + "runtimeconfig.json";
 
-
-        File.WriteAllText(runtimeConfig, @"{
+        File.WriteAllText(
+            runtimeConfig,
+            @"{
   ""runtimeOptions"": {
     ""tfm"": ""net6.0"",
     ""rollForward"": ""LatestMinor"",
@@ -133,21 +142,29 @@ public class EmitterTests
       ""version"": ""6.0.0""
     }
   }
-}");
+}"
+        );
 
         // Run emitted assembly
         var actualOutputTxt = Dotnet.Invoke(assemblyLocation);
         var expectedOutputTxt = File.ReadAllLines(outputTxtPath);
         AssertFileLines(expectedOutputTxt, actualOutputTxt);
     }
+
     private static void AssertFileLines(string[] expectedLines, string[] actualLines)
     {
         for (var i = 0; i < expectedLines.Length; i++)
         {
-            Assert.True(actualLines.Length > i, $"Missing line {i + 1}. Expected: {expectedLines[i]}");
+            Assert.True(
+                actualLines.Length > i,
+                $"Missing line {i + 1}. Expected: {expectedLines[i]}"
+            );
             if (expectedLines[i].Trim() != actualLines[i].Trim())
-                throw new AssertActualExpectedException(expectedLines[i].Trim(), actualLines[i].Trim(),
-                    $"Line {i + 1}");
+                throw new AssertActualExpectedException(
+                    expectedLines[i].Trim(),
+                    actualLines[i].Trim(),
+                    $"Line {i + 1}"
+                );
         }
 
         Assert.Equal(expectedLines.Length, actualLines.Length);
@@ -155,7 +172,9 @@ public class EmitterTests
 
     private static string DumpIl(string assemblyLocation)
     {
-        using var file = new StreamWriter(assemblyLocation.Substring(0, assemblyLocation.Length - 3) + "txt");
+        using var file = new StreamWriter(
+            assemblyLocation.Substring(0, assemblyLocation.Length - 3) + "txt"
+        );
         DumpIl(file, assemblyLocation);
 
         using var sw = new StringWriter();
@@ -169,7 +188,10 @@ public class EmitterTests
         using var module = new PEFile(assemblyLocation);
 
         sw.WriteLine($"// IL code: {module.Name}");
-        var disassembler = new ReflectionDisassembler(new PlainTextOutput(sw), CancellationToken.None);
+        var disassembler = new ReflectionDisassembler(
+            new PlainTextOutput(sw),
+            CancellationToken.None
+        );
         disassembler.WriteModuleContents(module);
     }
 

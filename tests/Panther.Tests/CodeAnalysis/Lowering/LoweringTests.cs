@@ -30,13 +30,18 @@ public class LoweringTests
     private void LoweringShouldPreserveSideEffectOrderInCallExpressions()
     {
         string SideEffectBlock(int i) =>
-            AnnotatedText.Parse($@"{{
+            AnnotatedText
+                .Parse(
+                    $@"{{
                                         println(""{i}"")
                                         ""V{i}""
-                                      }}").Text;
+                                      }}"
+                )
+                .Text;
 
-
-        var source = AnnotatedText.Parse($@"
+        var source = AnnotatedText
+            .Parse(
+                $@"
                                         {{
                                           println(""first"")
                                           println(concat({SideEffectBlock(0)}, sideEffect(""1""), {SideEffectBlock(2)})) 
@@ -49,7 +54,9 @@ public class LoweringTests
                                         }}
 
                                         def concat(a: string, b: string, c: string): string = a + b + c
-                                        ").Text;
+                                        "
+            )
+            .Text;
 
         var tree = SyntaxTree.Parse(source);
         Assert.Empty(tree.Diagnostics);
@@ -57,13 +64,7 @@ public class LoweringTests
 
         scriptHost.Execute(tree);
 
-        var expectedOutput = BuildExpectedOutput(
-            "first",
-            "0",
-            "1",
-            "2",
-            "V0V1V2",
-            "last");
+        var expectedOutput = BuildExpectedOutput("first", "0", "1", "2", "V0V1V2", "last");
 
         AssertEvaluation("getOutput()", expectedOutput, scriptHost);
     }
@@ -71,7 +72,8 @@ public class LoweringTests
     private bool ContainsBlock(BoundBlockExpression block) =>
         block.Statements.Any(ContainsBlock) || ContainsBlock(block.Expression);
 
-    private bool ContainsBlock(params BoundExpression[] expression) => expression.Any(ContainsBlock);
+    private bool ContainsBlock(params BoundExpression[] expression) =>
+        expression.Any(ContainsBlock);
 
     private bool ContainsBlock(BoundExpression expression)
     {
@@ -93,10 +95,17 @@ public class LoweringTests
             case BoundConversionExpression conversionExpression:
                 return ContainsBlock(conversionExpression.Expression);
             case BoundForExpression boundForExpression:
-                return ContainsBlock(boundForExpression.Body, boundForExpression.LowerBound,
-                    boundForExpression.UpperBound);
+                return ContainsBlock(
+                    boundForExpression.Body,
+                    boundForExpression.LowerBound,
+                    boundForExpression.UpperBound
+                );
             case BoundIfExpression boundIfExpression:
-                return ContainsBlock(boundIfExpression.Condition, boundIfExpression.Else, boundIfExpression.Then);
+                return ContainsBlock(
+                    boundIfExpression.Condition,
+                    boundIfExpression.Else,
+                    boundIfExpression.Then
+                );
             case BoundWhileExpression boundWhileExpression:
                 return ContainsBlock(boundWhileExpression.Body, boundWhileExpression.Condition);
             case BoundUnaryExpression boundUnaryExpression:
@@ -115,8 +124,8 @@ public class LoweringTests
             BoundAssignmentStatement statement => ContainsBlock(statement.Right),
             BoundConditionalGotoStatement statement => ContainsBlock(statement.Condition),
             BoundExpressionStatement statement => ContainsBlock(statement.Expression),
-            BoundVariableDeclarationStatement(_, _, var expression) => expression != null &&
-                                                                       ContainsBlock(expression),
+            BoundVariableDeclarationStatement(_, _, var expression)
+                => expression != null && ContainsBlock(expression),
             _ => throw new ArgumentOutOfRangeException(nameof(arg))
         };
 }

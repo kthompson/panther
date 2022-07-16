@@ -6,8 +6,10 @@ namespace Panther.CodeAnalysis;
 
 public static class ImmutableArrayExtensions
 {
-    public static (ImmutableArray<A> matches, ImmutableArray<A> nonMatches) Partition<A>(this IEnumerable<A> array,
-        Predicate<A> predicate)
+    public static (ImmutableArray<A> matches, ImmutableArray<A> nonMatches) Partition<A>(
+        this IEnumerable<A> array,
+        Predicate<A> predicate
+    )
     {
         var lefts = ImmutableArray.CreateBuilder<A>();
         var rights = ImmutableArray.CreateBuilder<A>();

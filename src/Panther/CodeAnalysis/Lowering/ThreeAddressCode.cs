@@ -24,7 +24,6 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
         return tac.GetBlock(boundStatement.Syntax);
     }
 
-
     protected override BoundExpression RewriteBlockExpression(BoundBlockExpression node)
     {
         if (node.Statements.Length == 0)
@@ -103,7 +102,9 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
     protected override BoundExpression RewriteConversionExpression(BoundConversionExpression node)
     {
         var rewriteExpression = RewriteExpression(node.Expression);
-        var expr = IsSimpleNode(rewriteExpression) ? rewriteExpression : CreateTemporary(rewriteExpression);
+        var expr = IsSimpleNode(rewriteExpression)
+            ? rewriteExpression
+            : CreateTemporary(rewriteExpression);
         if (expr == node.Expression)
             return node;
 
@@ -111,7 +112,8 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
     }
 
     private static bool IsSimpleNode(BoundExpression node) =>
-        node.Kind == BoundNodeKind.VariableExpression || node.Kind == BoundNodeKind.LiteralExpression;
+        node.Kind == BoundNodeKind.VariableExpression
+        || node.Kind == BoundNodeKind.LiteralExpression;
 
     private BoundExpression CreateTemporary(BoundExpression boundExpression, string prefix = "temp")
     {
@@ -124,7 +126,13 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
             .Declare();
 
         // var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
-        _statements.Add(new BoundVariableDeclarationStatement(boundExpression.Syntax, tempVariable, boundExpression));
+        _statements.Add(
+            new BoundVariableDeclarationStatement(
+                boundExpression.Syntax,
+                tempVariable,
+                boundExpression
+            )
+        );
         return new BoundVariableExpression(boundExpression.Syntax, tempVariable);
     }
 }

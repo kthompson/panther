@@ -51,7 +51,12 @@ internal class BoundNodePrinter : BoundNodeVisitor
     {
         if (node is BoundBinaryExpression binaryExpression)
         {
-            WriteNestedExpression(binaryExpression, parentPrecedence, binaryExpression.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ?? throw new Exception("Invalid operator"));
+            WriteNestedExpression(
+                binaryExpression,
+                parentPrecedence,
+                binaryExpression.Operator.SyntaxKind.GetBinaryOperatorPrecedence()
+                    ?? throw new Exception("Invalid operator")
+            );
         }
         else
         {
@@ -59,7 +64,11 @@ internal class BoundNodePrinter : BoundNodeVisitor
         }
     }
 
-    private void WriteNestedExpression(BoundNode node, OperatorPrecedence parent, OperatorPrecedence current)
+    private void WriteNestedExpression(
+        BoundNode node,
+        OperatorPrecedence parent,
+        OperatorPrecedence current
+    )
     {
         if (parent >= current)
         {
@@ -178,7 +187,6 @@ internal class BoundNodePrinter : BoundNodeVisitor
         WriteNestedExpression(node.Body);
     }
 
-
     public override void VisitExpressionStatement(BoundExpressionStatement node)
     {
         node.Expression.Accept(this);
@@ -191,7 +199,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WriteIdentifier(node.Variable.Name);
         _writer.WritePunctuation(": ");
         _writer.WriteKeyword(node.Variable.Type.ToString());
-        if(node.Expression != null)
+        if (node.Expression != null)
         {
             _writer.WritePunctuation(" = ");
             node.Expression.Accept(this);
@@ -303,8 +311,9 @@ internal class BoundNodePrinter : BoundNodeVisitor
 
     public override void VisitUnaryExpression(BoundUnaryExpression node)
     {
-        var op = SyntaxFacts.GetText(node.Operator.SyntaxKind) ??
-                 throw new Exception("Invalid operator");
+        var op =
+            SyntaxFacts.GetText(node.Operator.SyntaxKind)
+            ?? throw new Exception("Invalid operator");
 
         _writer.WritePunctuation(op);
         WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
@@ -312,10 +321,12 @@ internal class BoundNodePrinter : BoundNodeVisitor
 
     public override void VisitBinaryExpression(BoundBinaryExpression node)
     {
-        var op = SyntaxFacts.GetText(node.Operator.SyntaxKind) ??
-                 throw new Exception("Invalid operator");
-        var precedence = node.Operator.SyntaxKind.GetBinaryOperatorPrecedence() ??
-                         throw new Exception("Invalid operator");
+        var op =
+            SyntaxFacts.GetText(node.Operator.SyntaxKind)
+            ?? throw new Exception("Invalid operator");
+        var precedence =
+            node.Operator.SyntaxKind.GetBinaryOperatorPrecedence()
+            ?? throw new Exception("Invalid operator");
 
         WriteNestedExpression(node.Left, precedence);
         _writer.Write(" ");

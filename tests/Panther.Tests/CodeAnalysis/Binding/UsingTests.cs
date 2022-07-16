@@ -8,7 +8,8 @@ public class UsingTests
     [Fact]
     public void CanUseConsole()
     {
-        var code = AnnotatedText.Parse(@"
+        var code = AnnotatedText.Parse(
+            @"
                 using System
 
                 object Hello {
@@ -17,8 +18,13 @@ public class UsingTests
         );
         var compilation = Compile(code.Text);
 
-        Assert.Collection(compilation.RootSymbol.Types,
-            symbol => Assert.Collection(symbol.Methods,
-                methodSymbol => Assert.Equal("unit", methodSymbol.ReturnType.Symbol.Name)));
+        Assert.Collection(
+            compilation.RootSymbol.Types,
+            symbol =>
+                Assert.Collection(
+                    symbol.Methods,
+                    methodSymbol => Assert.Equal("unit", methodSymbol.ReturnType.Symbol.Name)
+                )
+        );
     }
 }

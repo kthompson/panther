@@ -14,7 +14,11 @@ public static class Classifier
         return classifiedSpans.ToImmutable();
     }
 
-    private static void ClassifyNode(SyntaxNode node, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder builder)
+    private static void ClassifyNode(
+        SyntaxNode node,
+        TextSpan span,
+        ImmutableArray<ClassifiedSpan>.Builder builder
+    )
     {
         if (!node.FullSpan.Overlaps(span))
             return;
@@ -30,8 +34,11 @@ public static class Classifier
         }
     }
 
-    private static void ClassifyToken(SyntaxToken token, TextSpan span,
-        ImmutableArray<ClassifiedSpan>.Builder builder)
+    private static void ClassifyToken(
+        SyntaxToken token,
+        TextSpan span,
+        ImmutableArray<ClassifiedSpan>.Builder builder
+    )
     {
         foreach (var trivia in token.LeadingTrivia)
             ClassifyTrivia(trivia, span, builder);
@@ -42,7 +49,12 @@ public static class Classifier
             ClassifyTrivia(trivia, span, builder);
     }
 
-    private static void AddClassification(SyntaxKind tokenKind, TextSpan tokenSpan, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder builder)
+    private static void AddClassification(
+        SyntaxKind tokenKind,
+        TextSpan tokenSpan,
+        TextSpan span,
+        ImmutableArray<ClassifiedSpan>.Builder builder
+    )
     {
         var intersection = tokenSpan.Intersection(span);
         if (intersection == null)
@@ -73,7 +85,9 @@ public static class Classifier
         };
     }
 
-    private static void ClassifyTrivia(SyntaxNode trivia, TextSpan span,
-        ImmutableArray<ClassifiedSpan>.Builder builder) =>
-        AddClassification(trivia.Kind, trivia.Span, span, builder);
+    private static void ClassifyTrivia(
+        SyntaxNode trivia,
+        TextSpan span,
+        ImmutableArray<ClassifiedSpan>.Builder builder
+    ) => AddClassification(trivia.Kind, trivia.Span, span, builder);
 }

@@ -60,7 +60,7 @@ public static class SyntaxFacts
                 return (OperatorPrecedence)8;
 
             // Unary/Prefix expressions are 9
-            
+
             case SyntaxKind.OpenParenToken:
             case SyntaxKind.OpenBracketToken:
             case SyntaxKind.DotToken:
@@ -150,22 +150,26 @@ public static class SyntaxFacts
             _ => null
         };
 
-    public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() => new[]
-    {
-        SyntaxKind.TildeToken,
-        SyntaxKind.PlusToken,
-        SyntaxKind.DashToken,
-        SyntaxKind.BangToken,
-    };
+    public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds() =>
+        new[]
+        {
+            SyntaxKind.TildeToken,
+            SyntaxKind.PlusToken,
+            SyntaxKind.DashToken,
+            SyntaxKind.BangToken,
+        };
 
     public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
-        Enum.GetValues(typeof(SyntaxKind)).Cast<SyntaxKind>()
-            .Where(kind =>
-                kind != SyntaxKind.EqualsToken &&
-                kind != SyntaxKind.OpenParenToken &&
-                kind != SyntaxKind.DotToken &&
-                kind != SyntaxKind.OpenBracketToken &&
-                GetBinaryOperatorPrecedence(kind) > 0);
+        Enum.GetValues(typeof(SyntaxKind))
+            .Cast<SyntaxKind>()
+            .Where(
+                kind =>
+                    kind != SyntaxKind.EqualsToken
+                    && kind != SyntaxKind.OpenParenToken
+                    && kind != SyntaxKind.DotToken
+                    && kind != SyntaxKind.OpenBracketToken
+                    && GetBinaryOperatorPrecedence(kind) > 0
+            );
 
     public static bool IsTrivia(this SyntaxKind kind) =>
         kind switch

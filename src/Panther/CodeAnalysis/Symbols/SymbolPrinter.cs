@@ -58,7 +58,8 @@ internal static class SymbolPrinter
                 WriteMethodSymbol(symbol, writer);
                 break;
 
-            case TypeSymbol or { IsType: true }:
+            case TypeSymbol
+            or { IsType: true }:
                 WriteTypeSymbol(symbol, writer);
                 break;
 
@@ -70,7 +71,7 @@ internal static class SymbolPrinter
                 WriteValueSymbol(symbol, writer);
                 break;
 
-            case { IsField: true}:
+            case { IsField: true }:
                 WriteValueSymbol(symbol, writer);
                 break;
 

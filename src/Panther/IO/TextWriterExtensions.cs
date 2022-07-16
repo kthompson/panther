@@ -104,11 +104,12 @@ public static class TextWriterExtensions
                 if (!(text is ScriptSourceFile sourceFile))
                     continue;
 
-                for (var currentLine = textLocation.StartLine;
-                     currentLine <= textLocation.EndLine;
-                     currentLine++)
+                for (
+                    var currentLine = textLocation.StartLine;
+                    currentLine <= textLocation.EndLine;
+                    currentLine++
+                )
                 {
-
                     var line = sourceFile.GetLine(currentLine);
                     var startInCurrentLine = text.GetLineIndex(span.Start) == currentLine;
                     var endInCurrentLine = text.GetLineIndex(span.End) == currentLine;

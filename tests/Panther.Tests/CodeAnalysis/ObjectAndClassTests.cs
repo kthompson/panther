@@ -11,7 +11,8 @@ public class ObjectAndClassTests
     public void EvaluatesObjectMethodCallExpression()
     {
         using var scriptHost = BuildScriptHost();
-        var code = @"
+        var code =
+            @"
                 SomeObject.method()
                 
                 object SomeObject {
@@ -26,7 +27,8 @@ public class ObjectAndClassTests
     public void EvaluatesObjectFieldExpression()
     {
         using var scriptHost = BuildScriptHost();
-        var code = @"
+        var code =
+            @"
                 SomeObject.field
                 
                 object SomeObject {
@@ -41,7 +43,8 @@ public class ObjectAndClassTests
     public void EvaluatesObjectNestedFieldExpression()
     {
         using var scriptHost = BuildScriptHost();
-        var code = @"
+        var code =
+            @"
                 SomeObject.Nested.field
                 
                 object SomeObject {
@@ -58,7 +61,8 @@ public class ObjectAndClassTests
     public void EvaluatesObjectFieldAssignmentExpression()
     {
         using var scriptHost = BuildScriptHost();
-        var code = @"
+        var code =
+            @"
                 SomeObject.field = SomeObject.field + "" bell""
                 SomeObject.field
                 
@@ -74,7 +78,8 @@ public class ObjectAndClassTests
     public void EvaluatesNestedObjectFieldAssignmentExpression()
     {
         using var scriptHost = BuildScriptHost();
-        var code = @"
+        var code =
+            @"
                 SomeObject.Nested.field = SomeObject.Nested.field + "" bell""
                 SomeObject.Nested.field
                 
@@ -88,12 +93,12 @@ public class ObjectAndClassTests
         AssertEvaluation(code, "taco bell", scriptHost);
     }
 
-
     [Property]
     public void EvaluatesClassFieldExpression(int x, int y)
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 new Point({x}, {y}).X
                 
                 class Point(X: int, Y: int)
@@ -106,7 +111,8 @@ public class ObjectAndClassTests
     public void EvaluatesClassMethodCallExpression(int x, int y)
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 new Point({x}, {y}).distance()
                 
                 class Point(X: int, Y: int)
@@ -118,12 +124,12 @@ public class ObjectAndClassTests
         AssertEvaluation(code, x * y, scriptHost);
     }
 
-
     [Fact]
     public void EvaluatesClassFieldsFieldExpression()
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 val x = new B(new A(1))
                 x.A.X
                 
@@ -134,12 +140,12 @@ public class ObjectAndClassTests
         AssertEvaluation(code, 1, scriptHost);
     }
 
-
     [Property]
     public void EvaluatesClassFieldAccess(int x, int y)
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 val p = new Point({x}, {y})
                 p.X
                 
@@ -149,12 +155,12 @@ public class ObjectAndClassTests
         AssertEvaluation(code, x, scriptHost);
     }
 
-
     [Fact]
     public void EvaluatesClassFieldAccess2()
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 val p = new Point(10, 20)
                 p.Y
                 
@@ -168,7 +174,8 @@ public class ObjectAndClassTests
     public void EvaluatesClassFieldAssignment(int x, int y)
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 val p = new A({x})
                 p.X = {y}
                 p.X
@@ -179,12 +186,12 @@ public class ObjectAndClassTests
         AssertEvaluation(code, y, scriptHost);
     }
 
-
     [Property]
     public void EvaluatesClassFieldExpressions(int x, int y)
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 val p = new A({x})
                 p.X = p.X + {y}
                 p.X
@@ -195,12 +202,12 @@ public class ObjectAndClassTests
         AssertEvaluation(code, x + y, scriptHost);
     }
 
-
     [Fact]
     public void EvaluatesClassAssignmentWithTypeAnnotation()
     {
         using var scriptHost = BuildScriptHost();
-        var code = $@"
+        var code =
+            $@"
                 val p: Point = new Point(10, 20)
                 p.Y
                 

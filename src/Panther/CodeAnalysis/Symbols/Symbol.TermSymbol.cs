@@ -7,8 +7,6 @@ public abstract partial class Symbol
     private sealed class TermSymbol : Symbol
     {
         public TermSymbol(Symbol owner, TextLocation location, string name)
-            : base(owner, location, name)
-        {
-        }
+            : base(owner, location, name) { }
     }
 }

@@ -13,9 +13,7 @@ namespace Panther.Generators;
 [Generator]
 public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
 {
-    public void Initialize(InitializationContext context)
-    {
-    }
+    public void Initialize(InitializationContext context) { }
 
     public void Execute(SourceGeneratorContext context)
     {
@@ -29,14 +27,21 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
         indentedTextWriter.WriteLine("{");
         indentedTextWriter.Indent++;
 
-
         var compilation = context.Compilation;
 
-        var immutableArrayType = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableArray`1");
-        var syntaxNodeType = compilation.GetTypeByMetadataName("Panther.CodeAnalysis.Syntax.SyntaxNode")!;
-        var separatedSyntaxListType = compilation.GetTypeByMetadataName("Panther.CodeAnalysis.Syntax.SeparatedSyntaxList`1");
+        var immutableArrayType = compilation.GetTypeByMetadataName(
+            "System.Collections.Immutable.ImmutableArray`1"
+        );
+        var syntaxNodeType = compilation.GetTypeByMetadataName(
+            "Panther.CodeAnalysis.Syntax.SyntaxNode"
+        )!;
+        var separatedSyntaxListType = compilation.GetTypeByMetadataName(
+            "Panther.CodeAnalysis.Syntax.SeparatedSyntaxList`1"
+        );
         var allTypes = GetAllTypes(compilation.Assembly);
-        var syntaxNodeTypes = allTypes.Where(type => !type.IsAbstract && IsDerivedFrom(type, syntaxNodeType) && IsPartial(type));
+        var syntaxNodeTypes = allTypes.Where(
+            type => !type.IsAbstract && IsDerivedFrom(type, syntaxNodeType) && IsPartial(type)
+        );
 
         foreach (var syntaxNode in syntaxNodeTypes)
         {
@@ -44,7 +49,9 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
             indentedTextWriter.WriteLine($"partial class {name}");
             indentedTextWriter.WriteLine("{");
             indentedTextWriter.Indent++;
-            var kind = name.EndsWith("Syntax") ? name.Substring(0, name.LastIndexOf("Syntax")) : name;
+            var kind = name.EndsWith("Syntax")
+                ? name.Substring(0, name.LastIndexOf("Syntax"))
+                : name;
 
             indentedTextWriter.WriteLine($"public override SyntaxKind Kind => SyntaxKind.{kind};");
             writer.WriteLine();
@@ -54,7 +61,8 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
 
             foreach (var propertySymbol in syntaxNode.GetMembers().OfType<IPropertySymbol>())
             {
-                if (!(propertySymbol.Type is INamedTypeSymbol propertyType)) continue;
+                if (!(propertySymbol.Type is INamedTypeSymbol propertyType))
+                    continue;
 
                 var canBeNull = propertySymbol.NullableAnnotation == NullableAnnotation.Annotated;
                 if (canBeNull)
@@ -68,20 +76,30 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
                 {
                     indentedTextWriter.WriteLine($"yield return {propertySymbol.Name};");
                 }
-                else if (propertyType.TypeArguments.Length == 1 &&
-                         IsDerivedFrom(propertyType.TypeArguments[0], syntaxNodeType) &&
-                         SymbolEqualityComparer.Default.Equals(propertyType.OriginalDefinition, immutableArrayType))
+                else if (
+                    propertyType.TypeArguments.Length == 1
+                    && IsDerivedFrom(propertyType.TypeArguments[0], syntaxNodeType)
+                    && SymbolEqualityComparer.Default.Equals(
+                        propertyType.OriginalDefinition,
+                        immutableArrayType
+                    )
+                )
                 {
-
                     indentedTextWriter.WriteLine($"foreach (var child in {propertySymbol.Name})");
                     indentedTextWriter.Indent++;
                     indentedTextWriter.WriteLine($"yield return child;");
                     indentedTextWriter.Indent--;
                 }
-                else if (SymbolEqualityComparer.Default.Equals(propertyType.OriginalDefinition, separatedSyntaxListType) &&
-                         IsDerivedFrom(propertyType.TypeArguments[0], syntaxNodeType))
+                else if (
+                    SymbolEqualityComparer.Default.Equals(
+                        propertyType.OriginalDefinition,
+                        separatedSyntaxListType
+                    ) && IsDerivedFrom(propertyType.TypeArguments[0], syntaxNodeType)
+                )
                 {
-                    indentedTextWriter.WriteLine($"foreach (var child in {propertySymbol.Name}.GetWithSeparators())");
+                    indentedTextWriter.WriteLine(
+                        $"foreach (var child in {propertySymbol.Name}.GetWithSeparators())"
+                    );
                     indentedTextWriter.Indent++;
                     indentedTextWriter.WriteLine($"yield return child;");
                     indentedTextWriter.Indent--;
@@ -98,16 +116,18 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
             indentedTextWriter.Indent--;
             indentedTextWriter.WriteLine("}");
             writer.WriteLine();
-
         }
 
         indentedTextWriter.Indent--;
         indentedTextWriter.WriteLine("}");
 
-
         // HACK the source generator doesnt completely work since we aren't on the appropriate .net version
         // and not all tooling supports source generators, so manually generate them for now
-        var path = Path.Combine(Path.GetDirectoryName(compilation.SyntaxTrees.Select(tree => tree.FilePath).First()) ?? ".", "SyntaxNode_GetChildren.g.cs");
+        var path = Path.Combine(
+            Path.GetDirectoryName(compilation.SyntaxTrees.Select(tree => tree.FilePath).First())
+                ?? ".",
+            "SyntaxNode_GetChildren.g.cs"
+        );
         File.WriteAllText(path, writer.ToString());
 
         // context.AddSource("SyntaxNode_GetChildren.g.cs", SourceText.From(writer.ToString(), Encoding.UTF8));
@@ -115,7 +135,8 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
 
     bool IsPartial(INamedTypeSymbol type)
     {
-        var items = from syntaxReference in type.DeclaringSyntaxReferences
+        var items =
+            from syntaxReference in type.DeclaringSyntaxReferences
             let syntax = syntaxReference.GetSyntax()
             where syntax is TypeDeclarationSyntax
             let typeDeclarationSyntax = (TypeDeclarationSyntax)syntax
@@ -143,7 +164,9 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
     {
         var items = new List<INamedTypeSymbol>();
         GetAllTypes(items, compilationAssembly.GlobalNamespace);
-        items.Sort((x, y) => string.Compare(x.MetadataName, y.MetadataName, StringComparison.Ordinal));
+        items.Sort(
+            (x, y) => string.Compare(x.MetadataName, y.MetadataName, StringComparison.Ordinal)
+        );
         return items;
     }
 

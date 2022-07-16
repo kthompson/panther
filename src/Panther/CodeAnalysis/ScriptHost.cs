@@ -24,11 +24,13 @@ public class ScriptHost : IDisposable
     private readonly AssemblyLoadContext _loadContext;
 
     public ScriptHost(ImmutableArray<AssemblyDefinition> references, string moduleName)
-        : this(references, null, moduleName)
-    {
-    }
+        : this(references, null, moduleName) { }
 
-    public ScriptHost(ImmutableArray<AssemblyDefinition> references, Compilation? previous, string moduleName)
+    public ScriptHost(
+        ImmutableArray<AssemblyDefinition> references,
+        Compilation? previous,
+        string moduleName
+    )
     {
         _references = references;
         _previous = previous;
@@ -37,7 +39,12 @@ public class ScriptHost : IDisposable
         _previousMethods = new Dictionary<Symbol, MethodReference>();
         var uuid = Guid.NewGuid().ToString();
         _loadContext = new AssemblyLoadContext(uuid, true);
-        _hostPath = Path.Combine(Path.GetTempPath(), "Panther", "Execution", $"{moduleName}-{uuid}");
+        _hostPath = Path.Combine(
+            Path.GetTempPath(),
+            "Panther",
+            "Execution",
+            $"{moduleName}-{uuid}"
+        );
         if (!Directory.Exists(_hostPath))
             Directory.CreateDirectory(_hostPath);
     }
@@ -52,7 +59,12 @@ public class ScriptHost : IDisposable
     public ExecutionResult Execute(Compilation compilation)
     {
         var outputPath = Path.Combine(_hostPath, $"script{_id}.dll");
-        var emitResult = compilation.Emit($"{_moduleName}{_id}", outputPath, _previousGlobals, _previousMethods);
+        var emitResult = compilation.Emit(
+            $"{_moduleName}{_id}",
+            outputPath,
+            _previousGlobals,
+            _previousMethods
+        );
         if (emitResult.Diagnostics.Any())
             return new ExecutionResult(emitResult.Diagnostics, null);
 

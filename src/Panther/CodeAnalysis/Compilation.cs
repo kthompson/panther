@@ -21,7 +21,10 @@ public class Compilation
     public ImmutableArray<AssemblyDefinition> References { get; }
     public Symbol RootSymbol => BoundAssembly.RootSymbol;
     public ImmutableArray<Diagnostic> Diagnostics =>
-        SyntaxTrees.SelectMany(tree => tree.Diagnostics).Concat(BoundAssembly.Diagnostics).ToImmutableArray();
+        SyntaxTrees
+            .SelectMany(tree => tree.Diagnostics)
+            .Concat(BoundAssembly.Diagnostics)
+            .ToImmutableArray();
 
     private BoundAssembly? _boundAssembly;
     private BoundAssembly BoundAssembly
@@ -30,7 +33,12 @@ public class Compilation
         {
             if (_boundAssembly == null)
             {
-                var bindAssembly = Binder.BindAssembly(IsScript, SyntaxTrees, Previous?.BoundAssembly,  References);
+                var bindAssembly = Binder.BindAssembly(
+                    IsScript,
+                    SyntaxTrees,
+                    Previous?.BoundAssembly,
+                    References
+                );
                 Interlocked.CompareExchange(ref _boundAssembly, bindAssembly, null);
             }
 
@@ -38,8 +46,12 @@ public class Compilation
         }
     }
 
-
-    private Compilation(ImmutableArray<AssemblyDefinition> references, bool isScript, Compilation? previous, params SyntaxTree[] syntaxTrees)
+    private Compilation(
+        ImmutableArray<AssemblyDefinition> references,
+        bool isScript,
+        Compilation? previous,
+        params SyntaxTree[] syntaxTrees
+    )
     {
         References = references;
         IsScript = isScript;
@@ -47,7 +59,10 @@ public class Compilation
         SyntaxTrees = syntaxTrees.ToImmutableArray();
     }
 
-    public static (ImmutableArray<Diagnostic> diagnostics, Compilation? compilation) Create(string[] references, params SyntaxTree[] syntaxTrees)
+    public static (ImmutableArray<Diagnostic> diagnostics, Compilation? compilation) Create(
+        string[] references,
+        params SyntaxTree[] syntaxTrees
+    )
     {
         var bag = new DiagnosticBag();
         var assemblies = ImmutableArray.CreateBuilder<AssemblyDefinition>();
@@ -72,11 +87,16 @@ public class Compilation
         return (ImmutableArray<Diagnostic>.Empty, Create(assemblies.ToImmutable(), syntaxTrees));
     }
 
-    public static Compilation Create(ImmutableArray<AssemblyDefinition> references, params SyntaxTree[] syntaxTrees) =>
-        new Compilation(references, false, null, syntaxTrees);
+    public static Compilation Create(
+        ImmutableArray<AssemblyDefinition> references,
+        params SyntaxTree[] syntaxTrees
+    ) => new Compilation(references, false, null, syntaxTrees);
 
-    public static Compilation CreateScript(ImmutableArray<AssemblyDefinition> references, Compilation? previous, params SyntaxTree[] syntaxTrees) =>
-        new Compilation(references, isScript: true, previous, syntaxTrees);
+    public static Compilation CreateScript(
+        ImmutableArray<AssemblyDefinition> references,
+        Compilation? previous,
+        params SyntaxTree[] syntaxTrees
+    ) => new Compilation(references, isScript: true, previous, syntaxTrees);
 
     public IEnumerable<Symbol> GetSymbols()
     {
@@ -85,7 +105,9 @@ public class Compilation
 
         while (compilation != null)
         {
-            foreach (var type in compilation.RootSymbol.Types.Where(type => symbolNames.Add(type.Name)))
+            foreach (
+                var type in compilation.RootSymbol.Types.Where(type => symbolNames.Add(type.Name))
+            )
             {
                 yield return type;
 
@@ -115,7 +137,6 @@ public class Compilation
             EmitTree(function.method, function.body!, writer);
             writer.WriteLine();
         }
-
 
         if (entryPoint != null)
         {
@@ -154,6 +175,10 @@ public class Compilation
     public EmitResult Emit(string moduleName, string outputPath) =>
         Emitter.Emit(BoundAssembly, moduleName, outputPath);
 
-    internal EmitResult Emit(string moduleName, string outputPath, Dictionary<Symbol, FieldReference> previousGlobals, Dictionary<Symbol, MethodReference> previousMethods) =>
-        Emitter.Emit(BoundAssembly, moduleName, outputPath, previousGlobals, previousMethods);
+    internal EmitResult Emit(
+        string moduleName,
+        string outputPath,
+        Dictionary<Symbol, FieldReference> previousGlobals,
+        Dictionary<Symbol, MethodReference> previousMethods
+    ) => Emitter.Emit(BoundAssembly, moduleName, outputPath, previousGlobals, previousMethods);
 }

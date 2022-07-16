@@ -10,13 +10,14 @@ internal abstract record Conversion
     public static readonly Conversion Explicit = new ExplicitConversion();
 
     sealed record NoConversion : Conversion;
+
     sealed record IdentityConversion : Conversion;
+
     sealed record ExplicitConversion : Conversion;
+
     sealed record ImplicitConversion : Conversion;
 
-    protected Conversion()
-    {
-    }
+    protected Conversion() { }
 
     public bool Exists => this is not NoConversion;
     public bool IsImplicit => this is ImplicitConversion;

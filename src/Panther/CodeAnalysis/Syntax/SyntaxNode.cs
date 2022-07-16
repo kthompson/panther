@@ -50,8 +50,7 @@ public abstract record SyntaxNode(SyntaxTree SyntaxTree)
     }
 
     public IEnumerable<SyntaxNode> Descendants() =>
-        GetChildren()
-            .SelectMany(child => child.DescendantsAndSelf());
+        GetChildren().SelectMany(child => child.DescendantsAndSelf());
 
     public void WriteTo(TextWriter writer)
     {
@@ -65,7 +64,12 @@ public abstract record SyntaxNode(SyntaxTree SyntaxTree)
         return writer.ToString();
     }
 
-    private static void PrettyPrint(TextWriter writer, SyntaxNode node, string indent = "", bool isLast = true)
+    private static void PrettyPrint(
+        TextWriter writer,
+        SyntaxNode node,
+        string indent = "",
+        bool isLast = true
+    )
     {
         var isConsole = writer == Console.Out;
 

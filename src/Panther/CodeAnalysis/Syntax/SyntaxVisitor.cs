@@ -4,9 +4,7 @@ public partial class SyntaxVisitor
 {
     public virtual void Visit(SyntaxNode node) => node.Accept(this);
 
-    protected virtual void DefaultVisit(SyntaxNode node)
-    {
-    }
+    protected virtual void DefaultVisit(SyntaxNode node) { }
 }
 
 public abstract partial class SyntaxVisitor<TResult>
