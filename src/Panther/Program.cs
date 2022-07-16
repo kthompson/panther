@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Panther.CodeAnalysis;
@@ -64,6 +65,13 @@ for (var i = 0; i < args.Length; i++)
 
         references.Add(args[i + 1]);
         i++;
+        continue;
+    }
+
+    if (CheckArg(arg, "attach", "attach"))
+    {
+        Debugger.Launch();
+        Debugger.Break();
         continue;
     }
 
@@ -177,6 +185,8 @@ version: {ThisAssembly.AssemblyInformationalVersion}
     -r, --reference    Required. An assembly reference
 
     -m, --module       Required. (Default: main) The module name
+
+    --attach           Attempt to attach a debugger 
 
     --help             Display this help screen.
 

@@ -15,4 +15,13 @@ public static class Predef
     private static Random _random = new Random();
 
     public static int rnd(int max) => _random.Next(max);
+
+    // Helper methods (not to be used externally)
+    public static int strlen(string str) => str.Length;
+
+    public static char getchar(string str, int index) => str[index];
+
+    public static int getargc() => Environment.GetCommandLineArgs().Length;
+
+    public static string getarg(int index) => Environment.GetCommandLineArgs()[index];
 }

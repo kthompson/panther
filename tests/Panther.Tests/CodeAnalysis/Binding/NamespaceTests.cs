@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using static Panther.Tests.CodeAnalysis.TestHelpers;
 
 namespace Panther.Tests.CodeAnalysis.Binding;
 
@@ -15,7 +16,7 @@ public class NamespaceTests
                     def main() = println(""Hello World"")
                 }"
         );
-        var compilation = TestHelpers.Compile(code.Text);
+        var compilation = Compile(code.Text);
 
         var HelloNamespace = compilation.RootSymbol.LookupNamespace("HelloNamespace");
         Assert.NotNull(HelloNamespace);
@@ -36,7 +37,7 @@ public class NamespaceTests
                     def main() = println(""Hello World"")
                 }"
         );
-        var compilation = TestHelpers.Compile(code.Text);
+        var compilation = Compile(code.Text);
 
         var Hello = compilation.RootSymbol.LookupNamespace("Hello");
         Assert.NotNull(Hello);

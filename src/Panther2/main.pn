@@ -1,0 +1,166 @@
+using System
+using System.IO
+
+object PantherCompiler
+{
+    def main(): unit = {
+        val text = File.ReadAllText(getarg(1))
+        // val lexer = new Lexer(text)
+        println("hello")
+    }    
+}
+
+class SyntaxToken(Kind: int, Start: int, End: int, Text: string)
+
+class Lexer(Text: string) {
+    var _position: int = 0
+    val _zero: char = getchar("\0", 0) 
+    
+    def Next(): unit = {
+        _position = _position + 1
+    }
+
+    def Peek(position: int): char = {
+        if(position >= strlen(Text)) _zero 
+        else getchar(Text, position)
+    }
+
+    def Current(): char = Peek(_position)
+    
+    def Lookahead(): char = Peek(_position + 1)
+    
+    def Next(): unit = {
+        _position = _position + 1
+    }
+    
+    def IsEndOfLine(c: char): bool = c == '\n' || c == '\r'
+
+    // def ParseToken() = {
+
+    // }
+
+    // def NextToken(): SyntaxToken = {
+    //     // parse leading trivia
+
+    //     // parse trailing trivia
+
+
+    // }
+    
+}
+
+class Parser()
+
+
+object SyntaxKind
+{
+    // Special Tokens
+    val EndOfInputToken = 0
+    val IdentifierToken = 1
+    val CommaToken = 2
+
+    // Trivia tokens
+    val InvalidTokenTrivia = 3
+    val EndOfLineTrivia = 4
+    val WhitespaceTrivia = 5
+    val LineCommentTrivia = 6
+    val BlockCommentTrivia = 7
+
+    // Literal tokens
+    val NumberToken = 8
+    val StringToken = 9
+
+    // Keywords
+   val BreakKeyword = 10
+   val ClassKeyword = 11
+   val ContinueKeyword = 12
+   val DefKeyword = 13
+   val ElseKeyword = 14
+   val FalseKeyword = 15
+   val ForKeyword = 16
+   val IfKeyword = 17
+   val ImplicitKeyword = 18
+   val NamespaceKeyword = 19
+   val NewKeyword = 20
+   val ObjectKeyword = 21
+   val StaticKeyword = 22
+   val ToKeyword = 23
+   val TrueKeyword = 24
+   val UsingKeyword = 25
+   val ValKeyword = 26
+   val VarKeyword = 27
+   val WhileKeyword = 28
+
+    // Operators
+    val AmpersandAmpersandToken = 29
+    val AmpersandToken = 30
+    val BangEqualsToken = 31
+    val BangToken = 32
+    val CaretToken = 33
+    val ColonToken = 34
+    val DashToken = 35
+    val DotToken = 36
+    val EqualsEqualsToken = 37
+    val EqualsToken = 38
+    val GreaterThanEqualsToken = 39
+    val GreaterThanToken = 40
+    val LessThanDashToken = 41
+    val LessThanEqualsToken = 42
+    val LessThanToken = 43
+    val PipePipeToken = 44
+    val PipeToken = 45
+    val PlusToken = 46
+    val SlashToken = 47
+    val StarToken = 48
+    val TildeToken = 49
+
+    // grouping tokens
+    val CloseParenToken = 50
+    val OpenParenToken = 51
+    val OpenBraceToken = 52
+    val CloseBraceToken = 53
+    val OpenBracketToken = 54
+    val CloseBracketToken = 55
+
+    // Expressions
+    val AssignmentExpression = 56
+    val BinaryExpression = 57
+    val BlockExpression = 58
+    val CallExpression = 59
+    val ForExpression = 60
+    val GroupExpression = 61
+    val IdentifierName = 62
+    val IfExpression = 63
+    val IndexExpression = 64
+    val LiteralExpression = 65
+    val MemberAccessExpression = 66
+    val NewExpression = 67
+    val QualifiedName = 68
+    val UnaryExpression = 69
+    val UnitExpression = 70
+    val WhileExpression = 71
+
+    // Statements
+    val BreakStatement = 72
+    val ContinueStatement = 73
+    val ExpressionStatement = 74
+    val VariableDeclarationStatement = 75
+
+    //  Nodes
+    val Template = 76
+    val TypeAnnotation = 77
+    val FunctionBody = 78
+    val Parameter = 79
+    val Initializer = 80
+    val CompilationUnit = 81
+
+    // Members
+    val ClassDeclaration = 82
+    val FunctionDeclaration = 83
+    val ObjectDeclaration = 84
+
+    // Top level items
+    val UsingDirective = 85
+    val GlobalStatement = 86
+    val NamespaceDeclaration = 87
+}
