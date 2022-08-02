@@ -46,7 +46,7 @@ public abstract class TypeSymbol : Symbol
             .WithType(Type.String);
 
         var getItem = String.NewMethod(TextLocation.None, "get_Chars").Declare();
-        var i = getItem
+        getItem
             .NewParameter(TextLocation.None, "i", 0)
             .WithType(Type.Delayed(() => Type.Int))
             .Declare();

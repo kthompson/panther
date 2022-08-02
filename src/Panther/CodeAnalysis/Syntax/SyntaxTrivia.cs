@@ -18,7 +18,7 @@ public sealed record SyntaxTrivia : SyntaxNode
     public override SyntaxKind Kind { get; }
     public string Text { get; }
 
-    public override TextSpan Span => new TextSpan(_position, Text?.Length ?? 0);
+    public override TextSpan Span => new TextSpan(_position, Text.Length);
     public override TextSpan FullSpan => Span;
 
     public override IEnumerable<SyntaxNode> GetChildren() => ImmutableArray<SyntaxNode>.Empty;

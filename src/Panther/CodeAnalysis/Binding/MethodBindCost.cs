@@ -59,7 +59,7 @@ static class MethodBindCost
         ImmutableArray<TypedExpression> arguments
     )
     {
-        var (errors, results) = methods
+        var (_, results) = methods
             .Select((method, index) => Analyze(index, method, arguments))
             .Partition(cost => cost is MethodBindCostResult.MethodBindCostError);
 
