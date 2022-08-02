@@ -35,7 +35,7 @@ internal abstract record Conversion
         if (from == Type.Any)
             return Explicit;
 
-        if ((from == Type.Bool || from == Type.Int) && to == Type.String)
+        if ((from == Type.Bool || from == Type.Int || from == Type.Char) && to == Type.String)
             return Explicit;
 
         if (from == Type.String && (to == Type.Bool || to == Type.Int))

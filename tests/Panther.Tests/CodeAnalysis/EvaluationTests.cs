@@ -85,6 +85,14 @@ public class EvaluationTests
         AssertEvaluation(code, value, scriptHost);
     }
 
+    [Property]
+    public void EvaluatesCharacterLiteral(char c)
+    {
+        var code = $"'{escapeString(c.ToString(), false)}'";
+        using var scriptHost = BuildScriptHost();
+        AssertEvaluation(code, c, scriptHost);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
@@ -102,6 +110,16 @@ public class EvaluationTests
         object value = (number % 2) == 0;
         using var scriptHost = BuildScriptHost();
         AssertEvaluation(code, value, scriptHost);
+    }
+
+    [Theory]
+    [InlineData("'\\u1a2d'", '\u1a2d')]
+    [InlineData("'\\t'", '\t')]
+    [InlineData(@"'\\'", '\\')]
+    public void EvaluatesCharEscapeSequences(string code, char expected)
+    {
+        using var scriptHost = BuildScriptHost();
+        AssertEvaluation(code, expected, scriptHost);
     }
 
     [Theory]
@@ -518,10 +536,11 @@ public class EvaluationTests
 
     string escapeString(NonNull<string> str) => escapeString(str.Item);
 
-    static string escapeString(string strItem)
+    static string escapeString(string strItem, bool includeQuotes = true)
     {
         var sb = new StringBuilder();
-        sb.Append('"');
+        if (includeQuotes)
+            sb.Append('"');
         foreach (var c in strItem)
         {
             switch (c)
@@ -570,7 +589,8 @@ public class EvaluationTests
             }
         }
 
-        sb.Append('"');
+        if (includeQuotes)
+            sb.Append('"');
         return sb.ToString();
     }
 }

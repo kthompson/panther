@@ -1678,6 +1678,7 @@ internal sealed class Binder
         // should be alias symbols that map to the real symbols
         rootScope.Import(root.NewClass(TextLocation.None, "any").WithType(Type.Any));
         rootScope.Import(root.NewClass(TextLocation.None, "int").WithType(Type.Int));
+        rootScope.Import(root.NewClass(TextLocation.None, "char").WithType(Type.Char));
         rootScope.Import(root.NewClass(TextLocation.None, "bool").WithType(Type.Bool));
         rootScope.Import(root.NewClass(TextLocation.None, "string").WithType(Type.String));
         rootScope.Import(root.NewClass(TextLocation.None, "unit").WithType(Type.Unit));
@@ -1703,7 +1704,9 @@ internal sealed class Binder
 
         // import all symbols from our references
         foreach (var reference in references)
+        {
             foreach (var module in reference.Modules)
+            {
                 foreach (var type in module.Types)
                 {
                     if (!type.IsClass || !type.IsPublic)
@@ -1718,6 +1721,8 @@ internal sealed class Binder
                         new ImportedTypeSymbol(namespaceSymbol, type.Name, type)
                     );
                 }
+            }
+        }
 
         return (root, rootScope);
     }

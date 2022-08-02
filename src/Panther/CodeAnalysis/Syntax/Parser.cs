@@ -58,6 +58,7 @@ internal class Parser
         this.Diagnostics.AddRange(lexer.Diagnostics);
 
         // a
+        _prefixParseFunctions[SyntaxKind.CharToken] = ParseLiteralExpression;
         _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
         _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
         _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierName;

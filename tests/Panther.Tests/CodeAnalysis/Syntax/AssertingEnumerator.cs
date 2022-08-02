@@ -95,6 +95,6 @@ internal sealed class AssertingEnumerator : IDisposable
             Assert.False(moveNextResult, $"additional tokens remain: {_enumerator.Current.Kind}");
         }
 
-        _enumerator?.Dispose();
+        _enumerator.Dispose();
     }
 }
