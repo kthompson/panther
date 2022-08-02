@@ -12,23 +12,23 @@ using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal sealed class Binder
+internal sealed class Typer
 {
     private readonly bool _isScript;
     public DiagnosticBag Diagnostics { get; } = new DiagnosticBag();
     private int _labelCounter = 0;
 
-    private readonly Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _breakContinueLabels =
+    private readonly Stack<(TypedLabel BreakLabel, TypedLabel ContinueLabel)> _breakContinueLabels =
         new();
     private readonly Dictionary<Symbol, FunctionDeclarationSyntax> _functionDeclarations = new();
-    private readonly Dictionary<Symbol, BoundBlockExpression> _constructorBodies = new();
+    private readonly Dictionary<Symbol, TypedBlockExpression> _constructorBodies = new();
 
-    public Binder(bool isScript)
+    public Typer(bool isScript)
     {
         _isScript = isScript;
     }
 
-    private void BindClassDeclaration(ClassDeclarationSyntax syntax, BoundScope parent)
+    private void BindClassDeclaration(ClassDeclarationSyntax syntax, TypedScope parent)
     {
         var typeSymbol = parent.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
 
@@ -38,7 +38,7 @@ internal sealed class Binder
         }
 
         var parameters = ImmutableArray.CreateBuilder<Symbol>();
-        var assignments = ImmutableArray.CreateBuilder<BoundStatement>();
+        var assignments = ImmutableArray.CreateBuilder<TypedStatement>();
         var seenFieldNames = new HashSet<string>();
 
         var ctor = typeSymbol.NewMethod(typeSymbol.Location, ".ctor");
@@ -66,26 +66,26 @@ internal sealed class Binder
                 ctor.DefineSymbol(parameter);
                 parameters.Add(parameter);
                 assignments.Add(
-                    new BoundAssignmentStatement(
+                    new TypedAssignmentStatement(
                         field,
-                        new BoundFieldExpression(field, null, fieldSymbol),
-                        new BoundVariableExpression(field, parameter)
+                        new TypedFieldExpression(field, null, fieldSymbol),
+                        new TypedVariableExpression(field, parameter)
                     )
                 );
             }
         }
 
-        var typeScope = new BoundScope(parent, typeSymbol);
+        var typeScope = new TypedScope(parent, typeSymbol);
         var immParams = parameters.ToImmutableArray();
         ctor.WithType(new MethodType(immParams, Type.Unit));
 
         typeSymbol.DefineSymbol(ctor);
         _constructorBodies.Add(
             ctor,
-            new BoundBlockExpression(
+            new TypedBlockExpression(
                 syntax,
                 assignments.ToImmutableArray(),
-                new BoundUnitExpression(syntax)
+                new TypedUnitExpression(syntax)
             )
         );
 
@@ -95,7 +95,7 @@ internal sealed class Binder
         }
     }
 
-    private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, BoundScope parent)
+    private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, TypedScope parent)
     {
         var typeSymbol = parent.Symbol.NewObject(
             objectDeclaration.Identifier.Location,
@@ -111,7 +111,7 @@ internal sealed class Binder
             );
         }
 
-        var scope = new BoundScope(parent, typeSymbol);
+        var scope = new TypedScope(parent, typeSymbol);
 
         BindMembers(objectDeclaration.Template.Members, objectDeclaration, scope);
     }
@@ -119,7 +119,7 @@ internal sealed class Binder
     private void BindMembers(
         ImmutableArray<MemberSyntax> members,
         SyntaxNode parent,
-        BoundScope scope
+        TypedScope scope
     )
     {
         var (objectsAndClasses, rest) = members.Partition(
@@ -159,7 +159,7 @@ internal sealed class Binder
             }
         }
 
-        var boundStatements = ImmutableArray.CreateBuilder<BoundStatement>();
+        var boundStatements = ImmutableArray.CreateBuilder<TypedStatement>();
 
         // check statements for field declarations
         foreach (var memberSyntax in statements)
@@ -199,17 +199,17 @@ internal sealed class Binder
 
         if (_constructorBodies.TryGetValue(ctorSymbol, out var existingBody))
         {
-            boundStatements.Add(new BoundExpressionStatement(parent, existingBody));
+            boundStatements.Add(new TypedExpressionStatement(parent, existingBody));
         }
 
         var loweredBody = LoweringPipeline.Lower(
             ctorSymbol,
-            new BoundExpressionStatement(
+            new TypedExpressionStatement(
                 parent,
-                new BoundBlockExpression(
+                new TypedBlockExpression(
                     parent,
                     boundStatements.ToImmutable(),
-                    new BoundUnitExpression(parent)
+                    new TypedUnitExpression(parent)
                 )
             )
         );
@@ -223,23 +223,23 @@ internal sealed class Binder
     // }
 
     private static EntryPoint? BindEntryPoint(
-        BoundScope boundScope,
+        TypedScope boundScope,
         bool isScript,
         ImmutableArray<SyntaxTree> syntaxTrees,
-        ImmutableArray<BoundStatement> globalStatements,
+        ImmutableArray<TypedStatement> globalStatements,
         Symbol? mainFunction,
-        Binder binder
+        Typer typer
     ) =>
         isScript
             ? BindScriptEntryPoint(boundScope, globalStatements)
-            : BindMainEntryPoint(boundScope, syntaxTrees, globalStatements, mainFunction, binder);
+            : BindMainEntryPoint(boundScope, syntaxTrees, globalStatements, mainFunction, typer);
 
     private static EntryPoint? BindMainEntryPoint(
-        BoundScope boundScope,
+        TypedScope boundScope,
         ImmutableArray<SyntaxTree> syntaxTrees,
-        ImmutableArray<BoundStatement> globalStatements,
+        ImmutableArray<TypedStatement> globalStatements,
         Symbol? mainFunction,
-        Binder binder
+        Typer typer
     )
     {
         var firstStatementPerSyntaxTree = (
@@ -254,7 +254,7 @@ internal sealed class Binder
         {
             foreach (var firstStatement2 in firstStatementPerSyntaxTree)
             {
-                binder.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(
+                typer.Diagnostics.ReportGlobalStatementsCanOnlyExistInOneFile(
                     firstStatement2!.Location
                 );
             }
@@ -267,11 +267,11 @@ internal sealed class Binder
         // if a main function exists, global statements cannot
         if (mainFunction != null && hasGlobalStatements)
         {
-            binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Location);
+            typer.Diagnostics.ReportCannotMixMainAndGlobalStatements(mainFunction.Location);
 
             foreach (var firstStatement1 in firstStatementPerSyntaxTree)
             {
-                binder.Diagnostics.ReportCannotMixMainAndGlobalStatements(
+                typer.Diagnostics.ReportCannotMixMainAndGlobalStatements(
                     firstStatement1!.Location
                 );
             }
@@ -288,7 +288,7 @@ internal sealed class Binder
             )
         )
         {
-            binder.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Location);
+            typer.Diagnostics.ReportMainMustHaveCorrectSignature(mainFunction.Location);
 
             return null;
         }
@@ -311,7 +311,7 @@ internal sealed class Binder
         var compilationUnit = globalStatements.First().Syntax;
         var body = LoweringPipeline.Lower(
             main,
-            BoundStatementFromStatements(compilationUnit, globalStatements)
+            TypedStatementFromStatements(compilationUnit, globalStatements)
         );
 
         boundScope.DefineSymbol(main);
@@ -320,8 +320,8 @@ internal sealed class Binder
     }
 
     private static EntryPoint? BindScriptEntryPoint(
-        BoundScope boundScope,
-        ImmutableArray<BoundStatement> globalStatements
+        TypedScope boundScope,
+        ImmutableArray<TypedStatement> globalStatements
     )
     {
         if (!globalStatements.Any())
@@ -333,7 +333,7 @@ internal sealed class Binder
             .WithFlags(SymbolFlags.Static);
 
         var compilationUnit = globalStatements.First().Syntax;
-        var boundStatementFromStatements = BoundStatementFromStatements(
+        var boundStatementFromStatements = TypedStatementFromStatements(
             compilationUnit,
             globalStatements
         );
@@ -343,9 +343,9 @@ internal sealed class Binder
         if (boundStatementFromStatements.Expression.Type != Type.Any)
         {
             // what should we do when we have a unit expression?
-            boundStatementFromStatements = new BoundExpressionStatement(
+            boundStatementFromStatements = new TypedExpressionStatement(
                 boundStatementFromStatements.Syntax,
-                new BoundConversionExpression(
+                new TypedConversionExpression(
                     boundStatementFromStatements.Syntax,
                     Type.Any,
                     boundStatementFromStatements.Expression
@@ -365,28 +365,28 @@ internal sealed class Binder
     private static bool IsTopLevelDeclaration(SyntaxNode member) =>
         member.Kind is SyntaxKind.ClassDeclaration or SyntaxKind.ObjectDeclaration;
 
-    public static BoundAssembly BindAssembly(
+    public static TypedAssembly BindAssembly(
         bool isScript,
         ImmutableArray<SyntaxTree> syntaxTrees,
-        BoundAssembly? previous,
+        TypedAssembly? previous,
         ImmutableArray<AssemblyDefinition> references
     )
     {
         var (root, parentScope) = CreateParentScope(previous, references);
-        var scope = new BoundScope(parentScope, root);
-        var binder = new Binder(isScript);
+        var scope = new TypedScope(parentScope, root);
+        var binder = new Typer(isScript);
 
         var defaultTypeAddedToNamespace = false;
-        BoundType? defaultType = null;
-        BoundScope? defaultTypeScope = null;
+        TypedType? defaultType = null;
+        TypedScope? defaultTypeScope = null;
 
         var globalStatements = ImmutableArray.CreateBuilder<GlobalStatementSyntax>();
-        var fileScopes = new Dictionary<SourceFile, BoundScope>();
+        var fileScopes = new Dictionary<SourceFile, TypedScope>();
 
         foreach (var tree in syntaxTrees)
         {
             var compilationUnit = tree.Root;
-            var fileScope = new BoundScope(scope, $"FileScope[{tree.File.FileName}]");
+            var fileScope = new TypedScope(scope, $"FileScope[{tree.File.FileName}]");
             fileScopes[tree.File] = fileScope;
 
             var thisScope = fileScope;
@@ -403,7 +403,7 @@ internal sealed class Binder
             if (compilationUnit.Namespace != null)
             {
                 var namespaceSymbol = binder.BindNamespace(compilationUnit.Namespace, root);
-                thisScope = new BoundScope(thisScope, namespaceSymbol, "declarations");
+                thisScope = new TypedScope(thisScope, namespaceSymbol, "declarations");
             }
 
             foreach (var @using in compilationUnit.Usings)
@@ -431,11 +431,11 @@ internal sealed class Binder
             if (functions.IsEmpty && theseGlobalStatements.IsEmpty)
                 continue;
 
-            defaultType = new BoundType(root, TextLocation.None, "$Program")
+            defaultType = new TypedType(root, TextLocation.None, "$Program")
             {
                 Flags = SymbolFlags.Object
             };
-            defaultTypeScope = new BoundScope(fileScope, defaultType);
+            defaultTypeScope = new TypedScope(fileScope, defaultType);
 
             // functions go into our default type scope
             // everything else can go in our global scope
@@ -467,8 +467,8 @@ internal sealed class Binder
             defaultTypeScope
                 ?? (
                     mainFunction == null
-                        ? new BoundScope(scope)
-                        : new BoundScope(scope, mainFunction.Owner)
+                        ? new TypedScope(scope)
+                        : new TypedScope(scope, mainFunction.Owner)
                 ),
             isScript,
             syntaxTrees,
@@ -490,7 +490,7 @@ internal sealed class Binder
 
         diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
-        var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, BoundBlockExpression>();
+        var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, TypedBlockExpression>();
 
         // Map and lower all function definitions
         foreach (var boundType in root.Types)
@@ -504,11 +504,11 @@ internal sealed class Binder
                     ? defaultTypeScope
                     : fileScopes[boundType.Location.File];
             Debug.Assert(fileScope != null);
-            var typeScope = new BoundScope(fileScope!, boundType);
+            var typeScope = new TypedScope(fileScope!, boundType);
 
             foreach (var methodSymbol in boundType.Methods)
             {
-                var functionScope = new BoundScope(typeScope, methodSymbol);
+                var functionScope = new TypedScope(typeScope, methodSymbol);
 
                 if (binder._constructorBodies.TryGetValue(methodSymbol, out var block))
                 {
@@ -523,7 +523,7 @@ internal sealed class Binder
 
                         var loweredBody = LoweringPipeline.Lower(
                             methodSymbol,
-                            new BoundExpressionStatement(body.Syntax, body)
+                            new TypedExpressionStatement(body.Syntax, body)
                         );
 
                         if (
@@ -548,7 +548,7 @@ internal sealed class Binder
 
         diagnostics.AddRange(binder.Diagnostics);
 
-        return new BoundAssembly(
+        return new TypedAssembly(
             Previous: previous,
             Diagnostics: diagnostics.ToImmutableArray(),
             EntryPoint: entryPoint,
@@ -600,25 +600,25 @@ internal sealed class Binder
     private Symbol BindUsing(UsingDirectiveSyntax usingDirective, Symbol symbol) =>
         BindNamespace(usingDirective.Name, symbol, false);
 
-    private static BoundExpressionStatement BoundStatementFromStatements(
+    private static TypedExpressionStatement TypedStatementFromStatements(
         SyntaxNode syntax,
-        IReadOnlyCollection<BoundStatement> statements
+        IReadOnlyCollection<TypedStatement> statements
     )
     {
-        var expr = (statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
+        var expr = (statements.LastOrDefault() as TypedExpressionStatement)?.Expression;
         var stmts =
             expr == null
                 ? statements.ToImmutableArray()
                 : statements.Take(statements.Count - 1).ToImmutableArray();
 
         // this doesnt really feel like the correct syntax as we should have something that encompasses all of the statements
-        return new BoundExpressionStatement(
+        return new TypedExpressionStatement(
             syntax,
-            new BoundBlockExpression(syntax, stmts, expr ?? new BoundUnitExpression(syntax))
+            new TypedBlockExpression(syntax, stmts, expr ?? new TypedUnitExpression(syntax))
         );
     }
 
-    private Symbol BindFunctionDeclaration(FunctionDeclarationSyntax syntax, BoundScope scope)
+    private Symbol BindFunctionDeclaration(FunctionDeclarationSyntax syntax, TypedScope scope)
     {
         var seenParamNames = new HashSet<string>();
         var function = scope.Symbol.NewMethod(syntax.Identifier.Location, syntax.Identifier.Text);
@@ -654,9 +654,9 @@ internal sealed class Binder
             // HACK: temporarily bind to body so that we can detect the type
             // var tempFunction = new SourceMethodSymbol(syntax.Identifier.Text, parameters.ToImmutable(),
             //     Type.Unit, syntax);
-            var functionScope = new BoundScope(
+            var functionScope = new TypedScope(
                 scope,
-                new BoundType(scope.Symbol, TextLocation.None, "<temp>")
+                new TypedType(scope.Symbol, TextLocation.None, "<temp>")
             );
             foreach (var parameterSymbol in function.Parameters)
             {
@@ -684,12 +684,12 @@ internal sealed class Binder
         return function;
     }
 
-    private BoundStatement BindGlobalStatement(StatementSyntax syntax, BoundScope scope) =>
+    private TypedStatement BindGlobalStatement(StatementSyntax syntax, TypedScope scope) =>
         BindStatement(syntax, scope, true);
 
-    private BoundStatement BindStatement(
+    private TypedStatement BindStatement(
         StatementSyntax syntax,
-        BoundScope scope,
+        TypedScope scope,
         bool isGlobal = false
     )
     {
@@ -708,46 +708,46 @@ internal sealed class Binder
         return statement;
     }
 
-    private static bool IsSideEffectStatement(BoundStatement statement)
+    private static bool IsSideEffectStatement(TypedStatement statement)
     {
-        if (statement is BoundExpressionStatement es)
+        if (statement is TypedExpressionStatement es)
             return IsSideEffectExpression(es.Expression);
 
         return true;
     }
 
-    private static bool IsSideEffectExpression(BoundExpression expression)
+    private static bool IsSideEffectExpression(TypedExpression expression)
     {
         var exprKind = expression.Kind;
 
-        if (expression is BoundWhileExpression boundWhileExpression)
+        if (expression is TypedWhileExpression boundWhileExpression)
         {
             return IsSideEffectExpression(boundWhileExpression.Body);
         }
 
-        if (expression is BoundForExpression boundForExpression)
+        if (expression is TypedForExpression boundForExpression)
         {
             return IsSideEffectExpression(boundForExpression.Body);
         }
 
-        if (expression is BoundIfExpression boundIfExpression)
+        if (expression is TypedIfExpression boundIfExpression)
         {
             return IsSideEffectExpression(boundIfExpression.Then)
                 || IsSideEffectExpression(boundIfExpression.Else);
         }
 
-        if (expression is BoundBlockExpression blockExpression)
+        if (expression is TypedBlockExpression blockExpression)
         {
             return blockExpression.Statements.Any(IsSideEffectStatement)
                 || IsSideEffectExpression(blockExpression.Expression);
         }
 
-        return exprKind == BoundNodeKind.ErrorExpression
-            || exprKind == BoundNodeKind.AssignmentExpression
-            || exprKind == BoundNodeKind.CallExpression;
+        return exprKind == TypedNodeKind.ErrorExpression
+            || exprKind == TypedNodeKind.AssignmentExpression
+            || exprKind == TypedNodeKind.CallExpression;
     }
 
-    private BoundStatement BindStatementInternal(StatementSyntax syntax, BoundScope scope) =>
+    private TypedStatement BindStatementInternal(StatementSyntax syntax, TypedScope scope) =>
         syntax switch
         {
             BreakStatementSyntax breakStatementSyntax => BindBreakStatement(breakStatementSyntax),
@@ -760,7 +760,7 @@ internal sealed class Binder
             _ => throw new ArgumentOutOfRangeException(nameof(syntax))
         };
 
-    private BoundStatement BindContinueStatement(ContinueStatementSyntax syntax)
+    private TypedStatement BindContinueStatement(ContinueStatementSyntax syntax)
     {
         var label = GetContinueLabel();
         if (label == null)
@@ -769,13 +769,13 @@ internal sealed class Binder
                 syntax.ContinueKeyword.Location,
                 syntax.ContinueKeyword.Text
             );
-            return new BoundExpressionStatement(syntax, new BoundErrorExpression(syntax));
+            return new TypedExpressionStatement(syntax, new TypedErrorExpression(syntax));
         }
 
-        return new BoundGotoStatement(syntax, label);
+        return new TypedGotoStatement(syntax, label);
     }
 
-    private BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
+    private TypedStatement BindBreakStatement(BreakStatementSyntax syntax)
     {
         var label = GetBreakLabel();
         if (label == null)
@@ -784,21 +784,21 @@ internal sealed class Binder
                 syntax.BreakKeyword.Location,
                 syntax.BreakKeyword.Text
             );
-            return new BoundExpressionStatement(syntax, new BoundErrorExpression(syntax));
+            return new TypedExpressionStatement(syntax, new TypedErrorExpression(syntax));
         }
 
-        return new BoundGotoStatement(syntax, label);
+        return new TypedGotoStatement(syntax, label);
     }
 
-    public BoundLabel? GetBreakLabel() =>
+    public TypedLabel? GetBreakLabel() =>
         _breakContinueLabels.Count == 0 ? null : _breakContinueLabels.Peek().BreakLabel;
 
-    public BoundLabel? GetContinueLabel() =>
+    public TypedLabel? GetContinueLabel() =>
         _breakContinueLabels.Count == 0 ? null : _breakContinueLabels.Peek().ContinueLabel;
 
-    private BoundStatement BindVariableDeclarationStatement(
+    private TypedStatement BindVariableDeclarationStatement(
         VariableDeclarationStatementSyntax syntax,
-        BoundScope scope
+        TypedScope scope
     )
     {
         // TODO: handle cases where we dont have an initializer
@@ -814,10 +814,10 @@ internal sealed class Binder
         );
         var variable = BindVariable(syntax.IdentifierToken, expressionType, isReadOnly, scope);
 
-        return new BoundVariableDeclarationStatement(syntax, variable, converted);
+        return new TypedVariableDeclarationStatement(syntax, variable, converted);
     }
 
-    private Symbol BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause, BoundScope boundScope)
+    private Symbol BindTypeAnnotation(TypeAnnotationSyntax syntaxTypeClause, TypedScope boundScope)
     {
         var type = BindTypeSymbol(syntaxTypeClause.Type, boundScope);
         if (type == null)
@@ -834,14 +834,14 @@ internal sealed class Binder
 
     private Symbol? BindOptionalTypeAnnotation(
         TypeAnnotationSyntax? syntaxTypeClause,
-        BoundScope scope
+        TypedScope scope
     ) => syntaxTypeClause == null ? null : BindTypeAnnotation(syntaxTypeClause, scope);
 
     private Symbol BindVariable(
         SyntaxToken identifier,
         Type expressionType,
         bool isReadOnly,
-        BoundScope scope
+        TypedScope scope
     )
     {
         var name = identifier.Text ?? "??";
@@ -873,20 +873,20 @@ internal sealed class Binder
         return variable;
     }
 
-    private BoundStatement BindExpressionStatement(
+    private TypedStatement BindExpressionStatement(
         ExpressionStatementSyntax syntax,
-        BoundScope scope
+        TypedScope scope
     )
     {
         var expression = BindExpression(syntax.Expression, scope);
 
-        return new BoundExpressionStatement(
+        return new TypedExpressionStatement(
             syntax,
-            expression.Type == Type.Error ? new BoundErrorExpression(syntax) : expression
+            expression.Type == Type.Error ? new TypedErrorExpression(syntax) : expression
         );
     }
 
-    private BoundExpression BindExpression(ExpressionSyntax syntax, BoundScope scope) =>
+    private TypedExpression BindExpression(ExpressionSyntax syntax, TypedScope scope) =>
         syntax switch
         {
             AssignmentExpressionSyntax assignmentExpressionSyntax
@@ -919,7 +919,7 @@ internal sealed class Binder
             _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
         };
 
-    private BoundExpression BindNewExpression(NewExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindNewExpression(NewExpressionSyntax syntax, TypedScope scope)
     {
         var boundArguments = syntax.Arguments
             .Select(argument => BindExpression(argument, scope))
@@ -927,7 +927,7 @@ internal sealed class Binder
 
         var type = BindTypeSymbol(syntax.Type, scope);
         if (type == null)
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
 
         // find constructor from type that matches the arguments:
         var filteredSymbols = type.Constructors
@@ -942,7 +942,7 @@ internal sealed class Binder
                     syntax.Type.ToText(),
                     boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                 );
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
 
             case 1:
                 var constructor = filteredSymbols[0];
@@ -952,7 +952,7 @@ internal sealed class Binder
                     boundArguments
                 );
 
-                return new BoundNewExpression(syntax, constructor, convertedArguments);
+                return new TypedNewExpression(syntax, constructor, convertedArguments);
 
             default:
                 Diagnostics.ReportAmbiguousMethod(
@@ -960,74 +960,74 @@ internal sealed class Binder
                     syntax.Type.ToText(),
                     boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                 );
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
         }
     }
 
-    private BoundExpression BindAssignmentExpression(
+    private TypedExpression BindAssignmentExpression(
         AssignmentExpressionSyntax syntax,
-        BoundScope scope
+        TypedScope scope
     )
     {
         // TODO support member access
         var boundLHS = BindExpression(syntax.Name, scope);
         switch (boundLHS)
         {
-            case BoundErrorExpression:
+            case TypedErrorExpression:
                 return boundLHS;
 
-            case BoundVariableExpression variableExpression:
-                return BoundAssignmentExpression(
+            case TypedVariableExpression variableExpression:
+                return TypedAssignmentExpression(
                     syntax,
                     scope,
                     variableExpression.Variable,
                     boundLHS
                 );
 
-            case BoundFieldExpression fieldExpression:
-                return BoundAssignmentExpression(syntax, scope, fieldExpression.Field, boundLHS);
+            case TypedFieldExpression fieldExpression:
+                return TypedAssignmentExpression(syntax, scope, fieldExpression.Field, boundLHS);
 
-            case BoundIndexExpression:
+            case TypedIndexExpression:
                 return BindAssignmentExpression(syntax, boundLHS, scope);
 
             default:
                 Diagnostics.ReportNotAssignable(syntax.Name.Location);
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
         }
     }
 
-    private BoundExpression BoundAssignmentExpression(
+    private TypedExpression TypedAssignmentExpression(
         AssignmentExpressionSyntax syntax,
-        BoundScope scope,
+        TypedScope scope,
         Symbol symbol,
-        BoundExpression boundLHS
+        TypedExpression boundLHS
     )
     {
         if (symbol.IsReadOnly)
         {
             Diagnostics.ReportReassignmentToVal(syntax.Name.Location, symbol.Name);
 
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
         return BindAssignmentExpression(syntax, boundLHS, scope);
     }
 
-    private BoundExpression BindAssignmentExpression(
+    private TypedExpression BindAssignmentExpression(
         AssignmentExpressionSyntax syntax,
-        BoundExpression boundLHS,
-        BoundScope scope
+        TypedExpression boundLHS,
+        TypedScope scope
     )
     {
         var boundRHS = BindExpression(syntax.Expression, boundLHS.Type, scope);
 
-        return new BoundAssignmentExpression(syntax, boundLHS, boundRHS);
+        return new TypedAssignmentExpression(syntax, boundLHS, boundRHS);
     }
 
-    private BoundExpression BindExpression(
+    private TypedExpression BindExpression(
         ExpressionSyntax syntax,
         Type type,
-        BoundScope scope,
+        TypedScope scope,
         bool allowExplicit = false
     )
     {
@@ -1035,9 +1035,9 @@ internal sealed class Binder
         return BindConversion(syntax.Location, expression, type, allowExplicit);
     }
 
-    private BoundExpression BindConversion(
+    private TypedExpression BindConversion(
         TextLocation location,
-        BoundExpression expression,
+        TypedExpression expression,
         Type type,
         bool allowExplicit = false
     )
@@ -1051,7 +1051,7 @@ internal sealed class Binder
                 Diagnostics.ReportCannotConvert(location, expression.Type, type);
             }
 
-            return new BoundErrorExpression(expression.Syntax);
+            return new TypedErrorExpression(expression.Syntax);
         }
 
         if (!allowExplicit && conversion.IsExplicit)
@@ -1062,10 +1062,10 @@ internal sealed class Binder
         if (conversion.IsIdentity)
             return expression;
 
-        return new BoundConversionExpression(expression.Syntax, type, expression);
+        return new TypedConversionExpression(expression.Syntax, type, expression);
     }
 
-    private BoundNode BindMemberAccess(MemberAccessExpressionSyntax syntax, BoundScope scope)
+    private TypedNode BindMemberAccess(MemberAccessExpressionSyntax syntax, TypedScope scope)
     {
         // TODO: combine with BindMemberAccessExpression?
         var expr = BindExpression(syntax.Expression, scope);
@@ -1073,7 +1073,7 @@ internal sealed class Binder
         var name = syntax.Name.Identifier.Text;
         var members = type.Symbol.LookupMembers(name).ToImmutableArray();
 
-        if (expr.Kind == BoundNodeKind.ErrorExpression)
+        if (expr.Kind == TypedNodeKind.ErrorExpression)
             return expr;
 
         // TODO add property support
@@ -1081,16 +1081,16 @@ internal sealed class Binder
         {
             case 0:
                 Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
 
             case 1:
                 switch (members[0])
                 {
                     case { IsField: true } field:
-                        return new BoundFieldExpression(syntax, expr, field);
+                        return new TypedFieldExpression(syntax, expr, field);
 
                     case { IsMethod: true }:
-                        return new BoundMethodExpression(
+                        return new TypedMethodExpression(
                             syntax,
                             name,
                             expr,
@@ -1098,12 +1098,12 @@ internal sealed class Binder
                         );
 
                     case { IsMember: true }:
-                        return new BoundTypeExpression(syntax, members[0].Type);
+                        return new TypedTypeExpression(syntax, members[0].Type);
 
                     default:
                         // TODO: new error message as we have members but they are not of any expected type
                         Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
-                        return new BoundErrorExpression(syntax);
+                        return new TypedErrorExpression(syntax);
                 }
 
             default:
@@ -1113,15 +1113,15 @@ internal sealed class Binder
                 {
                     // TODO: new error message as something is wrong here we have non-method members with the same name
                     Diagnostics.ReportMissingDefinition(syntax.Location, type, name);
-                    return new BoundErrorExpression(syntax);
+                    return new TypedErrorExpression(syntax);
                 }
 
-                return new BoundMethodExpression(syntax, name, expr, methods);
+                return new TypedMethodExpression(syntax, name, expr, methods);
             }
         }
     }
 
-    private Symbol? BindTypeSymbol(NameSyntax syntax, BoundScope scope)
+    private Symbol? BindTypeSymbol(NameSyntax syntax, TypedScope scope)
     {
         switch (syntax)
         {
@@ -1188,24 +1188,24 @@ internal sealed class Binder
         }
     }
 
-    private BoundExpression BindMemberAccessExpression(
+    private TypedExpression BindMemberAccessExpression(
         MemberAccessExpressionSyntax syntax,
-        BoundScope scope
+        TypedScope scope
     )
     {
         // TODO: combine with BindMemberMethodAccess?
         var node = BindMemberAccess(syntax, scope);
-        if (node is BoundExpression expr)
+        if (node is TypedExpression expr)
         {
             return expr;
         }
 
         // TODO: fix this Type.Error put the appropriate TypeSymbol here
         Diagnostics.ReportMissingDefinition(syntax.Location, Type.Error, syntax.Name.ToText());
-        return new BoundErrorExpression(syntax);
+        return new TypedErrorExpression(syntax);
     }
 
-    private BoundExpression BindCallExpression(CallExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindCallExpression(CallExpressionSyntax syntax, TypedScope scope)
     {
         // TODO: we should be able to refactor this a bit by extracting all of the IdentifierNameSyntax steps
 
@@ -1226,10 +1226,10 @@ internal sealed class Binder
         if (syntax.Expression is MemberAccessExpressionSyntax memberAccessExpressionSyntax)
         {
             var expression = BindMemberAccess(memberAccessExpressionSyntax, scope);
-            if (expression is BoundErrorExpression errorExpression)
+            if (expression is TypedErrorExpression errorExpression)
                 return errorExpression;
 
-            if (expression is BoundMethodExpression boundMethodExpression)
+            if (expression is TypedMethodExpression boundMethodExpression)
             {
                 var methods = boundMethodExpression.Methods
                     .Where(x => x.Parameters.Length == boundArguments.Length)
@@ -1243,7 +1243,7 @@ internal sealed class Binder
                         boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                     );
 
-                    return new BoundErrorExpression(syntax);
+                    return new TypedErrorExpression(syntax);
                 }
 
                 if (methods.Length == 1)
@@ -1265,17 +1265,17 @@ internal sealed class Binder
             }
 
             Diagnostics.ReportUnsupportedFunctionCall(syntax.Expression.Location);
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
         throw new ArgumentOutOfRangeException(nameof(syntax));
     }
 
-    private BoundExpression ResolveMethodOverload(
+    private TypedExpression ResolveMethodOverload(
         CallExpressionSyntax syntax,
         ImmutableArray<Symbol> methods,
-        BoundMethodExpression boundMethodExpression,
-        ImmutableArray<BoundExpression> boundArguments
+        TypedMethodExpression boundMethodExpression,
+        ImmutableArray<TypedExpression> boundArguments
     )
     {
         var symbol = MethodBindCost.Analyze(methods, boundArguments);
@@ -1288,7 +1288,7 @@ internal sealed class Binder
                 boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
             );
 
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
         return BindCallExpressionToMethodSymbol(
@@ -1299,11 +1299,11 @@ internal sealed class Binder
         );
     }
 
-    private BoundExpression BindIdentifierCallExpression(
+    private TypedExpression BindIdentifierCallExpression(
         CallExpressionSyntax syntax,
         NameSyntax identifierNameSyntax,
-        ImmutableArray<BoundExpression> boundArguments,
-        BoundScope scope
+        ImmutableArray<TypedExpression> boundArguments,
+        TypedScope scope
     )
     {
         // Bind Conversion
@@ -1320,7 +1320,7 @@ internal sealed class Binder
             scope
         );
         if (symbol == null)
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
 
         return BindCallExpressionToSymbol(syntax, symbol, null, boundArguments);
     }
@@ -1328,8 +1328,8 @@ internal sealed class Binder
     private Symbol? BindIdentifierForCallExpression(
         string symbolName,
         TextLocation nameLocation,
-        ImmutableArray<BoundExpression> boundArguments,
-        BoundScope scope
+        ImmutableArray<TypedExpression> boundArguments,
+        TypedScope scope
     )
     {
         var symbols = scope.LookupSymbol(symbolName, false);
@@ -1400,11 +1400,11 @@ internal sealed class Binder
         }
     }
 
-    private BoundExpression BindCallExpressionToSymbol(
+    private TypedExpression BindCallExpressionToSymbol(
         CallExpressionSyntax syntax,
         Symbol symbol,
-        BoundExpression? expression,
-        IReadOnlyList<BoundExpression> boundArguments
+        TypedExpression? expression,
+        IReadOnlyList<TypedExpression> boundArguments
     )
     {
         switch (symbol)
@@ -1431,14 +1431,14 @@ internal sealed class Binder
                     boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                 );
 
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
             }
             case { IsMethod: true }:
                 return BindCallExpressionToMethodSymbol(syntax, symbol, expression, boundArguments);
 
             case { IsValue: true }:
                 Diagnostics.ReportNotAFunction(syntax.Expression.Location, symbol.Name);
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
 
             default:
                 Diagnostics.ReportNoOverloads(
@@ -1446,29 +1446,29 @@ internal sealed class Binder
                     symbol.Name,
                     boundArguments.Select(arg => arg.Type.Symbol.Name).ToImmutableArray()
                 );
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
         }
     }
 
-    private BoundExpression BindCallExpressionToMethodSymbol(
+    private TypedExpression BindCallExpressionToMethodSymbol(
         CallExpressionSyntax syntax,
         Symbol method,
-        BoundExpression? expression,
-        IReadOnlyList<BoundExpression> boundArguments
+        TypedExpression? expression,
+        IReadOnlyList<TypedExpression> boundArguments
     )
     {
         var convertedArgs = BindArgumentsWithConversions(syntax.Arguments, method, boundArguments);
 
-        return new BoundCallExpression(syntax, method, expression, convertedArgs);
+        return new TypedCallExpression(syntax, method, expression, convertedArgs);
     }
 
-    private ImmutableArray<BoundExpression> BindArgumentsWithConversions(
+    private ImmutableArray<TypedExpression> BindArgumentsWithConversions(
         SeparatedSyntaxList<ExpressionSyntax> arguments,
         Symbol method,
-        IReadOnlyList<BoundExpression> boundArguments
+        IReadOnlyList<TypedExpression> boundArguments
     )
     {
-        var convertedArgs = ImmutableArray.CreateBuilder<BoundExpression>();
+        var convertedArgs = ImmutableArray.CreateBuilder<TypedExpression>();
         for (var i = 0; i < arguments.Count; i++)
         {
             var argument = boundArguments[i];
@@ -1480,10 +1480,10 @@ internal sealed class Binder
         return convertedArgs.ToImmutable();
     }
 
-    private BoundExpression? TryBindTypeConversion(
+    private TypedExpression? TryBindTypeConversion(
         CallExpressionSyntax syntax,
         string symbolName,
-        BoundScope scope
+        TypedScope scope
     )
     {
         if (syntax.Arguments.Count != 1)
@@ -1514,61 +1514,61 @@ internal sealed class Binder
         return type;
     }
 
-    private BoundExpression BindForExpression(ForExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindForExpression(ForExpressionSyntax syntax, TypedScope scope)
     {
-        var lowerBound = BindExpression(syntax.FromExpression, scope);
-        var upperBound = BindExpression(syntax.ToExpression, scope);
+        var lowerTyped = BindExpression(syntax.FromExpression, scope);
+        var upperTyped = BindExpression(syntax.ToExpression, scope);
 
-        if (lowerBound.Type != Type.Int)
+        if (lowerTyped.Type != Type.Int)
         {
             Diagnostics.ReportTypeMismatch(
                 syntax.FromExpression.Location,
                 Type.Int,
-                lowerBound.Type
+                lowerTyped.Type
             );
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
-        if (upperBound.Type != Type.Int)
+        if (upperTyped.Type != Type.Int)
         {
-            Diagnostics.ReportTypeMismatch(syntax.ToExpression.Location, Type.Int, upperBound.Type);
-            return new BoundErrorExpression(syntax);
+            Diagnostics.ReportTypeMismatch(syntax.ToExpression.Location, Type.Int, upperTyped.Type);
+            return new TypedErrorExpression(syntax);
         }
 
-        var newScope = new BoundScope(scope);
+        var newScope = new TypedScope(scope);
         var variable = BindVariable(syntax.Variable, Type.Int, true, newScope);
 
         var body = BindLoopBody(syntax.Body, newScope, out var breakLabel, out var continueLabel);
 
-        return new BoundForExpression(
+        return new TypedForExpression(
             syntax,
             variable,
-            lowerBound,
-            upperBound,
+            lowerTyped,
+            upperTyped,
             body,
             breakLabel,
             continueLabel
         );
     }
 
-    private BoundExpression BindWhileExpression(WhileExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindWhileExpression(WhileExpressionSyntax syntax, TypedScope scope)
     {
         var condition = BindExpression(syntax.ConditionExpression, Type.Bool, scope);
         var expr = BindLoopBody(syntax.Body, scope, out var breakLabel, out var continueLabel);
 
-        return new BoundWhileExpression(syntax, condition, expr, breakLabel, continueLabel);
+        return new TypedWhileExpression(syntax, condition, expr, breakLabel, continueLabel);
     }
 
-    private BoundExpression BindLoopBody(
+    private TypedExpression BindLoopBody(
         ExpressionSyntax syntax,
-        BoundScope scope,
-        out BoundLabel breakLabel,
-        out BoundLabel continueLabel
+        TypedScope scope,
+        out TypedLabel breakLabel,
+        out TypedLabel continueLabel
     )
     {
         _labelCounter++;
-        breakLabel = new BoundLabel($"break{_labelCounter}");
-        continueLabel = new BoundLabel($"continue{_labelCounter}");
+        breakLabel = new TypedLabel($"break{_labelCounter}");
+        continueLabel = new TypedLabel($"continue{_labelCounter}");
 
         _breakContinueLabels.Push((breakLabel, continueLabel));
 
@@ -1582,14 +1582,14 @@ internal sealed class Binder
         }
     }
 
-    private BoundExpression BindIfExpression(IfExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindIfExpression(IfExpressionSyntax syntax, TypedScope scope)
     {
         var condition = BindExpression(syntax.ConditionExpression, scope);
         var then = BindExpression(syntax.ThenExpression, scope);
         var elseExpr = BindExpression(syntax.ElseExpression, scope);
 
         if (condition.Type == Type.Error || then.Type == Type.Error || elseExpr.Type == Type.Error)
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
 
         if (then.Type != elseExpr.Type)
         {
@@ -1598,7 +1598,7 @@ internal sealed class Binder
                 then.Type,
                 elseExpr.Type
             );
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
         if (condition.Type != Type.Bool)
@@ -1608,33 +1608,33 @@ internal sealed class Binder
                 Type.Bool,
                 condition.Type
             );
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
-        return new BoundIfExpression(syntax, condition, then, elseExpr);
+        return new TypedIfExpression(syntax, condition, then, elseExpr);
     }
 
-    private BoundExpression BindUnitExpression(UnitExpressionSyntax syntax) =>
-        new BoundUnitExpression(syntax);
+    private TypedExpression BindUnitExpression(UnitExpressionSyntax syntax) =>
+        new TypedUnitExpression(syntax);
 
-    private BoundExpression BindBlockExpression(BlockExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindBlockExpression(BlockExpressionSyntax syntax, TypedScope scope)
     {
-        var blockScope = new BoundScope(scope);
+        var blockScope = new TypedScope(scope);
         var stmts = syntax.Statements
             .Select(stmt => BindStatement(stmt, blockScope))
             .ToImmutableArray();
 
         var expr = BindExpression(syntax.Expression, blockScope);
 
-        return new BoundBlockExpression(syntax, stmts, expr);
+        return new TypedBlockExpression(syntax, stmts, expr);
     }
 
-    private static (Symbol root, BoundScope parent) CreateParentScope(
-        BoundAssembly? previous,
+    private static (Symbol root, TypedScope parent) CreateParentScope(
+        TypedAssembly? previous,
         ImmutableArray<AssemblyDefinition> references
     )
     {
-        var stack = new Stack<BoundAssembly>();
+        var stack = new Stack<TypedAssembly>();
 
         while (previous != null)
         {
@@ -1647,7 +1647,7 @@ internal sealed class Binder
         while (stack.Count > 0)
         {
             previous = stack.Pop();
-            var scope = new BoundScope(parent);
+            var scope = new TypedScope(parent);
 
             // import all members from the previous default type which is where top level
             var declaringType = previous.DefaultType;
@@ -1667,12 +1667,12 @@ internal sealed class Binder
         return (root, parent);
     }
 
-    private static (Symbol root, BoundScope rootScope) CreateRootScope(
+    private static (Symbol root, TypedScope rootScope) CreateRootScope(
         ImmutableArray<AssemblyDefinition> references
     )
     {
         var root = Symbol.NewRoot();
-        var rootScope = new BoundScope(root, "root");
+        var rootScope = new TypedScope(root, "root");
 
         // define default symbols
         // should be alias symbols that map to the real symbols
@@ -1761,14 +1761,14 @@ internal sealed class Binder
         return symbol;
     }
 
-    private BoundExpression BindNameExpression(NameSyntax syntax, BoundScope scope)
+    private TypedExpression BindNameExpression(NameSyntax syntax, TypedScope scope)
     {
         if (syntax is IdentifierNameSyntax simpleName)
         {
             var ident = simpleName.Identifier;
             if (ident.IsInsertedToken)
             {
-                return new BoundErrorExpression(syntax);
+                return new TypedErrorExpression(syntax);
             }
 
             var name = ident.Text;
@@ -1777,41 +1777,41 @@ internal sealed class Binder
             if (variable != null)
             {
                 Debug.Assert(!variable.IsField);
-                return new BoundVariableExpression(syntax, variable);
+                return new TypedVariableExpression(syntax, variable);
             }
 
             var field = scope.LookupField(name);
             if (field != null)
             {
-                return new BoundFieldExpression(syntax, null, field);
+                return new TypedFieldExpression(syntax, null, field);
             }
 
             var type = scope.LookupType(name);
             if (type != null)
-                return new BoundTypeExpression(syntax, type.Type);
+                return new TypedTypeExpression(syntax, type.Type);
 
             var ns = scope.LookupNamespace(name);
             if (ns != null)
-                return new BoundNamespaceExpression(syntax, ns);
+                return new TypedNamespaceExpression(syntax, ns);
 
             Diagnostics.ReportUndefinedName(ident.Location, name);
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
         Diagnostics.ReportUnsupportedFieldAccess(syntax.Location, "<err>");
-        return new BoundErrorExpression(syntax);
+        return new TypedErrorExpression(syntax);
     }
 
-    private BoundExpression BindGroupExpression(GroupExpressionSyntax syntax, BoundScope scope) =>
+    private TypedExpression BindGroupExpression(GroupExpressionSyntax syntax, TypedScope scope) =>
         BindExpression(syntax.Expression, scope);
 
-    private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, TypedScope scope)
     {
         var boundOperand = BindExpression(syntax.Operand, scope);
         if (boundOperand.Type == Type.Error)
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
 
-        var boundOperator = BoundUnaryOperator.Bind(syntax.OperatorToken.Kind, boundOperand.Type);
+        var boundOperator = TypedUnaryOperator.Bind(syntax.OperatorToken.Kind, boundOperand.Type);
 
         if (boundOperator == null)
         {
@@ -1820,19 +1820,19 @@ internal sealed class Binder
                 syntax.OperatorToken.Text,
                 boundOperand.Type
             );
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
-        return new BoundUnaryExpression(syntax, boundOperator, boundOperand);
+        return new TypedUnaryExpression(syntax, boundOperator, boundOperand);
     }
 
-    private BoundExpression BindIndexExpression(IndexExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindIndexExpression(IndexExpressionSyntax syntax, TypedScope scope)
     {
         var expr = BindExpression(syntax.Expression, scope);
         var index = BindExpression(syntax.Index, scope);
 
         if (expr.Type == Type.Error || index.Type == Type.Error)
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
 
         var symbol = expr.Type.Symbol;
 
@@ -1850,24 +1850,24 @@ internal sealed class Binder
         if (getter == null && setter == null)
         {
             Diagnostics.ReportExpressionDoesNotSupportIndexOperator(syntax.Expression.Location);
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
-        return new BoundIndexExpression(syntax, expr, index, getter, setter);
+        return new TypedIndexExpression(syntax, expr, index, getter, setter);
     }
 
-    private BoundExpression BindBinaryExpression(BinaryExpressionSyntax syntax, BoundScope scope)
+    private TypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, TypedScope scope)
     {
         var left = BindExpression(syntax.Left, scope);
         var right = BindExpression(syntax.Right, scope);
-        var boundOperator = BoundBinaryOperator.Bind(
+        var boundOperator = TypedBinaryOperator.Bind(
             syntax.OperatorToken.Kind,
             left.Type,
             right.Type
         );
 
         if (left.Type == Type.Error || right.Type == Type.Error)
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
 
         if (boundOperator == null)
         {
@@ -1877,17 +1877,17 @@ internal sealed class Binder
                 left.Type,
                 right.Type
             );
-            return new BoundErrorExpression(syntax);
+            return new TypedErrorExpression(syntax);
         }
 
-        return new BoundBinaryExpression(syntax, left, boundOperator, right);
+        return new TypedBinaryExpression(syntax, left, boundOperator, right);
     }
 
-    private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
+    private TypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
     {
         var value = syntax.Value;
         return value == null
-            ? (BoundExpression)new BoundErrorExpression(syntax)
-            : new BoundLiteralExpression(syntax, value);
+            ? (TypedExpression)new TypedErrorExpression(syntax)
+            : new TypedLiteralExpression(syntax, value);
     }
 }

@@ -6,9 +6,9 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal abstract record BoundNode(SyntaxNode Syntax)
+internal abstract record TypedNode(SyntaxNode Syntax)
 {
-    public abstract BoundNodeKind Kind { get; }
+    public abstract TypedNodeKind Kind { get; }
 
     public string ToPrintString()
     {
@@ -17,7 +17,7 @@ internal abstract record BoundNode(SyntaxNode Syntax)
         return writer.ToString();
     }
 
-    public abstract void Accept(BoundNodeVisitor visitor);
+    public abstract void Accept(TypedNodeVisitor visitor);
 
-    public abstract TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor);
+    public abstract TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor);
 }

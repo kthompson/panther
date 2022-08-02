@@ -3,9 +3,9 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal sealed record BoundLiteralExpression : BoundExpression
+internal sealed record TypedLiteralExpression : TypedExpression
 {
-    public BoundLiteralExpression(SyntaxNode syntax, object value) : base(syntax)
+    public TypedLiteralExpression(SyntaxNode syntax, object value) : base(syntax)
     {
         Value = value;
         Type = value switch
@@ -22,11 +22,11 @@ internal sealed record BoundLiteralExpression : BoundExpression
     }
 
     public object Value { get; }
-    public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
+    public override TypedNodeKind Kind => TypedNodeKind.LiteralExpression;
     public override Type Type { get; init; }
 
-    public override void Accept(BoundNodeVisitor visitor) => visitor.VisitLiteralExpression(this);
+    public override void Accept(TypedNodeVisitor visitor) => visitor.VisitLiteralExpression(this);
 
-    public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) =>
+    public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) =>
         visitor.VisitLiteralExpression(this);
 }

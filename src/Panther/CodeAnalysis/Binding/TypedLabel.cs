@@ -1,8 +1,8 @@
 ﻿namespace Panther.CodeAnalysis.Binding;
 
-internal sealed record BoundLabel(string Name)
+internal sealed record TypedLabel(string Name)
 {
-    public bool Equals(BoundLabel? other)
+    public bool Equals(TypedLabel? other)
     {
         if (ReferenceEquals(null, other))
             return false;

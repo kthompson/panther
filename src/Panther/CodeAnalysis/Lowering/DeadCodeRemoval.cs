@@ -6,10 +6,10 @@ namespace Panther.CodeAnalysis.Lowering;
 
 internal static class DeadCodeRemoval
 {
-    public static BoundBlockExpression RemoveDeadCode(BoundBlockExpression block)
+    public static TypedBlockExpression RemoveDeadCode(TypedBlockExpression block)
     {
         var controlFlow = ControlFlowGraph.Create(block);
-        var reachableStatements = new HashSet<BoundStatement>(
+        var reachableStatements = new HashSet<TypedStatement>(
             controlFlow.Blocks.SelectMany(basicBlock => basicBlock.Statements)
         );
 
@@ -20,6 +20,6 @@ internal static class DeadCodeRemoval
                 builder.RemoveAt(i);
         }
 
-        return new BoundBlockExpression(block.Syntax, builder.ToImmutable(), block.Expression);
+        return new TypedBlockExpression(block.Syntax, builder.ToImmutable(), block.Expression);
     }
 }

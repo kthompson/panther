@@ -7,9 +7,9 @@ using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding;
 
-static class BoundNodePrinterExtensions
+static class TypedNodePrinterExtensions
 {
-    public static void WriteTo(this BoundNode node, TextWriter writer)
+    public static void WriteTo(this TypedNode node, TextWriter writer)
     {
         var indentedWriter = writer is IndentedTextWriter indentedTextWriter
             ? indentedTextWriter
@@ -18,25 +18,25 @@ static class BoundNodePrinterExtensions
         WriteTo(node, indentedWriter);
     }
 
-    public static void WriteTo(this BoundNode node, IndentedTextWriter writer) =>
-        BoundNodePrinter.WriteTo(node, writer);
+    public static void WriteTo(this TypedNode node, IndentedTextWriter writer) =>
+        TypedNodePrinter.WriteTo(node, writer);
 }
 
-internal class BoundNodePrinter : BoundNodeVisitor
+internal class TypedNodePrinter : TypedNodeVisitor
 {
     private readonly IndentedTextWriter _writer;
 
-    private BoundNodePrinter(IndentedTextWriter writer)
+    private TypedNodePrinter(IndentedTextWriter writer)
     {
         this._writer = writer;
     }
 
-    public static void WriteTo(BoundNode node, IndentedTextWriter writer) =>
-        node.Accept(new BoundNodePrinter(writer));
+    public static void WriteTo(TypedNode node, IndentedTextWriter writer) =>
+        node.Accept(new TypedNodePrinter(writer));
 
-    private void WriteNestedExpression(BoundNode node)
+    private void WriteNestedExpression(TypedNode node)
     {
-        if (node is BoundBlockExpression)
+        if (node is TypedBlockExpression)
         {
             node.Accept(this);
             return;
@@ -47,9 +47,9 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.Indent--;
     }
 
-    private void WriteNestedExpression(BoundExpression node, OperatorPrecedence parentPrecedence)
+    private void WriteNestedExpression(TypedExpression node, OperatorPrecedence parentPrecedence)
     {
-        if (node is BoundBinaryExpression binaryExpression)
+        if (node is TypedBinaryExpression binaryExpression)
         {
             WriteNestedExpression(
                 binaryExpression,
@@ -65,7 +65,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
     }
 
     private void WriteNestedExpression(
-        BoundNode node,
+        TypedNode node,
         OperatorPrecedence parent,
         OperatorPrecedence current
     )
@@ -82,10 +82,10 @@ internal class BoundNodePrinter : BoundNodeVisitor
         }
     }
 
-    protected override void DefaultVisit(BoundNode node) =>
+    protected override void DefaultVisit(TypedNode node) =>
         throw new NotSupportedException(node.Kind.ToString());
 
-    public override void VisitNewExpression(BoundNewExpression node)
+    public override void VisitNewExpression(TypedNewExpression node)
     {
         _writer.WriteKeyword("new ");
         _writer.WriteIdentifier(node.Type.Symbol.Name);
@@ -105,7 +105,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WritePunctuation(")");
     }
 
-    public override void VisitFieldExpression(BoundFieldExpression node)
+    public override void VisitFieldExpression(TypedFieldExpression node)
     {
         if (node.Expression != null)
         {
@@ -119,13 +119,13 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WriteIdentifier(node.Field.Name);
     }
 
-    public override void VisitNopStatement(BoundNopStatement node)
+    public override void VisitNopStatement(TypedNopStatement node)
     {
         _writer.WriteKeyword("nop");
         _writer.WriteLine();
     }
 
-    public override void VisitAssignmentStatement(BoundAssignmentStatement node)
+    public override void VisitAssignmentStatement(TypedAssignmentStatement node)
     {
         node.Left.Accept(this);
         _writer.WritePunctuation(" = ");
@@ -133,14 +133,14 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WriteLine();
     }
 
-    public override void VisitAssignmentExpression(BoundAssignmentExpression node)
+    public override void VisitAssignmentExpression(TypedAssignmentExpression node)
     {
         node.Left.Accept(this);
         _writer.WritePunctuation(" = ");
         node.Right.Accept(this);
     }
 
-    public override void VisitIfExpression(BoundIfExpression node)
+    public override void VisitIfExpression(TypedIfExpression node)
     {
         _writer.WriteKeyword("if ");
         _writer.WritePunctuation("(");
@@ -153,31 +153,31 @@ internal class BoundNodePrinter : BoundNodeVisitor
         WriteNestedExpression(node.Else);
     }
 
-    public override void VisitUnitExpression(BoundUnitExpression node)
+    public override void VisitUnitExpression(TypedUnitExpression node)
     {
         _writer.WritePunctuation("()");
     }
 
-    public override void VisitVariableExpression(BoundVariableExpression node)
+    public override void VisitVariableExpression(TypedVariableExpression node)
     {
         _writer.WriteIdentifier(node.Variable.Name);
     }
 
-    public override void VisitForExpression(BoundForExpression node)
+    public override void VisitForExpression(TypedForExpression node)
     {
         _writer.WriteKeyword("for ");
         _writer.WritePunctuation("(");
         _writer.WriteIdentifier(node.Variable.Name);
         _writer.WritePunctuation(" <- ");
-        node.LowerBound.Accept(this);
+        node.LowerTyped.Accept(this);
         _writer.WriteKeyword(" to ");
-        node.UpperBound.Accept(this);
+        node.UpperTyped.Accept(this);
         _writer.WritePunctuation(") ");
         _writer.WriteLine();
         WriteNestedExpression(node.Body);
     }
 
-    public override void VisitWhileExpression(BoundWhileExpression node)
+    public override void VisitWhileExpression(TypedWhileExpression node)
     {
         _writer.WriteKeyword("while ");
         _writer.WritePunctuation("(");
@@ -187,13 +187,13 @@ internal class BoundNodePrinter : BoundNodeVisitor
         WriteNestedExpression(node.Body);
     }
 
-    public override void VisitExpressionStatement(BoundExpressionStatement node)
+    public override void VisitExpressionStatement(TypedExpressionStatement node)
     {
         node.Expression.Accept(this);
         _writer.WriteLine();
     }
 
-    public override void VisitVariableDeclarationStatement(BoundVariableDeclarationStatement node)
+    public override void VisitVariableDeclarationStatement(TypedVariableDeclarationStatement node)
     {
         _writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
         _writer.WriteIdentifier(node.Variable.Name);
@@ -207,7 +207,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WriteLine();
     }
 
-    public override void VisitCallExpression(BoundCallExpression node)
+    public override void VisitCallExpression(TypedCallExpression node)
     {
         _writer.WriteIdentifier(node.Method.Name);
         _writer.WritePunctuation("(");
@@ -227,7 +227,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WritePunctuation(")");
     }
 
-    public override void VisitBlockExpression(BoundBlockExpression node)
+    public override void VisitBlockExpression(TypedBlockExpression node)
     {
         if (node.Statements.Length == 0)
         {
@@ -253,13 +253,13 @@ internal class BoundNodePrinter : BoundNodeVisitor
         _writer.WritePunctuation("}");
     }
 
-    public override void VisitLabelStatement(BoundLabelStatement node)
+    public override void VisitLabelStatement(TypedLabelStatement node)
     {
         var dedent = (_writer.Indent > 0);
         if (dedent)
             _writer.Indent--;
 
-        _writer.WritePunctuation(node.BoundLabel.Name);
+        _writer.WritePunctuation(node.TypedLabel.Name);
         _writer.WritePunctuation(":");
         _writer.WriteLine();
 
@@ -267,28 +267,28 @@ internal class BoundNodePrinter : BoundNodeVisitor
             _writer.Indent++;
     }
 
-    public override void VisitGotoStatement(BoundGotoStatement node)
+    public override void VisitGotoStatement(TypedGotoStatement node)
     {
         _writer.WriteKeyword("goto ");
-        _writer.WriteIdentifier(node.BoundLabel.Name);
+        _writer.WriteIdentifier(node.TypedLabel.Name);
         _writer.WriteLine();
     }
 
-    public override void VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
+    public override void VisitConditionalGotoStatement(TypedConditionalGotoStatement node)
     {
         _writer.WriteKeyword("goto ");
-        _writer.WriteIdentifier(node.BoundLabel.Name);
+        _writer.WriteIdentifier(node.TypedLabel.Name);
         _writer.WriteKeyword(node.JumpIfTrue ? " if " : " unless ");
         node.Condition.Accept(this);
         _writer.WriteLine();
     }
 
-    public override void VisitErrorExpression(BoundErrorExpression node)
+    public override void VisitErrorExpression(TypedErrorExpression node)
     {
         _writer.WriteKeyword("err");
     }
 
-    public override void VisitLiteralExpression(BoundLiteralExpression node)
+    public override void VisitLiteralExpression(TypedLiteralExpression node)
     {
         var value = node.Value.ToString() ?? "";
         if (node.Type == Type.Bool)
@@ -309,7 +309,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         }
     }
 
-    public override void VisitUnaryExpression(BoundUnaryExpression node)
+    public override void VisitUnaryExpression(TypedUnaryExpression node)
     {
         var op =
             SyntaxFacts.GetText(node.Operator.SyntaxKind)
@@ -319,7 +319,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         WriteNestedExpression(node.Operand, OperatorPrecedence.Prefix);
     }
 
-    public override void VisitBinaryExpression(BoundBinaryExpression node)
+    public override void VisitBinaryExpression(TypedBinaryExpression node)
     {
         var op =
             SyntaxFacts.GetText(node.Operator.SyntaxKind)
@@ -335,7 +335,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
         WriteNestedExpression(node.Right, precedence);
     }
 
-    public override void VisitConversionExpression(BoundConversionExpression node)
+    public override void VisitConversionExpression(TypedConversionExpression node)
     {
         //TODO: writer.WriteIdentifier(node.Type.Name);
         _writer.WriteIdentifier(node.Type.ToString());
@@ -349,11 +349,11 @@ internal class BoundNodePrinter : BoundNodeVisitor
     //     var properties = GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
     //     foreach (var property in properties)
     //     {
-    //         if (property.Name == nameof(Kind) || property.Name == nameof(BoundBinaryExpression.Operator))
+    //         if (property.Name == nameof(Kind) || property.Name == nameof(TypedBinaryExpression.Operator))
     //             continue;
     //
-    //         if (typeof(BoundNode).IsAssignableFrom(property.PropertyType) ||
-    //             typeof(IEnumerable<BoundNode>).IsAssignableFrom(property.PropertyType))
+    //         if (typeof(TypedNode).IsAssignableFrom(property.PropertyType) ||
+    //             typeof(IEnumerable<TypedNode>).IsAssignableFrom(property.PropertyType))
     //             continue;
     //
     //         var value = property.GetValue(this);
@@ -364,7 +364,7 @@ internal class BoundNodePrinter : BoundNodeVisitor
     //     }
     // }
 
-    // private static void PrettyPrint(TextWriter writer, BoundNode node, string indent = "", bool isLast = true)
+    // private static void PrettyPrint(TextWriter writer, TypedNode node, string indent = "", bool isLast = true)
     // {
     //     var isConsole = writer == Console.Out;
     //
@@ -424,23 +424,23 @@ internal class BoundNodePrinter : BoundNodeVisitor
     //     }
     // }
     //
-    // private static string GetText(BoundNode node)
+    // private static string GetText(TypedNode node)
     // {
-    //     if (node is BoundBinaryExpression binary)
+    //     if (node is TypedBinaryExpression binary)
     //         return $"{binary.Operator.Kind}Expression";
     //
-    //     if (node is BoundUnaryExpression unary)
+    //     if (node is TypedUnaryExpression unary)
     //         return $"{unary.Operator.Kind}Expression";
     //
     //     return node.Kind.ToString();
     // }
     //
-    // private static ConsoleColor GetColor(BoundNode node)
+    // private static ConsoleColor GetColor(TypedNode node)
     // {
-    //     if (node is BoundExpression)
+    //     if (node is TypedExpression)
     //         return ConsoleColor.Blue;
     //
-    //     if (node is BoundStatement)
+    //     if (node is TypedStatement)
     //         return ConsoleColor.Cyan;
     //
     //     return ConsoleColor.Yellow;

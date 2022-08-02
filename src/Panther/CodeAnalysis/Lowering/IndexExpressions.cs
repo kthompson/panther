@@ -16,18 +16,18 @@ sealed class IndexExpressions
         _method = method;
     }
 
-    public static BoundStatement Lower(Symbol method, BoundStatement statement) =>
+    public static TypedStatement Lower(Symbol method, TypedStatement statement) =>
         Getters.Lower(Setters.Lower(statement));
 
-    class Setters : BoundTreeRewriter
+    class Setters : TypedTreeRewriter
     {
-        protected override BoundExpression RewriteAssignmentExpression(
-            BoundAssignmentExpression node
+        protected override TypedExpression RewriteAssignmentExpression(
+            TypedAssignmentExpression node
         )
         {
-            if (node.Left is BoundIndexExpression indexExpression)
+            if (node.Left is TypedIndexExpression indexExpression)
             {
-                return new BoundCallExpression(
+                return new TypedCallExpression(
                     node.Syntax,
                     indexExpression.Setter!,
                     RewriteExpression(indexExpression.Expression),
@@ -41,23 +41,23 @@ sealed class IndexExpressions
             return node;
         }
 
-        public static BoundStatement Lower(BoundStatement statement) =>
+        public static TypedStatement Lower(TypedStatement statement) =>
             new Setters().RewriteStatement(statement);
     }
 
-    class Getters : BoundTreeRewriter
+    class Getters : TypedTreeRewriter
     {
-        protected override BoundExpression RewriteIndexExpression(
-            BoundIndexExpression indexExpression
+        protected override TypedExpression RewriteIndexExpression(
+            TypedIndexExpression indexExpression
         ) =>
-            new BoundCallExpression(
+            new TypedCallExpression(
                 indexExpression.Syntax,
                 indexExpression.Getter!,
                 RewriteExpression(indexExpression.Expression),
                 ImmutableArray.Create(RewriteExpression(indexExpression.Index))
             );
 
-        public static BoundStatement Lower(BoundStatement statement) =>
+        public static TypedStatement Lower(TypedStatement statement) =>
             new Getters().RewriteStatement(statement);
     }
 }

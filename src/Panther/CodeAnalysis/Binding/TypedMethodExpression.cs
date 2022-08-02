@@ -4,12 +4,12 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Binding;
 
-sealed record BoundMethodExpression : BoundNode
+sealed record TypedMethodExpression : TypedNode
 {
-    public BoundMethodExpression(
+    public TypedMethodExpression(
         SyntaxNode syntax,
         string name,
-        BoundExpression? expression,
+        TypedExpression? expression,
         ImmutableArray<Symbol> methods
     ) : base(syntax)
     {
@@ -19,13 +19,13 @@ sealed record BoundMethodExpression : BoundNode
     }
 
     public string Name { get; }
-    public BoundExpression? Expression { get; }
+    public TypedExpression? Expression { get; }
     public ImmutableArray<Symbol> Methods { get; }
 
-    public override BoundNodeKind Kind => BoundNodeKind.MethodExpression;
+    public override TypedNodeKind Kind => TypedNodeKind.MethodExpression;
 
-    public override void Accept(BoundNodeVisitor visitor) => visitor.VisitMethodExpression(this);
+    public override void Accept(TypedNodeVisitor visitor) => visitor.VisitMethodExpression(this);
 
-    public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) =>
+    public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) =>
         visitor.VisitMethodExpression(this);
 }

@@ -5,12 +5,12 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal sealed record BoundAssembly(
-    BoundAssembly? Previous,
+internal sealed record TypedAssembly(
+    TypedAssembly? Previous,
     ImmutableArray<Diagnostic> Diagnostics,
     EntryPoint? EntryPoint,
-    BoundType? DefaultType,
+    TypedType? DefaultType,
     Symbol RootSymbol,
-    ImmutableDictionary<Symbol, BoundBlockExpression> MethodDefinitions,
+    ImmutableDictionary<Symbol, TypedBlockExpression> MethodDefinitions,
     ImmutableArray<AssemblyDefinition> References
 );

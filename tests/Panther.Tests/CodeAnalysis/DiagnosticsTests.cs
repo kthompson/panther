@@ -261,7 +261,7 @@ public class DiagnosticsTests
     }
 
     [Property]
-    public void ReportInvalidForLowerBound(bool lower)
+    public void ReportInvalidForLowerTyped(bool lower)
     {
         var text = $@"for (x <- [{b(lower)}] to 12) 7";
 
@@ -274,7 +274,7 @@ public class DiagnosticsTests
     }
 
     [Property]
-    public void ReportInvalidForUpperBound(bool upper)
+    public void ReportInvalidForUpperTyped(bool upper)
     {
         var text = $@"for (x <- 7 to [{b(upper)}]) 7";
 

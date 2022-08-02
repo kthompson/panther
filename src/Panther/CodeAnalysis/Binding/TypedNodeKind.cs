@@ -2,7 +2,7 @@
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal enum BoundNodeKind
+internal enum TypedNodeKind
 {
     // Expressions
     AssignmentExpression,

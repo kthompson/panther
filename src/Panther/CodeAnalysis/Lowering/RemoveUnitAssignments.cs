@@ -3,44 +3,44 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Lowering;
 
-sealed class RemoveUnitAssignments : BoundStatementListRewriter
+sealed class RemoveUnitAssignments : TypedStatementListRewriter
 {
     private RemoveUnitAssignments() { }
 
-    protected override BoundStatement RewriteStatement(BoundStatement node)
+    protected override TypedStatement RewriteStatement(TypedStatement node)
     {
-        BoundStatement RewriteSubExpression(BoundExpression original)
+        TypedStatement RewriteSubExpression(TypedExpression original)
         {
             var expression = RewriteExpression(original);
-            if (expression.Kind == BoundNodeKind.UnitExpression)
-                return new BoundNopStatement(node.Syntax);
+            if (expression.Kind == TypedNodeKind.UnitExpression)
+                return new TypedNopStatement(node.Syntax);
 
-            return base.RewriteStatement(new BoundExpressionStatement(node.Syntax, expression));
+            return base.RewriteStatement(new TypedExpressionStatement(node.Syntax, expression));
         }
 
         return node switch
         {
-            BoundVariableDeclarationStatement(_, var variable, var inner)
+            TypedVariableDeclarationStatement(_, var variable, var inner)
                 when variable.Type == Type.Unit
-                => inner == null ? new BoundNopStatement(node.Syntax) : RewriteSubExpression(inner),
-            BoundAssignmentStatement(_, var variable, var inner) when variable.Type == Type.Unit
+                => inner == null ? new TypedNopStatement(node.Syntax) : RewriteSubExpression(inner),
+            TypedAssignmentStatement(_, var variable, var inner) when variable.Type == Type.Unit
                 => RewriteSubExpression(inner),
-            BoundExpressionStatement(_, var inner) when inner.Type == Type.Unit
+            TypedExpressionStatement(_, var inner) when inner.Type == Type.Unit
                 => RewriteSubExpression(inner),
             _ => base.RewriteStatement(node)
         };
     }
 
-    protected override BoundExpression RewriteExpression(BoundExpression node)
+    protected override TypedExpression RewriteExpression(TypedExpression node)
     {
         if (
-            node is BoundVariableExpression variableExpression
+            node is TypedVariableExpression variableExpression
             && variableExpression.Type == Type.Unit
         )
-            return new BoundUnitExpression(node.Syntax);
+            return new TypedUnitExpression(node.Syntax);
 
         if (
-            node is BoundAssignmentExpression(_, var variable, var inner)
+            node is TypedAssignmentExpression(_, var variable, var inner)
             && variable.Type == Type.Unit
         )
         {
@@ -52,6 +52,6 @@ sealed class RemoveUnitAssignments : BoundStatementListRewriter
         return base.RewriteExpression(node);
     }
 
-    public static BoundBlockExpression Lower(BoundBlockExpression blockExpression) =>
+    public static TypedBlockExpression Lower(TypedBlockExpression blockExpression) =>
         new RemoveUnitAssignments().Rewrite(blockExpression);
 }

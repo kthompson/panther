@@ -6,7 +6,7 @@ namespace Panther.CodeAnalysis.Lowering;
 
 internal sealed class LoweringPipeline
 {
-    public static BoundBlockExpression Lower(Symbol method, BoundStatement statement)
+    public static TypedBlockExpression Lower(Symbol method, TypedStatement statement)
     {
         var debug = false;
         if (debug)

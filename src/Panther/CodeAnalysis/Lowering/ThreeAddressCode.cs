@@ -7,7 +7,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Lowering;
 
-sealed class ThreeAddressCode : BoundStatementListRewriter
+sealed class ThreeAddressCode : TypedStatementListRewriter
 {
     private readonly Symbol _method;
     private int _tempCount = 0;
@@ -17,14 +17,14 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
         _method = method;
     }
 
-    public static BoundBlockExpression Lower(Symbol method, BoundStatement boundStatement)
+    public static TypedBlockExpression Lower(Symbol method, TypedStatement boundStatement)
     {
         var tac = new ThreeAddressCode(method);
         tac.RewriteStatement(boundStatement);
         return tac.GetBlock(boundStatement.Syntax);
     }
 
-    protected override BoundExpression RewriteBlockExpression(BoundBlockExpression node)
+    protected override TypedExpression RewriteBlockExpression(TypedBlockExpression node)
     {
         if (node.Statements.Length == 0)
             return RewriteExpression(node.Expression);
@@ -36,14 +36,14 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
         }
 
         var rewritten = this.RewriteExpression(node.Expression);
-        if (rewritten.Kind == BoundNodeKind.LiteralExpression)
+        if (rewritten.Kind == TypedNodeKind.LiteralExpression)
             return rewritten;
 
         // node.Expression had a nested block so assign it to a temp and return the variable
         return CreateTemporary(rewritten);
     }
 
-    protected override BoundExpression RewriteCallExpression(BoundCallExpression node)
+    protected override TypedExpression RewriteCallExpression(TypedCallExpression node)
     {
         // since statements can exist inside of a block which is an argument, when we flatten the block statements
         // can get out of order if there are side effects in any of the arguments. In order to prevent this we need
@@ -56,10 +56,10 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
 
         var rewritten = node.Expression == null ? null : this.RewriteExpression(node.Expression);
 
-        return new BoundCallExpression(node.Syntax, node.Method, rewritten, args);
+        return new TypedCallExpression(node.Syntax, node.Method, rewritten, args);
     }
 
-    protected override BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
+    protected override TypedExpression RewriteBinaryExpression(TypedBinaryExpression node)
     {
         var left = IsSimpleNode(node.Left) ? node.Left : CreateTemporary(node.Left);
         var right = IsSimpleNode(node.Right) ? node.Right : CreateTemporary(node.Right);
@@ -68,10 +68,10 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
         if (node.Left == left && node.Right == right && node.Operator == @operator)
             return node;
 
-        return new BoundBinaryExpression(node.Syntax, left, @operator, right);
+        return new TypedBinaryExpression(node.Syntax, left, @operator, right);
     }
 
-    protected override BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
+    protected override TypedExpression RewriteUnaryExpression(TypedUnaryExpression node)
     {
         var rewrittenOp = RewriteExpression(node.Operand);
         var operand = IsSimpleNode(rewrittenOp) ? rewrittenOp : CreateTemporary(rewrittenOp);
@@ -79,27 +79,27 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
         if (node.Operand == operand && node.Operator == @operator)
             return node;
 
-        return new BoundUnaryExpression(node.Syntax, @operator, operand);
+        return new TypedUnaryExpression(node.Syntax, @operator, operand);
     }
 
-    protected override BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
+    protected override TypedExpression RewriteAssignmentExpression(TypedAssignmentExpression node)
     {
-        RewriteStatement(new BoundAssignmentStatement(node.Syntax, node.Left, node.Right));
+        RewriteStatement(new TypedAssignmentStatement(node.Syntax, node.Left, node.Right));
 
-        return new BoundUnitExpression(node.Syntax);
+        return new TypedUnitExpression(node.Syntax);
     }
 
-    protected override BoundExpression RewriteForExpression(BoundForExpression node)
+    protected override TypedExpression RewriteForExpression(TypedForExpression node)
     {
         throw new InvalidProgramException("No `for` expression should exist at this stage");
     }
 
-    protected override BoundExpression RewriteWhileExpression(BoundWhileExpression node)
+    protected override TypedExpression RewriteWhileExpression(TypedWhileExpression node)
     {
         throw new InvalidProgramException("No `while` expression should exist at this stage");
     }
 
-    protected override BoundExpression RewriteConversionExpression(BoundConversionExpression node)
+    protected override TypedExpression RewriteConversionExpression(TypedConversionExpression node)
     {
         var rewriteExpression = RewriteExpression(node.Expression);
         var expr = IsSimpleNode(rewriteExpression)
@@ -108,14 +108,14 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
         if (expr == node.Expression)
             return node;
 
-        return new BoundConversionExpression(node.Syntax, node.Type, expr);
+        return new TypedConversionExpression(node.Syntax, node.Type, expr);
     }
 
-    private static bool IsSimpleNode(BoundExpression node) =>
-        node.Kind == BoundNodeKind.VariableExpression
-        || node.Kind == BoundNodeKind.LiteralExpression;
+    private static bool IsSimpleNode(TypedExpression node) =>
+        node.Kind == TypedNodeKind.VariableExpression
+        || node.Kind == TypedNodeKind.LiteralExpression;
 
-    private BoundExpression CreateTemporary(BoundExpression boundExpression, string prefix = "temp")
+    private TypedExpression CreateTemporary(TypedExpression boundExpression, string prefix = "temp")
     {
         _tempCount++;
         var name = $"{prefix}${_tempCount:0000}";
@@ -127,12 +127,12 @@ sealed class ThreeAddressCode : BoundStatementListRewriter
 
         // var tempVariable = new LocalVariableSymbol(name, true, boundExpression.Type, boundExpression.ConstantValue);
         _statements.Add(
-            new BoundVariableDeclarationStatement(
+            new TypedVariableDeclarationStatement(
                 boundExpression.Syntax,
                 tempVariable,
                 boundExpression
             )
         );
-        return new BoundVariableExpression(boundExpression.Syntax, tempVariable);
+        return new TypedVariableExpression(boundExpression.Syntax, tempVariable);
     }
 }

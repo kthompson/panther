@@ -20,7 +20,7 @@ static class MethodBindCost
     private static MethodBindCostResult Analyze(
         int id,
         Symbol method,
-        ImmutableArray<BoundExpression> arguments
+        ImmutableArray<TypedExpression> arguments
     )
     {
         if (method.Type is not MethodType methodType)
@@ -56,7 +56,7 @@ static class MethodBindCost
 
     public static Symbol? Analyze(
         ImmutableArray<Symbol> methods,
-        ImmutableArray<BoundExpression> arguments
+        ImmutableArray<TypedExpression> arguments
     )
     {
         var (errors, results) = methods

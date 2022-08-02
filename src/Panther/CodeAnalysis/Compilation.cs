@@ -19,24 +19,24 @@ public class Compilation
     public Compilation? Previous { get; }
     public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
     public ImmutableArray<AssemblyDefinition> References { get; }
-    public Symbol RootSymbol => BoundAssembly.RootSymbol;
+    public Symbol RootSymbol => TypedAssembly.RootSymbol;
     public ImmutableArray<Diagnostic> Diagnostics =>
         SyntaxTrees
             .SelectMany(tree => tree.Diagnostics)
-            .Concat(BoundAssembly.Diagnostics)
+            .Concat(TypedAssembly.Diagnostics)
             .ToImmutableArray();
 
-    private BoundAssembly? _boundAssembly;
-    private BoundAssembly BoundAssembly
+    private TypedAssembly? _boundAssembly;
+    private TypedAssembly TypedAssembly
     {
         get
         {
             if (_boundAssembly == null)
             {
-                var bindAssembly = Binder.BindAssembly(
+                var bindAssembly = Typer.BindAssembly(
                     IsScript,
                     SyntaxTrees,
-                    Previous?.BoundAssembly,
+                    Previous?.TypedAssembly,
                     References
                 );
                 Interlocked.CompareExchange(ref _boundAssembly, bindAssembly, null);
@@ -123,12 +123,12 @@ public class Compilation
 
     public void EmitTree(TextWriter writer)
     {
-        var entryPoint = BoundAssembly.EntryPoint?.Symbol;
+        var entryPoint = TypedAssembly.EntryPoint?.Symbol;
         var methods =
-            from type in BoundAssembly.RootSymbol.Types
+            from type in TypedAssembly.RootSymbol.Types
             from method in type.Methods
             where method != entryPoint
-            let body = BoundAssembly.MethodDefinitions.GetValueOrDefault(method)
+            let body = TypedAssembly.MethodDefinitions.GetValueOrDefault(method)
             where body != null
             select new { method, body };
 
@@ -147,7 +147,7 @@ public class Compilation
 
     public void EmitTree(Symbol method, TextWriter writer)
     {
-        var assembly = BoundAssembly;
+        var assembly = TypedAssembly;
 
         while (assembly != null)
         {
@@ -164,7 +164,7 @@ public class Compilation
         method.WriteTo(writer);
     }
 
-    private static void EmitTree(Symbol method, BoundBlockExpression block, TextWriter writer)
+    private static void EmitTree(Symbol method, TypedBlockExpression block, TextWriter writer)
     {
         method.WriteTo(writer);
         writer.WritePunctuation(" = ");
@@ -173,12 +173,12 @@ public class Compilation
     }
 
     public EmitResult Emit(string moduleName, string outputPath) =>
-        Emitter.Emit(BoundAssembly, moduleName, outputPath);
+        Emitter.Emit(TypedAssembly, moduleName, outputPath);
 
     internal EmitResult Emit(
         string moduleName,
         string outputPath,
         Dictionary<Symbol, FieldReference> previousGlobals,
         Dictionary<Symbol, MethodReference> previousMethods
-    ) => Emitter.Emit(BoundAssembly, moduleName, outputPath, previousGlobals, previousMethods);
+    ) => Emitter.Emit(TypedAssembly, moduleName, outputPath, previousGlobals, previousMethods);
 }

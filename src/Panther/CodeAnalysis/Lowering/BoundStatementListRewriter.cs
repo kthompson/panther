@@ -6,37 +6,37 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Lowering;
 
-internal class BoundStatementListRewriter : BoundTreeRewriter
+internal class TypedStatementListRewriter : TypedTreeRewriter
 {
-    protected readonly List<BoundStatement> _statements = new List<BoundStatement>();
+    protected readonly List<TypedStatement> _statements = new List<TypedStatement>();
 
-    protected BoundStatementListRewriter() { }
+    protected TypedStatementListRewriter() { }
 
-    protected BoundBlockExpression GetBlock(SyntaxNode syntax)
+    protected TypedBlockExpression GetBlock(SyntaxNode syntax)
     {
-        var expr = (_statements.LastOrDefault() as BoundExpressionStatement)?.Expression;
+        var expr = (_statements.LastOrDefault() as TypedExpressionStatement)?.Expression;
         var stmts = expr == null ? _statements : _statements.Take(_statements.Count - 1);
 
-        expr ??= new BoundUnitExpression(syntax);
+        expr ??= new TypedUnitExpression(syntax);
 
-        return new BoundBlockExpression(syntax, stmts.ToImmutableArray(), expr);
+        return new TypedBlockExpression(syntax, stmts.ToImmutableArray(), expr);
     }
 
-    protected BoundBlockExpression Rewrite(BoundBlockExpression block)
+    protected TypedBlockExpression Rewrite(TypedBlockExpression block)
     {
         foreach (var statement in block.Statements)
             RewriteStatement(statement);
 
-        RewriteStatement(new BoundExpressionStatement(block.Syntax, block.Expression));
+        RewriteStatement(new TypedExpressionStatement(block.Syntax, block.Expression));
 
         return GetBlock(block.Syntax);
     }
 
-    protected override BoundStatement RewriteStatement(BoundStatement node)
+    protected override TypedStatement RewriteStatement(TypedStatement node)
     {
         var statement = base.RewriteStatement(node);
 
-        if (statement is not BoundNopStatement)
+        if (statement is not TypedNopStatement)
             _statements.Add(statement);
 
         return statement;
