@@ -10,7 +10,7 @@ internal static class SymbolPrinter
     {
         switch (symbol)
         {
-            case ClassType classType:
+            case ClassType:
                 writer.WriteIdentifier("<classtype>");
                 break;
 
