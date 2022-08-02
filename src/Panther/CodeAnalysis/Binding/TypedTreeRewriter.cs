@@ -5,49 +5,49 @@ using System.Linq;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal abstract class BoundTreeRewriter
+internal abstract class TypedTreeRewriter
 {
-    protected virtual BoundExpression RewriteExpression(BoundExpression node) =>
+    protected virtual TypedExpression RewriteExpression(TypedExpression node) =>
         node switch
         {
-            BoundAssignmentExpression boundAssignmentExpression
+            TypedAssignmentExpression boundAssignmentExpression
                 => RewriteAssignmentExpression(boundAssignmentExpression),
-            BoundBinaryExpression boundBinaryExpression
+            TypedBinaryExpression boundBinaryExpression
                 => RewriteBinaryExpression(boundBinaryExpression),
-            BoundBlockExpression boundBlockExpression
+            TypedBlockExpression boundBlockExpression
                 => RewriteBlockExpression(boundBlockExpression),
-            BoundCallExpression callExpression => RewriteCallExpression(callExpression),
-            BoundConversionExpression conversionExpression
+            TypedCallExpression callExpression => RewriteCallExpression(callExpression),
+            TypedConversionExpression conversionExpression
                 => RewriteConversionExpression(conversionExpression),
-            BoundErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
-            BoundFieldExpression boundFieldExpression
+            TypedErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
+            TypedFieldExpression boundFieldExpression
                 => RewriteFieldExpression(boundFieldExpression),
-            BoundForExpression boundForExpression => RewriteForExpression(boundForExpression),
-            BoundIfExpression boundIfExpression => RewriteIfExpression(boundIfExpression),
-            BoundIndexExpression boundIndexExpression
+            TypedForExpression boundForExpression => RewriteForExpression(boundForExpression),
+            TypedIfExpression boundIfExpression => RewriteIfExpression(boundIfExpression),
+            TypedIndexExpression boundIndexExpression
                 => RewriteIndexExpression(boundIndexExpression),
-            BoundLiteralExpression boundLiteralExpression
+            TypedLiteralExpression boundLiteralExpression
                 => RewriteLiteralExpression(boundLiteralExpression),
-            BoundNewExpression boundLiteralExpression
+            TypedNewExpression boundLiteralExpression
                 => RewriteNewExpression(boundLiteralExpression),
-            BoundTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
-            BoundUnaryExpression boundUnaryExpression
+            TypedTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
+            TypedUnaryExpression boundUnaryExpression
                 => RewriteUnaryExpression(boundUnaryExpression),
-            BoundUnitExpression boundUnitExpression => RewriteUnitExpression(boundUnitExpression),
-            BoundVariableExpression boundVariableExpression
+            TypedUnitExpression boundUnitExpression => RewriteUnitExpression(boundUnitExpression),
+            TypedVariableExpression boundVariableExpression
                 => RewriteVariableExpression(boundVariableExpression),
-            BoundWhileExpression boundWhileExpression
+            TypedWhileExpression boundWhileExpression
                 => RewriteWhileExpression(boundWhileExpression),
             _ => throw new ArgumentOutOfRangeException(nameof(node))
         };
 
-    protected virtual BoundExpression RewriteFieldExpression(BoundFieldExpression node) => node;
+    protected virtual TypedExpression RewriteFieldExpression(TypedFieldExpression node) => node;
 
-    protected virtual BoundExpression RewriteTypeExpression(BoundTypeExpression node) => node;
+    protected virtual TypedExpression RewriteTypeExpression(TypedTypeExpression node) => node;
 
-    protected virtual BoundExpression RewriteNewExpression(BoundNewExpression node)
+    protected virtual TypedExpression RewriteNewExpression(TypedNewExpression node)
     {
-        List<BoundExpression>? newArguments = null;
+        List<TypedExpression>? newArguments = null;
 
         for (var i = 0; i < node.Arguments.Length; i++)
         {
@@ -59,7 +59,7 @@ internal abstract class BoundTreeRewriter
                 if (newArguments == null)
                 {
                     // initialize the list with all the statements up to `i`
-                    newArguments = new List<BoundExpression>();
+                    newArguments = new List<TypedExpression>();
 
                     for (var j = 0; j < i; j++)
                     {
@@ -74,14 +74,14 @@ internal abstract class BoundTreeRewriter
         if (newArguments == null)
             return node;
 
-        return new BoundNewExpression(
+        return new TypedNewExpression(
             node.Syntax,
             node.Constructor,
             newArguments?.ToImmutableArray() ?? node.Arguments
         );
     }
 
-    protected virtual BoundExpression RewriteIndexExpression(BoundIndexExpression node)
+    protected virtual TypedExpression RewriteIndexExpression(TypedIndexExpression node)
     {
         var expression = RewriteExpression(node.Expression);
         var index = RewriteExpression(node.Index);
@@ -89,23 +89,23 @@ internal abstract class BoundTreeRewriter
         if (node.Expression == expression && node.Index == index)
             return node;
 
-        return new BoundIndexExpression(node.Syntax, expression, index, node.Getter, node.Setter);
+        return new TypedIndexExpression(node.Syntax, expression, index, node.Getter, node.Setter);
     }
 
-    protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
+    protected virtual TypedExpression RewriteConversionExpression(TypedConversionExpression node)
     {
         var expr = RewriteExpression(node.Expression);
         if (expr == node.Expression)
             return node;
 
-        return new BoundConversionExpression(node.Syntax, node.Type, expr);
+        return new TypedConversionExpression(node.Syntax, node.Type, expr);
     }
 
-    protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
+    protected virtual TypedExpression RewriteCallExpression(TypedCallExpression node)
     {
         var lhs = node.Expression != null ? RewriteExpression(node.Expression) : null;
 
-        List<BoundExpression>? newArguments = null;
+        List<TypedExpression>? newArguments = null;
 
         for (var i = 0; i < node.Arguments.Length; i++)
         {
@@ -117,7 +117,7 @@ internal abstract class BoundTreeRewriter
                 if (newArguments == null)
                 {
                     // initialize the list with all the statements up to `i`
-                    newArguments = new List<BoundExpression>();
+                    newArguments = new List<TypedExpression>();
 
                     for (var j = 0; j < i; j++)
                     {
@@ -132,7 +132,7 @@ internal abstract class BoundTreeRewriter
         if (newArguments == null && node.Expression == lhs)
             return node;
 
-        return new BoundCallExpression(
+        return new TypedCallExpression(
             node.Syntax,
             node.Method,
             lhs,
@@ -140,7 +140,7 @@ internal abstract class BoundTreeRewriter
         );
     }
 
-    protected virtual BoundExpression RewriteWhileExpression(BoundWhileExpression node)
+    protected virtual TypedExpression RewriteWhileExpression(TypedWhileExpression node)
     {
         var cond = RewriteExpression(node.Condition);
         var body = RewriteExpression(node.Body);
@@ -148,7 +148,7 @@ internal abstract class BoundTreeRewriter
         if (node.Condition == cond && node.Body == body)
             return node;
 
-        return new BoundWhileExpression(
+        return new TypedWhileExpression(
             node.Syntax,
             cond,
             body,
@@ -157,17 +157,17 @@ internal abstract class BoundTreeRewriter
         );
     }
 
-    protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
+    protected virtual TypedExpression RewriteUnaryExpression(TypedUnaryExpression node)
     {
         var operand = RewriteExpression(node.Operand);
         var @operator = RewriteUnaryOperator(node.Operator);
         if (node.Operand == operand && node.Operator == @operator)
             return node;
 
-        return new BoundUnaryExpression(node.Syntax, @operator, operand);
+        return new TypedUnaryExpression(node.Syntax, @operator, operand);
     }
 
-    protected virtual BoundExpression RewriteIfExpression(BoundIfExpression node)
+    protected virtual TypedExpression RewriteIfExpression(TypedIfExpression node)
     {
         var cond = RewriteExpression(node.Condition);
         var then = RewriteExpression(node.Then);
@@ -176,32 +176,32 @@ internal abstract class BoundTreeRewriter
         if (node.Condition == cond && node.Then == then && node.Else == @else)
             return node;
 
-        return new BoundIfExpression(node.Syntax, cond, then, @else);
+        return new TypedIfExpression(node.Syntax, cond, then, @else);
     }
 
-    protected virtual BoundExpression RewriteForExpression(BoundForExpression node)
+    protected virtual TypedExpression RewriteForExpression(TypedForExpression node)
     {
-        var lowerBound = RewriteExpression(node.LowerBound);
-        var upperBound = RewriteExpression(node.UpperBound);
+        var lowerTyped = RewriteExpression(node.LowerTyped);
+        var upperTyped = RewriteExpression(node.UpperTyped);
         var body = RewriteExpression(node.Body);
 
-        if (node.LowerBound == lowerBound && node.UpperBound == upperBound && node.Body == body)
+        if (node.LowerTyped == lowerTyped && node.UpperTyped == upperTyped && node.Body == body)
             return node;
 
-        return new BoundForExpression(
+        return new TypedForExpression(
             node.Syntax,
             node.Variable,
-            lowerBound,
-            upperBound,
+            lowerTyped,
+            upperTyped,
             body,
             node.BreakLabel,
             node.ContinueLabel
         );
     }
 
-    protected virtual BoundExpression RewriteBlockExpression(BoundBlockExpression node)
+    protected virtual TypedExpression RewriteBlockExpression(TypedBlockExpression node)
     {
-        List<BoundStatement>? statements = null;
+        List<TypedStatement>? statements = null;
 
         for (var i = 0; i < node.Statements.Length; i++)
         {
@@ -213,7 +213,7 @@ internal abstract class BoundTreeRewriter
                 if (statements == null)
                 {
                     // initialize the list with all the statements up to `i`
-                    statements = new List<BoundStatement>();
+                    statements = new List<TypedStatement>();
 
                     for (var j = 0; j < i; j++)
                     {
@@ -233,10 +233,10 @@ internal abstract class BoundTreeRewriter
 
         statements ??= node.Statements.ToList();
 
-        return new BoundBlockExpression(node.Syntax, statements.ToImmutableArray(), expression);
+        return new TypedBlockExpression(node.Syntax, statements.ToImmutableArray(), expression);
     }
 
-    protected virtual BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
+    protected virtual TypedExpression RewriteBinaryExpression(TypedBinaryExpression node)
     {
         var left = RewriteExpression(node.Left);
         var right = RewriteExpression(node.Right);
@@ -245,33 +245,33 @@ internal abstract class BoundTreeRewriter
         if (node.Left == left && node.Right == right && node.Operator == @operator)
             return node;
 
-        return new BoundBinaryExpression(node.Syntax, left, @operator, right);
+        return new TypedBinaryExpression(node.Syntax, left, @operator, right);
     }
 
-    protected virtual BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
+    protected virtual TypedExpression RewriteAssignmentExpression(TypedAssignmentExpression node)
     {
         var left = RewriteExpression(node.Left);
         var right = RewriteExpression(node.Right);
         if (left == node.Left && right == node.Right)
             return node;
 
-        return new BoundAssignmentExpression(node.Syntax, left, right);
+        return new TypedAssignmentExpression(node.Syntax, left, right);
     }
 
-    protected virtual BoundStatement RewriteStatement(BoundStatement node) =>
+    protected virtual TypedStatement RewriteStatement(TypedStatement node) =>
         node switch
         {
-            BoundAssignmentStatement assignmentStatement
+            TypedAssignmentStatement assignmentStatement
                 => RewriteAssignmentStatement(assignmentStatement),
-            BoundExpressionStatement expressionStatement
+            TypedExpressionStatement expressionStatement
                 => RewriteExpressionStatement(expressionStatement),
-            BoundNopStatement nopStatement => RewriteNopStatement(nopStatement),
-            BoundVariableDeclarationStatement variableDeclarationStatement
+            TypedNopStatement nopStatement => RewriteNopStatement(nopStatement),
+            TypedVariableDeclarationStatement variableDeclarationStatement
                 => RewriteVariableDeclarationStatement(variableDeclarationStatement),
-            BoundLabelStatement labelStatement => RewriteBoundLabelStatement(labelStatement),
-            BoundGotoStatement gotoStatement => RewriteBoundGotoStatement(gotoStatement),
-            BoundConditionalGotoStatement conditionalGotoStatement
-                => RewriteBoundConditionalGotoStatement(conditionalGotoStatement),
+            TypedLabelStatement labelStatement => RewriteTypedLabelStatement(labelStatement),
+            TypedGotoStatement gotoStatement => RewriteTypedGotoStatement(gotoStatement),
+            TypedConditionalGotoStatement conditionalGotoStatement
+                => RewriteTypedConditionalGotoStatement(conditionalGotoStatement),
             _
                 => throw new ArgumentOutOfRangeException(
                     nameof(node),
@@ -279,68 +279,68 @@ internal abstract class BoundTreeRewriter
                 )
         };
 
-    protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
+    protected virtual TypedStatement RewriteAssignmentStatement(TypedAssignmentStatement node)
     {
         var left = RewriteExpression(node.Left);
         var right = RewriteExpression(node.Right);
         if (left == node.Left && right == node.Right)
             return node;
 
-        return new BoundAssignmentStatement(node.Syntax, left, right);
+        return new TypedAssignmentStatement(node.Syntax, left, right);
     }
 
-    protected virtual BoundStatement RewriteBoundConditionalGotoStatement(
-        BoundConditionalGotoStatement node
+    protected virtual TypedStatement RewriteTypedConditionalGotoStatement(
+        TypedConditionalGotoStatement node
     )
     {
         var cond = RewriteExpression(node.Condition);
         if (node.Condition == cond)
             return node;
 
-        return new BoundConditionalGotoStatement(
+        return new TypedConditionalGotoStatement(
             node.Syntax,
-            node.BoundLabel,
+            node.TypedLabel,
             cond,
             node.JumpIfTrue
         );
     }
 
-    protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
+    protected virtual TypedStatement RewriteExpressionStatement(TypedExpressionStatement node)
     {
         var expr = RewriteExpression(node.Expression);
         if (expr == node.Expression)
             return node;
 
-        return new BoundExpressionStatement(node.Syntax, expr);
+        return new TypedExpressionStatement(node.Syntax, expr);
     }
 
-    protected virtual BoundStatement RewriteVariableDeclarationStatement(
-        BoundVariableDeclarationStatement node
+    protected virtual TypedStatement RewriteVariableDeclarationStatement(
+        TypedVariableDeclarationStatement node
     )
     {
         var expr = node.Expression == null ? null : RewriteExpression(node.Expression);
         if (expr == node.Expression)
             return node;
 
-        return new BoundVariableDeclarationStatement(node.Syntax, node.Variable, expr);
+        return new TypedVariableDeclarationStatement(node.Syntax, node.Variable, expr);
     }
 
-    protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node) => node;
+    protected virtual TypedExpression RewriteErrorExpression(TypedErrorExpression node) => node;
 
-    protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node) => node;
+    protected virtual TypedStatement RewriteNopStatement(TypedNopStatement node) => node;
 
-    protected virtual BoundStatement RewriteBoundGotoStatement(BoundGotoStatement node) => node;
+    protected virtual TypedStatement RewriteTypedGotoStatement(TypedGotoStatement node) => node;
 
-    protected virtual BoundStatement RewriteBoundLabelStatement(BoundLabelStatement node) => node;
+    protected virtual TypedStatement RewriteTypedLabelStatement(TypedLabelStatement node) => node;
 
-    protected virtual BoundUnaryOperator RewriteUnaryOperator(BoundUnaryOperator node) => node;
+    protected virtual TypedUnaryOperator RewriteUnaryOperator(TypedUnaryOperator node) => node;
 
-    protected virtual BoundExpression RewriteVariableExpression(BoundVariableExpression node) =>
+    protected virtual TypedExpression RewriteVariableExpression(TypedVariableExpression node) =>
         node;
 
-    protected virtual BoundExpression RewriteUnitExpression(BoundUnitExpression node) => node;
+    protected virtual TypedExpression RewriteUnitExpression(TypedUnitExpression node) => node;
 
-    protected virtual BoundExpression RewriteLiteralExpression(BoundLiteralExpression node) => node;
+    protected virtual TypedExpression RewriteLiteralExpression(TypedLiteralExpression node) => node;
 
-    protected virtual BoundBinaryOperator RewriteBinaryOperator(BoundBinaryOperator node) => node;
+    protected virtual TypedBinaryOperator RewriteBinaryOperator(TypedBinaryOperator node) => node;
 }

@@ -43,7 +43,7 @@ internal sealed class ControlFlowGraph
         public bool IsEnd { get; }
         public bool IsStart { get; }
 
-        public List<BoundStatement> Statements { get; } = new List<BoundStatement>();
+        public List<TypedStatement> Statements { get; } = new List<TypedStatement>();
         public List<BasicBlockBranch> Incoming { get; } = new List<BasicBlockBranch>();
         public List<BasicBlockBranch> Outgoing { get; } = new List<BasicBlockBranch>();
 
@@ -69,9 +69,9 @@ internal sealed class ControlFlowGraph
     {
         public BasicBlock From { get; }
         public BasicBlock To { get; }
-        public BoundExpression? Condition { get; }
+        public TypedExpression? Condition { get; }
 
-        public BasicBlockBranch(BasicBlock from, BasicBlock to, BoundExpression? condition)
+        public BasicBlockBranch(BasicBlock from, BasicBlock to, TypedExpression? condition)
         {
             From = @from;
             To = to;
@@ -84,30 +84,30 @@ internal sealed class ControlFlowGraph
 
     public sealed class BasicBlockBuilder
     {
-        private readonly List<BoundStatement> _statements = new List<BoundStatement>();
+        private readonly List<TypedStatement> _statements = new List<TypedStatement>();
         private readonly List<BasicBlock> _blocks = new List<BasicBlock>();
 
-        public List<BasicBlock> Build(BoundBlockExpression block)
+        public List<BasicBlock> Build(TypedBlockExpression block)
         {
             foreach (var statement in block.Statements)
             {
                 switch (statement.Kind)
                 {
-                    case BoundNodeKind.ConditionalGotoStatement:
-                    case BoundNodeKind.GotoStatement:
+                    case TypedNodeKind.ConditionalGotoStatement:
+                    case TypedNodeKind.GotoStatement:
                         _statements.Add(statement);
                         StartBlock();
                         break;
 
-                    case BoundNodeKind.LabelStatement:
+                    case TypedNodeKind.LabelStatement:
                         StartBlock();
                         _statements.Add(statement);
                         break;
 
-                    case BoundNodeKind.VariableDeclarationStatement:
-                    case BoundNodeKind.ExpressionStatement:
-                    case BoundNodeKind.AssignmentStatement:
-                    case BoundNodeKind.NopStatement:
+                    case TypedNodeKind.VariableDeclarationStatement:
+                    case TypedNodeKind.ExpressionStatement:
+                    case TypedNodeKind.AssignmentStatement:
+                    case TypedNodeKind.NopStatement:
                         _statements.Add(statement);
                         break;
 
@@ -119,7 +119,7 @@ internal sealed class ControlFlowGraph
                 }
             }
 
-            _statements.Add(new BoundExpressionStatement(block.Syntax, block.Expression));
+            _statements.Add(new TypedExpressionStatement(block.Syntax, block.Expression));
 
             EndBlock();
             return _blocks.ToList();
@@ -144,8 +144,8 @@ internal sealed class ControlFlowGraph
 
     public sealed class GraphBuilder
     {
-        private readonly Dictionary<BoundLabel, BasicBlock> _blockFromLabel =
-            new Dictionary<BoundLabel, BasicBlock>();
+        private readonly Dictionary<TypedLabel, BasicBlock> _blockFromLabel =
+            new Dictionary<TypedLabel, BasicBlock>();
         private readonly List<BasicBlockBranch> _branches = new List<BasicBlockBranch>();
         private readonly BasicBlock _start = new BasicBlock(isStart: true);
         private readonly BasicBlock _end = new BasicBlock(isStart: false);
@@ -158,9 +158,9 @@ internal sealed class ControlFlowGraph
             {
                 foreach (var statement in block.Statements)
                 {
-                    if (statement is BoundLabelStatement labelStatement)
+                    if (statement is TypedLabelStatement labelStatement)
                     {
-                        _blockFromLabel.Add(labelStatement.BoundLabel, block);
+                        _blockFromLabel.Add(labelStatement.TypedLabel, block);
                     }
                 }
             }
@@ -212,7 +212,7 @@ internal sealed class ControlFlowGraph
         }
 
         private void Walk(
-            BoundStatement statement,
+            TypedStatement statement,
             BasicBlock current,
             BasicBlock next,
             in bool isLastStatementInBlock
@@ -220,11 +220,11 @@ internal sealed class ControlFlowGraph
         {
             switch (statement)
             {
-                case BoundConditionalGotoStatement conditionalGotoStatement:
+                case TypedConditionalGotoStatement conditionalGotoStatement:
                 {
                     if (
                         _blockFromLabel.TryGetValue(
-                            conditionalGotoStatement.BoundLabel,
+                            conditionalGotoStatement.TypedLabel,
                             out var thenBlock
                         )
                     )
@@ -247,9 +247,9 @@ internal sealed class ControlFlowGraph
 
                     break;
                 }
-                case BoundGotoStatement gotoStatement:
+                case TypedGotoStatement gotoStatement:
                 {
-                    if (_blockFromLabel.TryGetValue(gotoStatement.BoundLabel, out var toBlock))
+                    if (_blockFromLabel.TryGetValue(gotoStatement.TypedLabel, out var toBlock))
                     {
                         Connect(current, toBlock);
                     }
@@ -260,11 +260,11 @@ internal sealed class ControlFlowGraph
 
                     break;
                 }
-                case BoundLabelStatement _:
-                case BoundExpressionStatement _:
-                case BoundVariableDeclarationStatement _:
-                case BoundAssignmentStatement _:
-                case BoundNopStatement _:
+                case TypedLabelStatement _:
+                case TypedExpressionStatement _:
+                case TypedVariableDeclarationStatement _:
+                case TypedAssignmentStatement _:
+                case TypedNopStatement _:
                     if (isLastStatementInBlock)
                         Connect(current, next);
 
@@ -278,28 +278,28 @@ internal sealed class ControlFlowGraph
             }
         }
 
-        private BoundExpression Negate(BoundExpression condition)
+        private TypedExpression Negate(TypedExpression condition)
         {
-            if (condition is BoundLiteralExpression literalExpression)
+            if (condition is TypedLiteralExpression literalExpression)
             {
                 var value = (bool)literalExpression.Value;
-                return new BoundLiteralExpression(condition.Syntax, !value);
+                return new TypedLiteralExpression(condition.Syntax, !value);
             }
 
             var op =
-                BoundUnaryOperator.Bind(SyntaxKind.BangToken, Type.Bool)
+                TypedUnaryOperator.Bind(SyntaxKind.BangToken, Type.Bool)
                 ?? throw new Exception("invalid operator");
 
-            return new BoundUnaryExpression(condition.Syntax, op, condition);
+            return new TypedUnaryExpression(condition.Syntax, op, condition);
         }
 
         private void Connect(
             BasicBlock @from,
             BasicBlock to,
-            BoundExpression? boundCondition = null
+            TypedExpression? boundCondition = null
         )
         {
-            if (boundCondition is BoundLiteralExpression lit)
+            if (boundCondition is TypedLiteralExpression lit)
             {
                 if ((bool)lit.Value)
                 {
@@ -352,7 +352,7 @@ internal sealed class ControlFlowGraph
         writer.WriteLine("}");
     }
 
-    public static ControlFlowGraph Create(BoundBlockExpression cfgExpression)
+    public static ControlFlowGraph Create(TypedBlockExpression cfgExpression)
     {
         var basicBlockBuilder = new BasicBlockBuilder();
         var blocks = basicBlockBuilder.Build(cfgExpression);
@@ -361,13 +361,13 @@ internal sealed class ControlFlowGraph
         return graphBuilder.Build(blocks);
     }
 
-    public static bool AllBlocksReturn(BoundBlockExpression body)
+    public static bool AllBlocksReturn(TypedBlockExpression body)
     {
         var graph = Create(body);
         foreach (var branch in graph.End.Incoming)
         {
             var lastStatement = branch.From.Statements.Last();
-            if (lastStatement.Kind != BoundNodeKind.ExpressionStatement)
+            if (lastStatement.Kind != TypedNodeKind.ExpressionStatement)
                 return false;
         }
 

@@ -6,24 +6,24 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal sealed class BoundScope : SymbolContainer
+internal sealed class TypedScope : SymbolContainer
 {
     public Symbol Symbol { get; }
 
     // symbols that have not been defined but are needed in scope for resolving types etc
     private readonly Dictionary<string, ImmutableArray<Symbol>> _importedSymbols = new();
 
-    public BoundScope Parent { get; }
+    public TypedScope Parent { get; }
 
-    public BoundScope(BoundScope parent, string? name = null) : this(parent.Symbol, parent, name)
+    public TypedScope(TypedScope parent, string? name = null) : this(parent.Symbol, parent, name)
     { }
 
-    public BoundScope(Symbol symbol, string? name = null) : this(symbol, null, name) { }
+    public TypedScope(Symbol symbol, string? name = null) : this(symbol, null, name) { }
 
-    public BoundScope(BoundScope parent, Symbol symbol, string? name = null)
+    public TypedScope(TypedScope parent, Symbol symbol, string? name = null)
         : this(symbol, parent, name) { }
 
-    private BoundScope(Symbol symbol, BoundScope? parent, string? name = null)
+    private TypedScope(Symbol symbol, TypedScope? parent, string? name = null)
     {
         this.Name = name ?? symbol.Name;
         Symbol = symbol;

@@ -36,53 +36,53 @@ class BindingGenerators
         Gen.Constant((SyntaxNode)new SyntaxToken(null!, SyntaxKind.InvalidTokenTrivia, 0))
             .ToArbitrary();
 
-    public static Arbitrary<BoundStatement> BoundStatement() =>
+    public static Arbitrary<TypedStatement> TypedStatement() =>
         Gen.OneOf(
-                Arb.Generate<BoundConditionalGotoStatement>().Select(x => (BoundStatement)x),
-                Arb.Generate<BoundExpressionStatement>().Select(x => (BoundStatement)x),
-                Arb.Generate<BoundGotoStatement>().Select(x => (BoundStatement)x),
-                Arb.Generate<BoundLabelStatement>().Select(x => (BoundStatement)x),
-                Arb.Generate<BoundVariableDeclarationStatement>().Select(x => (BoundStatement)x)
+                Arb.Generate<TypedConditionalGotoStatement>().Select(x => (TypedStatement)x),
+                Arb.Generate<TypedExpressionStatement>().Select(x => (TypedStatement)x),
+                Arb.Generate<TypedGotoStatement>().Select(x => (TypedStatement)x),
+                Arb.Generate<TypedLabelStatement>().Select(x => (TypedStatement)x),
+                Arb.Generate<TypedVariableDeclarationStatement>().Select(x => (TypedStatement)x)
             )
             .ToArbitrary();
 
-    public static Arbitrary<BoundGotoStatement> BoundGotoStatement() =>
+    public static Arbitrary<TypedGotoStatement> TypedGotoStatement() =>
         (
             from token in Arb.Generate<SyntaxNode>()
-            from label in Arb.Generate<BoundLabel>()
-            select new BoundGotoStatement(token, label)
+            from label in Arb.Generate<TypedLabel>()
+            select new TypedGotoStatement(token, label)
         ).ToArbitrary();
 
-    public static Arbitrary<BoundConditionalGotoStatement> BoundConditionalGotoStatement() =>
+    public static Arbitrary<TypedConditionalGotoStatement> TypedConditionalGotoStatement() =>
         (
             from token in Arb.Generate<SyntaxNode>()
-            from label in Arb.Generate<BoundLabel>()
+            from label in Arb.Generate<TypedLabel>()
             from jumpIfTrue in Arb.Generate<bool>()
-            from expr in GenBoundExpression(Panther.CodeAnalysis.Symbols.Type.Bool)
-            select new BoundConditionalGotoStatement(token, label, expr, jumpIfTrue)
+            from expr in GenTypedExpression(Panther.CodeAnalysis.Symbols.Type.Bool)
+            select new TypedConditionalGotoStatement(token, label, expr, jumpIfTrue)
         ).ToArbitrary();
 
-    public static Arbitrary<BoundExpressionStatement> BoundExpressionStatement() =>
+    public static Arbitrary<TypedExpressionStatement> TypedExpressionStatement() =>
         (
             from token in Arb.Generate<SyntaxNode>()
             from type in Arb.Generate<Type>()
-            from expr in GenBoundExpression(type)
-            select new BoundExpressionStatement(token, expr)
+            from expr in GenTypedExpression(type)
+            select new TypedExpressionStatement(token, expr)
         ).ToArbitrary();
 
-    public static Arbitrary<BoundVariableDeclarationStatement> BoundVariableDeclarationStatement() =>
+    public static Arbitrary<TypedVariableDeclarationStatement> TypedVariableDeclarationStatement() =>
         (
             from token in Arb.Generate<SyntaxNode>()
             from type in Arb.Generate<Type>()
             from variable in GenLocalVariableSymbol(type)
-            from expr in GenBoundExpression(type)
-            select new BoundVariableDeclarationStatement(token, variable, expr)
+            from expr in GenTypedExpression(type)
+            select new TypedVariableDeclarationStatement(token, variable, expr)
         ).ToArbitrary();
 
     public static Arbitrary<Type> Type => TypeGen.ToArbitrary();
 
-    public static Arbitrary<BoundUnitExpression> BoundUnitExpression =>
-        Gen.Constant(new BoundUnitExpression(null!)).ToArbitrary();
+    public static Arbitrary<TypedUnitExpression> TypedUnitExpression =>
+        Gen.Constant(new TypedUnitExpression(null!)).ToArbitrary();
 
     public static Gen<string> Identifier() =>
         from count in Gen.Choose(5, 10)
@@ -93,38 +93,38 @@ class BindingGenerators
 
     private static bool IsUnique(string ident) => _identifiers.Add(ident);
 
-    public static Arbitrary<BoundLabel> BoundLabel() =>
-        Identifier().Where(IsUnique).Select(x => new BoundLabel(x)).ToArbitrary();
+    public static Arbitrary<TypedLabel> TypedLabel() =>
+        Identifier().Where(IsUnique).Select(x => new TypedLabel(x)).ToArbitrary();
 
-    public static Arbitrary<BoundLabelStatement> BoundLabelStatement() =>
+    public static Arbitrary<TypedLabelStatement> TypedLabelStatement() =>
         (
             from token in Arb.Generate<SyntaxNode>()
-            from x in Arb.Generate<BoundLabel>()
-            select new BoundLabelStatement(token, x)
+            from x in Arb.Generate<TypedLabel>()
+            select new TypedLabelStatement(token, x)
         ).ToArbitrary();
 
-    public static Gen<BoundIfExpression> GenIfExpression(Type type) =>
-        from condition in GenBoundExpression(Panther.CodeAnalysis.Symbols.Type.Bool)
-        from thenExpr in GenBoundExpression(type)
-        from elseExpr in GenBoundExpression(type)
-        select new BoundIfExpression(null!, condition, thenExpr, elseExpr);
+    public static Gen<TypedIfExpression> GenIfExpression(Type type) =>
+        from condition in GenTypedExpression(Panther.CodeAnalysis.Symbols.Type.Bool)
+        from thenExpr in GenTypedExpression(type)
+        from elseExpr in GenTypedExpression(type)
+        select new TypedIfExpression(null!, condition, thenExpr, elseExpr);
 
-    public static Gen<BoundExpression> GenBoundExpressionLHS(Type type) =>
+    public static Gen<TypedExpression> GenTypedExpressionLHS(Type type) =>
         from token in Arb.Generate<SyntaxNode>()
         from variable in GenLocalVariableSymbol(type)
-        select (BoundExpression)new BoundVariableExpression(token, variable);
+        select (TypedExpression)new TypedVariableExpression(token, variable);
 
-    public static Gen<BoundAssignmentExpression> GenBoundAssignmentExpression(Type type) =>
+    public static Gen<TypedAssignmentExpression> GenTypedAssignmentExpression(Type type) =>
         from token in Arb.Generate<SyntaxNode>()
-        from lhs in GenBoundExpressionLHS(type)
-        from initializer in GenBoundExpression(type)
-        select new BoundAssignmentExpression(token, lhs, initializer);
+        from lhs in GenTypedExpressionLHS(type)
+        from initializer in GenTypedExpression(type)
+        select new TypedAssignmentExpression(token, lhs, initializer);
 
-    public static Gen<BoundBlockExpression> GenBoundBlockExpression(Type type) =>
+    public static Gen<TypedBlockExpression> GenTypedBlockExpression(Type type) =>
         from token in Arb.Generate<SyntaxNode>()
-        from statements in Arb.Generate<ImmutableArray<BoundStatement>>()
-        from expr in GenBoundExpression(type)
-        select new BoundBlockExpression(token, statements, expr);
+        from statements in Arb.Generate<ImmutableArray<TypedStatement>>()
+        from expr in GenTypedExpression(type)
+        select new TypedBlockExpression(token, statements, expr);
 
     public static Gen<(string ident, Type type)> GenNameAndType() =>
         from ident in Identifier()
@@ -156,26 +156,26 @@ class BindingGenerators
         from readOnly in Arb.Generate<bool>()
         select MainSymbol.NewLocal(TextLocation.None, ident, readOnly).WithType(type).Declare();
 
-    public static Gen<BoundExpression> GenBoundLiteralExpression(Type typeSymbol)
+    public static Gen<TypedExpression> GenTypedLiteralExpression(Type typeSymbol)
     {
-        Gen<BoundExpression> UnitGen() =>
+        Gen<TypedExpression> UnitGen() =>
             from token in Arb.Generate<SyntaxNode>()
-            select (BoundExpression)new BoundUnitExpression(token!);
+            select (TypedExpression)new TypedUnitExpression(token!);
 
-        Gen<BoundExpression> StringGen() =>
+        Gen<TypedExpression> StringGen() =>
             from token in Arb.Generate<SyntaxNode>()
             from x in Arb.Generate<NonNull<string>>()
-            select (BoundExpression)new BoundLiteralExpression(token, x.Item);
+            select (TypedExpression)new TypedLiteralExpression(token, x.Item);
 
-        Gen<BoundExpression> IntGen() =>
+        Gen<TypedExpression> IntGen() =>
             from token in Arb.Generate<SyntaxNode>()
             from x in Arb.Generate<int>()
-            select (BoundExpression)new BoundLiteralExpression(token, x);
+            select (TypedExpression)new TypedLiteralExpression(token, x);
 
-        Gen<BoundExpression> BoolGen() =>
+        Gen<TypedExpression> BoolGen() =>
             from token in Arb.Generate<SyntaxNode>()
             from x in Arb.Generate<bool>()
-            select (BoundExpression)new BoundLiteralExpression(token, x);
+            select (TypedExpression)new TypedLiteralExpression(token, x);
 
         if (typeSymbol == Panther.CodeAnalysis.Symbols.Type.Bool)
             return BoolGen();
@@ -209,19 +209,19 @@ class BindingGenerators
             .ToArbitrary();
     }
 
-    public static Gen<BoundCallExpression> GenBoundCallExpression(Type type) =>
+    public static Gen<TypedCallExpression> GenTypedCallExpression(Type type) =>
         from token in Arb.Generate<SyntaxNode>()
         from function in GenFunctionSymbol(type)
-        from args in Gen.Sequence(function.Parameters.Select(p => GenBoundExpression(p.Type)))
-        select new BoundCallExpression(token, function, null, args.ToImmutableArray());
+        from args in Gen.Sequence(function.Parameters.Select(p => GenTypedExpression(p.Type)))
+        select new TypedCallExpression(token, function, null, args.ToImmutableArray());
 
-    public static Gen<BoundExpression> GenBoundExpression(Type type)
+    public static Gen<TypedExpression> GenTypedExpression(Type type)
     {
         return Gen.Sized(size =>
         {
             if (size <= 1)
             {
-                return GenBoundLiteralExpression(type);
+                return GenTypedLiteralExpression(type);
             }
 
             if (type == Panther.CodeAnalysis.Symbols.Type.Unit)
@@ -229,15 +229,15 @@ class BindingGenerators
                 return Gen.Resize(
                     size / 2,
                     Gen.OneOf(
-                        // Arb.Generate<BoundVariableExpression>().Select(x => (BoundExpression) x),
-                        // Arb.Generate<BoundForExpression>().Select(x => (BoundExpression) x),
-                        // Arb.Generate<BoundWhileExpression>().Select(x => (BoundExpression) x)
+                        // Arb.Generate<TypedVariableExpression>().Select(x => (TypedExpression) x),
+                        // Arb.Generate<TypedForExpression>().Select(x => (TypedExpression) x),
+                        // Arb.Generate<TypedWhileExpression>().Select(x => (TypedExpression) x)
 
-                        GenIfExpression(type).Select(x => (BoundExpression)x),
-                        GenBoundAssignmentExpression(type).Select(x => (BoundExpression)x),
-                        GenBoundBlockExpression(type).Select(x => (BoundExpression)x),
-                        GenBoundCallExpression(type).Select(x => (BoundExpression)x),
-                        GenBoundLiteralExpression(type)
+                        GenIfExpression(type).Select(x => (TypedExpression)x),
+                        GenTypedAssignmentExpression(type).Select(x => (TypedExpression)x),
+                        GenTypedBlockExpression(type).Select(x => (TypedExpression)x),
+                        GenTypedCallExpression(type).Select(x => (TypedExpression)x),
+                        GenTypedLiteralExpression(type)
                     )
                 );
             }
@@ -245,15 +245,15 @@ class BindingGenerators
             return Gen.Resize(
                 size / 2,
                 Gen.OneOf(
-                    // Arb.Generate<BoundBinaryExpression>().Select(x => (BoundExpression) x),
-                    // Arb.Generate<BoundConversionExpression>().Select(x => (BoundExpression) x),
-                    // Arb.Generate<BoundUnaryExpression>().Select(x => (BoundExpression) x),
-                    // Arb.Generate<BoundVariableExpression>().Select(x => (BoundExpression) x),
+                    // Arb.Generate<TypedBinaryExpression>().Select(x => (TypedExpression) x),
+                    // Arb.Generate<TypedConversionExpression>().Select(x => (TypedExpression) x),
+                    // Arb.Generate<TypedUnaryExpression>().Select(x => (TypedExpression) x),
+                    // Arb.Generate<TypedVariableExpression>().Select(x => (TypedExpression) x),
 
-                    GenIfExpression(type).Select(x => (BoundExpression)x),
-                    GenBoundBlockExpression(type).Select(x => (BoundExpression)x),
-                    GenBoundCallExpression(type).Select(x => (BoundExpression)x),
-                    GenBoundLiteralExpression(type)
+                    GenIfExpression(type).Select(x => (TypedExpression)x),
+                    GenTypedBlockExpression(type).Select(x => (TypedExpression)x),
+                    GenTypedCallExpression(type).Select(x => (TypedExpression)x),
+                    GenTypedLiteralExpression(type)
                 )
             );
         });

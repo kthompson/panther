@@ -40,8 +40,8 @@ internal class Emitter
     private readonly Dictionary<Symbol, FieldReference> _globals;
     private readonly Dictionary<Symbol, MethodReference> _methodReferences;
 
-    private readonly Dictionary<BoundLabel, int> _labels = new();
-    private readonly List<(int InstructionIndex, BoundLabel Target)> _branchInstructionsToPatch =
+    private readonly Dictionary<TypedLabel, int> _labels = new();
+    private readonly List<(int InstructionIndex, TypedLabel Target)> _branchInstructionsToPatch =
         new();
 
     private Emitter(
@@ -123,7 +123,7 @@ internal class Emitter
         _knownTypes.TryGetValue(symbol, out var knownType) ? knownType : _types[symbol];
 
     public static EmitResult Emit(
-        BoundAssembly assembly,
+        TypedAssembly assembly,
         string moduleName,
         string outputPath,
         Dictionary<Symbol, FieldReference>? previousGlobals = null,
@@ -148,7 +148,7 @@ internal class Emitter
         return emitter.Emit(assembly, outputPath);
     }
 
-    public EmitResult Emit(BoundAssembly assembly, string outputPath)
+    public EmitResult Emit(TypedAssembly assembly, string outputPath)
     {
         if (_diagnostics.Any())
             return new EmitResult(
@@ -198,7 +198,7 @@ internal class Emitter
         );
     }
 
-    private void IterateTypes(BoundAssembly assembly, Action<Symbol> action)
+    private void IterateTypes(TypedAssembly assembly, Action<Symbol> action)
     {
         foreach (var type in assembly.RootSymbol.Types.Where(symbol => !symbol.IsImport))
         {
@@ -306,7 +306,7 @@ internal class Emitter
     private void EmitFunctionBody(
         TypeDefinition declaringType,
         Symbol method,
-        BoundBlockExpression block
+        TypedBlockExpression block
     )
     {
         var methodDefinition = _methods[method];
@@ -320,7 +320,7 @@ internal class Emitter
             EmitStatement(declaringType, ilProcessor, statement);
 
         // only emit block's expression if its a non-unit expression or we are not void
-        if (block.Expression.Kind != BoundNodeKind.UnitExpression || method.ReturnType != Type.Unit)
+        if (block.Expression.Kind != TypedNodeKind.UnitExpression || method.ReturnType != Type.Unit)
         {
             // emit expression
             EmitExpression(ilProcessor, block.Expression);
@@ -347,36 +347,36 @@ internal class Emitter
     private void EmitStatement(
         TypeDefinition declaringType,
         ILProcessor ilProcessor,
-        BoundStatement statement
+        TypedStatement statement
     )
     {
         switch (statement)
         {
-            case BoundConditionalGotoStatement conditionalGotoStatement:
+            case TypedConditionalGotoStatement conditionalGotoStatement:
                 EmitConditionalGotoStatement(ilProcessor, conditionalGotoStatement);
                 break;
 
-            case BoundExpressionStatement expressionStatement:
+            case TypedExpressionStatement expressionStatement:
                 EmitExpressionStatement(ilProcessor, expressionStatement);
                 break;
 
-            case BoundGotoStatement gotoStatement:
+            case TypedGotoStatement gotoStatement:
                 EmitGotoStatement(ilProcessor, gotoStatement);
                 break;
 
-            case BoundLabelStatement labelStatement:
+            case TypedLabelStatement labelStatement:
                 EmitLabelStatement(ilProcessor, labelStatement);
                 break;
 
-            case BoundVariableDeclarationStatement variableDeclarationStatement:
+            case TypedVariableDeclarationStatement variableDeclarationStatement:
                 EmitVariableDeclarationStatement(ilProcessor, variableDeclarationStatement);
                 break;
 
-            case BoundAssignmentStatement assignmentStatement:
+            case TypedAssignmentStatement assignmentStatement:
                 EmitAssignmentStatement(ilProcessor, assignmentStatement);
                 break;
 
-            case BoundNopStatement nopStatement:
+            case TypedNopStatement nopStatement:
                 EmitNopStatement(ilProcessor, nopStatement);
                 break;
 
@@ -385,21 +385,21 @@ internal class Emitter
         }
     }
 
-    private void EmitNopStatement(ILProcessor ilProcessor, BoundNopStatement nopStatement)
+    private void EmitNopStatement(ILProcessor ilProcessor, TypedNopStatement nopStatement)
     {
         ilProcessor.Emit(OpCodes.Nop);
     }
 
     private void EmitAssignmentStatement(
         ILProcessor ilProcessor,
-        BoundAssignmentStatement assignmentStatement
+        TypedAssignmentStatement assignmentStatement
     )
     {
         var current = assignmentStatement.Left;
 
         // check for simple cases first
         // local = expr
-        if (current is BoundVariableExpression(_, var variableSymbol))
+        if (current is TypedVariableExpression(_, var variableSymbol))
         {
             EmitExpression(ilProcessor, assignmentStatement.Right);
             ilProcessor.Emit(OpCodes.Stloc, _locals[variableSymbol]);
@@ -407,7 +407,7 @@ internal class Emitter
         }
 
         // this.field = expr | Object.field = expr
-        if (current is BoundFieldExpression(_, null, var fieldSymbol))
+        if (current is TypedFieldExpression(_, null, var fieldSymbol))
         {
             // field is local to the current type
             var fieldReference = _fields[fieldSymbol];
@@ -430,7 +430,7 @@ internal class Emitter
             return;
         }
 
-        if (current is BoundFieldExpression(_, var leftOfField, var variable))
+        if (current is TypedFieldExpression(_, var leftOfField, var variable))
         {
             // field is local to the current type
             var field = _fields[variable].Resolve();
@@ -461,7 +461,7 @@ internal class Emitter
 
     private void EmitVariableDeclarationStatement(
         ILProcessor ilProcessor,
-        BoundVariableDeclarationStatement variableDeclarationStatement
+        TypedVariableDeclarationStatement variableDeclarationStatement
     )
     {
         var pantherVar = variableDeclarationStatement.Variable;
@@ -508,36 +508,36 @@ internal class Emitter
         }
     }
 
-    private void EmitLabelStatement(ILProcessor ilProcessor, BoundLabelStatement labelStatement)
+    private void EmitLabelStatement(ILProcessor ilProcessor, TypedLabelStatement labelStatement)
     {
-        _labels[labelStatement.BoundLabel] = ilProcessor.Body.Instructions.Count;
+        _labels[labelStatement.TypedLabel] = ilProcessor.Body.Instructions.Count;
     }
 
-    private void EmitGotoStatement(ILProcessor ilProcessor, BoundGotoStatement gotoStatement)
+    private void EmitGotoStatement(ILProcessor ilProcessor, TypedGotoStatement gotoStatement)
     {
         _branchInstructionsToPatch.Add(
-            (ilProcessor.Body.Instructions.Count, gotoStatement.BoundLabel)
+            (ilProcessor.Body.Instructions.Count, gotoStatement.TypedLabel)
         );
         ilProcessor.Emit(OpCodes.Br, Instruction.Create(OpCodes.Nop));
     }
 
     private void EmitConditionalGotoStatement(
         ILProcessor ilProcessor,
-        BoundConditionalGotoStatement conditionalGotoStatement
+        TypedConditionalGotoStatement conditionalGotoStatement
     )
     {
         EmitExpression(ilProcessor, conditionalGotoStatement.Condition);
 
         var op = conditionalGotoStatement.JumpIfTrue ? OpCodes.Brtrue : OpCodes.Brfalse;
         _branchInstructionsToPatch.Add(
-            (ilProcessor.Body.Instructions.Count, conditionalGotoStatement.BoundLabel)
+            (ilProcessor.Body.Instructions.Count, conditionalGotoStatement.TypedLabel)
         );
         ilProcessor.Emit(op, Instruction.Create(OpCodes.Nop));
     }
 
     private void EmitExpressionStatement(
         ILProcessor ilProcessor,
-        BoundExpressionStatement expressionStatement
+        TypedExpressionStatement expressionStatement
     )
     {
         EmitExpression(ilProcessor, expressionStatement.Expression);
@@ -548,7 +548,7 @@ internal class Emitter
             ilProcessor.Emit(OpCodes.Pop);
     }
 
-    private void EmitExpression(ILProcessor ilProcessor, BoundExpression expression)
+    private void EmitExpression(ILProcessor ilProcessor, TypedExpression expression)
     {
         var constant = ConstantFolding.Fold(expression);
         if (constant != null)
@@ -559,35 +559,35 @@ internal class Emitter
 
         switch (expression)
         {
-            case BoundBinaryExpression binaryExpression:
+            case TypedBinaryExpression binaryExpression:
                 EmitBinaryExpression(ilProcessor, binaryExpression);
                 break;
 
-            case BoundCallExpression callExpression:
+            case TypedCallExpression callExpression:
                 EmitCallExpression(ilProcessor, callExpression);
                 break;
 
-            case BoundConversionExpression conversionExpression:
+            case TypedConversionExpression conversionExpression:
                 EmitConversionExpression(ilProcessor, conversionExpression);
                 break;
 
-            case BoundFieldExpression fieldExpression:
+            case TypedFieldExpression fieldExpression:
                 EmitFieldExpression(ilProcessor, fieldExpression);
                 break;
 
-            case BoundNewExpression newExpression:
+            case TypedNewExpression newExpression:
                 EmitNewExpression(ilProcessor, newExpression);
                 break;
 
-            case BoundUnaryExpression unaryExpression:
+            case TypedUnaryExpression unaryExpression:
                 EmitUnaryExpression(ilProcessor, unaryExpression);
                 break;
 
-            case BoundUnitExpression unitExpression:
+            case TypedUnitExpression unitExpression:
                 EmitUnitExpression(ilProcessor, unitExpression);
                 break;
 
-            case BoundVariableExpression variableExpression:
+            case TypedVariableExpression variableExpression:
                 EmitVariableExpression(ilProcessor, variableExpression);
                 break;
 
@@ -599,7 +599,7 @@ internal class Emitter
         }
     }
 
-    private void EmitNewExpression(ILProcessor ilProcessor, BoundNewExpression node)
+    private void EmitNewExpression(ILProcessor ilProcessor, TypedNewExpression node)
     {
         foreach (var argExpr in node.Arguments)
             EmitExpression(ilProcessor, argExpr);
@@ -620,8 +620,8 @@ internal class Emitter
 
     private void EmitConstantExpression(
         ILProcessor ilProcessor,
-        BoundExpression node,
-        BoundConstant constant
+        TypedExpression node,
+        TypedConstant constant
     )
     {
         if (node.Type == Type.Bool)
@@ -648,7 +648,7 @@ internal class Emitter
 
     private void EmitBinaryExpression(
         ILProcessor ilProcessor,
-        BoundBinaryExpression binaryExpression
+        TypedBinaryExpression binaryExpression
     )
     {
         EmitExpression(ilProcessor, binaryExpression.Left);
@@ -657,7 +657,7 @@ internal class Emitter
         var @operator = binaryExpression.Operator;
         switch (@operator.Kind)
         {
-            case BoundBinaryOperatorKind.Addition:
+            case TypedBinaryOperatorKind.Addition:
                 // string or int
                 if (@operator.LeftType == Type.String)
                 {
@@ -674,37 +674,37 @@ internal class Emitter
 
                 break;
 
-            case BoundBinaryOperatorKind.BitwiseAnd:
+            case TypedBinaryOperatorKind.BitwiseAnd:
                 // int
                 ilProcessor.Emit(OpCodes.And);
                 break;
 
-            case BoundBinaryOperatorKind.BitwiseOr:
+            case TypedBinaryOperatorKind.BitwiseOr:
                 // int
                 ilProcessor.Emit(OpCodes.Or);
                 break;
 
-            case BoundBinaryOperatorKind.BitwiseXor:
+            case TypedBinaryOperatorKind.BitwiseXor:
                 // int
                 ilProcessor.Emit(OpCodes.Xor);
                 break;
 
-            case BoundBinaryOperatorKind.Division:
+            case TypedBinaryOperatorKind.Division:
                 // int
                 ilProcessor.Emit(OpCodes.Div);
                 break;
 
-            case BoundBinaryOperatorKind.Equal:
+            case TypedBinaryOperatorKind.Equal:
                 // int, bool, string
                 ilProcessor.Emit(OpCodes.Ceq);
                 break;
 
-            case BoundBinaryOperatorKind.GreaterThan:
+            case TypedBinaryOperatorKind.GreaterThan:
                 // int
                 ilProcessor.Emit(OpCodes.Cgt);
                 break;
 
-            case BoundBinaryOperatorKind.GreaterThanOrEqual:
+            case TypedBinaryOperatorKind.GreaterThanOrEqual:
                 // int
                 // convert a >= b to !(a < b) or  (a < b) == false
                 ilProcessor.Emit(OpCodes.Clt);
@@ -712,41 +712,41 @@ internal class Emitter
                 ilProcessor.Emit(OpCodes.Ceq);
                 break;
 
-            case BoundBinaryOperatorKind.LessThan:
+            case TypedBinaryOperatorKind.LessThan:
                 // int
                 ilProcessor.Emit(OpCodes.Clt);
                 break;
 
-            case BoundBinaryOperatorKind.LessThanOrEqual:
+            case TypedBinaryOperatorKind.LessThanOrEqual:
                 // int
                 ilProcessor.Emit(OpCodes.Cgt);
                 ilProcessor.Emit(OpCodes.Ldc_I4_0);
                 ilProcessor.Emit(OpCodes.Ceq);
                 break;
 
-            case BoundBinaryOperatorKind.LogicalAnd:
+            case TypedBinaryOperatorKind.LogicalAnd:
                 // bool
                 ilProcessor.Emit(OpCodes.And);
                 break;
 
-            case BoundBinaryOperatorKind.LogicalOr:
+            case TypedBinaryOperatorKind.LogicalOr:
                 // bool
                 ilProcessor.Emit(OpCodes.Or);
                 break;
 
-            case BoundBinaryOperatorKind.Multiplication:
+            case TypedBinaryOperatorKind.Multiplication:
                 // int
                 ilProcessor.Emit(OpCodes.Mul);
                 break;
 
-            case BoundBinaryOperatorKind.NotEqual:
+            case TypedBinaryOperatorKind.NotEqual:
                 // int, bool, string
                 ilProcessor.Emit(OpCodes.Ceq);
                 ilProcessor.Emit(OpCodes.Ldc_I4_0);
                 ilProcessor.Emit(OpCodes.Ceq);
                 break;
 
-            case BoundBinaryOperatorKind.Subtraction:
+            case TypedBinaryOperatorKind.Subtraction:
                 // int
                 ilProcessor.Emit(OpCodes.Sub);
                 break;
@@ -756,11 +756,11 @@ internal class Emitter
         }
     }
 
-    private void EmitCallExpression(ILProcessor ilProcessor, BoundCallExpression callExpression)
+    private void EmitCallExpression(ILProcessor ilProcessor, TypedCallExpression callExpression)
     {
         if (
             callExpression.Expression != null
-            && callExpression.Expression is not BoundTypeExpression
+            && callExpression.Expression is not TypedTypeExpression
         )
         {
             EmitExpression(ilProcessor, callExpression.Expression);
@@ -824,7 +824,7 @@ internal class Emitter
 
     private void EmitConversionExpression(
         ILProcessor ilProcessor,
-        BoundConversionExpression conversionExpression
+        TypedConversionExpression conversionExpression
     )
     {
         EmitExpression(ilProcessor, conversionExpression.Expression);
@@ -902,27 +902,27 @@ internal class Emitter
         );
     }
 
-    private void EmitUnaryExpression(ILProcessor ilProcessor, BoundUnaryExpression unaryExpression)
+    private void EmitUnaryExpression(ILProcessor ilProcessor, TypedUnaryExpression unaryExpression)
     {
         EmitExpression(ilProcessor, unaryExpression.Operand);
         switch (unaryExpression.Operator.Kind)
         {
-            case BoundUnaryOperatorKind.Identity:
+            case TypedUnaryOperatorKind.Identity:
                 // no op
                 break;
 
-            case BoundUnaryOperatorKind.Negation:
+            case TypedUnaryOperatorKind.Negation:
                 // f(i) = -i
                 ilProcessor.Emit(OpCodes.Neg);
                 break;
 
-            case BoundUnaryOperatorKind.LogicalNegation:
+            case TypedUnaryOperatorKind.LogicalNegation:
                 // f(b) = !b (logical)
                 ilProcessor.Emit(OpCodes.Ldc_I4_0);
                 ilProcessor.Emit(OpCodes.Ceq);
                 break;
 
-            case BoundUnaryOperatorKind.BitwiseNegation:
+            case TypedUnaryOperatorKind.BitwiseNegation:
                 // f(i) = ~i
                 ilProcessor.Emit(OpCodes.Not);
                 break;
@@ -932,19 +932,19 @@ internal class Emitter
         }
     }
 
-    private void EmitUnitExpression(ILProcessor ilProcessor, BoundUnitExpression unitExpression)
+    private void EmitUnitExpression(ILProcessor ilProcessor, TypedUnitExpression unitExpression)
     {
         ilProcessor.Emit(OpCodes.Ldsfld, _unit);
     }
 
-    private void EmitFieldExpression(ILProcessor ilProcessor, BoundFieldExpression node)
+    private void EmitFieldExpression(ILProcessor ilProcessor, TypedFieldExpression node)
     {
         // TODO: field can be a global which is in the `_globals` array
         // _fields are all possible fields for any type
         var variable = node.Field;
         var field = _globals.TryGetValue(variable, out var aField) ? aField : _fields[variable];
 
-        if (node.Expression is BoundTypeExpression(_, _) || variable.IsStatic)
+        if (node.Expression is TypedTypeExpression(_, _) || variable.IsStatic)
         {
             ilProcessor.Emit(OpCodes.Ldsfld, field);
             return;
@@ -964,7 +964,7 @@ internal class Emitter
 
     private void EmitVariableExpression(
         ILProcessor ilProcessor,
-        BoundVariableExpression variableExpression
+        TypedVariableExpression variableExpression
     )
     {
         var variable = variableExpression.Variable;

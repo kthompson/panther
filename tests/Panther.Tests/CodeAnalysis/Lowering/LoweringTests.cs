@@ -14,7 +14,7 @@ namespace Panther.Tests.CodeAnalysis.Lowering;
 public class LoweringTests
 {
     [Property]
-    private void LoweringABoundStatementShouldNotContainBlocks(BoundStatement statement)
+    private void LoweringATypedStatementShouldNotContainBlocks(TypedStatement statement)
     {
         var root = Symbol.NewRoot();
         var block = LoweringPipeline.Lower(root, statement);
@@ -69,62 +69,62 @@ public class LoweringTests
         AssertEvaluation("getOutput()", expectedOutput, scriptHost);
     }
 
-    private bool ContainsBlock(BoundBlockExpression block) =>
+    private bool ContainsBlock(TypedBlockExpression block) =>
         block.Statements.Any(ContainsBlock) || ContainsBlock(block.Expression);
 
-    private bool ContainsBlock(params BoundExpression[] expression) =>
+    private bool ContainsBlock(params TypedExpression[] expression) =>
         expression.Any(ContainsBlock);
 
-    private bool ContainsBlock(BoundExpression expression)
+    private bool ContainsBlock(TypedExpression expression)
     {
         switch (expression)
         {
-            case BoundBlockExpression:
+            case TypedBlockExpression:
                 return true;
-            case BoundErrorExpression:
-            case BoundLiteralExpression:
-            case BoundUnitExpression:
-            case BoundVariableExpression:
+            case TypedErrorExpression:
+            case TypedLiteralExpression:
+            case TypedUnitExpression:
+            case TypedVariableExpression:
                 return false;
-            case BoundAssignmentExpression assignmentExpression:
+            case TypedAssignmentExpression assignmentExpression:
                 return ContainsBlock(assignmentExpression.Right);
-            case BoundBinaryExpression binaryExpression:
+            case TypedBinaryExpression binaryExpression:
                 return ContainsBlock(binaryExpression.Left, binaryExpression.Right);
-            case BoundCallExpression boundCallExpression:
+            case TypedCallExpression boundCallExpression:
                 return ContainsBlock(boundCallExpression.Arguments.ToArray());
-            case BoundConversionExpression conversionExpression:
+            case TypedConversionExpression conversionExpression:
                 return ContainsBlock(conversionExpression.Expression);
-            case BoundForExpression boundForExpression:
+            case TypedForExpression boundForExpression:
                 return ContainsBlock(
                     boundForExpression.Body,
-                    boundForExpression.LowerBound,
-                    boundForExpression.UpperBound
+                    boundForExpression.LowerTyped,
+                    boundForExpression.UpperTyped
                 );
-            case BoundIfExpression boundIfExpression:
+            case TypedIfExpression boundIfExpression:
                 return ContainsBlock(
                     boundIfExpression.Condition,
                     boundIfExpression.Else,
                     boundIfExpression.Then
                 );
-            case BoundWhileExpression boundWhileExpression:
+            case TypedWhileExpression boundWhileExpression:
                 return ContainsBlock(boundWhileExpression.Body, boundWhileExpression.Condition);
-            case BoundUnaryExpression boundUnaryExpression:
+            case TypedUnaryExpression boundUnaryExpression:
                 return ContainsBlock(boundUnaryExpression.Operand);
             default:
                 throw new ArgumentOutOfRangeException(nameof(expression));
         }
     }
 
-    private bool ContainsBlock(BoundStatement arg) =>
+    private bool ContainsBlock(TypedStatement arg) =>
         arg switch
         {
-            BoundGotoStatement _ => false,
-            BoundLabelStatement _ => false,
-            BoundNopStatement _ => false,
-            BoundAssignmentStatement statement => ContainsBlock(statement.Right),
-            BoundConditionalGotoStatement statement => ContainsBlock(statement.Condition),
-            BoundExpressionStatement statement => ContainsBlock(statement.Expression),
-            BoundVariableDeclarationStatement(_, _, var expression)
+            TypedGotoStatement _ => false,
+            TypedLabelStatement _ => false,
+            TypedNopStatement _ => false,
+            TypedAssignmentStatement statement => ContainsBlock(statement.Right),
+            TypedConditionalGotoStatement statement => ContainsBlock(statement.Condition),
+            TypedExpressionStatement statement => ContainsBlock(statement.Expression),
+            TypedVariableDeclarationStatement(_, _, var expression)
                 => expression != null && ContainsBlock(expression),
             _ => throw new ArgumentOutOfRangeException(nameof(arg))
         };

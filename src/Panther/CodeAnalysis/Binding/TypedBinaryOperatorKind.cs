@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Binding;
 
-internal enum BoundBinaryOperatorKind
+internal enum TypedBinaryOperatorKind
 {
     Addition,
     BitwiseAnd,

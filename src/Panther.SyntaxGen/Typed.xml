@@ -1,0 +1,253 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Tree Root="TypedNode">
+
+    <PredefinedNode Name="TypedMethodExpression" Base="TypedNode" />
+
+    <AbstractNode Name="TypedExpression" />
+
+    <PredefinedNode Name="TypedLiteralExpression" Base="TypedExpression" />
+    <PredefinedNode Name="TypedConversionExpression" Base="TypedExpression" />
+    <PredefinedNode Name="TypedErrorExpression" Base="TypedExpression" />
+
+    <Node Name="TypedAssignmentExpression" Base="TypedExpression">
+        <Kind Name="AssignmentExpression"/>
+
+        <Field Name="Left" Type="TypedExpression" />
+        <Field Name="Right" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedBinaryExpression" Base="TypedExpression">
+        <Kind Name="BinaryExpression"/>
+
+        <Field Name="Left" Type="TypedExpression" />
+        <Field Name="Operator" Type="TypedBinaryOperator" />
+        <Field Name="Right" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedBlockExpression" Base="TypedExpression">
+        <Kind Name="BlockExpression"/>
+
+        <Field Name="Statements" Type="ImmutableArray&lt;TypedStatement&gt;" />
+        <Field Name="Expression" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedBreakStatement" Base="TypedStatement">
+        <Kind Name="BreakStatement"/>
+    </Node>
+
+    <Node Name="TypedContinueStatement" Base="TypedStatement">
+        <Kind Name="ContinueStatement"/>
+    </Node>
+
+    <Node Name="TypedCallExpression" Base="TypedExpression">
+        <Kind Name="CallExpression"/>
+
+        <Field Name="Method" Type="Symbol" />
+        <Field Name="Expression" Type="TypedExpression?" />
+        <Field Name="Arguments" Type="ImmutableArray&lt;TypedExpression&gt;" />
+    </Node>
+
+    <Node Name="TypedFieldExpression" Base="TypedExpression">
+        <Kind Name="FieldExpression"/>
+
+        <Field Name="Expression" Type="TypedExpression?" />
+        <Field Name="Field" Type="Symbol" />
+    </Node>
+
+    <Node Name="TypedIndexExpression" Base="TypedExpression">
+        <Kind Name="IndexExpression"/>
+
+        <Field Name="Expression" Type="TypedExpression" />
+        <Field Name="Index" Type="TypedExpression" />
+        <Field Name="Getter" Type="Symbol?" />
+        <Field Name="Setter" Type="Symbol?" />
+    </Node>
+
+    <Node Name="TypedNamespaceExpression" Base="TypedExpression">
+        <Kind Name="NamespaceExpression"/>
+
+        <Field Name="Namespace" Type="Symbol" />
+    </Node>
+
+    <Node Name="TypedForExpression" Base="TypedExpression">
+        <Kind Name="ForExpression"/>
+
+        <Field Name="Variable" Type="Symbol" />
+        <Field Name="LowerTyped" Type="TypedExpression" />
+        <Field Name="UpperTyped" Type="TypedExpression" />
+        <Field Name="Body" Type="TypedExpression" />
+        <Field Name="BreakLabel" Type="TypedLabel" />
+        <Field Name="ContinueLabel" Type="TypedLabel" />
+    </Node>
+
+    <Node Name="TypedGroupExpression" Base="TypedExpression">
+        <Kind Name="GroupExpression"/>
+
+        <Field Name="Expression" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedIfExpression" Base="TypedExpression">
+        <Kind Name="IfExpression"/>
+
+        <Field Name="Condition" Type="TypedExpression" />
+        <Field Name="Then" Type="TypedExpression" />
+        <Field Name="Else" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedNewExpression" Base="TypedExpression">
+        <Kind Name="NewExpression"/>
+
+        <Field Name="Constructor" Type="Symbol" />
+        <Field Name="Arguments" Type="ImmutableArray&lt;TypedExpression&gt;" />
+    </Node>
+
+    <Node Name="TypedWhileExpression" Base="TypedExpression">
+        <Kind Name="WhileExpression"/>
+
+        <Field Name="Condition" Type="TypedExpression" />
+        <Field Name="Body" Type="TypedExpression" />
+        <Field Name="BreakLabel" Type="TypedLabel" />
+        <Field Name="ContinueLabel" Type="TypedLabel" />
+    </Node>
+
+    <Node Name="TypedUnaryExpression" Base="TypedExpression">
+        <Kind Name="UnaryExpression"/>
+
+        <Field Name="Operator" Type="TypedUnaryOperator" />
+        <Field Name="Operand" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedUnitExpression" Base="TypedExpression">
+        <Kind Name="UnitExpression"/>
+    </Node>
+
+    <Node Name="TypedVariableExpression" Base="TypedExpression">
+        <Kind Name="VariableExpression"/>
+
+        <Field Name="Variable" Type="Symbol" />
+    </Node>
+
+<!--    <AbstractNode Name="TypedName" Base="TypedExpression" />-->
+
+<!--    <Node Name="TypedIdentifierName" Base="TypedName">-->
+<!--        <Kind Name="IdentifierName"/>-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedQualifiedName" Base="TypedName">-->
+<!--        <Kind Name="QualifiedName"/>-->
+
+<!--        <Field Name="Left" Type="TypedName" />-->
+<!--        <Field Name="Right" Type="TypedIdentifierName" />-->
+<!--    </Node>-->
+
+    <AbstractNode Name="TypedStatement" />
+
+    <PredefinedNode Name="TypedGotoStatement" Base="TypedStatement" />
+    <PredefinedNode Name="TypedLabelStatement" Base="TypedStatement" />
+    <PredefinedNode Name="TypedNopStatement" Base="TypedStatement" />
+
+    <Node Name="TypedAssignmentStatement" Base="TypedStatement">
+        <Kind Name="AssignmentStatement"/>
+
+        <Field Name="Left" Type="TypedExpression" />
+        <Field Name="Right" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedConditionalGotoStatement" Base="TypedStatement">
+        <Kind Name="ConditionalGotoStatement"/>
+
+        <Field Name="TypedLabel" Type="TypedLabel" />
+        <Field Name="Condition" Type="TypedExpression" />
+        <Field Name="JumpIfTrue" Type="bool" />
+    </Node>
+
+    <Node Name="TypedExpressionStatement" Base="TypedStatement">
+        <Kind Name="ExpressionStatement"/>
+
+        <Field Name="Expression" Type="TypedExpression" />
+    </Node>
+
+    <Node Name="TypedVariableDeclarationStatement" Base="TypedStatement">
+        <Kind Name="VariableDeclarationStatement"/>
+
+        <Field Name="Variable" Type="Symbol" />
+<!--        <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax?" />-->
+        <Field Name="Expression" Type="TypedExpression?" />
+    </Node>
+
+    <Node Name="TypedGlobalStatement" Base="TypedMember">
+        <Kind Name="GlobalStatement"/>
+
+        <Field Name="Statement" Type="TypedStatement" />
+    </Node>
+
+<!--    <Node Name="TypedCompilationUnit">-->
+<!--        <Kind Name="CompilationUnit"/>-->
+
+<!--        <Field Name="Usings" Type="ImmutableArray&lt;TypedUsingDirective&gt;" />-->
+<!--        <Field Name="Members" Type="ImmutableArray&lt;TypedMember&gt;" />-->
+<!--    </Node>-->
+
+<!--    <AbstractNode Name="TypedNamespaceBody" />-->
+
+<!--    <Node Name="TypedNamespaceMembers" Base="TypedNamespaceBody">-->
+<!--        <Kind Name="NamespaceMembers"/>-->
+
+<!--        <Field Name="Members" Type="ImmutableArray&lt;TypedMember&gt;" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedNestedNamespace" Base="TypedNamespaceBody">-->
+<!--        <Kind Name="NestedNamespace"/>-->
+
+<!--        <Field Name="Body" Type="TypedNamespaceBody" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedNamespaceDeclaration" Base="TypedMember">-->
+<!--        <Kind Name="NamespaceDirective"/>-->
+
+<!--        <Field Name="Body" Type="TypedNamespaceBody" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedParameter">-->
+<!--        <Kind Name="Parameter"/>-->
+
+<!--        <Field Name="TypeAnnotation" Type="TypedTypeAnnotation" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedTypeAnnotation">-->
+<!--        <Kind Name="TypeAnnotation"/>-->
+
+<!--        <Field Name="Type" Type="TypedName" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedUsingDirective">-->
+<!--        <Kind Name="UsingDirective"/>-->
+
+<!--        <Field Name="Name" Type="TypedName" />-->
+<!--    </Node>-->
+
+    <AbstractNode Name="TypedMember" />
+
+<!--    <Node Name="TypedFunctionDeclaration" Base="TypedMember">-->
+<!--        <Kind Name="FunctionDeclaration"/>-->
+
+<!--        <Field Name="Parameters" Type="ImmutableArray&lt;TypedParameter&gt;" />-->
+<!--        <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax?" />-->
+<!--        <Field Name="Body" Type="TypedExpression" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedClassDeclaration" Base="TypedMember">-->
+<!--        <Kind Name="ClassDeclaration"/>-->
+
+<!--        <Field Name="Fields" Type="ImmutableArray&lt;TypedParameter&gt;" />-->
+<!--        <Field Name="Members" Type="ImmutableArray&lt;TypedMember&gt;" />-->
+<!--    </Node>-->
+
+<!--    <Node Name="TypedObjectDeclaration" Base="TypedMember">-->
+<!--        <Kind Name="ObjectDeclaration"/>-->
+
+<!--        <Field Name="Members" Type="ImmutableArray&lt;TypedMember&gt;" />-->
+<!--    </Node>-->
+
+</Tree>

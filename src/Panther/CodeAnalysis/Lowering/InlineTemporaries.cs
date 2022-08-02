@@ -6,21 +6,21 @@ using Panther.CodeAnalysis.Symbols;
 
 namespace Panther.CodeAnalysis.Lowering;
 
-internal sealed class InlineTemporaries : BoundStatementListRewriter
+internal sealed class InlineTemporaries : TypedStatementListRewriter
 {
     private readonly Symbol _method;
-    private readonly Dictionary<Symbol, BoundExpression> _expressionsToInline =
-        new Dictionary<Symbol, BoundExpression>();
+    private readonly Dictionary<Symbol, TypedExpression> _expressionsToInline =
+        new Dictionary<Symbol, TypedExpression>();
 
     private InlineTemporaries(Symbol method)
     {
         _method = method;
     }
 
-    protected override BoundStatement RewriteStatement(BoundStatement node)
+    protected override TypedStatement RewriteStatement(TypedStatement node)
     {
         if (
-            node is BoundVariableDeclarationStatement { Expression: { } } varDecl
+            node is TypedVariableDeclarationStatement { Expression: { } } varDecl
             && (
                 varDecl.Variable.Name.StartsWith("temp$")
             //|| varDecl.Variable.Name.StartsWith("ctemp$")
@@ -29,16 +29,16 @@ internal sealed class InlineTemporaries : BoundStatementListRewriter
         {
             varDecl.Variable.Delete();
             _expressionsToInline[varDecl.Variable] = varDecl.Expression;
-            return new BoundNopStatement(node.Syntax);
+            return new TypedNopStatement(node.Syntax);
         }
 
         return base.RewriteStatement(node);
     }
 
-    protected override BoundExpression RewriteExpression(BoundExpression node)
+    protected override TypedExpression RewriteExpression(TypedExpression node)
     {
         if (
-            node is BoundVariableExpression variableExpression
+            node is TypedVariableExpression variableExpression
             && _expressionsToInline.TryGetValue(variableExpression.Variable, out var expression)
         )
         {
@@ -49,12 +49,12 @@ internal sealed class InlineTemporaries : BoundStatementListRewriter
         return base.RewriteExpression(node);
     }
 
-    protected override BoundExpression RewriteBlockExpression(BoundBlockExpression node)
+    protected override TypedExpression RewriteBlockExpression(TypedBlockExpression node)
     {
         if (node.Statements.IsEmpty) { }
         return base.RewriteBlockExpression(node);
     }
 
-    public static BoundBlockExpression Lower(Symbol method, BoundBlockExpression blockExpression) =>
+    public static TypedBlockExpression Lower(Symbol method, TypedBlockExpression blockExpression) =>
         new InlineTemporaries(method).Rewrite(blockExpression);
 }

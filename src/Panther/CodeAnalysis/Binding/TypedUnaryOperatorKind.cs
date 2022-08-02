@@ -1,6 +1,6 @@
 ﻿namespace Panther.CodeAnalysis.Binding;
 
-internal enum BoundUnaryOperatorKind
+internal enum TypedUnaryOperatorKind
 {
     Identity,
     Negation, // -

@@ -4,9 +4,9 @@ using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Binding;
 
-internal sealed class BoundType : TypeSymbol
+internal sealed class TypedType : TypeSymbol
 {
-    public BoundType(Symbol owner, TextLocation location, string name) : base(owner, location, name)
+    public TypedType(Symbol owner, TextLocation location, string name) : base(owner, location, name)
     {
         this.Type = new ClassType(this);
     }

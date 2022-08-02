@@ -111,17 +111,17 @@ class Program
 
     static void Main(string[] args)
     {
-        _boundTree = ReadTree("Bound.xml");
+        _boundTree = ReadTree("Typed.xml");
         _tree = ReadTree("Syntax.xml");
 
         GenerateSyntaxTree();
         GenerateSyntaxVisitor();
 
-        GenerateBoundTree();
-        GenerateBoundVisitor();
+        GenerateTypedTree();
+        GenerateTypedVisitor();
     }
 
-    private static void GenerateBoundTree()
+    private static void GenerateTypedTree()
     {
         using var writer = new StringWriter();
         using var indentedTextWriter = new IndentedTextWriter(writer);
@@ -181,13 +181,13 @@ class Program
             indentedTextWriter.Write(node.Base ?? _boundTree.Root);
             indentedTextWriter.WriteLine("(Syntax) {");
 
-            EmitBoundKind(node, indentedTextWriter);
+            EmitTypedKind(node, indentedTextWriter);
 
             // EmitGetHashCode(indentedTextWriter, node);
 
             EmitToString(indentedTextWriter);
 
-            EmitAcceptBoundNodeVisitor(indentedTextWriter, name);
+            EmitAcceptTypedNodeVisitor(indentedTextWriter, name);
 
             indentedTextWriter.Indent--;
             indentedTextWriter.WriteLine("}");
@@ -207,13 +207,13 @@ class Program
             "Panther",
             "CodeAnalysis",
             "Binding",
-            "Binding.g.cs"
+            "Typing.g.cs"
         );
         File.WriteAllText(path, contents);
         Console.WriteLine($"Wrote bound nodes to {path}");
     }
 
-    private static void GenerateBoundVisitor()
+    private static void GenerateTypedVisitor()
     {
         using var writer = new StringWriter();
         using var indentedTextWriter = new IndentedTextWriter(writer);
@@ -229,7 +229,7 @@ class Program
         indentedTextWriter.WriteLine("{");
         indentedTextWriter.Indent++;
 
-        indentedTextWriter.WriteLine("internal partial class BoundNodeVisitor");
+        indentedTextWriter.WriteLine("internal partial class TypedNodeVisitor");
         indentedTextWriter.WriteLine("{");
         indentedTextWriter.Indent++;
 
@@ -254,7 +254,7 @@ class Program
         indentedTextWriter.Indent--;
         indentedTextWriter.WriteLine("}");
 
-        indentedTextWriter.WriteLine("internal partial class BoundNodeVisitor<TResult>");
+        indentedTextWriter.WriteLine("internal partial class TypedNodeVisitor<TResult>");
         indentedTextWriter.WriteLine("{");
         indentedTextWriter.Indent++;
 
@@ -292,7 +292,7 @@ class Program
             "Panther",
             "CodeAnalysis",
             "Binding",
-            "BoundNodeVisitor.g.cs"
+            "TypedNodeVisitor.g.cs"
         );
         File.WriteAllText(path, contents);
         Console.WriteLine($"Wrote bound visitor to {path}");
@@ -390,7 +390,7 @@ class Program
     )
     {
         var name = node.Name;
-        var methodName = Regex.Replace(Regex.Replace(name, "^Bound", ""), "(Syntax$|^Syntax)", "");
+        var methodName = Regex.Replace(Regex.Replace(name, "^Typed", ""), "(Syntax$|^Syntax)", "");
         var returnType = generic ? "TResult" : "void";
         indentedTextWriter.WriteLine(
             $"public virtual {returnType} Visit{methodName}({name} node) =>"
@@ -496,16 +496,16 @@ class Program
         Console.WriteLine($"Wrote syntax to {path}");
     }
 
-    private static void EmitAcceptBoundNodeVisitor(IndentedTextWriter writer, string name)
+    private static void EmitAcceptTypedNodeVisitor(IndentedTextWriter writer, string name)
     {
-        var methodName = Regex.Replace(name, "^Bound", "");
+        var methodName = Regex.Replace(name, "^Typed", "");
         writer.WriteLineNoTabs("");
         writer.WriteLine(
-            $"public override void Accept(BoundNodeVisitor visitor) => visitor.Visit{methodName}(this);"
+            $"public override void Accept(TypedNodeVisitor visitor) => visitor.Visit{methodName}(this);"
         );
         writer.WriteLineNoTabs("");
         writer.WriteLine(
-            $"public override TResult Accept<TResult>(BoundNodeVisitor<TResult> visitor) => visitor.Visit{methodName}(this);"
+            $"public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.Visit{methodName}(this);"
         );
     }
 
@@ -522,13 +522,13 @@ class Program
         );
     }
 
-    private static void EmitBoundKind(Node node, IndentedTextWriter indentedTextWriter)
+    private static void EmitTypedKind(Node node, IndentedTextWriter indentedTextWriter)
     {
         var kind = node.Kinds.FirstOrDefault();
         if (kind != null)
         {
             indentedTextWriter.WriteLine(
-                $"public override BoundNodeKind Kind => BoundNodeKind.{kind.Name};"
+                $"public override TypedNodeKind Kind => TypedNodeKind.{kind.Name};"
             );
             indentedTextWriter.WriteLineNoTabs("");
         }

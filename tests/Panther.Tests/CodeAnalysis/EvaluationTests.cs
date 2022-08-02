@@ -499,7 +499,7 @@ public class EvaluationTests
     }
 
     [Property]
-    public void EvaluatesBoundInt(int n)
+    public void EvaluatesTypedInt(int n)
     {
         using var scriptHost = BuildScriptHost();
         Execute($"val a = {n}", scriptHost);
@@ -517,7 +517,7 @@ public class EvaluationTests
     }
 
     [Property]
-    public void EvaluatesBoundBool(bool n)
+    public void EvaluatesTypedBool(bool n)
     {
         using var scriptHost = BuildScriptHost();
         Execute($"val a = {n.ToString().ToLower()}", scriptHost);
