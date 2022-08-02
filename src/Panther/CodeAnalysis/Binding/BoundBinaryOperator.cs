@@ -128,6 +128,18 @@ internal sealed class BoundBinaryOperator
         new BoundBinaryOperator(
             SyntaxKind.EqualsEqualsToken,
             BoundBinaryOperatorKind.Equal,
+            Type.Char,
+            Type.Bool
+        ),
+        new BoundBinaryOperator(
+            SyntaxKind.BangEqualsToken,
+            BoundBinaryOperatorKind.NotEqual,
+            Type.Char,
+            Type.Bool
+        ),
+        new BoundBinaryOperator(
+            SyntaxKind.EqualsEqualsToken,
+            BoundBinaryOperatorKind.Equal,
             Type.String,
             Type.Bool
         ),

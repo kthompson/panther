@@ -11,6 +11,7 @@ internal sealed record BoundLiteralExpression : BoundExpression
         Type = value switch
         {
             int _ => Type.Int,
+            char _ => Type.Char,
             bool _ => Type.Bool,
             string _ => Type.String,
             _

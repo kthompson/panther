@@ -31,6 +31,7 @@ internal class Lexer
         _lexFunctions[EndOfInputCharacter] = ReturnEndOfInput;
         _lexFunctions['!'] = ReturnBangToken;
         _lexFunctions['"'] = ParseStringToken;
+        _lexFunctions['\''] = ParseCharToken;
         _lexFunctions['&'] = ReturnAmpersandToken;
         _lexFunctions['('] = ReturnOpenParenToken;
         _lexFunctions[')'] = ReturnCloseParenToken;
@@ -363,6 +364,51 @@ internal class Lexer
             _file[start.._position],
             start
         );
+    }
+
+    private (SyntaxKind kind, int start, string text, object? value) ParseCharToken()
+    {
+        var start = _position;
+        Next(); // start '
+        char? c = null;
+        switch (Current)
+        {
+            case '\'':
+                Next(); // end '
+                break;
+
+            case '\\': // escape sequence
+                var escapeSequence = ParseEscapeSequence();
+                if (escapeSequence != null)
+                    c = escapeSequence[0];
+
+                break;
+            case '\n':
+            case '\r':
+            case null:
+                break;
+
+            default:
+                c = Current.Value;
+                Next();
+                break;
+        }
+
+        if (Current == '\'')
+        {
+            Next();
+        }
+        else
+        {
+            _diagnostics.ReportUnterminatedChar(new TextLocation(_file, new TextSpan(start, 1)));
+        }
+
+        var span = _file[start.._position];
+
+        if (c.HasValue)
+            return (SyntaxKind.CharToken, start, span, c.Value);
+
+        return (SyntaxKind.CharToken, start, span, null);
     }
 
     private (SyntaxKind kind, int start, string text, object value) ParseStringToken()

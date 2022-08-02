@@ -32,6 +32,7 @@ internal class Emitter
     private readonly MethodReference? _stringConcatReference;
     private readonly MethodReference? _convertBoolToString;
     private readonly MethodReference? _convertInt32ToString;
+    private readonly MethodReference? _convertCharToString;
     private readonly MethodReference? _convertToBool;
     private readonly MethodReference? _convertToInt32;
     private readonly FieldReference? _unit;
@@ -112,6 +113,7 @@ internal class Emitter
             "ToString",
             new[] { "System.Int32" }
         );
+        _convertCharToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Char" });
         _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
         _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
         _unit = ResolveField("Panther.Unit", "Default");
@@ -634,6 +636,10 @@ internal class Emitter
         {
             ilProcessor.Emit(OpCodes.Ldstr, (string)constant.Value);
         }
+        else if (node.Type == Type.Char)
+        {
+            ilProcessor.Emit(OpCodes.Ldc_I4, (int)(char)constant.Value);
+        }
         else
         {
             throw new NotImplementedException();
@@ -836,6 +842,12 @@ internal class Emitter
             if (fromType == Type.Int)
             {
                 ilProcessor.Emit(OpCodes.Call, _convertInt32ToString);
+                return;
+            }
+
+            if (fromType == Type.Char)
+            {
+                ilProcessor.Emit(OpCodes.Call, _convertCharToString);
                 return;
             }
         }

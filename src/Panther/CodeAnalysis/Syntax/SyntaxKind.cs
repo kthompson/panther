@@ -17,6 +17,7 @@ public enum SyntaxKind
     // Literal tokens
     NumberToken,
     StringToken,
+    CharToken,
 
     // Keywords
     BreakKeyword,

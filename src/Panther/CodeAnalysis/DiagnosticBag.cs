@@ -35,6 +35,9 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportInvalidEscapeSequence(TextLocation location, in char current) =>
         Report(location, $"Invalid character in escape sequence: {current}");
 
+    public void ReportExpectedCharacterLiteral(TextLocation location) =>
+        Report(location, "Expected character literal");
+
     public void ReportBadCharacter(TextLocation location, in char character) =>
         Report(location, $"Invalid character in input: {character}");
 
@@ -88,6 +91,9 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportUnterminatedString(TextLocation location) =>
         Report(location, "Unterminated string literal");
+
+    public void ReportUnterminatedChar(TextLocation location) =>
+        Report(location, "Unterminated char literal");
 
     public void ReportNoOverloads(
         TextLocation location,

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Panther.CodeAnalysis.Text;
 
@@ -109,6 +108,9 @@ internal sealed class ImportedTypeSymbol : Symbol
 
         if (name == typeof(string).FullName)
             return Type.String;
+
+        if (name == typeof(char).FullName)
+            return Type.Char;
 
         if (name == typeof(void).FullName)
             return Type.Unit;
