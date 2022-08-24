@@ -1,8 +1,8 @@
 ﻿using System.Collections.Immutable;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;
 

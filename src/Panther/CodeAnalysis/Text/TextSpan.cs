@@ -22,7 +22,7 @@ public struct TextSpan : IComparable<TextSpan>, IComparable
 
     public TextSpan? Intersection(TextSpan other) =>
         Overlaps(other)
-            ? (TextSpan?)TextSpan.FromBounds(Math.Max(Start, other.Start), Math.Min(End, other.End))
+            ? TextSpan.FromBounds(Math.Max(Start, other.Start), Math.Min(End, other.End))
             : null;
 
     public override string ToString()

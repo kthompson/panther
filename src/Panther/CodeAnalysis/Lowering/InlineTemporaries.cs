@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Panther.CodeAnalysis.Binding;
+﻿using System.Collections.Generic;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;
 

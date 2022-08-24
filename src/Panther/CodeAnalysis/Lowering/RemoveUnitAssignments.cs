@@ -1,5 +1,5 @@
-﻿using Panther.CodeAnalysis.Binding;
-using Panther.CodeAnalysis.Symbols;
+﻿using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;
 

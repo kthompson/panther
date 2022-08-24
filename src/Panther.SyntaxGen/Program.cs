@@ -135,9 +135,7 @@ class Program
         indentedTextWriter.WriteLine();
         indentedTextWriter.WriteLine("#nullable enable");
         indentedTextWriter.WriteLine();
-        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Binding");
-        indentedTextWriter.WriteLine("{");
-        indentedTextWriter.Indent++;
+        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Typing;");
 
         foreach (var node in _boundTree.Types.OfType<AbstractNode>())
         {
@@ -194,9 +192,6 @@ class Program
             writer.WriteLine();
         }
 
-        indentedTextWriter.Indent--;
-        indentedTextWriter.WriteLine("}");
-
         var contents = writer.ToString();
 
         var path = Path.Combine(
@@ -206,7 +201,7 @@ class Program
             "..",
             "Panther",
             "CodeAnalysis",
-            "Binding",
+            "Typing",
             "Typing.g.cs"
         );
         File.WriteAllText(path, contents);
@@ -225,9 +220,7 @@ class Program
         indentedTextWriter.WriteLine();
         indentedTextWriter.WriteLine("#nullable enable");
         indentedTextWriter.WriteLine();
-        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Binding");
-        indentedTextWriter.WriteLine("{");
-        indentedTextWriter.Indent++;
+        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Typing;");
 
         indentedTextWriter.WriteLine("internal partial class TypedNodeVisitor");
         indentedTextWriter.WriteLine("{");
@@ -279,9 +272,6 @@ class Program
         indentedTextWriter.Indent--;
         indentedTextWriter.WriteLine("}");
 
-        indentedTextWriter.Indent--;
-        indentedTextWriter.WriteLine("}");
-
         var contents = writer.ToString();
 
         var path = Path.Combine(
@@ -291,7 +281,7 @@ class Program
             "..",
             "Panther",
             "CodeAnalysis",
-            "Binding",
+            "Typing",
             "TypedNodeVisitor.g.cs"
         );
         File.WriteAllText(path, contents);
@@ -310,9 +300,7 @@ class Program
         indentedTextWriter.WriteLine();
         indentedTextWriter.WriteLine("#nullable enable");
         indentedTextWriter.WriteLine();
-        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Syntax");
-        indentedTextWriter.WriteLine("{");
-        indentedTextWriter.Indent++;
+        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Syntax;");
 
         indentedTextWriter.WriteLine("public partial class SyntaxVisitor");
         indentedTextWriter.WriteLine("{");
@@ -360,9 +348,6 @@ class Program
                 WriteVisitorMethod(indentedTextWriter, node, true);
             }
         }
-
-        indentedTextWriter.Indent--;
-        indentedTextWriter.WriteLine("}");
 
         indentedTextWriter.Indent--;
         indentedTextWriter.WriteLine("}");

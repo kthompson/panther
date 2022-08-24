@@ -3,14 +3,10 @@ using System.Linq;
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
-using Panther.CodeAnalysis.Text;
-using OpCode = System.Reflection.Emit.OpCode;
+using Panther.CodeAnalysis.Typing;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Emit;
@@ -638,7 +634,7 @@ internal class Emitter
         }
         else if (node.Type == Type.Char)
         {
-            ilProcessor.Emit(OpCodes.Ldc_I4, (int)(char)constant.Value);
+            ilProcessor.Emit(OpCodes.Ldc_I4, (char)constant.Value);
         }
         else
         {

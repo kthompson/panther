@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using FsCheck.Xunit;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Typing;
 using Xunit;
 using static Panther.Tests.CodeAnalysis.TestHelpers;
 

@@ -5,10 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Mono.Cecil;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Emit;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Typing;
 using Panther.IO;
 
 namespace Panther.CodeAnalysis;

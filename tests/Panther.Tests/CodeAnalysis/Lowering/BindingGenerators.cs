@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using FsCheck;
-using Microsoft.FSharp.Core;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
+using Panther.CodeAnalysis.Typing;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
 #pragma warning disable 612

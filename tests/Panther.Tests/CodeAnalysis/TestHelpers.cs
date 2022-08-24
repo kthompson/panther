@@ -12,7 +12,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using Mono.Cecil;
 using Panther.CodeAnalysis;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;

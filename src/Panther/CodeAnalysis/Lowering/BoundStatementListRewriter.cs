@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Syntax;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;
 

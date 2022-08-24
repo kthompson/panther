@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;
 
@@ -35,7 +35,7 @@ sealed class ThreeAddressCode : TypedStatementListRewriter
             RewriteStatement(boundStatement);
         }
 
-        var rewritten = this.RewriteExpression(node.Expression);
+        var rewritten = RewriteExpression(node.Expression);
         if (rewritten.Kind == TypedNodeKind.LiteralExpression)
             return rewritten;
 
@@ -54,7 +54,7 @@ sealed class ThreeAddressCode : TypedStatementListRewriter
             .Select(expr => CreateTemporary(expr, "ctemp"))
             .ToImmutableArray();
 
-        var rewritten = node.Expression == null ? null : this.RewriteExpression(node.Expression);
+        var rewritten = node.Expression == null ? null : RewriteExpression(node.Expression);
 
         return new TypedCallExpression(node.Syntax, node.Method, rewritten, args);
     }

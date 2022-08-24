@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.IO;
-using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Text;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Symbols;
 

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-using Panther.CodeAnalysis.Binding;
+﻿using System.Collections.Immutable;
 using Panther.CodeAnalysis.Symbols;
-using Panther.CodeAnalysis.Text;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;
 
