@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Panther.CodeAnalysis.Symbols;
+using Panther.CodeAnalysis.Text;
 using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis.Lowering;

@@ -196,11 +196,12 @@ internal class Emitter
 
     private void IterateTypes(TypedAssembly assembly, Action<Symbol> action)
     {
-        foreach (var type in assembly.RootSymbol.Types.Where(symbol => !symbol.IsImport))
-        {
-            _currentType = type;
-            action(type);
-        }
+        throw new NotImplementedException();
+        // foreach (var type in assembly.RootSymbol.GetTypeMembers().Where(symbol => !symbol.IsImport))
+        // {
+        //     _currentType = type;
+        //     action(type);
+        // }
     }
 
     private void EmitFields(Symbol type)

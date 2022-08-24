@@ -1,5 +1,4 @@
 ﻿using System;
-using Panther.CodeAnalysis.Symbols;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Typing;

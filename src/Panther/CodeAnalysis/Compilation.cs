@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Mono.Cecil;
+using Panther.CodeAnalysis.Binding;
 using Panther.CodeAnalysis.Emit;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -26,23 +27,23 @@ public class Compilation
             .Concat(TypedAssembly.Diagnostics)
             .ToImmutableArray();
 
-    private TypedAssembly? _boundAssembly;
+    private TypedAssembly? _typedAssembly;
     private TypedAssembly TypedAssembly
     {
         get
         {
-            if (_boundAssembly == null)
+            if (_typedAssembly == null)
             {
-                var bindAssembly = Typer.BindAssembly(
+                var typedAssembly = Typer.TypeAssembly(
                     IsScript,
                     SyntaxTrees,
                     Previous?.TypedAssembly,
                     References
                 );
-                Interlocked.CompareExchange(ref _boundAssembly, bindAssembly, null);
+                Interlocked.CompareExchange(ref _typedAssembly, typedAssembly, null);
             }
 
-            return _boundAssembly!;
+            return _typedAssembly!;
         }
     }
 
@@ -98,22 +99,28 @@ public class Compilation
         params SyntaxTree[] syntaxTrees
     ) => new Compilation(references, isScript: true, previous, syntaxTrees);
 
-    public IEnumerable<Symbol> GetSymbols()
+    public IEnumerable<ITypeSymbol> GetTypeSymbols()
     {
         var compilation = this;
-        var symbolNames = new HashSet<string>();
+        var symbols = new List<INamespaceOrTypeSymbol>();
 
         while (compilation != null)
         {
-            foreach (
-                var type in compilation.RootSymbol.Types.Where(type => symbolNames.Add(type.Name))
-            )
-            {
-                yield return type;
+            if (GetRootSymbol(compilation) is INamespaceOrTypeSymbol root)
+                symbols.Add(root);
 
-                foreach (var member in type.Members)
+            while (symbols.Count > 0)
+            {
+                var current = symbols[0];
+                symbols.RemoveAt(0);
+
+                if (current is INamespaceSymbol ns)
                 {
-                    yield return member;
+                    symbols.AddRange(ns.GetMembers());
+                }
+                else if (current is ITypeSymbol type)
+                {
+                    yield return type;
                 }
             }
 
@@ -121,12 +128,21 @@ public class Compilation
         }
     }
 
+    private Symbol GetRootSymbol(Compilation compilation)
+    {
+        Binder.Bind(this.References);
+
+        return compilation.RootSymbol;
+    }
+
+    public IEnumerable<ISymbol> GetSymbols() =>
+        GetTypeSymbols().SelectMany(typeSymbol => typeSymbol.GetMembers());
+
     public void EmitTree(TextWriter writer)
     {
         var entryPoint = TypedAssembly.EntryPoint?.Symbol;
         var methods =
-            from type in TypedAssembly.RootSymbol.Types
-            from method in type.Methods
+            from method in GetSymbols()
             where method != entryPoint
             let body = TypedAssembly.MethodDefinitions.GetValueOrDefault(method)
             where body != null
@@ -145,7 +161,7 @@ public class Compilation
         }
     }
 
-    public void EmitTree(Symbol method, TextWriter writer)
+    public void EmitTree(ISymbol method, TextWriter writer)
     {
         var assembly = TypedAssembly;
 
@@ -164,7 +180,7 @@ public class Compilation
         method.WriteTo(writer);
     }
 
-    private static void EmitTree(Symbol method, TypedBlockExpression block, TextWriter writer)
+    private static void EmitTree(ISymbol method, TypedBlockExpression block, TextWriter writer)
     {
         method.WriteTo(writer);
         writer.WritePunctuation(" = ");

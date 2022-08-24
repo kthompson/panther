@@ -271,9 +271,7 @@ internal sealed class Typer
 
             foreach (var firstStatement1 in firstStatementPerSyntaxTree)
             {
-                typer.Diagnostics.ReportCannotMixMainAndGlobalStatements(
-                    firstStatement1!.Location
-                );
+                typer.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
             }
 
             return null;
@@ -365,7 +363,7 @@ internal sealed class Typer
     private static bool IsTopLevelDeclaration(SyntaxNode member) =>
         member.Kind is SyntaxKind.ClassDeclaration or SyntaxKind.ObjectDeclaration;
 
-    public static TypedAssembly BindAssembly(
+    public static TypedAssembly TypeAssembly(
         bool isScript,
         ImmutableArray<SyntaxTree> syntaxTrees,
         TypedAssembly? previous,
@@ -490,7 +488,7 @@ internal sealed class Typer
 
         diagnostics.AddRange(syntaxTrees.SelectMany(tree => tree.Diagnostics));
 
-        var methodDefinitions = ImmutableDictionary.CreateBuilder<Symbol, TypedBlockExpression>();
+        var methodDefinitions = ImmutableDictionary.CreateBuilder<ISymbol, TypedBlockExpression>();
 
         // Map and lower all function definitions
         foreach (var boundType in root.Types)
@@ -1656,9 +1654,16 @@ internal sealed class Typer
                 scope.ImportMembers(declaringType);
             }
 
-            foreach (var type in previous.RootSymbol.Types)
+            if (previous.RootSymbol is Symbol rs)
             {
-                scope.Import(type);
+                foreach (var type in rs.Types)
+                {
+                    scope.Import(type);
+                }
+            }
+            else if (previous.RootSymbol is INamespaceOrTypeSymbol)
+            {
+                throw new NotImplementedException();
             }
 
             parent = scope;

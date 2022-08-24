@@ -50,79 +50,79 @@ internal static class SymbolPrinter
         }
     }
 
-    public static void WriteTo(this Symbol symbol, TextWriter writer)
+    public static void WriteTo(this ISymbol symbol, TextWriter writer)
     {
-        switch (symbol)
+        switch (symbol.Kind)
         {
-            case { IsMethod: true }:
+            case SymbolKind.Method:
                 WriteMethodSymbol(symbol, writer);
                 break;
 
-            case TypeSymbol
-            or { IsType: true }:
+            case SymbolKind.Class:
                 WriteTypeSymbol(symbol, writer);
                 break;
 
-            case { IsParameter: true }:
+            case SymbolKind.Parameter:
                 WriteParameterSymbol(symbol, writer);
                 break;
 
-            case { IsLocal: true }:
+            case SymbolKind.Value
+            or SymbolKind.Variable:
                 WriteValueSymbol(symbol, writer);
                 break;
 
-            case { IsField: true }:
+            case SymbolKind.Field:
                 WriteValueSymbol(symbol, writer);
                 break;
-
-            case var sym when sym == Symbol.None:
-                writer.WriteIdentifier("<none>");
-                break;
+            //
+            // case var sym when sym == Symbol.None:
+            //     writer.WriteIdentifier("<none>");
+            //     break;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(symbol));
         }
     }
 
-    private static void WriteTypeSymbol(Symbol symbol, TextWriter writer)
+    private static void WriteTypeSymbol(ISymbol symbol, TextWriter writer)
     {
         writer.WriteIdentifier(symbol.Name);
     }
 
-    private static void WriteParameterSymbol(Symbol symbol, TextWriter writer)
+    private static void WriteParameterSymbol(ISymbol symbol, TextWriter writer)
     {
         writer.WriteIdentifier(symbol.Name);
-        writer.WritePunctuation(": ");
-        symbol.Type.WriteTo(writer);
+        // writer.WritePunctuation(": ");
+        // symbol.Type.WriteTo(writer);
     }
 
-    private static void WriteValueSymbol(Symbol symbol, TextWriter writer)
+    private static void WriteValueSymbol(ISymbol symbol, TextWriter writer)
     {
-        writer.WriteKeyword(symbol.IsReadOnly ? "val " : "var ");
+        writer.WriteKeyword(symbol.Kind == SymbolKind.Value ? "val " : "var ");
         writer.WriteIdentifier(symbol.Name);
-        writer.WritePunctuation(": ");
-        symbol.Type.WriteTo(writer);
+        // writer.WritePunctuation(": ");
+        // symbol.Type.WriteTo(writer);
     }
 
-    private static void WriteMethodSymbol(Symbol symbol, TextWriter writer)
+    private static void WriteMethodSymbol(ISymbol symbol, TextWriter writer)
     {
         writer.WriteKeyword("def ");
         writer.WriteIdentifier(symbol.Name);
-        writer.WritePunctuation("(");
-
-        var enumerator = symbol.Parameters.GetEnumerator();
-        if (enumerator.MoveNext())
-        {
-            enumerator.Current.WriteTo(writer);
-
-            while (enumerator.MoveNext())
-            {
-                writer.WritePunctuation(", ");
-                enumerator.Current.WriteTo(writer);
-            }
-        }
-
-        writer.WritePunctuation("): ");
-        symbol.ReturnType.WriteTo(writer);
+        // writer.WritePunctuation("(");
+        //
+        // var enumerator = symbol.Parameters.GetEnumerator();
+        // if (enumerator.MoveNext())
+        // {
+        //     enumerator.Current.WriteTo(writer);
+        //
+        //     while (enumerator.MoveNext())
+        //     {
+        //         writer.WritePunctuation(", ");
+        //         enumerator.Current.WriteTo(writer);
+        //     }
+        // }
+        //
+        // writer.WritePunctuation("): ");
+        // symbol.ReturnType.WriteTo(writer);
     }
 }

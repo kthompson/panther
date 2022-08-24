@@ -1,14 +1,34 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Symbols;
 
-public abstract partial class Symbol : SymbolContainer
+public abstract partial class Symbol : SymbolContainer, ISymbol
 {
     public virtual SymbolFlags Flags { get; set; }
+
+    public SymbolKind Kind
+    {
+        get
+        {
+            if (IsClass)
+                return SymbolKind.Class;
+
+            if (IsMethod)
+                return SymbolKind.Method;
+
+            if (IsParameter)
+                return SymbolKind.Parameter;
+
+            return SymbolKind.Unknown;
+        }
+    }
+
     public override string Name { get; }
+    public ISymbol ContainingSymbol => Owner;
 
     public virtual bool IsRoot => false;
 

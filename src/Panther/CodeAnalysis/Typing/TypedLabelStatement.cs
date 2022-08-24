@@ -2,8 +2,7 @@
 
 namespace Panther.CodeAnalysis.Typing;
 
-sealed record TypedLabelStatement(SyntaxNode Syntax, TypedLabel TypedLabel)
-    : TypedStatement(Syntax)
+sealed record TypedLabelStatement(SyntaxNode Syntax, TypedLabel TypedLabel) : TypedStatement(Syntax)
 {
     public override TypedNodeKind Kind => TypedNodeKind.LabelStatement;
 

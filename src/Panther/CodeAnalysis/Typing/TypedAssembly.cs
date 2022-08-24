@@ -10,6 +10,6 @@ internal sealed record TypedAssembly(
     EntryPoint? EntryPoint,
     TypedType? DefaultType,
     Symbol RootSymbol,
-    ImmutableDictionary<Symbol, TypedBlockExpression> MethodDefinitions,
+    ImmutableDictionary<ISymbol, TypedBlockExpression> MethodDefinitions,
     ImmutableArray<AssemblyDefinition> References
 );

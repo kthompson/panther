@@ -6,6 +6,7 @@ using System.Linq;
 using Mono.Cecil;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Authoring;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
 using Panther.IO;
@@ -166,7 +167,7 @@ internal class PantherRepl : Repl
 
         var function = _previous
             .GetSymbols()
-            .Where(m => m.IsMethod)
+            .Where(m => m.Kind == SymbolKind.Method)
             .FirstOrDefault(func => func.Name == functionName);
 
         if (function == null)
