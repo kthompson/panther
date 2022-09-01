@@ -236,9 +236,15 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportRequiredFieldNotFound(string typeName, string fieldName) =>
         Report(null, $"Required field {typeName}.{fieldName} was not found");
 
-    public void ReportDuplicateDefinition(TextLocation location, string name) =>
-        Report(location, $"Duplicate definition '{name}'");
-
     public void ReportExpressionDoesNotSupportIndexOperator(TextLocation location) =>
         Report(location, "Expression does not support index operator");
+
+    public void ReportArrayCreationRequiresRankOrInitializer(TextLocation location) =>
+        Report(location, "Array creation requires rank or initializer");
+
+    public void ReportArrayRankMustBeAIntLiteral(TextLocation location) =>
+        Report(location, "Array rank must be an int literal");
+
+    public void ReportArrayRankMustMatchInitializerLength(TextLocation location) =>
+        Report(location, "Array rank must match initializer length");
 }

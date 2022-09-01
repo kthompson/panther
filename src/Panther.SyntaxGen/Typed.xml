@@ -32,6 +32,14 @@
         <Field Name="Expression" Type="TypedExpression" />
     </Node>
 
+    <Node Name="TypedArrayCreationExpression" Base="TypedExpression">
+        <Kind Name="ArrayCreationExpression"/>
+
+        <Field Name="ElementType" Type="Symbol" />
+        <Field Name="ArraySize" Type="int" />
+        <Field Name="Expressions" Type="ImmutableArray&lt;TypedExpression&gt;" />
+    </Node>
+
     <Node Name="TypedBreakStatement" Base="TypedStatement">
         <Kind Name="BreakStatement"/>
     </Node>
@@ -53,6 +61,13 @@
 
         <Field Name="Expression" Type="TypedExpression?" />
         <Field Name="Field" Type="Symbol" />
+    </Node>
+
+    <Node Name="TypedPropertyExpression" Base="TypedExpression">
+        <Kind Name="PropertyExpression"/>
+
+        <Field Name="Expression" Type="TypedExpression" />
+        <Field Name="Property" Type="Symbol" />
     </Node>
 
     <Node Name="TypedIndexExpression" Base="TypedExpression">

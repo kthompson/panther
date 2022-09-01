@@ -72,22 +72,26 @@ public enum SyntaxKind
     CloseBracketToken,
 
     // Expressions
+    ArrayCreationExpression,
     AssignmentExpression,
     BinaryExpression,
     BlockExpression,
     CallExpression,
     ForExpression,
     GroupExpression,
-    IdentifierName,
     IfExpression,
     IndexExpression,
     LiteralExpression,
     MemberAccessExpression,
     NewExpression,
-    QualifiedName,
     UnaryExpression,
     UnitExpression,
     WhileExpression,
+
+    // Types
+    QualifiedName,
+    GenericName,
+    IdentifierName,
 
     // Statements
     BreakStatement,
@@ -96,12 +100,14 @@ public enum SyntaxKind
     VariableDeclarationStatement,
 
     //  Nodes
+    ArrayInitializer,
+    CompilationUnit,
+    FunctionBody,
+    Initializer,
+    Parameter,
     Template,
     TypeAnnotation,
-    FunctionBody,
-    Parameter,
-    Initializer,
-    CompilationUnit,
+    TypeArgumentList,
 
     // Members
     ClassDeclaration,

@@ -8,6 +8,7 @@ using Panther.CodeAnalysis.Lowering;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
+using ArrayType = Panther.CodeAnalysis.Symbols.ArrayType;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Typing;
@@ -271,9 +272,7 @@ internal sealed class Typer
 
             foreach (var firstStatement1 in firstStatementPerSyntaxTree)
             {
-                typer.Diagnostics.ReportCannotMixMainAndGlobalStatements(
-                    firstStatement1!.Location
-                );
+                typer.Diagnostics.ReportCannotMixMainAndGlobalStatements(firstStatement1!.Location);
             }
 
             return null;
@@ -889,6 +888,8 @@ internal sealed class Typer
     private TypedExpression BindExpression(ExpressionSyntax syntax, TypedScope scope) =>
         syntax switch
         {
+            ArrayCreationExpressionSyntax arrayCreationExpressionSyntax
+                => BindArrayCreationExpression(arrayCreationExpressionSyntax, scope),
             AssignmentExpressionSyntax assignmentExpressionSyntax
                 => BindAssignmentExpression(assignmentExpressionSyntax, scope),
             BinaryExpressionSyntax binaryExpressionSyntax
@@ -918,6 +919,60 @@ internal sealed class Typer
                 => BindWhileExpression(whileExpressionSyntax, scope),
             _ => throw new Exception($"Unexpected syntax {syntax.Kind}")
         };
+
+    private TypedExpression BindArrayCreationExpression(
+        ArrayCreationExpressionSyntax syntax,
+        TypedScope scope
+    )
+    {
+        var typeSymbol = BindTypeSymbol(syntax.Type, scope);
+        if (typeSymbol == null)
+        {
+            Diagnostics.ReportUndefinedType(syntax.Type.Location, syntax.Type.ToText());
+            return new TypedErrorExpression(syntax);
+        }
+
+        if (syntax.Initializer == null)
+        {
+            if (syntax.ArrayRank == null)
+            {
+                Diagnostics.ReportArrayCreationRequiresRankOrInitializer(syntax.Location);
+                return new TypedErrorExpression(syntax);
+            }
+
+            if (syntax.ArrayRank is not { Value: int rank })
+            {
+                Diagnostics.ReportArrayRankMustBeAIntLiteral(syntax.Location);
+                return new TypedErrorExpression(syntax);
+            }
+
+            return new TypedArrayCreationExpression(
+                syntax,
+                typeSymbol,
+                rank,
+                ImmutableArray<TypedExpression>.Empty
+            );
+        }
+
+        var convertedArgs = syntax.Initializer.Arguments
+            .Select(
+                arg => BindConversion(arg.Location, BindExpression(arg, scope), typeSymbol.Type)
+            )
+            .ToImmutableArray();
+
+        if (syntax.ArrayRank is { Value: int arrayRank } && arrayRank != convertedArgs.Length)
+        {
+            Diagnostics.ReportArrayRankMustMatchInitializerLength(syntax.Location);
+            return new TypedErrorExpression(syntax);
+        }
+
+        return new TypedArrayCreationExpression(
+            syntax,
+            typeSymbol,
+            convertedArgs.Length,
+            convertedArgs
+        );
+    }
 
     private TypedExpression BindNewExpression(NewExpressionSyntax syntax, TypedScope scope)
     {
@@ -1042,13 +1097,15 @@ internal sealed class Typer
         bool allowExplicit = false
     )
     {
-        var conversion = Conversion.Classify(expression.Type, type);
+        var from = TypeResolver.Resolve(expression.Type);
+        var to = TypeResolver.Resolve(type);
+        var conversion = Conversion.Classify(from, to);
 
         if (!conversion.Exists)
         {
-            if (expression.Type != Type.Error && type != Type.Error)
+            if (from != Type.Error && to != Type.Error)
             {
-                Diagnostics.ReportCannotConvert(location, expression.Type, type);
+                Diagnostics.ReportCannotConvert(location, from, to);
             }
 
             return new TypedErrorExpression(expression.Syntax);
@@ -1056,13 +1113,13 @@ internal sealed class Typer
 
         if (!allowExplicit && conversion.IsExplicit)
         {
-            Diagnostics.ReportCannotConvertImplicitly(location, expression.Type, type);
+            Diagnostics.ReportCannotConvertImplicitly(location, from, to);
         }
 
         if (conversion.IsIdentity)
             return expression;
 
-        return new TypedConversionExpression(expression.Syntax, type, expression);
+        return new TypedConversionExpression(expression.Syntax, to, expression);
     }
 
     private TypedNode BindMemberAccess(MemberAccessExpressionSyntax syntax, TypedScope scope)
@@ -1088,6 +1145,9 @@ internal sealed class Typer
                 {
                     case { IsField: true } field:
                         return new TypedFieldExpression(syntax, expr, field);
+
+                    case { IsProperty: true } prop:
+                        return new TypedPropertyExpression(syntax, expr, prop);
 
                     case { IsMethod: true }:
                         return new TypedMethodExpression(
@@ -1835,6 +1895,11 @@ internal sealed class Typer
             return new TypedErrorExpression(syntax);
 
         var symbol = expr.Type.Symbol;
+
+        if (expr.Type is ArrayType && index.Type == Type.Int)
+        {
+            return new TypedIndexExpression(syntax, expr, index, null, null);
+        }
 
         // TODO: support subtyping
         // HACK: add find by `get_` prefix since string has a different name for the default index operator

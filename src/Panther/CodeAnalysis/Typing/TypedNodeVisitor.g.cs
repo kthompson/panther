@@ -8,6 +8,9 @@ using System.Collections.Immutable;
 namespace Panther.CodeAnalysis.Typing;
 internal partial class TypedNodeVisitor
 {
+    public virtual void VisitArrayCreationExpression(TypedArrayCreationExpression node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitAssignmentExpression(TypedAssignmentExpression node) =>
         this.DefaultVisit(node);
 
@@ -80,6 +83,9 @@ internal partial class TypedNodeVisitor
     public virtual void VisitNopStatement(TypedNopStatement node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitPropertyExpression(TypedPropertyExpression node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitUnaryExpression(TypedUnaryExpression node) =>
         this.DefaultVisit(node);
 
@@ -97,6 +103,9 @@ internal partial class TypedNodeVisitor
 }
 internal partial class TypedNodeVisitor<TResult>
 {
+    public virtual TResult VisitArrayCreationExpression(TypedArrayCreationExpression node) =>
+        this.DefaultVisit(node);
+
     public virtual TResult VisitAssignmentExpression(TypedAssignmentExpression node) =>
         this.DefaultVisit(node);
 
@@ -167,6 +176,9 @@ internal partial class TypedNodeVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitNopStatement(TypedNopStatement node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitPropertyExpression(TypedPropertyExpression node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitUnaryExpression(TypedUnaryExpression node) =>

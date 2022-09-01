@@ -4,24 +4,13 @@ using Panther.CodeAnalysis.Syntax;
 
 namespace Panther.CodeAnalysis.Typing;
 
-sealed record TypedMethodExpression : TypedNode
+sealed record TypedMethodExpression(
+    SyntaxNode Syntax,
+    string Name,
+    TypedExpression? Expression,
+    ImmutableArray<Symbol> Methods
+) : TypedNode(Syntax)
 {
-    public TypedMethodExpression(
-        SyntaxNode syntax,
-        string name,
-        TypedExpression? expression,
-        ImmutableArray<Symbol> methods
-    ) : base(syntax)
-    {
-        Name = name;
-        Expression = expression;
-        Methods = methods;
-    }
-
-    public string Name { get; }
-    public TypedExpression? Expression { get; }
-    public ImmutableArray<Symbol> Methods { get; }
-
     public override TypedNodeKind Kind => TypedNodeKind.MethodExpression;
 
     public override void Accept(TypedNodeVisitor visitor) => visitor.VisitMethodExpression(this);

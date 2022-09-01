@@ -65,6 +65,22 @@ internal sealed partial record TypedBlockExpression(SyntaxNode Syntax, Immutable
     public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitBlockExpression(this);
 }
 
+internal sealed partial record TypedArrayCreationExpression(SyntaxNode Syntax, Symbol ElementType, int ArraySize, ImmutableArray<TypedExpression> Expressions)
+    : TypedExpression(Syntax) {
+    public override TypedNodeKind Kind => TypedNodeKind.ArrayCreationExpression;
+
+    public override string ToString()
+    {
+        using var writer = new StringWriter();
+        this.WriteTo(writer);
+        return writer.ToString();
+    }
+
+    public override void Accept(TypedNodeVisitor visitor) => visitor.VisitArrayCreationExpression(this);
+
+    public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitArrayCreationExpression(this);
+}
+
 internal sealed partial record TypedBreakStatement(SyntaxNode Syntax)
     : TypedStatement(Syntax) {
     public override TypedNodeKind Kind => TypedNodeKind.BreakStatement;
@@ -127,6 +143,22 @@ internal sealed partial record TypedFieldExpression(SyntaxNode Syntax, TypedExpr
     public override void Accept(TypedNodeVisitor visitor) => visitor.VisitFieldExpression(this);
 
     public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitFieldExpression(this);
+}
+
+internal sealed partial record TypedPropertyExpression(SyntaxNode Syntax, TypedExpression Expression, Symbol Property)
+    : TypedExpression(Syntax) {
+    public override TypedNodeKind Kind => TypedNodeKind.PropertyExpression;
+
+    public override string ToString()
+    {
+        using var writer = new StringWriter();
+        this.WriteTo(writer);
+        return writer.ToString();
+    }
+
+    public override void Accept(TypedNodeVisitor visitor) => visitor.VisitPropertyExpression(this);
+
+    public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitPropertyExpression(this);
 }
 
 internal sealed partial record TypedIndexExpression(SyntaxNode Syntax, TypedExpression Expression, TypedExpression Index, Symbol? Getter, Symbol? Setter)

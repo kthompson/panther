@@ -7,6 +7,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Typing;
+using ArrayType = Panther.CodeAnalysis.Symbols.ArrayType;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
 namespace Panther.CodeAnalysis.Emit;
@@ -115,8 +116,19 @@ internal class Emitter
         _unit = ResolveField("Panther.Unit", "Default");
     }
 
-    private TypeReference LookupType(Symbol symbol) =>
-        _knownTypes.TryGetValue(symbol, out var knownType) ? knownType : _types[symbol];
+    private TypeReference LookupType(Symbol symbol)
+    {
+        if (_knownTypes.TryGetValue(symbol, out var knownType))
+            return knownType;
+
+        if (symbol.Type is ArrayType arrayType)
+        {
+            var element = LookupType(arrayType.ElementType.Symbol);
+            return element.MakeArrayType();
+        }
+
+        return _types[symbol];
+    }
 
     public static EmitResult Emit(
         TypedAssembly assembly,
@@ -399,11 +411,9 @@ internal class Emitter
         {
             EmitExpression(ilProcessor, assignmentStatement.Right);
             ilProcessor.Emit(OpCodes.Stloc, _locals[variableSymbol]);
-            return;
         }
-
         // this.field = expr | Object.field = expr
-        if (current is TypedFieldExpression(_, null, var fieldSymbol))
+        else if (current is TypedFieldExpression(_, null, var fieldSymbol))
         {
             // field is local to the current type
             var fieldReference = _fields[fieldSymbol];
@@ -422,11 +432,8 @@ internal class Emitter
 
             // perform: this.fieldReference = value
             ilProcessor.Emit(OpCodes.Stfld, fieldReference);
-
-            return;
         }
-
-        if (current is TypedFieldExpression(_, var leftOfField, var variable))
+        else if (current is TypedFieldExpression(_, var leftOfField, var variable))
         {
             // field is local to the current type
             var field = _fields[variable].Resolve();
@@ -447,6 +454,41 @@ internal class Emitter
                 EmitExpression(ilProcessor, leftOfField);
                 EmitExpression(ilProcessor, assignmentStatement.Right);
                 ilProcessor.Emit(OpCodes.Stfld, field);
+            }
+        }
+        // array[index] = value
+        else if (
+            current is TypedIndexExpression(_, var expression, var index, var getter, var setter)
+        )
+        {
+            // we dont support getter/setters here they should have been lowered to Call Expressions
+            Assert(getter == null);
+            Assert(setter == null);
+
+            EmitExpression(ilProcessor, expression);
+            EmitExpression(ilProcessor, index);
+            EmitExpression(ilProcessor, assignmentStatement.Right);
+
+            var assignmentType = assignmentStatement.Right.Type;
+            if (assignmentType == Type.Bool)
+            {
+                ilProcessor.Emit(OpCodes.Stelem_I1);
+            }
+            else if (assignmentType == Type.Char)
+            {
+                ilProcessor.Emit(OpCodes.Stelem_I2);
+            }
+            else if (assignmentType == Type.Int)
+            {
+                ilProcessor.Emit(OpCodes.Stelem_I4);
+            }
+            else if (assignmentType == Type.String)
+            {
+                ilProcessor.Emit(OpCodes.Stelem_Ref);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException();
             }
         }
         else
@@ -555,6 +597,10 @@ internal class Emitter
 
         switch (expression)
         {
+            case TypedArrayCreationExpression arrayCreationExpression:
+                EmitArrayCreationExpression(ilProcessor, arrayCreationExpression);
+                break;
+
             case TypedBinaryExpression binaryExpression:
                 EmitBinaryExpression(ilProcessor, binaryExpression);
                 break;
@@ -575,6 +621,14 @@ internal class Emitter
                 EmitNewExpression(ilProcessor, newExpression);
                 break;
 
+            case TypedIndexExpression indexExpression:
+                EmitIndexExpression(ilProcessor, indexExpression);
+                break;
+
+            case TypedPropertyExpression propertyExpression:
+                EmitPropertyExpression(ilProcessor, propertyExpression);
+                break;
+
             case TypedUnaryExpression unaryExpression:
                 EmitUnaryExpression(ilProcessor, unaryExpression);
                 break;
@@ -593,6 +647,76 @@ internal class Emitter
                     expression.GetType().FullName
                 );
         }
+    }
+
+    private void EmitIndexExpression(ILProcessor processor, TypedIndexExpression node)
+    {
+        if (node.Expression.Type is not ArrayType(_, var arrayElementType))
+        {
+            throw new InvalidOperationException();
+        }
+
+        EmitExpression(processor, node.Expression);
+        EmitExpression(processor, node.Index);
+
+        if (arrayElementType == Type.Bool)
+        {
+            processor.Emit(OpCodes.Ldelem_I1);
+        }
+        else if (arrayElementType == Type.Char)
+        {
+            processor.Emit(OpCodes.Ldelem_I2);
+        }
+        else if (arrayElementType == Type.Int)
+        {
+            processor.Emit(OpCodes.Ldelem_I4);
+        }
+        else if (arrayElementType == Type.String)
+        {
+            processor.Emit(OpCodes.Ldelem_Ref);
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private void EmitPropertyExpression(ILProcessor processor, TypedPropertyExpression node)
+    {
+        EmitExpression(processor, node.Expression);
+
+        // This probably should be getting lowered to another expression type but it works for now
+        if (node.Property.Name == "Length" && node.Expression.Type is ArrayType)
+        {
+            processor.Emit(OpCodes.Ldlen);
+            return;
+        }
+
+        var typeWithProp = LookupType(node.Expression.Type.Symbol).Resolve();
+        var prop = typeWithProp.Properties.FirstOrDefault(prop => prop.Name == node.Property.Name);
+        Assert(prop != null);
+
+        var getter = prop!.GetMethod;
+        processor.Emit(OpCodes.Callvirt, getter);
+    }
+
+    private void EmitArrayCreationExpression(
+        ILProcessor processor,
+        TypedArrayCreationExpression node
+    )
+    {
+        Assert(node.Expressions.Length == 0);
+
+        var arrayType = LookupType(node.Type.Symbol);
+
+        processor.Emit(OpCodes.Ldc_I4, node.ArraySize);
+        processor.Emit(OpCodes.Newarr, arrayType);
+    }
+
+    private static void Assert(bool test)
+    {
+        if (!test)
+            throw new InvalidOperationException();
     }
 
     private void EmitNewExpression(ILProcessor ilProcessor, TypedNewExpression node)

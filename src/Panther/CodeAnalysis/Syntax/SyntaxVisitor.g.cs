@@ -8,6 +8,12 @@ using System.Collections.Immutable;
 namespace Panther.CodeAnalysis.Syntax;
 public partial class SyntaxVisitor
 {
+    public virtual void VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitArrayInitializerExpression(ArrayInitializerExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
         this.DefaultVisit(node);
 
@@ -42,6 +48,9 @@ public partial class SyntaxVisitor
         this.DefaultVisit(node);
 
     public virtual void VisitFunctionDeclaration(FunctionDeclarationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitGenericName(GenericNameSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual void VisitGlobalStatement(GlobalStatementSyntax node) =>
@@ -95,6 +104,9 @@ public partial class SyntaxVisitor
     public virtual void VisitTypeAnnotation(TypeAnnotationSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitTypeArgumentList(TypeArgumentList node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitUnaryExpression(UnaryExpressionSyntax node) =>
         this.DefaultVisit(node);
 
@@ -112,6 +124,12 @@ public partial class SyntaxVisitor
 }
 public partial class SyntaxVisitor<TResult>
 {
+    public virtual TResult VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitArrayInitializerExpression(ArrayInitializerExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual TResult VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
         this.DefaultVisit(node);
 
@@ -146,6 +164,9 @@ public partial class SyntaxVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitFunctionDeclaration(FunctionDeclarationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitGenericName(GenericNameSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitGlobalStatement(GlobalStatementSyntax node) =>
@@ -197,6 +218,9 @@ public partial class SyntaxVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitTypeAnnotation(TypeAnnotationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitTypeArgumentList(TypeArgumentList node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitUnaryExpression(UnaryExpressionSyntax node) =>
