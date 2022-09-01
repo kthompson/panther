@@ -13,6 +13,9 @@ namespace Panther.CodeAnalysis.Syntax
     public abstract partial record NameSyntax(SyntaxTree SyntaxTree)
         : ExpressionSyntax(SyntaxTree);
 
+    public abstract partial record SimpleNameSyntax(SyntaxTree SyntaxTree)
+        : NameSyntax(SyntaxTree);
+
     public abstract partial record StatementSyntax(SyntaxTree SyntaxTree)
         : SyntaxNode(SyntaxTree);
 
@@ -45,6 +48,72 @@ namespace Panther.CodeAnalysis.Syntax
         public override void Accept(SyntaxVisitor visitor) => visitor.VisitAssignmentExpression(this);
 
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssignmentExpression(this);
+    }
+
+    public sealed partial record ArrayCreationExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenBracket, LiteralExpressionSyntax? ArrayRank, SyntaxToken CloseBracket, ArrayInitializerExpressionSyntax? Initializer)
+        : ExpressionSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.ArrayCreationExpression;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(NewKeyword, Type, OpenBracket, ArrayRank, CloseBracket, Initializer);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return NewKeyword;
+            yield return Type;
+            yield return OpenBracket;
+            if (ArrayRank != null)
+            {
+                yield return ArrayRank;
+            }
+            yield return CloseBracket;
+            if (Initializer != null)
+            {
+                yield return Initializer;
+            }
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitArrayCreationExpression(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitArrayCreationExpression(this);
+    }
+
+    public sealed partial record ArrayInitializerExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenBraceToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseBraceToken)
+        : SyntaxNode(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.ArrayInitializer;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpenBraceToken, Arguments, CloseBraceToken);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpenBraceToken;
+            foreach (var child in Arguments.GetWithSeparators())
+                yield return child;
+            yield return CloseBraceToken;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitArrayInitializerExpression(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitArrayInitializerExpression(this);
     }
 
     public sealed partial record BinaryExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Left, SyntaxToken OperatorToken, ExpressionSyntax Right)
@@ -413,7 +482,7 @@ namespace Panther.CodeAnalysis.Syntax
     }
 
     public sealed partial record IdentifierNameSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier)
-        : NameSyntax(SyntaxTree) {
+        : SimpleNameSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.IdentifierName;
 
         public override int GetHashCode()
@@ -438,7 +507,63 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIdentifierName(this);
     }
 
-    public sealed partial record QualifiedNameSyntax(SyntaxTree SyntaxTree, NameSyntax Left, SyntaxToken DotToken, IdentifierNameSyntax Right)
+    public sealed partial record GenericNameSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier, TypeArgumentList TypeArgumentList)
+        : SimpleNameSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.GenericName;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Identifier, TypeArgumentList);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Identifier;
+            yield return TypeArgumentList;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitGenericName(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitGenericName(this);
+    }
+
+    public sealed partial record TypeArgumentList(SyntaxTree SyntaxTree, SyntaxToken LessThan, SeparatedSyntaxList<NameSyntax> ArgumentList, SyntaxToken GreaterThan)
+        : SyntaxNode(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.TypeArgumentList;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(LessThan, ArgumentList, GreaterThan);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return LessThan;
+            foreach (var child in ArgumentList.GetWithSeparators())
+                yield return child;
+            yield return GreaterThan;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitTypeArgumentList(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitTypeArgumentList(this);
+    }
+
+    public sealed partial record QualifiedNameSyntax(SyntaxTree SyntaxTree, NameSyntax Left, SyntaxToken DotToken, SimpleNameSyntax Right)
         : NameSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.QualifiedName;
 

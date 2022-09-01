@@ -17,6 +17,27 @@
         <Field Name="Expression" Type="ExpressionSyntax" />
     </Node>
 
+    <Node Name="ArrayCreationExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="ArrayCreationExpression"/>
+
+        <Field Name="NewKeyword" Type="SyntaxToken" />
+        <Field Name="Type" Type="NameSyntax" />
+
+        <Field Name="OpenBracket" Type="SyntaxToken" />
+        <Field Name="ArrayRank" Type="LiteralExpressionSyntax?" />
+        <Field Name="CloseBracket" Type="SyntaxToken" />
+        
+        <Field Name="Initializer" Type="ArrayInitializerExpressionSyntax?" />
+    </Node>
+
+    <Node Name="ArrayInitializerExpressionSyntax">
+        <Kind Name="ArrayInitializer"/>
+
+        <Field Name="OpenBraceToken" Type="SyntaxToken" />
+        <Field Name="Arguments" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;" />
+        <Field Name="CloseBraceToken" Type="SyntaxToken" />
+    </Node>
+
     <Node Name="BinaryExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="BinaryExpression"/>
 
@@ -130,11 +151,27 @@
     </Node>
 
     <AbstractNode Name="NameSyntax" Base="ExpressionSyntax" />
-
-    <Node Name="IdentifierNameSyntax" Base="NameSyntax">
+    <AbstractNode Name="SimpleNameSyntax" Base="NameSyntax" />
+    
+    <Node Name="IdentifierNameSyntax" Base="SimpleNameSyntax">
         <Kind Name="IdentifierName"/>
 
         <Field Name="Identifier" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="GenericNameSyntax" Base="SimpleNameSyntax">
+        <Kind Name="GenericName"/>
+
+        <Field Name="Identifier" Type="SyntaxToken" />
+        <Field Name="TypeArgumentList" Type="TypeArgumentList" />
+    </Node>
+    
+    <Node Name="TypeArgumentList">
+        <Kind Name="TypeArgumentList"/>
+
+        <Field Name="LessThan" Type="SyntaxToken" />
+        <Field Name="ArgumentList" Type="SeparatedSyntaxList&lt;NameSyntax&gt;" />
+        <Field Name="GreaterThan" Type="SyntaxToken" />
     </Node>
 
     <Node Name="QualifiedNameSyntax" Base="NameSyntax">
@@ -142,7 +179,7 @@
 
         <Field Name="Left" Type="NameSyntax" />
         <Field Name="DotToken" Type="SyntaxToken" />
-        <Field Name="Right" Type="IdentifierNameSyntax" />
+        <Field Name="Right" Type="SimpleNameSyntax" />
     </Node>
 
     <AbstractNode Name="StatementSyntax" />

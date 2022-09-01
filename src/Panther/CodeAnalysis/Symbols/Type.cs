@@ -15,12 +15,16 @@ public abstract record Type
     public static readonly Type Error = new TypeConstructor("err", TypeSymbol.Error);
 
     public static readonly Type Any = new TypeConstructor("any", TypeSymbol.Any);
+
     public static readonly Type Unit = new TypeConstructor("unit", TypeSymbol.Unit);
 
     public static readonly Type Bool = new TypeConstructor("bool", TypeSymbol.Bool);
     public static readonly Type Int = new TypeConstructor("int", TypeSymbol.Int);
     public static readonly Type String = new TypeConstructor("string", TypeSymbol.String);
     public static readonly Type Char = new TypeConstructor("char", TypeSymbol.Char);
+
+    public static Type ArrayOf(Symbol symbol) =>
+        new ArrayType(TypeSymbol.ArrayOf(symbol), symbol.Type);
 
     public static readonly Type Unresolved = new Unresolved();
     public static readonly Type NoType = new NoType();
@@ -31,13 +35,15 @@ public abstract record Type
 public sealed record MethodType(ImmutableArray<Symbol> Parameters, Type ResultType)
     : Type(Symbol.None);
 
-public sealed record IndexType(Type Left, Type Index) : Type(Symbol.None);
+public sealed record ApplyType(Type Left, Type Index) : Type(Symbol.None);
 
 public sealed record ErrorType() : Type(TypeSymbol.Error);
 
 public sealed record Unresolved() : Type(Symbol.None);
 
 public sealed record NoType() : Type(Symbol.None);
+
+public sealed record ArrayType(Symbol Symbol, Type ElementType) : Type(Symbol);
 
 public sealed record ClassType(Symbol Symbol) : Type(Symbol);
 
@@ -59,9 +65,13 @@ public static class TypeResolver
         type switch
         {
             DelayType delayType => Resolve(delayType.F()),
-            IndexType indexType => new IndexType(Resolve(indexType.Left), Resolve(indexType.Index)),
+            ApplyType { Left: ArrayType arrayType } indexType when Type.Int == indexType.Index
+                => arrayType.ElementType,
+
+            ApplyType indexType => new ApplyType(Resolve(indexType.Left), Resolve(indexType.Index)),
             MethodType methodType
                 => new MethodType(methodType.Parameters, Resolve(methodType.ResultType)),
+            ArrayType arrayType => new ArrayType(arrayType.Symbol, Resolve(arrayType.ElementType)),
             ClassType
             or ErrorType
             or NamespaceType

@@ -12,6 +12,8 @@ internal abstract class TypedTreeRewriter
         {
             TypedAssignmentExpression boundAssignmentExpression
                 => RewriteAssignmentExpression(boundAssignmentExpression),
+            TypedArrayCreationExpression boundAssignmentArrayCreationExpression
+                => RewriteArrayCreationExpression(boundAssignmentArrayCreationExpression),
             TypedBinaryExpression boundBinaryExpression
                 => RewriteBinaryExpression(boundBinaryExpression),
             TypedBlockExpression boundBlockExpression
@@ -30,6 +32,9 @@ internal abstract class TypedTreeRewriter
                 => RewriteLiteralExpression(boundLiteralExpression),
             TypedNewExpression boundLiteralExpression
                 => RewriteNewExpression(boundLiteralExpression),
+
+            TypedPropertyExpression boundPropertyExpression
+                => RewritePropertyExpression(boundPropertyExpression),
             TypedTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
             TypedUnaryExpression boundUnaryExpression
                 => RewriteUnaryExpression(boundUnaryExpression),
@@ -40,6 +45,45 @@ internal abstract class TypedTreeRewriter
                 => RewriteWhileExpression(boundWhileExpression),
             _ => throw new ArgumentOutOfRangeException(nameof(node))
         };
+
+    protected virtual TypedExpression RewriteArrayCreationExpression(
+        TypedArrayCreationExpression node
+    )
+    {
+        List<TypedExpression>? newArguments = null;
+
+        for (var i = 0; i < node.Expressions.Length; i++)
+        {
+            var argument = node.Expressions[i];
+            var newArgument = RewriteExpression(argument);
+
+            if (newArgument != argument)
+            {
+                if (newArguments == null)
+                {
+                    // initialize the list with all the statements up to `i`
+                    newArguments = new List<TypedExpression>();
+
+                    for (var j = 0; j < i; j++)
+                    {
+                        newArguments.Add(node.Expressions[j]);
+                    }
+                }
+            }
+
+            newArguments?.Add(newArgument);
+        }
+
+        if (newArguments == null)
+            return node;
+
+        return new TypedArrayCreationExpression(
+            node.Syntax,
+            node.ElementType,
+            node.ArraySize,
+            newArguments?.ToImmutableArray() ?? node.Expressions
+        );
+    }
 
     protected virtual TypedExpression RewriteFieldExpression(TypedFieldExpression node) => node;
 
@@ -79,6 +123,16 @@ internal abstract class TypedTreeRewriter
             node.Constructor,
             newArguments?.ToImmutableArray() ?? node.Arguments
         );
+    }
+
+    protected virtual TypedExpression RewritePropertyExpression(TypedPropertyExpression node)
+    {
+        var expression = RewriteExpression(node.Expression);
+
+        if (node.Expression == expression)
+            return node;
+
+        return new TypedPropertyExpression(node.Syntax, expression, node.Property);
     }
 
     protected virtual TypedExpression RewriteIndexExpression(TypedIndexExpression node)

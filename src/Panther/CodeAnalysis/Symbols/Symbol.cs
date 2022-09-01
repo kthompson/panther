@@ -18,6 +18,7 @@ public abstract partial class Symbol : SymbolContainer
     public bool IsObject => this.Flags.HasFlag(SymbolFlags.Object);
     public bool IsMember => (this.Flags & SymbolFlags.Member) != 0;
     public bool IsMethod => this.Flags.HasFlag(SymbolFlags.Method);
+    public bool IsProperty => this.Flags.HasFlag(SymbolFlags.Property);
     public bool IsConstructor => this.Name is ".ctor" or ".cctor";
     public bool IsField => this.Flags.HasFlag(SymbolFlags.Field);
     public bool IsImport => this.Flags.HasFlag(SymbolFlags.Import);

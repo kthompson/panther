@@ -3,6 +3,7 @@
 internal enum TypedNodeKind
 {
     // Expressions
+    ArrayCreationExpression,
     AssignmentExpression,
     BinaryExpression,
     BlockExpression,
@@ -18,6 +19,7 @@ internal enum TypedNodeKind
     MethodExpression,
     NamespaceExpression,
     NewExpression,
+    PropertyExpression,
     TypeExpression,
     UnaryExpression,
     UnitExpression,

@@ -12,6 +12,11 @@ internal partial record TypedAssignmentExpression
     public override Type Type { get; init; } = Type.Unit;
 }
 
+internal partial record TypedArrayCreationExpression
+{
+    public override Type Type { get; init; } = Type.ArrayOf(ElementType);
+}
+
 internal partial record TypedBinaryExpression
 {
     public override Type Type { get; init; } = Operator.Type;
@@ -34,7 +39,7 @@ internal partial record TypedFieldExpression
 
 internal partial record TypedIndexExpression
 {
-    public override Type Type { get; init; } = new IndexType(Expression.Type, Index.Type);
+    public override Type Type { get; init; } = new ApplyType(Expression.Type, Index.Type);
 }
 
 internal partial record TypedNamespaceExpression
@@ -60,6 +65,11 @@ internal partial record TypedIfExpression
 internal partial record TypedNewExpression
 {
     public override Type Type { get; init; } = Constructor.Owner.Type;
+}
+
+internal partial record TypedPropertyExpression
+{
+    public override Type Type { get; init; } = Property.Type;
 }
 
 internal partial record TypedWhileExpression

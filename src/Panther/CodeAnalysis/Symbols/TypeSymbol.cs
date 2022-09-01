@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.IO;
 using Panther.CodeAnalysis.Text;
 using Panther.CodeAnalysis.Typing;
@@ -21,29 +22,44 @@ public abstract class TypeSymbol : Symbol
         .WithFlags(SymbolFlags.Class)
         .WithType(Type.Any);
 
-    public static readonly TypeSymbol Unit = new TypedType(Symbol.None, TextLocation.None, "unit")
-        .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Unit);
-
     public static readonly TypeSymbol Bool = new TypedType(Symbol.None, TextLocation.None, "bool")
         .WithFlags(SymbolFlags.Class)
         .WithType(Type.Bool);
-
-    public static readonly TypeSymbol Int = new TypedType(Symbol.None, TextLocation.None, "int")
-        .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Int);
 
     public static readonly TypeSymbol Char = new TypedType(Symbol.None, TextLocation.None, "char")
         .WithFlags(SymbolFlags.Class)
         .WithType(Type.Char);
 
+    public static readonly TypeSymbol Int = new TypedType(Symbol.None, TextLocation.None, "int")
+        .WithFlags(SymbolFlags.Class)
+        .WithType(Type.Int);
+
     public static readonly TypeSymbol String;
+
+    public static readonly TypeSymbol Unit = new TypedType(Symbol.None, TextLocation.None, "unit")
+        .WithFlags(SymbolFlags.Class)
+        .WithType(Type.Unit);
+
+    public static Symbol ArrayOf(Symbol symbol)
+    {
+        var type = new TypedType(Symbol.None, TextLocation.None, $"Array<{symbol.Name}>")
+            .WithFlags(SymbolFlags.Class)
+            .WithType(Type.Delayed(() => Type.ArrayOf(symbol)));
+
+        type.NewTerm(TextLocation.None, "Length", SymbolFlags.Property)
+            .WithType(Type.Int)
+            .Declare();
+
+        return type;
+    }
 
     static TypeSymbol()
     {
         String = new TypedType(Symbol.None, TextLocation.None, "string")
             .WithFlags(SymbolFlags.Class)
             .WithType(Type.String);
+
+        String.NewTerm(TextLocation.None, "Length", SymbolFlags.Property).Declare();
 
         var getItem = String.NewMethod(TextLocation.None, "get_Chars").Declare();
         getItem

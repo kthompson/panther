@@ -262,14 +262,20 @@ internal class Parser
 
     private NameSyntax ParseNameSyntax()
     {
-        NameSyntax name = ParseIdentifierName();
+        NameSyntax name = ParseSimpleName();
+
+        if (name is GenericNameSyntax)
+            return name;
 
         while (CurrentKind == SyntaxKind.DotToken)
         {
             var dot = Accept();
-            var right = ParseIdentifierName();
+            var right = ParseSimpleName();
 
             name = new QualifiedNameSyntax(_syntaxTree, name, dot, right);
+
+            if (right is GenericNameSyntax)
+                return name;
         }
 
         return name;
@@ -519,11 +525,28 @@ internal class Parser
         );
     }
 
-    private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
+    private SeparatedSyntaxList<ExpressionSyntax> ParseArguments() =>
+        ParseExpressionList(SyntaxKind.CloseParenToken);
+
+    private ArrayInitializerExpressionSyntax? ParseArrayInitializers()
+    {
+        var openBrace = Accept();
+        var expressions = ParseExpressionList(SyntaxKind.CloseBraceToken);
+        var closeBrace = Accept(SyntaxKind.CloseBraceToken);
+
+        return new ArrayInitializerExpressionSyntax(
+            _syntaxTree,
+            openBrace,
+            expressions,
+            closeBrace
+        );
+    }
+
+    private SeparatedSyntaxList<ExpressionSyntax> ParseExpressionList(SyntaxKind terminator)
     {
         var items = new List<SyntaxNode>();
 
-        if (CurrentKind == SyntaxKind.CloseParenToken)
+        if (CurrentKind == terminator)
             return new SeparatedSyntaxList<ExpressionSyntax>(ImmutableArray<SyntaxNode>.Empty);
 
         while (true)
@@ -532,10 +555,7 @@ internal class Parser
             items.Add(arg);
 
             var currentToken = CurrentToken;
-            if (
-                currentToken.Kind == SyntaxKind.CloseParenToken
-                || currentToken.Kind == SyntaxKind.EndOfInputToken
-            )
+            if (currentToken.Kind == terminator || currentToken.Kind == SyntaxKind.EndOfInputToken)
                 break;
 
             var comma = Accept(SyntaxKind.CommaToken);
@@ -585,11 +605,33 @@ internal class Parser
         }
     }
 
-    private NewExpressionSyntax ParseNewExpression()
+    private ExpressionSyntax ParseNewExpression()
     {
-        // new Point(0, 1)
         var newToken = Accept();
         var type = ParseNameSyntax();
+
+        // new Point[ 5 ] or new Point[ ]
+        if (CurrentKind == SyntaxKind.OpenBracketToken)
+        {
+            var openBracket = Accept();
+            var rank = CurrentKind == SyntaxKind.NumberToken ? ParseLiteralExpression() : null;
+            var closeBracket = Accept(SyntaxKind.CloseBracketToken);
+
+            var initializer =
+                CurrentKind == SyntaxKind.OpenBraceToken ? ParseArrayInitializers() : null;
+
+            return new ArrayCreationExpressionSyntax(
+                _syntaxTree,
+                newToken,
+                type,
+                openBracket,
+                rank,
+                closeBracket,
+                initializer
+            );
+        }
+
+        // new Point(0, 1)
         var openToken = Accept(SyntaxKind.OpenParenToken);
         var arguments = ParseArguments();
         var closeToken = Accept(SyntaxKind.CloseParenToken);
@@ -630,6 +672,54 @@ internal class Parser
     //
     //     return name;
     // }
+
+
+    private SimpleNameSyntax ParseSimpleName()
+    {
+        var ident = Accept(SyntaxKind.IdentifierToken);
+
+        if (CurrentKind != SyntaxKind.LessThanToken)
+            return new IdentifierNameSyntax(_syntaxTree, ident);
+
+        var typeArgumentList = ParseTypeArgumentList();
+
+        return new GenericNameSyntax(_syntaxTree, ident, typeArgumentList);
+    }
+
+    private TypeArgumentList ParseTypeArgumentList()
+    {
+        var items = ImmutableArray.CreateBuilder<SyntaxNode>();
+
+        var lt = Accept(SyntaxKind.LessThanToken);
+
+        while (
+            CurrentKind != SyntaxKind.EndOfInputToken && CurrentKind != SyntaxKind.GreaterThanToken
+        )
+        {
+            var currentToken = CurrentToken;
+            var arg = ParseNameSyntax();
+            items.Add(arg);
+
+            if (CurrentKind == SyntaxKind.GreaterThanToken)
+                break;
+
+            var comma = Accept(SyntaxKind.CommaToken);
+            items.Add(comma);
+            if (CurrentToken == currentToken)
+            {
+                NextToken();
+            }
+        }
+
+        var gt = Accept(SyntaxKind.GreaterThanToken);
+
+        return new TypeArgumentList(
+            _syntaxTree,
+            lt,
+            new SeparatedSyntaxList<NameSyntax>(items.ToImmutable()),
+            gt
+        );
+    }
 
     private IdentifierNameSyntax ParseIdentifierName()
     {
