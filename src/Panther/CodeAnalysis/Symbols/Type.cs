@@ -68,6 +68,10 @@ public static class TypeResolver
             ApplyType { Left: ArrayType arrayType } indexType when Type.Int == indexType.Index
                 => arrayType.ElementType,
 
+            ApplyType { Left: TypeConstructor("string", _) } indexType
+                when Type.Int == indexType.Index
+                => Type.Char,
+
             ApplyType indexType => new ApplyType(Resolve(indexType.Left), Resolve(indexType.Index)),
             MethodType methodType
                 => new MethodType(methodType.Parameters, Resolve(methodType.ResultType)),

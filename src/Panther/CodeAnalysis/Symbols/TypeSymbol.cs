@@ -57,9 +57,12 @@ public abstract class TypeSymbol : Symbol
     {
         String = new TypedType(Symbol.None, TextLocation.None, "string")
             .WithFlags(SymbolFlags.Class)
-            .WithType(Type.String);
+            .WithType(Type.Delayed(() => Type.String));
 
-        String.NewTerm(TextLocation.None, "Length", SymbolFlags.Property).Declare();
+        String
+            .NewTerm(TextLocation.None, "Length", SymbolFlags.Property)
+            .WithType(Type.Delayed(() => Type.Int))
+            .Declare();
 
         var getItem = String.NewMethod(TextLocation.None, "get_Chars").Declare();
         getItem

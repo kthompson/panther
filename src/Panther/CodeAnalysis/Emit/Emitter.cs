@@ -208,10 +208,21 @@ internal class Emitter
 
     private void IterateTypes(TypedAssembly assembly, Action<Symbol> action)
     {
-        foreach (var type in assembly.RootSymbol.Types.Where(symbol => !symbol.IsImport))
+        var namespaceSymbol = assembly.RootSymbol;
+        IterateTypes(namespaceSymbol, action);
+    }
+
+    private void IterateTypes(Symbol namespaceSymbol, Action<Symbol> action)
+    {
+        foreach (var type in namespaceSymbol.Types.Where(symbol => !symbol.IsImport))
         {
             _currentType = type;
             action(type);
+        }
+
+        foreach (var ns in namespaceSymbol.Namespaces)
+        {
+            IterateTypes(ns, action);
         }
     }
 
@@ -686,17 +697,16 @@ internal class Emitter
         EmitExpression(processor, node.Expression);
 
         // This probably should be getting lowered to another expression type but it works for now
-        if (node.Property.Name == "Length" && node.Expression.Type is ArrayType)
+        var propertyName = node.Property.Name;
+        var expressionType = node.Expression.Type;
+        if (propertyName == "Length" && expressionType is ArrayType)
         {
             processor.Emit(OpCodes.Ldlen);
             return;
         }
 
-        var typeWithProp = LookupType(node.Expression.Type.Symbol).Resolve();
-        var prop = typeWithProp.Properties.FirstOrDefault(prop => prop.Name == node.Property.Name);
-        Assert(prop != null);
+        var getter = ResolvePropertyGetter(expressionType, propertyName);
 
-        var getter = prop!.GetMethod;
         processor.Emit(OpCodes.Callvirt, getter);
     }
 
@@ -949,8 +959,8 @@ internal class Emitter
     {
         EmitExpression(ilProcessor, conversionExpression.Expression);
 
-        var fromType = conversionExpression.Expression.Type;
-        var toType = conversionExpression.Type;
+        var fromType = TypeResolver.Resolve(conversionExpression.Expression.Type);
+        var toType = TypeResolver.Resolve(conversionExpression.Type);
         if (toType == Type.String)
         {
             if (fromType == Type.Bool)
@@ -1144,6 +1154,15 @@ internal class Emitter
         }
 
         return null;
+    }
+
+    private MethodReference ResolvePropertyGetter(Type type, string propertyName)
+    {
+        var typeWithProp = LookupType(type.Symbol).Resolve();
+        var prop = typeWithProp.Properties.FirstOrDefault(prop => prop.Name == propertyName);
+        Assert(prop != null);
+        var getter = prop!.GetMethod;
+        return _assemblyDefinition.MainModule.ImportReference(getter);
     }
 
     private FieldReference? ResolveField(string typeName, string fieldName)

@@ -8,5 +8,10 @@ public abstract partial class Symbol
     {
         public TermSymbol(Symbol owner, TextLocation location, string name)
             : base(owner, location, name) { }
+
+        public override string ToString()
+        {
+            return $"Symbol: {FullName}";
+        }
     }
 }

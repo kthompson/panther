@@ -41,6 +41,13 @@ internal abstract record Conversion
         if (from == Type.String && (to == Type.Bool || to == Type.Int))
             return Explicit;
 
+        if (
+            from is ArrayType(_, var fromElement)
+            && to is ArrayType(_, var toElement)
+            && fromElement == toElement
+        )
+            return Identity;
+
         return None;
     }
 }
