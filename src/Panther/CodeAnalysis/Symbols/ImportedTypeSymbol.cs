@@ -96,6 +96,16 @@ internal sealed class ImportedTypeSymbol : Symbol
 
     private static Type? LookupTypeByMetadataName(string name)
     {
+        if (name.EndsWith("[]"))
+        {
+            var elementName = name.Substring(0, name.Length - 2);
+            var elementType = LookupTypeByMetadataName(elementName);
+            if (elementType == null)
+                return null;
+
+            return Type.ArrayOf(elementType.Symbol);
+        }
+
         // TODO: we need to look up types other than these
         if (name == typeof(object).FullName)
             return Type.Any;

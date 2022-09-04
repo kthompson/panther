@@ -1243,6 +1243,18 @@ internal sealed class Typer
                     }
                 }
             }
+            case GenericNameSyntax genericNameSyntax:
+                if (genericNameSyntax.Identifier.Text == "Array")
+                {
+                    var inner = genericNameSyntax.TypeArgumentList.ArgumentList[0];
+                    var innerSymbol = BindTypeSymbol(inner, scope);
+                    if (innerSymbol == null)
+                        goto default;
+
+                    return Type.ArrayOf(innerSymbol).Symbol;
+                }
+                goto default;
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(syntax));
         }
@@ -1648,25 +1660,25 @@ internal sealed class Typer
         var then = BindExpression(syntax.ThenExpression, scope);
         var elseExpr = BindExpression(syntax.ElseExpression, scope);
 
-        if (condition.Type == Type.Error || then.Type == Type.Error || elseExpr.Type == Type.Error)
+        var thenType = TypeResolver.Resolve(then.Type);
+        var elseType = TypeResolver.Resolve(elseExpr.Type);
+        var conditionType = TypeResolver.Resolve(condition.Type);
+
+        if (conditionType == Type.Error || thenType == Type.Error || elseType == Type.Error)
             return new TypedErrorExpression(syntax);
 
-        if (then.Type != elseExpr.Type)
+        if (thenType != elseType)
         {
-            Diagnostics.ReportTypeMismatch(
-                syntax.ElseExpression.Location,
-                then.Type,
-                elseExpr.Type
-            );
+            Diagnostics.ReportTypeMismatch(syntax.ElseExpression.Location, thenType, elseType);
             return new TypedErrorExpression(syntax);
         }
 
-        if (condition.Type != Type.Bool)
+        if (conditionType != Type.Bool)
         {
             Diagnostics.ReportTypeMismatch(
                 syntax.ConditionExpression.Location,
                 Type.Bool,
-                condition.Type
+                conditionType
             );
             return new TypedErrorExpression(syntax);
         }
@@ -1925,13 +1937,15 @@ internal sealed class Typer
     {
         var left = BindExpression(syntax.Left, scope);
         var right = BindExpression(syntax.Right, scope);
+        var leftType = TypeResolver.Resolve(left.Type);
+        var rightType = TypeResolver.Resolve(right.Type);
         var boundOperator = TypedBinaryOperator.Bind(
             syntax.OperatorToken.Kind,
-            left.Type,
-            right.Type
+            leftType,
+            rightType
         );
 
-        if (left.Type == Type.Error || right.Type == Type.Error)
+        if (leftType == Type.Error || rightType == Type.Error)
             return new TypedErrorExpression(syntax);
 
         if (boundOperator == null)
@@ -1939,8 +1953,8 @@ internal sealed class Typer
             Diagnostics.ReportUndefinedBinaryOperator(
                 syntax.OperatorToken.Location,
                 syntax.OperatorToken.Text,
-                left.Type,
-                right.Type
+                leftType,
+                rightType
             );
             return new TypedErrorExpression(syntax);
         }

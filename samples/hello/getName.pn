@@ -1,4 +1,0 @@
-def getName(): string = {
-    println("What is your name?")
-    readLine()
-}
