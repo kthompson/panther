@@ -886,20 +886,22 @@ internal class Emitter
         }
     }
 
-    private void EmitCallExpression(ILProcessor ilProcessor, TypedCallExpression callExpression)
+    private void EmitCallExpression(ILProcessor ilProcessor, TypedCallExpression node)
     {
-        if (
-            callExpression.Expression != null
-            && callExpression.Expression is not TypedTypeExpression
-        )
+        if (node.Expression != null)
         {
-            EmitExpression(ilProcessor, callExpression.Expression);
+            if (node.Expression is not TypedTypeExpression)
+                EmitExpression(ilProcessor, node.Expression);
+        }
+        else if (!node.Method.IsStatic)
+        {
+            ilProcessor.Emit(OpCodes.Ldarg_0); // load this
         }
 
-        foreach (var argExpr in callExpression.Arguments)
+        foreach (var argExpr in node.Arguments)
             EmitExpression(ilProcessor, argExpr);
 
-        var methodSymbol = callExpression.Method;
+        var methodSymbol = node.Method;
         if (_methods.TryGetValue(methodSymbol, out var method))
         {
             ilProcessor.Emit(OpCodes.Call, method);
@@ -1101,7 +1103,8 @@ internal class Emitter
         switch (variable)
         {
             case { IsParameter: true }:
-                ilProcessor.Emit(OpCodes.Ldarg, variable.Index);
+                var hasThis = variable.Owner.IsStatic ? 0 : 1;
+                ilProcessor.Emit(OpCodes.Ldarg, variable.Index + hasThis);
                 break;
 
             case { IsLocal: true }:
