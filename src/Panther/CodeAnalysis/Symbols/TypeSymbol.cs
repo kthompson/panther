@@ -64,6 +64,33 @@ public abstract class TypeSymbol : Symbol
             .WithType(Type.Delayed(() => Type.Int))
             .Declare();
 
+        var substring1 = String
+            .NewTerm(TextLocation.None, "Substring", SymbolFlags.Method)
+            .Declare();
+
+        substring1
+            .NewParameter(TextLocation.None, "startIndex", 0)
+            .WithType(Type.Delayed(() => Type.Int))
+            .Declare();
+
+        substring1
+            .NewParameter(TextLocation.None, "length", 1)
+            .WithType(Type.Delayed(() => Type.Int))
+            .Declare();
+
+        substring1.Type = new MethodType(substring1.Parameters, Type.Delayed(() => Type.String));
+
+        var substring2 = String
+            .NewTerm(TextLocation.None, "Substring", SymbolFlags.Method)
+            .Declare();
+
+        substring2
+            .NewParameter(TextLocation.None, "startIndex", 0)
+            .WithType(Type.Delayed(() => Type.Int))
+            .Declare();
+
+        substring2.Type = new MethodType(substring2.Parameters, Type.Delayed(() => Type.String));
+
         var getItem = String.NewMethod(TextLocation.None, "get_Chars").Declare();
         getItem
             .NewParameter(TextLocation.None, "i", 0)
