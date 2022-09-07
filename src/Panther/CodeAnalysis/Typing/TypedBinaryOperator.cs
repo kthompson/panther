@@ -14,8 +14,8 @@ internal sealed class TypedBinaryOperator
     public Type Type { get; }
 
     private TypedBinaryOperator(
-        SyntaxKind syntaxKind,
         TypedBinaryOperatorKind kind,
+        SyntaxKind syntaxKind,
         Type leftType,
         Type rightType,
         Type type
@@ -29,124 +29,148 @@ internal sealed class TypedBinaryOperator
     }
 
     private TypedBinaryOperator(
-        SyntaxKind syntaxKind,
         TypedBinaryOperatorKind kind,
+        SyntaxKind syntaxKind,
         Type type,
         Type resultType
-    ) : this(syntaxKind, kind, type, type, resultType) { }
+    ) : this(kind, syntaxKind, type, type, resultType) { }
 
-    private TypedBinaryOperator(SyntaxKind syntaxKind, TypedBinaryOperatorKind kind, Type type)
-        : this(syntaxKind, kind, type, type, type) { }
+    private TypedBinaryOperator(TypedBinaryOperatorKind kind, SyntaxKind syntaxKind, Type type)
+        : this(kind, syntaxKind, type, type, type) { }
 
     private static readonly TypedBinaryOperator[] _operators =
     {
-        new TypedBinaryOperator(SyntaxKind.PlusToken, TypedBinaryOperatorKind.Addition, Type.Int),
+        new TypedBinaryOperator(TypedBinaryOperatorKind.Addition, SyntaxKind.PlusToken, Type.Int),
         new TypedBinaryOperator(
-            SyntaxKind.PlusToken,
             TypedBinaryOperatorKind.Addition,
+            SyntaxKind.PlusToken,
             Type.String
         ),
         new TypedBinaryOperator(
-            SyntaxKind.DashToken,
-            TypedBinaryOperatorKind.Subtraction,
-            Type.Int
-        ),
-        new TypedBinaryOperator(
-            SyntaxKind.StarToken,
-            TypedBinaryOperatorKind.Multiplication,
-            Type.Int
-        ),
-        new TypedBinaryOperator(SyntaxKind.SlashToken, TypedBinaryOperatorKind.Division, Type.Int),
-        new TypedBinaryOperator(
-            SyntaxKind.CaretToken,
-            TypedBinaryOperatorKind.BitwiseXor,
-            Type.Int
-        ),
-        new TypedBinaryOperator(
-            SyntaxKind.AmpersandToken,
             TypedBinaryOperatorKind.BitwiseAnd,
+            SyntaxKind.AmpersandToken,
             Type.Int
         ),
-        new TypedBinaryOperator(SyntaxKind.PipeToken, TypedBinaryOperatorKind.BitwiseOr, Type.Int),
+        new TypedBinaryOperator(TypedBinaryOperatorKind.BitwiseOr, SyntaxKind.PipeToken, Type.Int),
         new TypedBinaryOperator(
-            SyntaxKind.EqualsEqualsToken,
+            TypedBinaryOperatorKind.BitwiseXor,
+            SyntaxKind.CaretToken,
+            Type.Int
+        ),
+        new TypedBinaryOperator(TypedBinaryOperatorKind.Division, SyntaxKind.SlashToken, Type.Int),
+        new TypedBinaryOperator(
             TypedBinaryOperatorKind.Equal,
+            SyntaxKind.EqualsEqualsToken,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
+            TypedBinaryOperatorKind.Equal,
+            SyntaxKind.EqualsEqualsToken,
+            Type.Char,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
+            TypedBinaryOperatorKind.Equal,
+            SyntaxKind.EqualsEqualsToken,
             Type.Int,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.LessThanToken,
-            TypedBinaryOperatorKind.LessThan,
-            Type.Int,
+            TypedBinaryOperatorKind.Equal,
+            SyntaxKind.EqualsEqualsToken,
+            Type.String,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.LessThanEqualsToken,
-            TypedBinaryOperatorKind.LessThanOrEqual,
-            Type.Int,
-            Type.Bool
-        ),
-        new TypedBinaryOperator(
-            SyntaxKind.GreaterThanToken,
             TypedBinaryOperatorKind.GreaterThan,
+            SyntaxKind.GreaterThanToken,
+            Type.Char,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
+            TypedBinaryOperatorKind.GreaterThan,
+            SyntaxKind.GreaterThanToken,
             Type.Int,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.GreaterThanEqualsToken,
             TypedBinaryOperatorKind.GreaterThanOrEqual,
+            SyntaxKind.GreaterThanEqualsToken,
+            Type.Char,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
+            TypedBinaryOperatorKind.GreaterThanOrEqual,
+            SyntaxKind.GreaterThanEqualsToken,
             Type.Int,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.BangEqualsToken,
-            TypedBinaryOperatorKind.NotEqual,
+            TypedBinaryOperatorKind.LessThan,
+            SyntaxKind.LessThanToken,
+            Type.Char,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
+            TypedBinaryOperatorKind.LessThan,
+            SyntaxKind.LessThanToken,
             Type.Int,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.AmpersandAmpersandToken,
+            TypedBinaryOperatorKind.LessThanOrEqual,
+            SyntaxKind.LessThanEqualsToken,
+            Type.Char,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
+            TypedBinaryOperatorKind.LessThanOrEqual,
+            SyntaxKind.LessThanEqualsToken,
+            Type.Int,
+            Type.Bool
+        ),
+        new TypedBinaryOperator(
             TypedBinaryOperatorKind.LogicalAnd,
+            SyntaxKind.AmpersandAmpersandToken,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.PipePipeToken,
             TypedBinaryOperatorKind.LogicalOr,
+            SyntaxKind.PipePipeToken,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.EqualsEqualsToken,
-            TypedBinaryOperatorKind.Equal,
-            Type.Bool
+            TypedBinaryOperatorKind.Multiplication,
+            SyntaxKind.StarToken,
+            Type.Int
         ),
         new TypedBinaryOperator(
-            SyntaxKind.BangEqualsToken,
             TypedBinaryOperatorKind.NotEqual,
+            SyntaxKind.BangEqualsToken,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.EqualsEqualsToken,
-            TypedBinaryOperatorKind.Equal,
+            TypedBinaryOperatorKind.NotEqual,
+            SyntaxKind.BangEqualsToken,
             Type.Char,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.BangEqualsToken,
             TypedBinaryOperatorKind.NotEqual,
-            Type.Char,
+            SyntaxKind.BangEqualsToken,
+            Type.Int,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.EqualsEqualsToken,
-            TypedBinaryOperatorKind.Equal,
+            TypedBinaryOperatorKind.NotEqual,
+            SyntaxKind.BangEqualsToken,
             Type.String,
             Type.Bool
         ),
         new TypedBinaryOperator(
-            SyntaxKind.BangEqualsToken,
-            TypedBinaryOperatorKind.NotEqual,
-            Type.String,
-            Type.Bool
+            TypedBinaryOperatorKind.Subtraction,
+            SyntaxKind.DashToken,
+            Type.Int
         ),
     };
 
