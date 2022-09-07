@@ -19,10 +19,7 @@ internal sealed class InlineTemporaries : TypedStatementListRewriter
     {
         if (
             node is TypedVariableDeclarationStatement { Expression: { } } varDecl
-            && (
-                varDecl.Variable.Name.StartsWith("temp$")
-            //|| varDecl.Variable.Name.StartsWith("ctemp$")
-            )
+            && varDecl.Variable.Name.StartsWith("temp$")
         )
         {
             varDecl.Variable.Delete();

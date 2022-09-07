@@ -68,7 +68,9 @@ internal sealed class ImportedTypeSymbol : Symbol
 
     private Symbol? ImportMethodDefinition(MethodDefinition methodDefinition)
     {
-        var method = this.NewMethod(TextLocation.None, methodDefinition.Name).Declare();
+        var method = this.NewMethod(TextLocation.None, methodDefinition.Name)
+            .WithFlags(SymbolFlags.Static)
+            .Declare();
 
         var parameters = ImmutableArray.CreateBuilder<Symbol>();
 
@@ -98,7 +100,7 @@ internal sealed class ImportedTypeSymbol : Symbol
     {
         if (name.EndsWith("[]"))
         {
-            var elementName = name.Substring(0, name.Length - 2);
+            var elementName = name[..^2];
             var elementType = LookupTypeByMetadataName(elementName);
             if (elementType == null)
                 return null;

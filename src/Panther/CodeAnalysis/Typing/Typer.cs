@@ -61,8 +61,7 @@ internal sealed class Typer
             }
             else
             {
-                // +1 since arg 0 is `this`
-                var parameter = ctor.NewParameter(field.Identifier.Location, fieldName, index + 1)
+                var parameter = ctor.NewParameter(field.Identifier.Location, fieldName, index)
                     .WithType(fieldType);
                 ctor.DefineSymbol(parameter);
                 parameters.Add(parameter);
