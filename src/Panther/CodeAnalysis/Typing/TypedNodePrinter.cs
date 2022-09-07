@@ -85,6 +85,26 @@ internal class TypedNodePrinter : TypedNodeVisitor
     protected override void DefaultVisit(TypedNode node) =>
         throw new NotSupportedException(node.Kind.ToString());
 
+    public override void VisitTypeExpression(TypedTypeExpression node)
+    {
+        _writer.WriteIdentifier(node.Type.Symbol.Name);
+    }
+
+    public override void VisitIndexExpression(TypedIndexExpression node)
+    {
+        node.Expression.Accept(this);
+        _writer.WritePunctuation("[");
+        node.Index.Accept(this);
+        _writer.WritePunctuation("]");
+    }
+
+    public override void VisitPropertyExpression(TypedPropertyExpression node)
+    {
+        node.Expression.Accept(this);
+        _writer.WritePunctuation(".");
+        _writer.WriteIdentifier(node.Property.Name);
+    }
+
     public override void VisitNewExpression(TypedNewExpression node)
     {
         _writer.WriteKeyword("new ");
@@ -209,6 +229,16 @@ internal class TypedNodePrinter : TypedNodeVisitor
 
     public override void VisitCallExpression(TypedCallExpression node)
     {
+        if (node.Expression != null)
+        {
+            node.Expression.Accept(this);
+            _writer.WritePunctuation(".");
+        }
+        else if (!node.Method.IsStatic)
+        {
+            _writer.WriteKeyword("this");
+            _writer.WritePunctuation(".");
+        }
         _writer.WriteIdentifier(node.Method.Name);
         _writer.WritePunctuation("(");
         var iterator = node.Arguments.GetEnumerator();
@@ -302,6 +332,10 @@ internal class TypedNodePrinter : TypedNodeVisitor
         else if (node.Type == Type.String)
         {
             _writer.WriteString("\"" + value.Replace("\"", "\"\"") + "\"");
+        }
+        else if (node.Type == Type.Char)
+        {
+            _writer.WriteString("'" + value.Replace("'", "\\'") + "'");
         }
         else
         {
