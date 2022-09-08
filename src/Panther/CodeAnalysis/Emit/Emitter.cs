@@ -716,10 +716,11 @@ internal class Emitter
     )
     {
         Assert(node.Expressions.Length == 0);
+        Assert(node.ArraySize != null);
 
         var arrayType = LookupType(node.Type.Symbol);
 
-        processor.Emit(OpCodes.Ldc_I4, node.ArraySize);
+        EmitExpression(processor, node.ArraySize!);
         processor.Emit(OpCodes.Newarr, arrayType);
     }
 

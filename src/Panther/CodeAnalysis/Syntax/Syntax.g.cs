@@ -50,7 +50,7 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssignmentExpression(this);
     }
 
-    public sealed partial record ArrayCreationExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenBracket, LiteralExpressionSyntax? ArrayRank, SyntaxToken CloseBracket, ArrayInitializerExpressionSyntax? Initializer)
+    public sealed partial record ArrayCreationExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenBracket, ExpressionSyntax? ArrayRank, SyntaxToken CloseBracket, ArrayInitializerExpressionSyntax? Initializer)
         : ExpressionSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.ArrayCreationExpression;
 

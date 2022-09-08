@@ -50,6 +50,7 @@ internal abstract class TypedTreeRewriter
         TypedArrayCreationExpression node
     )
     {
+        var arraySize = node.ArraySize != null ? RewriteExpression(node.ArraySize) : null;
         List<TypedExpression>? newArguments = null;
 
         for (var i = 0; i < node.Expressions.Length; i++)
@@ -74,13 +75,13 @@ internal abstract class TypedTreeRewriter
             newArguments?.Add(newArgument);
         }
 
-        if (newArguments == null)
+        if (newArguments == null && arraySize == node.ArraySize)
             return node;
 
         return new TypedArrayCreationExpression(
             node.Syntax,
             node.ElementType,
-            node.ArraySize,
+            arraySize,
             newArguments?.ToImmutableArray() ?? node.Expressions
         );
     }

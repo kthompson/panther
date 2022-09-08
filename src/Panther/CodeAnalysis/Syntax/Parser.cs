@@ -614,7 +614,10 @@ internal class Parser
         if (CurrentKind == SyntaxKind.OpenBracketToken)
         {
             var openBracket = Accept();
-            var rank = CurrentKind == SyntaxKind.NumberToken ? ParseLiteralExpression() : null;
+            var rank =
+                CurrentKind == SyntaxKind.CloseBracketToken
+                    ? null
+                    : ParseExpression(OperatorPrecedence.Lowest);
             var closeBracket = Accept(SyntaxKind.CloseBracketToken);
 
             var initializer =
