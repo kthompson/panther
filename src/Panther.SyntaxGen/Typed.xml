@@ -36,7 +36,7 @@
         <Kind Name="ArrayCreationExpression"/>
 
         <Field Name="ElementType" Type="Symbol" />
-        <Field Name="ArraySize" Type="int" />
+        <Field Name="ArraySize" Type="TypedExpression?" />
         <Field Name="Expressions" Type="ImmutableArray&lt;TypedExpression&gt;" />
     </Node>
 

@@ -24,7 +24,7 @@
         <Field Name="Type" Type="NameSyntax" />
 
         <Field Name="OpenBracket" Type="SyntaxToken" />
-        <Field Name="ArrayRank" Type="LiteralExpressionSyntax?" />
+        <Field Name="ArrayRank" Type="ExpressionSyntax?" />
         <Field Name="CloseBracket" Type="SyntaxToken" />
         
         <Field Name="Initializer" Type="ArrayInitializerExpressionSyntax?" />

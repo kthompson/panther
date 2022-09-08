@@ -939,16 +939,18 @@ internal sealed class Typer
                 return new TypedErrorExpression(syntax);
             }
 
-            if (syntax.ArrayRank is not { Value: int rank })
+            var typedRank = BindExpression(syntax.ArrayRank, scope);
+
+            if (typedRank.Type != Type.Int)
             {
-                Diagnostics.ReportArrayRankMustBeAIntLiteral(syntax.Location);
+                Diagnostics.ReportArrayRankMustBeAnInt(syntax.Location);
                 return new TypedErrorExpression(syntax);
             }
 
             return new TypedArrayCreationExpression(
                 syntax,
                 typeSymbol,
-                rank,
+                typedRank,
                 ImmutableArray<TypedExpression>.Empty
             );
         }
@@ -959,18 +961,13 @@ internal sealed class Typer
             )
             .ToImmutableArray();
 
-        if (syntax.ArrayRank is { Value: int arrayRank } && arrayRank != convertedArgs.Length)
+        if (syntax.ArrayRank is not null)
         {
-            Diagnostics.ReportArrayRankMustMatchInitializerLength(syntax.Location);
+            Diagnostics.ReportArrayOnlyRankOrInitializer(syntax.ArrayRank.Location);
             return new TypedErrorExpression(syntax);
         }
 
-        return new TypedArrayCreationExpression(
-            syntax,
-            typeSymbol,
-            convertedArgs.Length,
-            convertedArgs
-        );
+        return new TypedArrayCreationExpression(syntax, typeSymbol, null, convertedArgs);
     }
 
     private TypedExpression BindNewExpression(NewExpressionSyntax syntax, TypedScope scope)

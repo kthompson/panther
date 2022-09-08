@@ -242,9 +242,9 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     public void ReportArrayCreationRequiresRankOrInitializer(TextLocation location) =>
         Report(location, "Array creation requires rank or initializer");
 
-    public void ReportArrayRankMustBeAIntLiteral(TextLocation location) =>
-        Report(location, "Array rank must be an int literal");
+    public void ReportArrayRankMustBeAnInt(TextLocation location) =>
+        Report(location, "Array rank must be of type 'int'");
 
-    public void ReportArrayRankMustMatchInitializerLength(TextLocation location) =>
-        Report(location, "Array rank must match initializer length");
+    public void ReportArrayOnlyRankOrInitializer(TextLocation location) =>
+        Report(location, "Array cannot provide rank and initializer");
 }

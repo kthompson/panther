@@ -65,7 +65,7 @@ internal sealed partial record TypedBlockExpression(SyntaxNode Syntax, Immutable
     public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitBlockExpression(this);
 }
 
-internal sealed partial record TypedArrayCreationExpression(SyntaxNode Syntax, Symbol ElementType, int ArraySize, ImmutableArray<TypedExpression> Expressions)
+internal sealed partial record TypedArrayCreationExpression(SyntaxNode Syntax, Symbol ElementType, TypedExpression? ArraySize, ImmutableArray<TypedExpression> Expressions)
     : TypedExpression(Syntax) {
     public override TypedNodeKind Kind => TypedNodeKind.ArrayCreationExpression;
 
