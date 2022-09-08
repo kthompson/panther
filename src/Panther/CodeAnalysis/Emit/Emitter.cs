@@ -430,19 +430,17 @@ internal class Emitter
             var fieldReference = _fields[fieldSymbol];
             var field = fieldReference.Resolve();
             var isStatic = (field.Attributes & FieldAttributes.Static) != 0;
-            if (isStatic)
+            if (!isStatic)
             {
-                // load RHS to stack
-                EmitExpression(ilProcessor, assignmentStatement.Right);
-                ilProcessor.Emit(OpCodes.Stsfld, fieldReference);
-                return;
+                ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
             }
 
-            ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
+            // load RHS to stack
             EmitExpression(ilProcessor, assignmentStatement.Right);
 
             // perform: this.fieldReference = value
-            ilProcessor.Emit(OpCodes.Stfld, fieldReference);
+            //      or: Object.fieldReference = value
+            ilProcessor.Emit(isStatic ? OpCodes.Stsfld : OpCodes.Stfld, fieldReference);
         }
         else if (current is TypedFieldExpression(_, var leftOfField, var variable))
         {
@@ -499,7 +497,7 @@ internal class Emitter
             }
             else
             {
-                throw new ArgumentOutOfRangeException();
+                ilProcessor.Emit(OpCodes.Stelem_Ref);
             }
         }
         else
@@ -521,6 +519,10 @@ internal class Emitter
             var field = _fields[pantherVar];
             if (variableDeclarationStatement.Expression != null)
             {
+                if (!pantherVar.IsStatic)
+                {
+                    ilProcessor.Emit(OpCodes.Ldarg_0); // load `this`
+                }
                 EmitExpression(ilProcessor, variableDeclarationStatement.Expression);
                 ilProcessor.Emit(pantherVar.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, field);
             }
@@ -688,7 +690,7 @@ internal class Emitter
         }
         else
         {
-            throw new ArgumentOutOfRangeException();
+            processor.Emit(OpCodes.Ldelem_Ref);
         }
     }
 
