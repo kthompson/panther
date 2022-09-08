@@ -851,6 +851,7 @@ internal sealed class Typer
             variable = scope.Symbol
                 .NewField(identifier.Location, name, isReadOnly)
                 .WithType(expressionType);
+
             if (scope.Symbol.IsObject)
             {
                 variable.Flags |= SymbolFlags.Static;
