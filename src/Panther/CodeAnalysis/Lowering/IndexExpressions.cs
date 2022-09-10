@@ -75,7 +75,8 @@ sealed class IndexExpressions
                     new TypedArrayCreationExpression(
                         node.Syntax,
                         node.ElementType,
-                        node.ArraySize,
+                        node.ArraySize
+                            ?? new TypedLiteralExpression(node.Syntax, node.Expressions.Length),
                         ImmutableArray<TypedExpression>.Empty
                     )
                 )
