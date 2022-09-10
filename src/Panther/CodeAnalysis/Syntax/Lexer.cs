@@ -157,7 +157,7 @@ internal class Lexer
             if (Current == EndOfInputCharacter)
             {
                 _diagnostics.ReportUnterminatedBlockComment(
-                    new TextLocation(_file, new TextSpan(start, _position))
+                    new TextLocation(_file, new TextSpan(start, _position - start))
                 );
                 return new SyntaxTrivia(
                     _syntaxTree,
@@ -373,10 +373,6 @@ internal class Lexer
         char? c = null;
         switch (Current)
         {
-            case '\'':
-                Next(); // end '
-                break;
-
             case '\\': // escape sequence
                 var escapeSequence = ParseEscapeSequence();
                 if (escapeSequence != null)
@@ -386,6 +382,10 @@ internal class Lexer
             case '\n':
             case '\r':
             case null:
+                _diagnostics.ReportUnterminatedChar(
+                    new TextLocation(_file, new TextSpan(start, 1))
+                );
+
                 break;
 
             default:
@@ -458,6 +458,10 @@ internal class Lexer
         Next(); // accept \
         switch (Current)
         {
+            case '\'':
+                Next();
+                return "\'";
+
             case 'r':
                 Next();
                 return "\r";
