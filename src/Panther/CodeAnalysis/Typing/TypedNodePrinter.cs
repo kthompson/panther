@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.IO;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.IO;
 using Type = Panther.CodeAnalysis.Symbols.Type;
@@ -84,6 +85,33 @@ internal class TypedNodePrinter : TypedNodeVisitor
 
     protected override void DefaultVisit(TypedNode node) =>
         throw new NotSupportedException(node.Kind.ToString());
+
+    public override void VisitArrayCreationExpression(TypedArrayCreationExpression node)
+    {
+        _writer.WriteKeyword("new ");
+        node.Type.WriteTo(_writer);
+        _writer.WritePunctuation("[");
+        node.ArraySize?.Accept(this);
+        _writer.WritePunctuation("]");
+
+        if (!node.Expressions.IsEmpty)
+        {
+            _writer.WritePunctuation("{");
+            var iterator = node.Expressions.GetEnumerator();
+            if (iterator.MoveNext())
+            {
+                while (true)
+                {
+                    iterator.Current.Accept(this);
+                    if (!iterator.MoveNext())
+                        break;
+
+                    _writer.WritePunctuation(", ");
+                }
+            }
+            _writer.WritePunctuation("}");
+        }
+    }
 
     public override void VisitTypeExpression(TypedTypeExpression node)
     {
@@ -218,7 +246,7 @@ internal class TypedNodePrinter : TypedNodeVisitor
         _writer.WriteKeyword(node.Variable.IsReadOnly ? "val " : "var ");
         _writer.WriteIdentifier(node.Variable.Name);
         _writer.WritePunctuation(": ");
-        _writer.WriteKeyword(node.Variable.Type.ToString());
+        node.Variable.Type.WriteTo(_writer);
         if (node.Expression != null)
         {
             _writer.WritePunctuation(" = ");
