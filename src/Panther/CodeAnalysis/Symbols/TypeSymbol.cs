@@ -20,25 +20,31 @@ public abstract class TypeSymbol : Symbol
     // like a BuiltinType or something. that would also cover the `err` type
     public static readonly TypeSymbol Any = new TypedType(Symbol.None, TextLocation.None, "any")
         .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Any);
+        .WithType(Type.Delayed(() => Type.Any));
 
     public static readonly TypeSymbol Bool = new TypedType(Symbol.None, TextLocation.None, "bool")
         .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Bool);
+        .WithType(Type.Delayed(() => Type.Bool));
 
     public static readonly TypeSymbol Char = new TypedType(Symbol.None, TextLocation.None, "char")
         .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Char);
+        .WithType(Type.Delayed(() => Type.Char));
 
     public static readonly TypeSymbol Int = new TypedType(Symbol.None, TextLocation.None, "int")
         .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Int);
+        .WithType(Type.Delayed(() => Type.Int));
 
-    public static readonly TypeSymbol String;
+    public static readonly TypeSymbol String = new TypedType(
+        Symbol.None,
+        TextLocation.None,
+        "string"
+    )
+        .WithFlags(SymbolFlags.Class)
+        .WithType(Type.Delayed(() => Type.String));
 
     public static readonly TypeSymbol Unit = new TypedType(Symbol.None, TextLocation.None, "unit")
         .WithFlags(SymbolFlags.Class)
-        .WithType(Type.Unit);
+        .WithType(Type.Delayed(() => Type.Unit));
 
     public static Symbol ArrayOf(Symbol symbol)
     {
@@ -55,10 +61,6 @@ public abstract class TypeSymbol : Symbol
 
     static TypeSymbol()
     {
-        String = new TypedType(Symbol.None, TextLocation.None, "string")
-            .WithFlags(SymbolFlags.Class)
-            .WithType(Type.Delayed(() => Type.String));
-
         String
             .NewTerm(TextLocation.None, "Length", SymbolFlags.Property)
             .WithType(Type.Delayed(() => Type.Int))
