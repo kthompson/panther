@@ -30,6 +30,7 @@ internal class Emitter
     private readonly MethodReference? _convertBoolToString;
     private readonly MethodReference? _convertInt32ToString;
     private readonly MethodReference? _convertCharToString;
+    private readonly MethodReference? _convertObjectToString;
     private readonly MethodReference? _convertToBool;
     private readonly MethodReference? _convertToInt32;
     private readonly FieldReference? _unit;
@@ -111,6 +112,11 @@ internal class Emitter
             new[] { "System.Int32" }
         );
         _convertCharToString = ResolveMethod("System.Convert", "ToString", new[] { "System.Char" });
+        _convertObjectToString = ResolveMethod(
+            "System.Convert",
+            "ToString",
+            new[] { "System.Object" }
+        );
         _convertToBool = ResolveMethod("System.Convert", "ToBoolean", new[] { "System.Object" });
         _convertToInt32 = ResolveMethod("System.Convert", "ToInt32", new[] { "System.Object" });
         _unit = ResolveField("Panther.Unit", "Default");
@@ -983,6 +989,12 @@ internal class Emitter
             if (fromType == Type.Char)
             {
                 ilProcessor.Emit(OpCodes.Call, _convertCharToString);
+                return;
+            }
+
+            if (fromType == Type.Any)
+            {
+                ilProcessor.Emit(OpCodes.Call, _convertObjectToString);
                 return;
             }
         }
