@@ -27,6 +27,7 @@ internal class Emitter
 
     private readonly TypeReference? _voidType;
     private readonly MethodReference? _stringConcatReference;
+    private readonly MethodReference? _stringEqualityReference;
     private readonly MethodReference? _convertBoolToString;
     private readonly MethodReference? _convertInt32ToString;
     private readonly MethodReference? _convertCharToString;
@@ -98,6 +99,12 @@ internal class Emitter
         _stringConcatReference = ResolveMethod(
             "System.String",
             "Concat",
+            new[] { "System.String", "System.String" }
+        );
+
+        _stringEqualityReference = ResolveMethod(
+            "System.String",
+            "op_Equality",
             new[] { "System.String", "System.String" }
         );
 
@@ -834,8 +841,18 @@ internal class Emitter
                 break;
 
             case TypedBinaryOperatorKind.Equal:
-                // int, bool, string
-                ilProcessor.Emit(OpCodes.Ceq);
+
+                if (@operator.LeftType == Type.String)
+                {
+                    // String
+                    ilProcessor.Emit(OpCodes.Call, _stringEqualityReference);
+                }
+                else
+                {
+                    // int, bool
+                    ilProcessor.Emit(OpCodes.Ceq);
+                }
+
                 break;
 
             case TypedBinaryOperatorKind.GreaterThan:
