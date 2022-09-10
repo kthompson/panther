@@ -1,6 +1,9 @@
 ﻿def main() = {
     val p = new Point(10, 20)
     println(p.X)
+    val extent = new Extent(5, 15, 0, 20)
+    println(extent.width())
+    println(extent.height())
     ()
 }
 

@@ -94,11 +94,14 @@
 	.method public static
 		void main () cil managed
 	{
-		.maxstack 2
+		.maxstack 4
 		.entrypoint
 		.locals init (
 		[0] class Point,
-		[1] object
+		[1] object,
+		[2] class Extent,
+		[3] object,
+		[4] object
 		)
 
 		IL_0000: ldc.i4.s 10
@@ -111,7 +114,25 @@
 		IL_0015: stloc.1
 		IL_0016: ldloc.1
 		IL_0017: call void [Panther.StdLib]Panther.Predef::println(object)
-		IL_001c: ret
+		IL_001c: ldc.i4.5
+		IL_001d: ldc.i4.s 15
+		IL_001f: ldc.i4.0
+		IL_0020: ldc.i4.s 20
+		IL_0022: newobj instance void Extent::.ctor(int32, int32, int32, int32)
+		IL_0027: stloc.2
+		IL_0028: ldloc.2
+		IL_0029: call instance int32 Extent::width()
+		IL_002e: box [System.Private.CoreLib]System.Int32
+		IL_0033: stloc.3
+		IL_0034: ldloc.3
+		IL_0035: call void [Panther.StdLib]Panther.Predef::println(object)
+		IL_003a: ldloc.2
+		IL_003b: call instance int32 Extent::height()
+		IL_0040: box [System.Private.CoreLib]System.Int32
+        IL_0045: stloc.s 4
+		IL_0047: ldloc.s 4
+		IL_0049: call void [Panther.StdLib]Panther.Predef::println(object)
+		IL_004e: ret
 	} // end of method $Program::main
 
 } // end of class $Program
