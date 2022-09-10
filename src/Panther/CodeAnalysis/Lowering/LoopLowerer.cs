@@ -220,7 +220,7 @@ internal sealed class LoopLowerer : TypedTreeRewriter
                 condition,
                 whileBody,
                 node.BreakLabel,
-                new TypedLabel("continue")
+                GenerateLabel("ForToWhileContinue")
             )
         );
         return RewriteExpression(newBlock);
