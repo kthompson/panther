@@ -10,8 +10,8 @@ internal static class SymbolPrinter
     {
         switch (symbol)
         {
-            case ClassType:
-                writer.WriteIdentifier("<classtype>");
+            case ClassType(var classSym):
+                writer.WriteIdentifier(classSym.Name);
                 break;
 
             case ErrorType:
@@ -44,6 +44,12 @@ internal static class SymbolPrinter
                 break;
             case Unresolved:
                 writer.WriteIdentifier("<unresolved>");
+                break;
+            case ArrayType(_, var elementType):
+                writer.WriteIdentifier("Array");
+                writer.WritePunctuation("<");
+                elementType.WriteTo(writer);
+                writer.WritePunctuation(">");
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(symbol));
