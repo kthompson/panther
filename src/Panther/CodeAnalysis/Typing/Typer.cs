@@ -1571,6 +1571,7 @@ internal sealed class Typer
             ["any"] = Type.Any,
             ["int"] = Type.Int,
             ["bool"] = Type.Bool,
+            ["char"] = Type.Char,
             ["string"] = Type.String,
             ["unit"] = Type.Unit,
         };
