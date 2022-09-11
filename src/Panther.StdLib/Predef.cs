@@ -15,4 +15,9 @@ public static class Predef
     private static Random _random = new Random();
 
     public static int rnd(int max) => _random.Next(max);
+
+    public static void panic() => throw new InvalidOperationException("panicked");
+
+    public static void panic(object value) =>
+        throw new InvalidOperationException($"panicked: {value}");
 }
