@@ -6,6 +6,7 @@ using Mono.Cecil;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
+using Panther.CodeAnalysis.Typing;
 
 namespace Panther.CodeAnalysis;
 
@@ -30,7 +31,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void ReportInvalidNumber(TextLocation textSpan, string text, Type type) =>
-        Report(textSpan, $"The number {text} isn't a valid '{type}'");
+        Report(textSpan, $"The number {text} isn't a valid '{type.ToPrintString()}'");
 
     public void ReportInvalidEscapeSequence(TextLocation location, in char current) =>
         Report(location, $"Invalid character in escape sequence: {current}");
@@ -57,7 +58,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     ) =>
         Report(
             location,
-            $"Unary operator '{operatorText}' is not defined for type '{operandType}'"
+            $"Unary operator '{operatorText}' is not defined for type '{operandType.ToPrintString()}'"
         );
 
     public void ReportUndefinedBinaryOperator(
@@ -68,7 +69,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
     ) =>
         Report(
             location,
-            $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'"
+            $"Binary operator '{operatorText}' is not defined for types '{leftType.ToPrintString()}' and '{rightType.ToPrintString()}'"
         );
 
     public void ReportUndefinedName(TextLocation location, string name) =>
@@ -81,7 +82,10 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         Report(location, $"Reassignment to val '{name}'");
 
     public void ReportTypeMismatch(TextLocation location, Type expectedType, Type foundType) =>
-        Report(location, $"Type mismatch. Required '{expectedType}', found '{foundType}'");
+        Report(
+            location,
+            $"Type mismatch. Required '{expectedType.ToPrintString()}', found '{foundType.ToPrintString()}'"
+        );
 
     public void ReportExpectedExpression(TextLocation location, SyntaxKind kind) =>
         Report(location, $"Unexpected token {kind}, expected Expression");
@@ -116,12 +120,15 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         );
 
     public void ReportCannotConvert(TextLocation location, Type fromType, Type toType) =>
-        Report(location, $"Cannot convert from '{fromType}' to '{toType}'");
+        Report(
+            location,
+            $"Cannot convert from '{fromType.ToPrintString()}' to '{toType.ToPrintString()}'"
+        );
 
     public void ReportCannotConvertImplicitly(TextLocation location, Type fromType, Type toType) =>
         Report(
             location,
-            $"Cannot convert from '{fromType}' to '{toType}'. An explicit conversion exists, are you missing a cast?"
+            $"Cannot convert from '{fromType.ToPrintString()}' to '{toType.ToPrintString()}'. An explicit conversion exists, are you missing a cast?"
         );
 
     public void ReportUndefinedTypeOrInitializer(TextLocation location) =>
@@ -173,7 +180,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         Report(location, $"Duplicate type '{typeName}' detected");
 
     public void ReportMissingDefinition(TextLocation location, Type type, string name) =>
-        Report(location, $"'{type.Symbol.Name}' does not contain a definition for '{name}'");
+        Report(location, $"'{type.ToPrintString()}' does not contain a definition for '{name}'");
 
     public void ReportInvalidReference(string reference) =>
         Report(null, $"The specified reference is not valid: {reference}");
@@ -247,4 +254,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportArrayOnlyRankOrInitializer(TextLocation location) =>
         Report(location, "Array cannot provide rank and initializer");
+
+    public void ReportGenericTypeNotSupported(TextLocation location, string typeName) =>
+        Report(location, $"Generic type not supported: {typeName}");
 }

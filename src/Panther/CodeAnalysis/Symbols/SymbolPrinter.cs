@@ -6,6 +6,13 @@ namespace Panther.CodeAnalysis.Symbols;
 
 internal static class SymbolPrinter
 {
+    public static string ToPrintString(this Type type)
+    {
+        using var writer = new StringWriter();
+        type.WriteTo(writer);
+        return writer.ToString();
+    }
+
     public static void WriteTo(this Type symbol, TextWriter writer)
     {
         switch (symbol)
