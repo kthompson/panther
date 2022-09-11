@@ -23,7 +23,7 @@ public class TextLocation : IEquatable<TextLocation>
     {
         get
         {
-            var offset = File.LineToOffset(StartLine);
+            var offset = File.LineToOffset(EndLine);
             return offset == -1 ? -1 : Span.End - offset;
         }
     }
