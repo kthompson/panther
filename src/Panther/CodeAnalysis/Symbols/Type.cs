@@ -43,7 +43,22 @@ public sealed record Unresolved() : Type(Symbol.None);
 
 public sealed record NoType() : Type(Symbol.None);
 
-public sealed record ArrayType(Symbol Symbol, Type ElementType) : Type(Symbol);
+public sealed record ArrayType(Symbol Symbol, Type ElementType) : Type(Symbol)
+{
+    public bool Equals(ArrayType? other)
+    {
+        if (ReferenceEquals(null, other))
+            return false;
+        if (ReferenceEquals(this, other))
+            return true;
+        return ElementType.Equals(other.ElementType);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(123, ElementType);
+    }
+};
 
 public sealed record ClassType(Symbol Symbol) : Type(Symbol);
 
