@@ -199,7 +199,7 @@ internal sealed class Typer
 
         if (_constructorBodies.TryGetValue(ctorSymbol, out var existingBody))
         {
-            boundStatements.Add(new TypedExpressionStatement(parent, existingBody));
+            boundStatements.Insert(0, new TypedExpressionStatement(parent, existingBody));
         }
 
         var loweredBody = LoweringPipeline.Lower(
