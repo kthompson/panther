@@ -1015,8 +1015,7 @@ internal class Emitter
                 return;
             }
         }
-
-        if (toType == Type.Any)
+        else if (toType == Type.Any)
         {
             if (fromType == Type.Bool)
             {
@@ -1050,14 +1049,18 @@ internal class Emitter
                 return;
             }
         }
-
-        if (toType == Type.Int)
+        else if (toType == Type.Int)
         {
             if (fromType == Type.String)
             {
                 ilProcessor.Emit(OpCodes.Call, _convertToInt32);
                 return;
             }
+        }
+        else if (toType == Type.Char && fromType == Type.Int)
+        {
+            // conversion is a no-op
+            return;
         }
 
         throw new ArgumentOutOfRangeException(
