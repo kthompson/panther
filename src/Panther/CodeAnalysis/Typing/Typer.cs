@@ -29,31 +29,28 @@ internal sealed class Typer
         _isScript = isScript;
     }
 
-    private void BindClassDeclaration(ClassDeclarationSyntax syntax, TypedScope parent)
+    private void BindClassDeclaration(
+        ClassDeclarationSyntax syntax,
+        TypedScope parent,
+        Symbol classSymbol
+    )
     {
-        var typeSymbol = parent.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
-
-        if (!parent.DefineSymbol(typeSymbol))
-        {
-            Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
-        }
-
         var parameters = ImmutableArray.CreateBuilder<Symbol>();
         var assignments = ImmutableArray.CreateBuilder<TypedStatement>();
         var seenFieldNames = new HashSet<string>();
 
-        var ctor = typeSymbol.NewMethod(typeSymbol.Location, ".ctor");
+        var ctor = classSymbol.NewMethod(classSymbol.Location, ".ctor");
 
         for (var index = 0; index < syntax.Fields.Count; index++)
         {
             var field = syntax.Fields[index];
             var fieldName = field.Identifier.Text;
             var fieldType = BindTypeAnnotation(field.TypeAnnotation, parent).Type;
-            var fieldSymbol = typeSymbol
+            var fieldSymbol = classSymbol
                 .NewField(field.Identifier.Location, field.Identifier.Text, false)
                 .WithType(fieldType);
 
-            typeSymbol.DefineSymbol(fieldSymbol);
+            classSymbol.DefineSymbol(fieldSymbol);
 
             if (!seenFieldNames.Add(fieldName))
             {
@@ -75,11 +72,11 @@ internal sealed class Typer
             }
         }
 
-        var typeScope = new TypedScope(parent, typeSymbol);
+        var typeScope = new TypedScope(parent, classSymbol);
         var immParams = parameters.ToImmutableArray();
         ctor.WithType(new MethodType(immParams, Type.Unit));
 
-        typeSymbol.DefineSymbol(ctor);
+        classSymbol.DefineSymbol(ctor);
         _constructorBodies.Add(
             ctor,
             new TypedBlockExpression(
@@ -95,7 +92,30 @@ internal sealed class Typer
         }
     }
 
-    private void BindObjectDeclaration(ObjectDeclarationSyntax objectDeclaration, TypedScope parent)
+    private Symbol BindClassSymbol(ClassDeclarationSyntax syntax, TypedScope parent)
+    {
+        var typeSymbol = parent.Symbol.NewClass(syntax.Identifier.Location, syntax.Identifier.Text);
+
+        if (!parent.DefineSymbol(typeSymbol))
+        {
+            Diagnostics.ReportAmbiguousType(syntax.Location, syntax.Identifier.Text);
+        }
+
+        return typeSymbol;
+    }
+
+    private void BindObjectDeclaration(
+        ObjectDeclarationSyntax objectDeclaration,
+        TypedScope parent,
+        Symbol objectSymbol
+    )
+    {
+        var scope = new TypedScope(parent, objectSymbol);
+
+        BindMembers(objectDeclaration.Template.Members, objectDeclaration, scope);
+    }
+
+    private Symbol BindObjectSymbol(ObjectDeclarationSyntax objectDeclaration, TypedScope parent)
     {
         var typeSymbol = parent.Symbol.NewObject(
             objectDeclaration.Identifier.Location,
@@ -111,9 +131,7 @@ internal sealed class Typer
             );
         }
 
-        var scope = new TypedScope(parent, typeSymbol);
-
-        BindMembers(objectDeclaration.Template.Members, objectDeclaration, scope);
+        return typeSymbol;
     }
 
     private void BindMembers(
@@ -127,22 +145,41 @@ internal sealed class Typer
         );
         var (functions, statements) = rest.Partition(member => member is FunctionDeclarationSyntax);
 
+        var completeBindings = new List<Action>();
+
         // define classes and objects first
         foreach (var member in objectsAndClasses)
         {
             switch (member)
             {
                 case ObjectDeclarationSyntax childObjectDeclaration:
-                    BindObjectDeclaration(childObjectDeclaration, scope);
-                    break;
+                {
+                    var symbol = BindObjectSymbol(childObjectDeclaration, scope);
 
+                    completeBindings.Add(
+                        () => BindObjectDeclaration(childObjectDeclaration, scope, symbol)
+                    );
+
+                    break;
+                }
                 case ClassDeclarationSyntax classDeclaration:
-                    BindClassDeclaration(classDeclaration, scope);
-                    break;
+                {
+                    var classSymbol = BindClassSymbol(classDeclaration, scope);
 
+                    completeBindings.Add(
+                        () => BindClassDeclaration(classDeclaration, scope, classSymbol)
+                    );
+                    break;
+                }
                 default:
                     throw new ArgumentOutOfRangeException(nameof(member));
             }
+        }
+
+        // now complete the creation of the bodies
+        foreach (var action in completeBindings)
+        {
+            action();
         }
 
         foreach (var member in functions)

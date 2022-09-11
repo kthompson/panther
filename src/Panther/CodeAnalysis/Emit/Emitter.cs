@@ -182,7 +182,25 @@ internal class Emitter
 
         // ensure all functions exist first so we can reference them
         // WORKAROUND order these so that our emitter tests are consistent. is there a better way?
-        IterateTypes(assembly, EmitTypeDeclaration);
+        var namespaceSymbol = assembly.RootSymbol;
+
+        var emitBodyActions = new List<Action>();
+
+        IterateTypes(
+            namespaceSymbol,
+            type =>
+            {
+                var emitTypeDefinition = EmitTypeDefinition(type);
+
+                emitBodyActions.Add(() => EmitTypeFunctionDeclaration(type, emitTypeDefinition));
+            }
+        );
+
+        // we emit the method definitions now, but not the bodies so that we can reference any types
+        foreach (var emitBodyAction in emitBodyActions)
+        {
+            emitBodyAction();
+        }
 
         // emit fields now
         IterateTypes(assembly, EmitFields);
@@ -269,7 +287,16 @@ internal class Emitter
         }
     }
 
-    private void EmitTypeDeclaration(Symbol type)
+    private void EmitTypeFunctionDeclaration(Symbol type, TypeDefinition typeDef)
+    {
+        // PERF: this order by isn't necessary but its here so that tests pass
+        foreach (var functionSignature in type.Methods.OrderBy(x => x.Name))
+        {
+            EmitFunctionDeclaration(typeDef, functionSignature);
+        }
+    }
+
+    private TypeDefinition EmitTypeDefinition(Symbol type)
     {
         var objectType = _knownTypes[TypeSymbol.Any];
 
@@ -281,14 +308,9 @@ internal class Emitter
             objectType
         );
 
-        // PERF: this order by isn't necessary but its here so that tests pass
-        foreach (var functionSignature in type.Methods.OrderBy(x => x.Name))
-        {
-            EmitFunctionDeclaration(typeDef, functionSignature);
-        }
-
         _types[type] = typeDef;
         _assemblyDefinition.MainModule.Types.Add(typeDef);
+        return typeDef;
     }
 
     private void EmitFunctionDeclaration(TypeDefinition typeDef, Symbol method)
