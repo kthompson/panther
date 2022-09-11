@@ -733,7 +733,7 @@ internal class Emitter
         Assert(node.Expressions.Length == 0);
         Assert(node.ArraySize != null);
 
-        var arrayType = LookupType(node.Type.Symbol);
+        var arrayType = LookupType(((ArrayType)node.Type).ElementType.Symbol);
 
         EmitExpression(processor, node.ArraySize!);
         processor.Emit(OpCodes.Newarr, arrayType);
