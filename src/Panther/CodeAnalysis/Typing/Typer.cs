@@ -1123,7 +1123,7 @@ internal sealed class Typer
     {
         // TODO: combine with BindMemberAccessExpression?
         var expr = BindExpression(syntax.Expression, scope);
-        var type = expr.Type;
+        var type = TypeResolver.Resolve(expr.Type);
         var name = syntax.Name.Identifier.Text;
         var members = type.Symbol.LookupMembers(name).ToImmutableArray();
 
@@ -1246,11 +1246,28 @@ internal sealed class Typer
                     var inner = genericNameSyntax.TypeArgumentList.ArgumentList[0];
                     var innerSymbol = BindTypeSymbol(inner, scope);
                     if (innerSymbol == null)
-                        goto default;
+                    {
+                        Diagnostics.ReportUndefinedType(
+                            genericNameSyntax.TypeArgumentList.ArgumentList[0].Location,
+                            string.Join(
+                                '.',
+                                inner.ToIdentifierNames().Select(name => name.ToText())
+                            )
+                        );
+                        innerSymbol = TypeSymbol.Error;
+                    }
 
                     return Type.ArrayOf(innerSymbol).Symbol;
                 }
-                goto default;
+
+                Diagnostics.ReportGenericTypeNotSupported(
+                    genericNameSyntax.Location,
+                    string.Join(
+                        '.',
+                        genericNameSyntax.ToIdentifierNames().Select(name => name.ToText())
+                    )
+                );
+                return TypeSymbol.Error;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(syntax));
