@@ -677,6 +677,10 @@ internal class Emitter
                 EmitPropertyExpression(ilProcessor, propertyExpression);
                 break;
 
+            case TypedTypeExpression typeExpression:
+                EmitTypeExpression(ilProcessor, typeExpression);
+                break;
+
             case TypedUnaryExpression unaryExpression:
                 EmitUnaryExpression(ilProcessor, unaryExpression);
                 break;
@@ -695,6 +699,14 @@ internal class Emitter
                     expression.GetType().FullName
                 );
         }
+    }
+
+    private void EmitTypeExpression(ILProcessor processor, TypedTypeExpression expression)
+    {
+        // NOTE: TypedTypeExpression should only really be used in the case of `this` but
+        // seems possible for this to get here in other ways so maybe look at this and make
+        // a new typed expression for `this`
+        processor.Emit(OpCodes.Ldarg_0); // load this
     }
 
     private void EmitIndexExpression(ILProcessor processor, TypedIndexExpression node)
@@ -936,12 +948,16 @@ internal class Emitter
 
     private void EmitCallExpression(ILProcessor ilProcessor, TypedCallExpression node)
     {
-        if (node.Expression != null)
+        if (node.Method.IsStatic)
         {
-            if (node.Expression is not TypedTypeExpression)
-                EmitExpression(ilProcessor, node.Expression);
+            // no-op
         }
-        else if (!node.Method.IsStatic)
+        else if (node.Expression != null)
+        {
+            // if (node.Expression is not TypedTypeExpression)
+            EmitExpression(ilProcessor, node.Expression);
+        }
+        else
         {
             ilProcessor.Emit(OpCodes.Ldarg_0); // load this
         }
@@ -1133,7 +1149,7 @@ internal class Emitter
         var variable = node.Field;
         var field = _globals.TryGetValue(variable, out var aField) ? aField : _fields[variable];
 
-        if (node.Expression is TypedTypeExpression(_, _) || variable.IsStatic)
+        if (variable.IsStatic)
         {
             ilProcessor.Emit(OpCodes.Ldsfld, field);
             return;

@@ -1,0 +1,18 @@
+def main() = {
+    val extent = new Extent(5, 15, 0, 20)
+    println(extent.return_this().width())
+    println(extent.width())
+    println(extent.return_this().height())
+    println(extent.height())
+    println(extent.area())
+}
+
+class Extent(xmin: int, xmax: int, ymin: int, ymax: int)
+{
+    def width(): int = this.xmax - this.xmin
+    def height(): int = this.ymax - this.ymin
+
+    def area(): int = this.height() * this.width()
+
+    def return_this(): Extent = this
+}

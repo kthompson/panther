@@ -126,6 +126,12 @@
         <Field Name="Name" Type="IdentifierNameSyntax" />
     </Node>
 
+    <Node Name="ThisExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="ThisExpression"/>
+
+        <Field Name="ThisToken" Type="SyntaxToken" />
+    </Node>
+
     <Node Name="WhileExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="WhileExpression"/>
 

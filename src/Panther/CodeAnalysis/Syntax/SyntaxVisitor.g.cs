@@ -101,6 +101,9 @@ public partial class SyntaxVisitor
     public virtual void VisitTemplate(TemplateSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitThisExpression(ThisExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitTypeAnnotation(TypeAnnotationSyntax node) =>
         this.DefaultVisit(node);
 
@@ -215,6 +218,9 @@ public partial class SyntaxVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitTemplate(TemplateSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitThisExpression(ThisExpressionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitTypeAnnotation(TypeAnnotationSyntax node) =>
