@@ -1020,6 +1020,9 @@ internal sealed class Typer
         if (type == null)
             return new TypedErrorExpression(syntax);
 
+        if (boundArguments.Any(arg => arg is TypedErrorExpression))
+            return new TypedErrorExpression(syntax);
+
         // find constructor from type that matches the arguments:
         var filteredSymbols = type.Constructors
             .Where(sym => (sym.IsMethod && sym.Parameters.Length == boundArguments.Length))
@@ -1338,6 +1341,9 @@ internal sealed class Typer
             .Select(argument => BindExpression(argument, scope))
             .ToImmutableArray();
 
+        if (boundArguments.Any(arg => arg is TypedErrorExpression))
+            return new TypedErrorExpression(syntax);
+
         if (syntax.Expression is IdentifierNameSyntax identifierNameSyntax)
         {
             return BindIdentifierCallExpression(
@@ -1558,7 +1564,7 @@ internal sealed class Typer
 
                 return new TypedErrorExpression(syntax);
             }
-            case { IsMethod: true }:
+            case { IsMethod: true } when symbol.Parameters.Length == boundArguments.Count:
                 return BindCallExpressionToMethodSymbol(syntax, symbol, expression, boundArguments);
 
             case { IsValue: true }:
@@ -1593,6 +1599,11 @@ internal sealed class Typer
         IReadOnlyList<TypedExpression> boundArguments
     )
     {
+        if (arguments.Count != boundArguments.Count || arguments.Count != method.Parameters.Length)
+            throw new InvalidOperationException(
+                $"Argument count mismatch for symbol: {method.Name}"
+            );
+
         var convertedArgs = ImmutableArray.CreateBuilder<TypedExpression>();
         for (var i = 0; i < arguments.Count; i++)
         {
