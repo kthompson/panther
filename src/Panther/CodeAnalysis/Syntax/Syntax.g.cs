@@ -397,6 +397,32 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitMemberAccessExpression(this);
     }
 
+    public sealed partial record ThisExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken ThisToken)
+        : ExpressionSyntax(SyntaxTree) {
+        public override SyntaxKind Kind => SyntaxKind.ThisExpression;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ThisToken);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return ThisToken;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitThisExpression(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitThisExpression(this);
+    }
+
     public sealed partial record WhileExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken WhileKeyword, SyntaxToken OpenParenToken, ExpressionSyntax ConditionExpression, SyntaxToken CloseParenToken, ExpressionSyntax Body)
         : ExpressionSyntax(SyntaxTree) {
         public override SyntaxKind Kind => SyntaxKind.WhileExpression;

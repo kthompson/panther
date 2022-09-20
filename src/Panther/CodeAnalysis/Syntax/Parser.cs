@@ -62,6 +62,7 @@ internal class Parser
         _prefixParseFunctions[SyntaxKind.FalseKeyword] = ParseBooleanLiteral;
         _prefixParseFunctions[SyntaxKind.ForKeyword] = ParseForExpression;
         _prefixParseFunctions[SyntaxKind.IdentifierToken] = ParseIdentifierName;
+        _prefixParseFunctions[SyntaxKind.ThisKeyword] = ParseThis;
         _prefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
         _prefixParseFunctions[SyntaxKind.NumberToken] = ParseLiteralExpression;
         _prefixParseFunctions[SyntaxKind.NewKeyword] = ParseNewExpression;
@@ -728,6 +729,12 @@ internal class Parser
     {
         var ident = Accept(SyntaxKind.IdentifierToken);
         return new IdentifierNameSyntax(_syntaxTree, ident);
+    }
+
+    private ThisExpressionSyntax ParseThis()
+    {
+        var ident = Accept();
+        return new ThisExpressionSyntax(_syntaxTree, ident);
     }
 
     private LiteralExpressionSyntax ParseBooleanLiteral()

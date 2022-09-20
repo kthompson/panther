@@ -947,6 +947,8 @@ internal sealed class Typer
             MemberAccessExpressionSyntax memberAccessExpressionSyntax
                 => BindMemberAccessExpression(memberAccessExpressionSyntax, scope),
             NameSyntax nameExpressionSyntax => BindNameExpression(nameExpressionSyntax, scope),
+            ThisExpressionSyntax thisExpressionSyntax
+                => BindThisExpression(thisExpressionSyntax, scope),
             NewExpressionSyntax newExpressionSyntax
                 => BindNewExpression(newExpressionSyntax, scope),
             UnaryExpressionSyntax unaryExpressionSyntax
@@ -1883,6 +1885,33 @@ internal sealed class Typer
         namespaceLookup[@namespace] = symbol;
 
         return symbol;
+    }
+
+    private TypedExpression BindThisExpression(ThisExpressionSyntax syntax, TypedScope scope)
+    {
+        var symbol = scope.Symbol;
+
+        while (true)
+        {
+            if (symbol.IsRoot)
+            {
+                Diagnostics.ReportNoThisInScope(syntax.Location, "root");
+                return new TypedErrorExpression(syntax);
+            }
+
+            if (symbol.IsObject)
+            {
+                Diagnostics.ReportNoThisInScope(syntax.Location, "static");
+                return new TypedErrorExpression(syntax);
+            }
+
+            if (symbol.IsClass)
+            {
+                return new TypedTypeExpression(syntax, symbol.Type);
+            }
+
+            symbol = symbol.Owner;
+        }
     }
 
     private TypedExpression BindNameExpression(NameSyntax syntax, TypedScope scope)

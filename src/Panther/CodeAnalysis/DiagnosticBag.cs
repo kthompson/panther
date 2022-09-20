@@ -257,4 +257,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportGenericTypeNotSupported(TextLocation location, string typeName) =>
         Report(location, $"Generic type not supported: {typeName}");
+
+    public void ReportNoThisInScope(TextLocation location, string scopeName) =>
+        Report(location, $"`this` keyword not valid in {scopeName} scope");
 }
