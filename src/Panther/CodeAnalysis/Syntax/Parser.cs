@@ -529,7 +529,7 @@ internal class Parser
     private SeparatedSyntaxList<ExpressionSyntax> ParseArguments() =>
         ParseExpressionList(SyntaxKind.CloseParenToken);
 
-    private ArrayInitializerExpressionSyntax? ParseArrayInitializers()
+    private ArrayInitializerExpressionSyntax ParseArrayInitializers()
     {
         var openBrace = Accept();
         var expressions = ParseExpressionList(SyntaxKind.CloseBraceToken);
