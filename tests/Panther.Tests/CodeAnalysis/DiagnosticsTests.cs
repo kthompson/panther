@@ -249,11 +249,10 @@ public class DiagnosticsTests
     [Fact]
     public void ReportInvalidParameter()
     {
-        var text = @"[println](""hey"", [=])";
+        var text = @"println(""hey"", [=])";
 
         var diagnostic =
             @"
-                No overloads matching function name 'println' and argument types 'string', 'err'
                 Unexpected token EqualsToken, expected Expression
             ";
 

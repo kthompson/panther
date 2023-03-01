@@ -1166,6 +1166,9 @@ internal sealed class Typer
         // TODO: combine with BindMemberAccessExpression?
         var expr = BindExpression(syntax.Expression, scope);
         var type = TypeResolver.Resolve(expr.Type);
+        if (type == Type.Error)
+            return new TypedErrorExpression(syntax);
+
         var name = syntax.Name.Identifier.Text;
         var members = type.Symbol.LookupMembers(name).ToImmutableArray();
 
