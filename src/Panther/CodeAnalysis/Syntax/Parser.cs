@@ -374,7 +374,7 @@ internal class Parser
         var terminator = GetStatementTerminator(expr) ?? GetStatementTerminator(CurrentToken);
         if (terminator == null)
         {
-            Diagnostics.ReportUnexpectedEndOfLineTrivia(expr.Location);
+            Diagnostics.ReportExpectedEndOfLineTrivia(expr.Location);
         }
     }
 

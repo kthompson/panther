@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Mono.Cecil;
 using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
@@ -30,6 +31,27 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+    private string FriendlyKind(SyntaxKind kind)
+    {
+        var text = SyntaxFacts.GetText(kind);
+        if (text != null)
+            return $"'{text}'";
+
+        var str = kind.ToString();
+        return Humanize(
+            str.EndsWith("Keyword")
+                ? str[..^7]
+                : str.EndsWith("Token")
+                    ? str[..^5]
+                    : str
+        );
+    }
+
+    private string Humanize(string words)
+    {
+        return Regex.Replace(words, "([a-z])([A-Z])", "$1 $2").ToLowerInvariant();
+    }
+
     public void ReportInvalidNumber(TextLocation textSpan, string text, Type type) =>
         Report(textSpan, $"The number {text} isn't a valid '{type.ToPrintString()}'");
 
@@ -46,10 +68,17 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         TextLocation location,
         SyntaxKind currentKind,
         SyntaxKind expectedKind
-    ) => Report(location, $"Unexpected token {currentKind}, expected {expectedKind}");
+    ) =>
+        Report(
+            location,
+            $"Unexpected token {FriendlyKind(currentKind)}, expected {FriendlyKind(expectedKind)}"
+        );
 
-    public void ReportUnexpectedEndOfLineTrivia(TextLocation location) =>
-        Report(location, $"Unexpected end of line trivia but none found");
+    public void ReportUnexpectedOpCode(TextLocation location, SyntaxKind currentKind) =>
+        Report(location, $"Unexpected opcode {FriendlyKind(currentKind)}");
+
+    public void ReportExpectedEndOfLineTrivia(TextLocation location) =>
+        Report(location, $"Expected end of line trivia but none found");
 
     public void ReportUndefinedUnaryOperator(
         TextLocation location,
@@ -88,7 +117,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         );
 
     public void ReportExpectedExpression(TextLocation location, SyntaxKind kind) =>
-        Report(location, $"Unexpected token {kind}, expected Expression");
+        Report(location, $"Unexpected token {FriendlyKind(kind)}, expected Expression");
 
     public void ReportUndefinedFunction(TextLocation location, string name) =>
         Report(location, $"Function name '{name}' does not exist");
