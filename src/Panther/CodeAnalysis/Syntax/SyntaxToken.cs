@@ -9,14 +9,14 @@ namespace Panther.CodeAnalysis.Syntax;
 public sealed record SyntaxToken : SyntaxNode
 {
     public SyntaxToken(
-        SyntaxTree syntaxTree,
+        SourceFile sourceFile,
         SyntaxKind kind,
         int position,
         string text,
         object? value
     )
         : this(
-            syntaxTree,
+            sourceFile,
             kind,
             position,
             position,
@@ -28,7 +28,7 @@ public sealed record SyntaxToken : SyntaxNode
         ) { }
 
     public SyntaxToken(
-        SyntaxTree syntaxTree,
+        SourceFile sourceFile,
         SyntaxKind kind,
         int position,
         string text,
@@ -37,7 +37,7 @@ public sealed record SyntaxToken : SyntaxNode
         ImmutableArray<SyntaxTrivia> trailingTrivia
     )
         : this(
-            syntaxTree,
+            sourceFile,
             kind,
             position,
             position + text.Length,
@@ -48,9 +48,9 @@ public sealed record SyntaxToken : SyntaxNode
             trailingTrivia
         ) { }
 
-    public SyntaxToken(SyntaxTree syntaxTree, SyntaxKind kind, int position)
+    public SyntaxToken(SourceFile sourceFile, SyntaxKind kind, int position)
         : this(
-            syntaxTree,
+            sourceFile,
             kind,
             position,
             position,
@@ -62,7 +62,7 @@ public sealed record SyntaxToken : SyntaxNode
         ) { }
 
     private SyntaxToken(
-        SyntaxTree syntaxTree,
+        SourceFile sourceFile,
         SyntaxKind kind,
         int position,
         int end,
@@ -71,7 +71,7 @@ public sealed record SyntaxToken : SyntaxNode
         bool isInsertedToken,
         ImmutableArray<SyntaxTrivia> leadingTrivia,
         ImmutableArray<SyntaxTrivia> trailingTrivia
-    ) : base(syntaxTree)
+    ) : base(sourceFile)
     {
         Kind = kind;
         Position = position;

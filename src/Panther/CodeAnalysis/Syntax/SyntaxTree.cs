@@ -1,31 +1,22 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Net;
 using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax;
 
 public class SyntaxTree
 {
-    private delegate void ParseHandler(
-        SyntaxTree syntaxTree,
-        out CompilationUnitSyntax root,
-        out ImmutableArray<Diagnostic> diagnostics
-    );
-
     public ImmutableArray<Diagnostic> Diagnostics { get; }
     public SourceFile File { get; }
     public CompilationUnitSyntax Root { get; }
 
-    private SyntaxTree(SourceFile file, ParseHandler handler)
+    private SyntaxTree(SourceFile file)
     {
         File = file;
+        var parser = new Parser(file);
 
-        handler(this, out var root, out var diagnostics);
-
-        Root = root;
-        Diagnostics = diagnostics.ToImmutableArray();
+        Root = parser.ParseCompilationUnit();
+        Diagnostics = parser.Diagnostics.ToImmutableArray();
     }
 
     public static SyntaxTree LoadFile(string fileName)
@@ -35,26 +26,15 @@ public class SyntaxTree
         return Parse(sourceText);
     }
 
-    private static void Parse(
-        SyntaxTree syntaxTree,
-        out CompilationUnitSyntax root,
-        out ImmutableArray<Diagnostic> diagnostics
-    )
-    {
-        var parser = new Parser(syntaxTree);
-        root = parser.ParseCompilationUnit();
-        diagnostics = parser.Diagnostics.ToImmutableArray();
-    }
-
     public static SyntaxTree Parse(string source) => Parse(SourceFile.From(source));
 
-    public static SyntaxTree Parse(SourceFile source) => new SyntaxTree(source, Parse);
+    public static SyntaxTree Parse(SourceFile source) => new SyntaxTree(source);
 
     public static IEnumerable<SyntaxToken> ParseTokens(string source) =>
         ParseTokens(SourceFile.From(source));
 
     public static IEnumerable<SyntaxToken> ParseTokens(SourceFile sourceFile) =>
-        ParseTokens(sourceFile, out var _);
+        ParseTokens(sourceFile, out _);
 
     public static IEnumerable<SyntaxToken> ParseTokens(
         SourceFile sourceFile,
@@ -62,39 +42,22 @@ public class SyntaxTree
     )
     {
         var tokens = new List<SyntaxToken>();
+        var lexer = new Lexer(sourceFile);
 
-        void ParseTokens(
-            SyntaxTree syntaxTree,
-            out CompilationUnitSyntax root,
-            out ImmutableArray<Diagnostic> diags
-        )
+        while (true)
         {
-            var lexer = new Lexer(syntaxTree);
-
-            while (true)
+            var token = lexer.NextToken();
+            if (token.Kind == SyntaxKind.EndOfInputToken)
             {
-                var token = lexer.NextToken();
-                if (token.Kind == SyntaxKind.EndOfInputToken)
-                {
-                    root = new CompilationUnitSyntax(
-                        syntaxTree,
-                        null,
-                        ImmutableArray<UsingDirectiveSyntax>.Empty,
-                        ImmutableArray<MemberSyntax>.Empty,
-                        token
-                    );
-                    break;
-                }
-
-                tokens.Add(token);
+                break;
             }
 
-            diags = lexer.Diagnostics.ToImmutableArray();
+            tokens.Add(token);
         }
 
+        diagnostics = lexer.Diagnostics.ToImmutableArray();
+
         // Creating the SyntaxTree has a side-effect of running the code above
-        var tree = new SyntaxTree(sourceFile, ParseTokens);
-        diagnostics = tree.Diagnostics;
         return tokens;
     }
 }

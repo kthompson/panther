@@ -394,6 +394,7 @@ class Program
         indentedTextWriter.WriteLine("using System.IO;");
         indentedTextWriter.WriteLine("using System.Collections.Generic;");
         indentedTextWriter.WriteLine("using System.Collections.Immutable;");
+        indentedTextWriter.WriteLine("using Panther.CodeAnalysis.Text;");
         indentedTextWriter.WriteLine();
         indentedTextWriter.WriteLine("#nullable enable");
         indentedTextWriter.WriteLine();
@@ -405,7 +406,7 @@ class Program
         {
             var name = node.Name;
             indentedTextWriter.Write(
-                $"public abstract partial record {name}(SyntaxTree SyntaxTree"
+                $"public abstract partial record {name}(SourceFile SourceFile"
             );
 
             foreach (var field in node.Fields)
@@ -420,7 +421,7 @@ class Program
             indentedTextWriter.Indent++;
             indentedTextWriter.Write(": ");
             indentedTextWriter.Write(node.Base ?? _tree.Root);
-            indentedTextWriter.Write("(SyntaxTree);");
+            indentedTextWriter.Write("(SourceFile);");
             indentedTextWriter.Indent--;
             indentedTextWriter.WriteLine();
             indentedTextWriter.WriteLineNoTabs("");
@@ -429,7 +430,7 @@ class Program
         foreach (var node in _tree.Types.OfType<Node>())
         {
             var name = node.Name;
-            indentedTextWriter.Write($"public sealed partial record {name}(SyntaxTree SyntaxTree");
+            indentedTextWriter.Write($"public sealed partial record {name}(SourceFile SourceFile");
 
             foreach (var field in node.Fields)
             {
@@ -443,7 +444,7 @@ class Program
             indentedTextWriter.Indent++;
             indentedTextWriter.Write(": ");
             indentedTextWriter.Write(node.Base ?? _tree.Root);
-            indentedTextWriter.WriteLine("(SyntaxTree) {");
+            indentedTextWriter.WriteLine("(SourceFile) {");
 
             EmitSyntaxKind(node, indentedTextWriter);
 

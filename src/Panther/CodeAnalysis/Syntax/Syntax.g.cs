@@ -2,28 +2,29 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Panther.CodeAnalysis.Text;
 
 #nullable enable
 
 namespace Panther.CodeAnalysis.Syntax
 {
-    public abstract partial record ExpressionSyntax(SyntaxTree SyntaxTree)
-        : SyntaxNode(SyntaxTree);
+    public abstract partial record ExpressionSyntax(SourceFile SourceFile)
+        : SyntaxNode(SourceFile);
 
-    public abstract partial record NameSyntax(SyntaxTree SyntaxTree)
-        : ExpressionSyntax(SyntaxTree);
+    public abstract partial record NameSyntax(SourceFile SourceFile)
+        : ExpressionSyntax(SourceFile);
 
-    public abstract partial record SimpleNameSyntax(SyntaxTree SyntaxTree)
-        : NameSyntax(SyntaxTree);
+    public abstract partial record SimpleNameSyntax(SourceFile SourceFile)
+        : NameSyntax(SourceFile);
 
-    public abstract partial record StatementSyntax(SyntaxTree SyntaxTree)
-        : SyntaxNode(SyntaxTree);
+    public abstract partial record StatementSyntax(SourceFile SourceFile)
+        : SyntaxNode(SourceFile);
 
-    public abstract partial record MemberSyntax(SyntaxTree SyntaxTree)
-        : SyntaxNode(SyntaxTree);
+    public abstract partial record MemberSyntax(SourceFile SourceFile)
+        : SyntaxNode(SourceFile);
 
-    public sealed partial record AssignmentExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Name, SyntaxToken EqualsToken, ExpressionSyntax Expression)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record AssignmentExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Name, SyntaxToken EqualsToken, ExpressionSyntax Expression)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;
 
         public override int GetHashCode()
@@ -50,8 +51,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssignmentExpression(this);
     }
 
-    public sealed partial record ArrayCreationExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenBracket, ExpressionSyntax? ArrayRank, SyntaxToken CloseBracket, ArrayInitializerExpressionSyntax? Initializer)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record ArrayCreationExpressionSyntax(SourceFile SourceFile, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenBracket, ExpressionSyntax? ArrayRank, SyntaxToken CloseBracket, ArrayInitializerExpressionSyntax? Initializer)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ArrayCreationExpression;
 
         public override int GetHashCode()
@@ -87,8 +88,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitArrayCreationExpression(this);
     }
 
-    public sealed partial record ArrayInitializerExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenBraceToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseBraceToken)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record ArrayInitializerExpressionSyntax(SourceFile SourceFile, SyntaxToken OpenBraceToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseBraceToken)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ArrayInitializer;
 
         public override int GetHashCode()
@@ -116,8 +117,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitArrayInitializerExpression(this);
     }
 
-    public sealed partial record BinaryExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Left, SyntaxToken OperatorToken, ExpressionSyntax Right)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record BinaryExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Left, SyntaxToken OperatorToken, ExpressionSyntax Right)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.BinaryExpression;
 
         public override int GetHashCode()
@@ -144,8 +145,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitBinaryExpression(this);
     }
 
-    public sealed partial record BlockExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenBraceToken, ImmutableArray<StatementSyntax> Statements, ExpressionSyntax Expression, SyntaxToken CloseBraceToken)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record BlockExpressionSyntax(SourceFile SourceFile, SyntaxToken OpenBraceToken, ImmutableArray<StatementSyntax> Statements, ExpressionSyntax Expression, SyntaxToken CloseBraceToken)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.BlockExpression;
 
         public override int GetHashCode()
@@ -175,8 +176,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitBlockExpression(this);
     }
 
-    public sealed partial record NewExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record NewExpressionSyntax(SourceFile SourceFile, SyntaxToken NewKeyword, NameSyntax Type, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.NewExpression;
 
         public override int GetHashCode()
@@ -206,8 +207,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNewExpression(this);
     }
 
-    public sealed partial record CallExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record CallExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Expression, SyntaxToken OpenParenToken, SeparatedSyntaxList<ExpressionSyntax> Arguments, SyntaxToken CloseParenToken)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.CallExpression;
 
         public override int GetHashCode()
@@ -236,8 +237,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitCallExpression(this);
     }
 
-    public sealed partial record ForExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken ForKeyword, SyntaxToken OpenParenToken, SyntaxToken Variable, SyntaxToken LessThanDashToken, ExpressionSyntax FromExpression, SyntaxToken ToKeyword, ExpressionSyntax ToExpression, SyntaxToken CloseParenToken, ExpressionSyntax Body)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record ForExpressionSyntax(SourceFile SourceFile, SyntaxToken ForKeyword, SyntaxToken OpenParenToken, SyntaxToken Variable, SyntaxToken LessThanDashToken, ExpressionSyntax FromExpression, SyntaxToken ToKeyword, ExpressionSyntax ToExpression, SyntaxToken CloseParenToken, ExpressionSyntax Body)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ForExpression;
 
         public override int GetHashCode()
@@ -280,8 +281,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitForExpression(this);
     }
 
-    public sealed partial record GroupExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenParenToken, ExpressionSyntax Expression, SyntaxToken CloseParenToken)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record GroupExpressionSyntax(SourceFile SourceFile, SyntaxToken OpenParenToken, ExpressionSyntax Expression, SyntaxToken CloseParenToken)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.GroupExpression;
 
         public override int GetHashCode()
@@ -308,8 +309,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitGroupExpression(this);
     }
 
-    public sealed partial record IfExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken IfKeyword, SyntaxToken OpenParenToken, ExpressionSyntax ConditionExpression, SyntaxToken CloseParenToken, ExpressionSyntax ThenExpression, SyntaxToken ElseKeyword, ExpressionSyntax ElseExpression)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record IfExpressionSyntax(SourceFile SourceFile, SyntaxToken IfKeyword, SyntaxToken OpenParenToken, ExpressionSyntax ConditionExpression, SyntaxToken CloseParenToken, ExpressionSyntax ThenExpression, SyntaxToken ElseKeyword, ExpressionSyntax ElseExpression)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.IfExpression;
 
         public override int GetHashCode()
@@ -340,8 +341,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIfExpression(this);
     }
 
-    public sealed partial record IndexExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken OpenBracket, ExpressionSyntax Index, SyntaxToken CloseBracket)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record IndexExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Expression, SyntaxToken OpenBracket, ExpressionSyntax Index, SyntaxToken CloseBracket)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.IndexExpression;
 
         public override int GetHashCode()
@@ -369,8 +370,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIndexExpression(this);
     }
 
-    public sealed partial record MemberAccessExpressionSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression, SyntaxToken DotToken, IdentifierNameSyntax Name)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record MemberAccessExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Expression, SyntaxToken DotToken, IdentifierNameSyntax Name)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.MemberAccessExpression;
 
         public override int GetHashCode()
@@ -397,8 +398,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitMemberAccessExpression(this);
     }
 
-    public sealed partial record ThisExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken ThisToken)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record ThisExpressionSyntax(SourceFile SourceFile, SyntaxToken ThisToken)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ThisExpression;
 
         public override int GetHashCode()
@@ -423,8 +424,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitThisExpression(this);
     }
 
-    public sealed partial record WhileExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken WhileKeyword, SyntaxToken OpenParenToken, ExpressionSyntax ConditionExpression, SyntaxToken CloseParenToken, ExpressionSyntax Body)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record WhileExpressionSyntax(SourceFile SourceFile, SyntaxToken WhileKeyword, SyntaxToken OpenParenToken, ExpressionSyntax ConditionExpression, SyntaxToken CloseParenToken, ExpressionSyntax Body)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.WhileExpression;
 
         public override int GetHashCode()
@@ -453,8 +454,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitWhileExpression(this);
     }
 
-    public sealed partial record UnaryExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OperatorToken, ExpressionSyntax Operand)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record UnaryExpressionSyntax(SourceFile SourceFile, SyntaxToken OperatorToken, ExpressionSyntax Operand)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.UnaryExpression;
 
         public override int GetHashCode()
@@ -480,8 +481,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitUnaryExpression(this);
     }
 
-    public sealed partial record UnitExpressionSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenParenToken, SyntaxToken CloseParenToken)
-        : ExpressionSyntax(SyntaxTree) {
+    public sealed partial record UnitExpressionSyntax(SourceFile SourceFile, SyntaxToken OpenParenToken, SyntaxToken CloseParenToken)
+        : ExpressionSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.UnitExpression;
 
         public override int GetHashCode()
@@ -507,8 +508,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitUnitExpression(this);
     }
 
-    public sealed partial record IdentifierNameSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier)
-        : SimpleNameSyntax(SyntaxTree) {
+    public sealed partial record IdentifierNameSyntax(SourceFile SourceFile, SyntaxToken Identifier)
+        : SimpleNameSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.IdentifierName;
 
         public override int GetHashCode()
@@ -533,8 +534,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIdentifierName(this);
     }
 
-    public sealed partial record GenericNameSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier, TypeArgumentList TypeArgumentList)
-        : SimpleNameSyntax(SyntaxTree) {
+    public sealed partial record GenericNameSyntax(SourceFile SourceFile, SyntaxToken Identifier, TypeArgumentList TypeArgumentList)
+        : SimpleNameSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.GenericName;
 
         public override int GetHashCode()
@@ -560,8 +561,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitGenericName(this);
     }
 
-    public sealed partial record TypeArgumentList(SyntaxTree SyntaxTree, SyntaxToken LessThan, SeparatedSyntaxList<NameSyntax> ArgumentList, SyntaxToken GreaterThan)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record TypeArgumentList(SourceFile SourceFile, SyntaxToken LessThan, SeparatedSyntaxList<NameSyntax> ArgumentList, SyntaxToken GreaterThan)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.TypeArgumentList;
 
         public override int GetHashCode()
@@ -589,8 +590,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitTypeArgumentList(this);
     }
 
-    public sealed partial record QualifiedNameSyntax(SyntaxTree SyntaxTree, NameSyntax Left, SyntaxToken DotToken, SimpleNameSyntax Right)
-        : NameSyntax(SyntaxTree) {
+    public sealed partial record QualifiedNameSyntax(SourceFile SourceFile, NameSyntax Left, SyntaxToken DotToken, SimpleNameSyntax Right)
+        : NameSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.QualifiedName;
 
         public override int GetHashCode()
@@ -617,8 +618,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitQualifiedName(this);
     }
 
-    public sealed partial record BreakStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken BreakKeyword)
-        : StatementSyntax(SyntaxTree) {
+    public sealed partial record BreakStatementSyntax(SourceFile SourceFile, SyntaxToken BreakKeyword)
+        : StatementSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.BreakStatement;
 
         public override int GetHashCode()
@@ -643,8 +644,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitBreakStatement(this);
     }
 
-    public sealed partial record ContinueStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken ContinueKeyword)
-        : StatementSyntax(SyntaxTree) {
+    public sealed partial record ContinueStatementSyntax(SourceFile SourceFile, SyntaxToken ContinueKeyword)
+        : StatementSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ContinueStatement;
 
         public override int GetHashCode()
@@ -669,8 +670,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitContinueStatement(this);
     }
 
-    public sealed partial record ExpressionStatementSyntax(SyntaxTree SyntaxTree, ExpressionSyntax Expression)
-        : StatementSyntax(SyntaxTree) {
+    public sealed partial record ExpressionStatementSyntax(SourceFile SourceFile, ExpressionSyntax Expression)
+        : StatementSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ExpressionStatement;
 
         public override int GetHashCode()
@@ -695,8 +696,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitExpressionStatement(this);
     }
 
-    public sealed partial record VariableDeclarationStatementSyntax(SyntaxTree SyntaxTree, SyntaxToken ValOrVarToken, SyntaxToken IdentifierToken, TypeAnnotationSyntax? TypeAnnotation, InitializerSyntax? Initializer)
-        : StatementSyntax(SyntaxTree) {
+    public sealed partial record VariableDeclarationStatementSyntax(SourceFile SourceFile, SyntaxToken ValOrVarToken, SyntaxToken IdentifierToken, TypeAnnotationSyntax? TypeAnnotation, InitializerSyntax? Initializer)
+        : StatementSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.VariableDeclarationStatement;
 
         public override int GetHashCode()
@@ -730,8 +731,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitVariableDeclarationStatement(this);
     }
 
-    public sealed partial record GlobalStatementSyntax(SyntaxTree SyntaxTree, StatementSyntax Statement)
-        : MemberSyntax(SyntaxTree) {
+    public sealed partial record GlobalStatementSyntax(SourceFile SourceFile, StatementSyntax Statement)
+        : MemberSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.GlobalStatement;
 
         public override int GetHashCode()
@@ -756,8 +757,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitGlobalStatement(this);
     }
 
-    public sealed partial record CompilationUnitSyntax(SyntaxTree SyntaxTree, NamespaceDeclarationSyntax? Namespace, ImmutableArray<UsingDirectiveSyntax> Usings, ImmutableArray<MemberSyntax> Members, SyntaxToken EndOfFileToken)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record CompilationUnitSyntax(SourceFile SourceFile, NamespaceDeclarationSyntax? Namespace, ImmutableArray<UsingDirectiveSyntax> Usings, ImmutableArray<MemberSyntax> Members, SyntaxToken EndOfFileToken)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.CompilationUnit;
 
         public override int GetHashCode()
@@ -792,8 +793,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitCompilationUnit(this);
     }
 
-    public sealed partial record NamespaceDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken NamespaceKeyword, NameSyntax Name)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record NamespaceDeclarationSyntax(SourceFile SourceFile, SyntaxToken NamespaceKeyword, NameSyntax Name)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.NamespaceDeclaration;
 
         public override int GetHashCode()
@@ -819,8 +820,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNamespaceDeclaration(this);
     }
 
-    public sealed partial record ParameterSyntax(SyntaxTree SyntaxTree, SyntaxToken Identifier, TypeAnnotationSyntax TypeAnnotation)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record ParameterSyntax(SourceFile SourceFile, SyntaxToken Identifier, TypeAnnotationSyntax TypeAnnotation)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.Parameter;
 
         public override int GetHashCode()
@@ -846,8 +847,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitParameter(this);
     }
 
-    public sealed partial record InitializerSyntax(SyntaxTree SyntaxTree, SyntaxToken EqualsToken, ExpressionSyntax Expression)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record InitializerSyntax(SourceFile SourceFile, SyntaxToken EqualsToken, ExpressionSyntax Expression)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.Initializer;
 
         public override int GetHashCode()
@@ -873,8 +874,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitInitializer(this);
     }
 
-    public sealed partial record TypeAnnotationSyntax(SyntaxTree SyntaxTree, SyntaxToken ColonToken, NameSyntax Type)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record TypeAnnotationSyntax(SourceFile SourceFile, SyntaxToken ColonToken, NameSyntax Type)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.TypeAnnotation;
 
         public override int GetHashCode()
@@ -900,8 +901,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitTypeAnnotation(this);
     }
 
-    public sealed partial record UsingDirectiveSyntax(SyntaxTree SyntaxTree, SyntaxToken UsingKeyword, SyntaxToken? UsingStyleKeyword, NameSyntax Name)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record UsingDirectiveSyntax(SourceFile SourceFile, SyntaxToken UsingKeyword, SyntaxToken? UsingStyleKeyword, NameSyntax Name)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.UsingDirective;
 
         public override int GetHashCode()
@@ -931,8 +932,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitUsingDirective(this);
     }
 
-    public sealed partial record TemplateSyntax(SyntaxTree SyntaxTree, SyntaxToken OpenBrace, ImmutableArray<MemberSyntax> Members, SyntaxToken CloseBrace)
-        : SyntaxNode(SyntaxTree) {
+    public sealed partial record TemplateSyntax(SourceFile SourceFile, SyntaxToken OpenBrace, ImmutableArray<MemberSyntax> Members, SyntaxToken CloseBrace)
+        : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.Template;
 
         public override int GetHashCode()
@@ -961,8 +962,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitTemplate(this);
     }
 
-    public sealed partial record FunctionBodySyntax(SyntaxTree SyntaxTree, SyntaxToken EqualsToken, ExpressionSyntax Body)
-        : MemberSyntax(SyntaxTree) {
+    public sealed partial record FunctionBodySyntax(SourceFile SourceFile, SyntaxToken EqualsToken, ExpressionSyntax Body)
+        : MemberSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.FunctionBody;
 
         public override int GetHashCode()
@@ -988,8 +989,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitFunctionBody(this);
     }
 
-    public sealed partial record FunctionDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken DefKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Parameters, SyntaxToken CloseParenToken, TypeAnnotationSyntax? TypeAnnotation, FunctionBodySyntax? Body)
-        : MemberSyntax(SyntaxTree) {
+    public sealed partial record FunctionDeclarationSyntax(SourceFile SourceFile, SyntaxToken DefKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Parameters, SyntaxToken CloseParenToken, TypeAnnotationSyntax? TypeAnnotation, FunctionBodySyntax? Body)
+        : MemberSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 
         public override int GetHashCode()
@@ -1027,8 +1028,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitFunctionDeclaration(this);
     }
 
-    public sealed partial record ClassDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ClassKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Fields, SyntaxToken CloseParenToken, TemplateSyntax? Template)
-        : MemberSyntax(SyntaxTree) {
+    public sealed partial record ClassDeclarationSyntax(SourceFile SourceFile, SyntaxToken ClassKeyword, SyntaxToken Identifier, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Fields, SyntaxToken CloseParenToken, TemplateSyntax? Template)
+        : MemberSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ClassDeclaration;
 
         public override int GetHashCode()
@@ -1062,8 +1063,8 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitClassDeclaration(this);
     }
 
-    public sealed partial record ObjectDeclarationSyntax(SyntaxTree SyntaxTree, SyntaxToken ObjectKeyword, SyntaxToken Identifier, TemplateSyntax Template)
-        : MemberSyntax(SyntaxTree) {
+    public sealed partial record ObjectDeclarationSyntax(SourceFile SourceFile, SyntaxToken ObjectKeyword, SyntaxToken Identifier, TemplateSyntax Template)
+        : MemberSyntax(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.ObjectDeclaration;
 
         public override int GetHashCode()
