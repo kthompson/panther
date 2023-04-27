@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Panther.CodeAnalysis;
@@ -64,6 +65,13 @@ for (var i = 0; i < args.Length; i++)
 
         references.Add(args[i + 1]);
         i++;
+        continue;
+    }
+
+    if (CheckArg(arg, "b", "break"))
+    {
+        i++;
+        Debugger.Launch();
         continue;
     }
 

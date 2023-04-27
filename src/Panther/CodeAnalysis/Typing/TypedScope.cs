@@ -10,9 +10,6 @@ internal sealed class TypedScope : SymbolContainer
 {
     public Symbol Symbol { get; }
 
-    // symbols that have not been defined but are needed in scope for resolving types etc
-    private readonly Dictionary<string, ImmutableArray<Symbol>> _importedSymbols = new();
-
     public TypedScope Parent { get; }
 
     public TypedScope(TypedScope parent, string? name = null) : this(parent.Symbol, parent, name)

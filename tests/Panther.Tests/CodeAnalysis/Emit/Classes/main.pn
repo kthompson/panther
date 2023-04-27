@@ -4,6 +4,7 @@
     val extent = new Extent(5, 15, 0, 20)
     println(extent.width())
     println(extent.height())
+    println(new ClassWithInitializers().p)
     ()
 }
 
@@ -16,4 +17,8 @@ class Extent(xmin: int, xmax: int, ymin: int, ymax: int)
 
     // def min() = new Point(xmin, ymin)
     // def max() = new Point(xmax, ymax)
+}
+
+class ClassWithInitializers() {
+    val p = 25
 }
