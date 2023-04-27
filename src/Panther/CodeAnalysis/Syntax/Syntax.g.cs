@@ -8,6 +8,9 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax
 {
+    public abstract partial record InstructionSyntax(SourceFile SourceFile)
+        : SyntaxNode(SourceFile);
+
     public abstract partial record ExpressionSyntax(SourceFile SourceFile)
         : SyntaxNode(SourceFile);
 
@@ -22,6 +25,198 @@ namespace Panther.CodeAnalysis.Syntax
 
     public abstract partial record MemberSyntax(SourceFile SourceFile)
         : SyntaxNode(SourceFile);
+
+    public sealed partial record IntOperandInstructionSyntax(SourceFile SourceFile, SyntaxToken OpCode, SyntaxToken Operand)
+        : InstructionSyntax(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.IntOperandInstruction;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpCode, Operand);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpCode;
+            yield return Operand;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitIntOperandInstruction(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitIntOperandInstruction(this);
+    }
+
+    public sealed partial record LoadStringInstructionSyntax(SourceFile SourceFile, SyntaxToken OpCode, SyntaxToken Operand)
+        : InstructionSyntax(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.LoadStringInstruction;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpCode, Operand);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpCode;
+            yield return Operand;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitLoadStringInstruction(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitLoadStringInstruction(this);
+    }
+
+    public sealed partial record LabelOperandInstructionSyntax(SourceFile SourceFile, SyntaxToken OpCode, SyntaxToken Label)
+        : InstructionSyntax(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.LabelOperandInstruction;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpCode, Label);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpCode;
+            yield return Label;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitLabelOperandInstruction(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitLabelOperandInstruction(this);
+    }
+
+    public sealed partial record CallInstructionSyntax(SourceFile SourceFile, SyntaxToken OpCode, SyntaxToken Label, SyntaxToken ArgumentCount)
+        : InstructionSyntax(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.CallInstruction;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpCode, Label, ArgumentCount);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpCode;
+            yield return Label;
+            yield return ArgumentCount;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitCallInstruction(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitCallInstruction(this);
+    }
+
+    public sealed partial record FunctionInstructionSyntax(SourceFile SourceFile, SyntaxToken OpCode, SyntaxToken Label, SyntaxToken LocalCount)
+        : InstructionSyntax(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.FunctionInstruction;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpCode, Label, LocalCount);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpCode;
+            yield return Label;
+            yield return LocalCount;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitFunctionInstruction(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitFunctionInstruction(this);
+    }
+
+    public sealed partial record NoOperandInstructionSyntax(SourceFile SourceFile, SyntaxToken OpCode)
+        : InstructionSyntax(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.NoOperandInstruction;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(OpCode);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return OpCode;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitNoOperandInstruction(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNoOperandInstruction(this);
+    }
+
+    public sealed partial record AssemblyListing(SourceFile SourceFile, ImmutableArray<InstructionSyntax> Instructions, SyntaxToken EndOfFileToken)
+        : SyntaxNode(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.AssemblyListing;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Instructions, EndOfFileToken);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            foreach (var child in Instructions)
+                yield return child;
+
+            yield return EndOfFileToken;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitAssemblyListing(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssemblyListing(this);
+    }
 
     public sealed partial record AssignmentExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Name, SyntaxToken EqualsToken, ExpressionSyntax Expression)
         : ExpressionSyntax(SourceFile) {

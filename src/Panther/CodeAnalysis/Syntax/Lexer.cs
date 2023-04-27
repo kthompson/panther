@@ -11,6 +11,7 @@ internal class Lexer
 {
     private const char EndOfInputCharacter = '\u0003';
     private readonly SourceFile _file;
+    private readonly Func<string, SyntaxKind> _getKeyword;
     private readonly DiagnosticBag _diagnostics = new();
     private int _position;
     private readonly Dictionary<
@@ -18,9 +19,10 @@ internal class Lexer
         Func<(SyntaxKind kind, int start, string text, object? value)>
     > _lexFunctions = new();
 
-    public Lexer(SourceFile sourceFile)
+    public Lexer(SourceFile sourceFile, Func<string, SyntaxKind> getKeyword)
     {
         _file = sourceFile;
+        _getKeyword = getKeyword;
         InitializeLexFunctions();
     }
 
@@ -323,7 +325,7 @@ internal class Lexer
 
         var span = _file[start.._position];
 
-        var kind = SyntaxFacts.GetKeywordKind(span);
+        var kind = _getKeyword(span);
 
         return (kind, start, span, null);
     }

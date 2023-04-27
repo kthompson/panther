@@ -40,7 +40,7 @@ internal class Parser
 
     public Parser(SourceFile sourceFile)
     {
-        var lexer = new Lexer(sourceFile);
+        var lexer = new Lexer(sourceFile, SyntaxFacts.GetKeywordKind);
         var tokens = new List<SyntaxToken>();
         while (true)
         {

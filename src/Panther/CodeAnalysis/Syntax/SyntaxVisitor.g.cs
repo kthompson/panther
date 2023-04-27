@@ -14,6 +14,9 @@ public partial class SyntaxVisitor
     public virtual void VisitArrayInitializerExpression(ArrayInitializerExpressionSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitAssemblyListing(AssemblyListing node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
         this.DefaultVisit(node);
 
@@ -27,6 +30,9 @@ public partial class SyntaxVisitor
         this.DefaultVisit(node);
 
     public virtual void VisitCallExpression(CallExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitCallInstruction(CallInstructionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual void VisitClassDeclaration(ClassDeclarationSyntax node) =>
@@ -50,6 +56,9 @@ public partial class SyntaxVisitor
     public virtual void VisitFunctionDeclaration(FunctionDeclarationSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitFunctionInstruction(FunctionInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitGenericName(GenericNameSyntax node) =>
         this.DefaultVisit(node);
 
@@ -71,7 +80,16 @@ public partial class SyntaxVisitor
     public virtual void VisitInitializer(InitializerSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitIntOperandInstruction(IntOperandInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitLabelOperandInstruction(LabelOperandInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitLiteralExpression(LiteralExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitLoadStringInstruction(LoadStringInstructionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual void VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
@@ -81,6 +99,9 @@ public partial class SyntaxVisitor
         this.DefaultVisit(node);
 
     public virtual void VisitNewExpression(NewExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitNoOperandInstruction(NoOperandInstructionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual void VisitObjectDeclaration(ObjectDeclarationSyntax node) =>
@@ -133,6 +154,9 @@ public partial class SyntaxVisitor<TResult>
     public virtual TResult VisitArrayInitializerExpression(ArrayInitializerExpressionSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual TResult VisitAssemblyListing(AssemblyListing node) =>
+        this.DefaultVisit(node);
+
     public virtual TResult VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
         this.DefaultVisit(node);
 
@@ -146,6 +170,9 @@ public partial class SyntaxVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitCallExpression(CallExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitCallInstruction(CallInstructionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitClassDeclaration(ClassDeclarationSyntax node) =>
@@ -169,6 +196,9 @@ public partial class SyntaxVisitor<TResult>
     public virtual TResult VisitFunctionDeclaration(FunctionDeclarationSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual TResult VisitFunctionInstruction(FunctionInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual TResult VisitGenericName(GenericNameSyntax node) =>
         this.DefaultVisit(node);
 
@@ -190,7 +220,16 @@ public partial class SyntaxVisitor<TResult>
     public virtual TResult VisitInitializer(InitializerSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual TResult VisitIntOperandInstruction(IntOperandInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitLabelOperandInstruction(LabelOperandInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual TResult VisitLiteralExpression(LiteralExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitLoadStringInstruction(LoadStringInstructionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitMemberAccessExpression(MemberAccessExpressionSyntax node) =>
@@ -200,6 +239,9 @@ public partial class SyntaxVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitNewExpression(NewExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitNoOperandInstruction(NoOperandInstructionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitObjectDeclaration(ObjectDeclarationSyntax node) =>
