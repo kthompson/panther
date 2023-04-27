@@ -11,8 +11,9 @@ internal sealed class ImportedTypeSymbol : Symbol
 {
     private readonly TypeDefinition _typeDefinition;
 
-    private readonly Lazy<ImmutableArray<Symbol>> _members;
-    private readonly Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>> _membersByName;
+    private bool _membersLoaded;
+    private ImmutableArray<Symbol> _members;
+    private ImmutableDictionary<string, ImmutableArray<Symbol>>? _membersByName;
 
     public ImportedTypeSymbol(Symbol parent, string name, TypeDefinition typeDefinition)
         : base(parent, TextLocation.None, name)
@@ -25,46 +26,64 @@ internal sealed class ImportedTypeSymbol : Symbol
         this.Type = new ClassType(this);
 
         _typeDefinition = typeDefinition;
-        _members = new Lazy<ImmutableArray<Symbol>>(() =>
-        {
-            var builder = ImmutableArray.CreateBuilder<Symbol>();
-
-            foreach (var method in _typeDefinition.Methods)
-            {
-                if (!method.IsPublic || !method.IsStatic)
-                    continue;
-
-                var imported = ImportMethodDefinition(method);
-                if (imported == null)
-                    continue;
-
-                builder.Add(imported);
-            }
-
-            return builder.ToImmutable();
-        });
-
-        _membersByName = new Lazy<ImmutableDictionary<string, ImmutableArray<Symbol>>>(
-            () =>
-                Members
-                    .GroupBy(
-                        x => x.Name,
-                        (key, symbols) =>
-                            new KeyValuePair<string, ImmutableArray<Symbol>>(
-                                key,
-                                symbols.ToImmutableArray()
-                            )
-                    )
-                    .ToImmutableDictionary()
-        );
     }
 
-    public override ImmutableArray<Symbol> Members => _members.Value;
+    public override ImmutableArray<Symbol> Members
+    {
+        get
+        {
+            EnsureInitialized();
 
-    public override ImmutableArray<Symbol> LookupMembers(string name) =>
-        _membersByName.Value.TryGetValue(name, out var symbols)
+            return _members;
+        }
+    }
+
+    private void EnsureInitialized()
+    {
+        if (_membersLoaded)
+            return;
+
+        var builder = ImmutableArray.CreateBuilder<Symbol>();
+
+        foreach (var method in _typeDefinition.Methods)
+        {
+            if (!method.IsPublic)
+                continue;
+
+            if (method.HasGenericParameters)
+                continue;
+
+            // if (method.IsStatic || method.IsConstructor)
+            var imported = ImportMethodDefinition(method);
+            if (imported == null)
+                continue;
+
+            builder.Add(imported);
+        }
+
+        _members = builder.ToImmutable();
+
+        _membersByName = _members
+            .GroupBy(
+                x => x.Name,
+                (key, symbols) =>
+                    new KeyValuePair<string, ImmutableArray<Symbol>>(
+                        key,
+                        symbols.ToImmutableArray()
+                    )
+            )
+            .ToImmutableDictionary();
+
+        _membersLoaded = true;
+    }
+
+    public override ImmutableArray<Symbol> LookupMembers(string name)
+    {
+        EnsureInitialized();
+        return _membersByName!.TryGetValue(name, out var symbols)
             ? symbols
             : ImmutableArray<Symbol>.Empty;
+    }
 
     private Symbol? ImportMethodDefinition(MethodDefinition methodDefinition)
     {
@@ -87,6 +106,7 @@ internal sealed class ImportedTypeSymbol : Symbol
             );
         }
 
+        // TODO: this is probably wrong for the Type of a constructor
         var returnType = LookupTypeByMetadataName(methodDefinition.ReturnType.FullName);
         if (returnType != null)
         {

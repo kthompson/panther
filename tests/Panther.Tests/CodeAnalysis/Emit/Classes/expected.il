@@ -88,6 +88,24 @@
 
 } // end of class Extent
 
+.class public auto ansi sealed ClassWithInitializers
+    extends [System.Private.CoreLib]System.Object
+{
+    .field public int32 p
+
+	.method public hidebysig specialname rtspecialname
+		instance void .ctor () cil managed
+	{
+	    .maxstack 8
+
+        IL_0000: ldarg.0
+        IL_0001: ldc.i4.s 25
+        IL_0003: stfld int32 ClassWithInitializers::p
+        IL_0008: ret
+	} // end of method ClassWithInitializers::.ctor
+
+} // end of class ClassWithInitializers
+
 .class public auto ansi sealed $Program
 	extends [System.Private.CoreLib]System.Object
 {
@@ -101,7 +119,8 @@
 		[1] object,
 		[2] class Extent,
 		[3] object,
-		[4] object
+		[4] object,
+		[5] object
 		)
 
 		IL_0000: ldc.i4.s 10
@@ -132,7 +151,13 @@
         IL_0045: stloc.s 4
 		IL_0047: ldloc.s 4
 		IL_0049: call void [Panther.StdLib]Panther.Predef::println(object)
-		IL_004e: ret
+		IL_004e: newobj instance void ClassWithInitializers::.ctor()
+		IL_0053: ldfld int32 ClassWithInitializers::p
+		IL_0058: box [System.Private.CoreLib]System.Int32
+		IL_005d: stloc.s 5
+		IL_005f: ldloc.s 5
+		IL_0061: call void [Panther.StdLib]Panther.Predef::println(object)
+		IL_0066: ret
 	} // end of method $Program::main
 
 } // end of class $Program
