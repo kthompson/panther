@@ -10,7 +10,6 @@ namespace Panther.CodeAnalysis.Syntax;
 internal class Lexer
 {
     private const char EndOfInputCharacter = '\u0003';
-    private readonly SyntaxTree _syntaxTree;
     private readonly SourceFile _file;
     private readonly DiagnosticBag _diagnostics = new();
     private int _position;
@@ -19,10 +18,9 @@ internal class Lexer
         Func<(SyntaxKind kind, int start, string text, object? value)>
     > _lexFunctions = new();
 
-    public Lexer(SyntaxTree syntaxTree)
+    public Lexer(SourceFile sourceFile)
     {
-        _syntaxTree = syntaxTree;
-        _file = syntaxTree.File;
+        _file = sourceFile;
         InitializeLexFunctions();
     }
 
@@ -92,7 +90,7 @@ internal class Lexer
 
                 var span = _file[start..end];
 
-                trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.EndOfLineTrivia, span, start));
+                trivia.Add(new SyntaxTrivia(_file, SyntaxKind.EndOfLineTrivia, span, start));
                 if (!leadingTrivia)
                 {
                     // trailing trivia should always terminate at the end of a line
@@ -107,7 +105,7 @@ internal class Lexer
                 var (start, end) = ParsePredicate(IsNonNewLineWhiteSpace);
 
                 var span = _file[start..end];
-                trivia.Add(new SyntaxTrivia(_syntaxTree, SyntaxKind.WhitespaceTrivia, span, start));
+                trivia.Add(new SyntaxTrivia(_file, SyntaxKind.WhitespaceTrivia, span, start));
                 continue;
             }
 
@@ -143,7 +141,7 @@ internal class Lexer
     {
         var (kind, start, text, _) = ReturnInvalidTokenTrivia();
 
-        return new SyntaxTrivia(_syntaxTree, kind, text, start);
+        return new SyntaxTrivia(_file, kind, text, start);
     }
 
     private SyntaxTrivia ParseBlockComment()
@@ -160,7 +158,7 @@ internal class Lexer
                     new TextLocation(_file, new TextSpan(start, _position - start))
                 );
                 return new SyntaxTrivia(
-                    _syntaxTree,
+                    _file,
                     SyntaxKind.BlockCommentTrivia,
                     _file[start.._position],
                     start
@@ -172,7 +170,7 @@ internal class Lexer
                 Next(); // '*'
                 Next(); // '/'
                 return new SyntaxTrivia(
-                    _syntaxTree,
+                    _file,
                     SyntaxKind.BlockCommentTrivia,
                     _file[start.._position],
                     start
@@ -198,7 +196,7 @@ internal class Lexer
 
         var trailing = ParseTrivia(false);
 
-        return new SyntaxToken(_syntaxTree, kind, start, text, value, leading, trailing);
+        return new SyntaxToken(_file, kind, start, text, value, leading, trailing);
     }
 
     private (SyntaxKind kind, int start, string text, object? value) ParseToken()
@@ -359,7 +357,7 @@ internal class Lexer
         }
 
         return new SyntaxTrivia(
-            _syntaxTree,
+            _file,
             SyntaxKind.LineCommentTrivia,
             _file[start.._position],
             start

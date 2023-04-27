@@ -6,8 +6,8 @@ namespace Panther.CodeAnalysis.Syntax;
 
 public sealed record SyntaxTrivia : SyntaxNode
 {
-    public SyntaxTrivia(SyntaxTree syntaxTree, SyntaxKind kind, string text, int position)
-        : base(syntaxTree)
+    public SyntaxTrivia(SourceFile sourceFile, SyntaxKind kind, string text, int position)
+        : base(sourceFile)
     {
         Kind = kind;
         Text = text;

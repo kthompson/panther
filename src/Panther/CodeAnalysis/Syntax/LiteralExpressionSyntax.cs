@@ -1,8 +1,13 @@
 ﻿using System.Collections.Generic;
+using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax;
 
-public sealed partial record LiteralExpressionSyntax : ExpressionSyntax
+public sealed partial record LiteralExpressionSyntax(
+    SourceFile SourceFile,
+    SyntaxToken LiteralToken,
+    object? Value
+) : ExpressionSyntax(SourceFile)
 {
     public override SyntaxKind Kind => SyntaxKind.LiteralExpression;
 
@@ -19,16 +24,6 @@ public sealed partial record LiteralExpressionSyntax : ExpressionSyntax
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
         visitor.VisitLiteralExpression(this);
 
-    public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken)
-        : this(syntaxTree, literalToken, literalToken.Value) { }
-
-    public LiteralExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken literalToken, object? value)
-        : base(syntaxTree)
-    {
-        LiteralToken = literalToken;
-        Value = value;
-    }
-
-    public SyntaxToken LiteralToken { get; }
-    public object? Value { get; }
+    public LiteralExpressionSyntax(SourceFile sourceFile, SyntaxToken literalToken)
+        : this(sourceFile, literalToken, literalToken.Value) { }
 }

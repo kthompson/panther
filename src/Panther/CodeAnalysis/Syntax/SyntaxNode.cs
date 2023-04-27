@@ -7,7 +7,7 @@ using Panther.CodeAnalysis.Text;
 
 namespace Panther.CodeAnalysis.Syntax;
 
-public abstract record SyntaxNode(SyntaxTree SyntaxTree)
+public abstract record SyntaxNode(SourceFile SourceFile)
 {
     internal int? Id { get; set; }
 
@@ -37,7 +37,7 @@ public abstract record SyntaxNode(SyntaxTree SyntaxTree)
         }
     }
 
-    public TextLocation Location => new TextLocation(SyntaxTree.File, Span);
+    public TextLocation Location => new TextLocation(SourceFile, Span);
 
     public abstract IEnumerable<SyntaxNode> GetChildren();
 
