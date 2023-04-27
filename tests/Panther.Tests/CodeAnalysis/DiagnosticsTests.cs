@@ -124,7 +124,7 @@ public class DiagnosticsTests
 
         var diagnostic =
             @"
-                Unexpected token EndOfInputToken, expected CloseBraceToken
+                Unexpected token end of input, expected '}'
             ";
 
         AssertHasDiagnostics(text, diagnostic);
@@ -165,8 +165,8 @@ public class DiagnosticsTests
 
         var diagnostic =
             @"
-                Unexpected token EndOfInputToken, expected Expression
-                Unexpected token EndOfInputToken, expected CloseParenToken
+                Unexpected token end of input, expected Expression
+                Unexpected token end of input, expected ')'
             ";
 
         AssertHasDiagnostics(text, diagnostic);
@@ -240,7 +240,7 @@ public class DiagnosticsTests
 
         var diagnostic =
             @"
-                Unexpected token CloseParenToken, expected IdentifierToken
+                Unexpected token ')', expected identifier
             ";
 
         AssertHasDiagnostics(text, diagnostic);
@@ -253,7 +253,7 @@ public class DiagnosticsTests
 
         var diagnostic =
             @"
-                Unexpected token EqualsToken, expected Expression
+                Unexpected token '=', expected Expression
             ";
 
         AssertHasDiagnostics(text, diagnostic);
