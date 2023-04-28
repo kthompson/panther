@@ -1,4 +1,4 @@
-﻿# Jaguar VM Language
+﻿# Panther VM Language
 
 ## Segments
 
