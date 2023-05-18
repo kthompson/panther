@@ -52,8 +52,8 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         return Regex.Replace(words, "([a-z])([A-Z])", "$1 $2").ToLowerInvariant();
     }
 
-    public void ReportInvalidNumber(TextLocation textSpan, string text, Type type) =>
-        Report(textSpan, $"The number {text} isn't a valid '{type.ToPrintString()}'");
+    public void ReportInvalidNumber(TextLocation textSpan, string text, string type) =>
+        Report(textSpan, $"The number {text} isn't a valid '{type}'");
 
     public void ReportInvalidEscapeSequence(TextLocation location, in char current) =>
         Report(location, $"Invalid character in escape sequence: {current}");
@@ -289,4 +289,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportNoThisInScope(TextLocation location, string scopeName) =>
         Report(location, $"`this` keyword not valid in {scopeName} scope");
+
+    public void MultipleEntryPoints(TextLocation location) =>
+        Report(location, $"Multiple entry points were detected");
 }

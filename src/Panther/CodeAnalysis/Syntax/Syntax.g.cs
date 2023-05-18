@@ -189,18 +189,18 @@ namespace Panther.CodeAnalysis.Syntax
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitNoOperandInstruction(this);
     }
 
-    public sealed partial record AssemblyListing(SourceFile SourceFile, ImmutableArray<InstructionSyntax> Instructions, SyntaxToken EndOfFileToken)
+    public sealed partial record AssemblyListingSyntax(SourceFile SourceFile, ImmutableArray<AssemblyClassDeclarationSyntax> ClassDeclarations, SyntaxToken EndOfFileToken)
         : SyntaxNode(SourceFile) {
         public override SyntaxKind Kind => SyntaxKind.AssemblyListing;
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Instructions, EndOfFileToken);
+            return HashCode.Combine(ClassDeclarations, EndOfFileToken);
         }
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            foreach (var child in Instructions)
+            foreach (var child in ClassDeclarations)
                 yield return child;
 
             yield return EndOfFileToken;
@@ -216,6 +216,126 @@ namespace Panther.CodeAnalysis.Syntax
         public override void Accept(SyntaxVisitor visitor) => visitor.VisitAssemblyListing(this);
 
         public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssemblyListing(this);
+    }
+
+    public sealed partial record AssemblyClassDeclarationSyntax(SourceFile SourceFile, SyntaxToken ClassKeyword, SyntaxToken Name, SyntaxToken OpenBrace, ImmutableArray<AssemblyFieldDeclarationSyntax> FieldDeclarations, ImmutableArray<AssemblyMethodDeclarationSyntax> MethodDeclarations, SyntaxToken CloseBrace)
+        : SyntaxNode(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.AssemblyClassDeclaration;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ClassKeyword, Name, OpenBrace, FieldDeclarations, MethodDeclarations, CloseBrace);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return ClassKeyword;
+            yield return Name;
+            yield return OpenBrace;
+            foreach (var child in FieldDeclarations)
+                yield return child;
+
+            foreach (var child in MethodDeclarations)
+                yield return child;
+
+            yield return CloseBrace;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitAssemblyClassDeclaration(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssemblyClassDeclaration(this);
+    }
+
+    public sealed partial record AssemblyFieldDeclarationSyntax(SourceFile SourceFile, SyntaxToken FieldToken, SyntaxToken? StaticToken, SyntaxToken Name)
+        : SyntaxNode(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.AssemblyFieldDeclaration;
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(FieldToken, StaticToken, Name);
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return FieldToken;
+            if (StaticToken != null)
+            {
+                yield return StaticToken;
+            }
+            yield return Name;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitAssemblyFieldDeclaration(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssemblyFieldDeclaration(this);
+    }
+
+    public sealed partial record AssemblyMethodDeclarationSyntax(SourceFile SourceFile, SyntaxToken MethodToken, SyntaxToken? EntryPointToken, SyntaxToken Name, SyntaxToken Locals, SyntaxToken OpenParenToken, SeparatedSyntaxList<ParameterSyntax> Parameters, SyntaxToken CloseParenToken, TypeAnnotationSyntax TypeAnnotation, SyntaxToken OpenBraceToken, ImmutableArray<InstructionSyntax> Instructions, SyntaxToken CloseBraceToken)
+        : SyntaxNode(SourceFile) {
+        public override SyntaxKind Kind => SyntaxKind.AssemblyMethodDeclaration;
+
+        public override int GetHashCode()
+        {
+            var hc = new HashCode();
+            hc.Add(MethodToken);
+            hc.Add(EntryPointToken);
+            hc.Add(Name);
+            hc.Add(Locals);
+            hc.Add(OpenParenToken);
+            hc.Add(Parameters);
+            hc.Add(CloseParenToken);
+            hc.Add(TypeAnnotation);
+            hc.Add(OpenBraceToken);
+            hc.Add(Instructions);
+            hc.Add(CloseBraceToken);
+            return hc.ToHashCode();
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return MethodToken;
+            if (EntryPointToken != null)
+            {
+                yield return EntryPointToken;
+            }
+            yield return Name;
+            yield return Locals;
+            yield return OpenParenToken;
+            foreach (var child in Parameters.GetWithSeparators())
+                yield return child;
+            yield return CloseParenToken;
+            yield return TypeAnnotation;
+            yield return OpenBraceToken;
+            foreach (var child in Instructions)
+                yield return child;
+
+            yield return CloseBraceToken;
+        }
+
+        public override string ToString()
+        {
+            using var writer = new StringWriter();
+            this.WriteTo(writer);
+            return writer.ToString();
+        }
+
+        public override void Accept(SyntaxVisitor visitor) => visitor.VisitAssemblyMethodDeclaration(this);
+
+        public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitAssemblyMethodDeclaration(this);
     }
 
     public sealed partial record AssignmentExpressionSyntax(SourceFile SourceFile, ExpressionSyntax Name, SyntaxToken EqualsToken, ExpressionSyntax Expression)

@@ -11,9 +11,13 @@ public class AssemblerTests
     public void ReportIntOperandInstructions()
     {
         var text =
-            $@"ldloc
-               [nop]
-               ldstr [taco]
+            $@".class Program {{
+                 .method main 0 (): void {{
+                     ldloc
+                     [nop]
+                     ldstr [taco]
+                 }}
+               }}
             ";
 
         var diagnostic =
@@ -29,7 +33,11 @@ public class AssemblerTests
     public void ReportEndOfLine()
     {
         var text =
-            $@"[nop] taco
+            $@".class Program {{
+                 .method main 0 (): void {{
+                    [nop] taco
+                 }}
+               }}
             ";
 
         var diagnostic =
@@ -45,13 +53,15 @@ public class AssemblerTests
     {
         var text =
             $@"
-               function my_method 5
-                  label taco_town
-                  ldarg 0
-                  ldarg 1
-                  add
-                  ldc 5
-                  call my_method 2
+               .class Program
+                 .method main
+                    function my_method 5
+                      label taco_town
+                      ldarg 0
+                      ldarg 1
+                      add
+                      ldc 5
+                      call my_method 2
             ";
 
         var diagnostic =

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Text;
 using Type = Panther.CodeAnalysis.Symbols.Type;
 
@@ -12,6 +13,7 @@ internal class Lexer
     private const char EndOfInputCharacter = '\u0003';
     private readonly SourceFile _file;
     private readonly Func<string, SyntaxKind> _getKeyword;
+    private readonly bool _dotIsIdentToken;
     private readonly DiagnosticBag _diagnostics = new();
     private int _position;
     private readonly Dictionary<
@@ -19,10 +21,11 @@ internal class Lexer
         Func<(SyntaxKind kind, int start, string text, object? value)>
     > _lexFunctions = new();
 
-    public Lexer(SourceFile sourceFile, Func<string, SyntaxKind> getKeyword)
+    public Lexer(SourceFile sourceFile, Func<string, SyntaxKind> getKeyword, bool dotIsIdentToken)
     {
         _file = sourceFile;
         _getKeyword = getKeyword;
+        _dotIsIdentToken = dotIsIdentToken;
         InitializeLexFunctions();
     }
 
@@ -39,7 +42,8 @@ internal class Lexer
         _lexFunctions['+'] = ReturnPlusToken;
         _lexFunctions[','] = ReturnCommaToken;
         _lexFunctions['-'] = ReturnDashToken;
-        _lexFunctions['.'] = ReturnDotToken;
+        if (!_dotIsIdentToken)
+            _lexFunctions['.'] = ReturnDotToken;
         _lexFunctions['/'] = ReturnSlashToken;
         _lexFunctions[':'] = ReturnColonToken;
         _lexFunctions['<'] = ReturnLessThanToken;
@@ -219,10 +223,16 @@ internal class Lexer
         return ReturnInvalidTokenTrivia();
     }
 
-    private static bool IsIdentCharacter(char current, bool leading) =>
-        leading
-            ? char.IsLetter(current) || current == '_'
-            : char.IsLetterOrDigit(current) || current == '_';
+    private bool IsIdentCharacter(char current, bool leading)
+    {
+        if (char.IsLetter(current) || current == '_')
+            return true;
+
+        if (!leading)
+            return char.IsDigit(current);
+
+        return _dotIsIdentToken && current == '.';
+    }
 
     private (SyntaxKind kind, int start, string text, object? value) ReturnInvalidTokenTrivia()
     {
@@ -341,7 +351,7 @@ internal class Lexer
             _diagnostics.ReportInvalidNumber(
                 new TextLocation(_file, new TextSpan(start, _position - start)),
                 span.AsSpan().ToString(),
-                Type.Int
+                Type.Int.ToPrintString()
             );
 
         return (SyntaxKind.NumberToken, start, span, value);

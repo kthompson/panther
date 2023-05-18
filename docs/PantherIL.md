@@ -1,5 +1,10 @@
 ﻿# Panther VM Language
 
+## Features
+
+32-bit data bus
+16-bit address bus
+
 ## Segments
 
 Memory segments:
@@ -11,6 +16,36 @@ Memory segments:
 * That
 * Temp
 * Static
+
+## Metadata
+
+### Class definition
+
+```
+.class _className_
+```
+
+### Field definition
+
+Must be before any method declarations
+
+```
+.field [.static] _fieldName_
+```
+
+
+### Method definitions
+
+```
+.method [.entrypoint] _name_ (p1: _type_, p2: _type_)
+```
+
+Examples:
+```
+.method .entrypoint Main(): void
+
+.method MakePoint (x: int, y: int): Point
+```
 
 ## Op Codes
 
@@ -39,11 +74,10 @@ Memory segments:
 
 ### Stack
 
+* call Class.method
 * pop
 * nop
 * ret
-* function _label_ _nlocals_
-* call _label_ _narguments_
 
 ### Arithmetic
 

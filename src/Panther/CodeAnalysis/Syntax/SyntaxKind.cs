@@ -52,7 +52,8 @@ public enum SyntaxKind
     CgtKeyword,
     CltKeyword,
     DivKeyword,
-    FunctionKeyword,
+    EntryPointKeyword,
+    FieldKeyword,
     LabelKeyword,
     LdargKeyword,
     LdcKeyword,
@@ -60,6 +61,7 @@ public enum SyntaxKind
     LdlocKeyword,
     LdsfldKeyword,
     LdstrKeyword,
+    MethodKeyword,
     MulKeyword,
     NegKeyword,
     NopKeyword,
@@ -82,6 +84,12 @@ public enum SyntaxKind
     AssemblyListing,
     NoOperandInstruction,
     CallInstruction,
+
+    // PIL Declarations
+
+    AssemblyClassDeclaration,
+    AssemblyFieldDeclaration,
+    AssemblyMethodDeclaration,
 
     // Operators
     AmpersandAmpersandToken,
@@ -109,10 +117,10 @@ public enum SyntaxKind
     // grouping tokens
     CloseParenToken,
     OpenParenToken,
-    OpenBraceToken,
-    CloseBraceToken,
-    OpenBracketToken,
-    CloseBracketToken,
+    OpenBraceToken, // {
+    CloseBraceToken, // }
+    OpenBracketToken, // [
+    CloseBracketToken, // ]
 
     // Expressions
     ArrayCreationExpression,

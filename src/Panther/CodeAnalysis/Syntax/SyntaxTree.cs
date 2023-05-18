@@ -42,7 +42,7 @@ public class SyntaxTree
     )
     {
         var tokens = new List<SyntaxToken>();
-        var lexer = new Lexer(sourceFile, SyntaxFacts.GetKeywordKind);
+        var lexer = new Lexer(sourceFile, SyntaxFacts.GetKeywordKind, false);
 
         while (true)
         {

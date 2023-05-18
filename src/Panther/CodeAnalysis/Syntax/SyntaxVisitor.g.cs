@@ -14,7 +14,16 @@ public partial class SyntaxVisitor
     public virtual void VisitArrayInitializerExpression(ArrayInitializerExpressionSyntax node) =>
         this.DefaultVisit(node);
 
-    public virtual void VisitAssemblyListing(AssemblyListing node) =>
+    public virtual void VisitAssemblyClassDeclaration(AssemblyClassDeclarationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitAssemblyFieldDeclaration(AssemblyFieldDeclarationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitAssemblyListing(AssemblyListingSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual void VisitAssemblyMethodDeclaration(AssemblyMethodDeclarationSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual void VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
@@ -154,7 +163,16 @@ public partial class SyntaxVisitor<TResult>
     public virtual TResult VisitArrayInitializerExpression(ArrayInitializerExpressionSyntax node) =>
         this.DefaultVisit(node);
 
-    public virtual TResult VisitAssemblyListing(AssemblyListing node) =>
+    public virtual TResult VisitAssemblyClassDeclaration(AssemblyClassDeclarationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitAssemblyFieldDeclaration(AssemblyFieldDeclarationSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitAssemblyListing(AssemblyListingSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitAssemblyMethodDeclaration(AssemblyMethodDeclarationSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitAssignmentExpression(AssignmentExpressionSyntax node) =>

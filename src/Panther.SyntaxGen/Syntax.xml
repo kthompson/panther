@@ -50,11 +50,48 @@
         <Field Name="OpCode" Type="SyntaxToken" />
     </Node>
 
-    <Node Name="AssemblyListing">
+    <Node Name="AssemblyListingSyntax">
         <Kind Name="AssemblyListing"/>
 
-        <Field Name="Instructions" Type="ImmutableArray&lt;InstructionSyntax&gt;" />
+        <Field Name="ClassDeclarations" Type="ImmutableArray&lt;AssemblyClassDeclarationSyntax&gt;" />
         <Field Name="EndOfFileToken" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="AssemblyClassDeclarationSyntax">
+        <Kind Name="AssemblyClassDeclaration"/>
+
+        <Field Name="ClassKeyword" Type="SyntaxToken" />
+        <Field Name="Name" Type="SyntaxToken" />
+        <Field Name="OpenBrace" Type="SyntaxToken" />
+        <Field Name="FieldDeclarations" Type="ImmutableArray&lt;AssemblyFieldDeclarationSyntax&gt;" />
+        <Field Name="MethodDeclarations" Type="ImmutableArray&lt;AssemblyMethodDeclarationSyntax&gt;" />
+        <Field Name="CloseBrace" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="AssemblyFieldDeclarationSyntax">
+        <Kind Name="AssemblyFieldDeclaration"/>
+
+        <Field Name="FieldToken" Type="SyntaxToken" />
+        <Field Name="StaticToken" Type="SyntaxToken?" />
+        <Field Name="Name" Type="SyntaxToken" />
+    </Node>
+
+    <Node Name="AssemblyMethodDeclarationSyntax">
+        <Kind Name="AssemblyMethodDeclaration"/>
+
+        <Field Name="MethodToken" Type="SyntaxToken" />
+        <Field Name="EntryPointToken" Type="SyntaxToken?" />
+        <Field Name="Name" Type="SyntaxToken" />
+        <Field Name="Locals" Type="SyntaxToken" />
+
+        <Field Name="OpenParenToken" Type="SyntaxToken" />
+        <Field Name="Parameters" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;" />
+        <Field Name="CloseParenToken" Type="SyntaxToken" />
+        <Field Name="TypeAnnotation" Type="TypeAnnotationSyntax" />
+
+        <Field Name="OpenBraceToken" Type="SyntaxToken" />
+        <Field Name="Instructions" Type="ImmutableArray&lt;InstructionSyntax&gt;" />
+        <Field Name="CloseBraceToken" Type="SyntaxToken" />
     </Node>
 
     <AbstractNode Name="ExpressionSyntax" />
