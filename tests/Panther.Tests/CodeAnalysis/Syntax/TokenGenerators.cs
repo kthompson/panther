@@ -37,6 +37,7 @@ public class TokenGenerators
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "1"),
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "123"),
                     new NonSeparatorTokenTestData(SyntaxKind.NumberToken, "0"),
+                    new NonSeparatorTokenTestData(SyntaxKind.NullKeyword, "null"),
                 }.Concat(
                     Enum.GetValues(typeof(SyntaxKind))
                         .Cast<SyntaxKind>()

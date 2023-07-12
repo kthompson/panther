@@ -19,6 +19,7 @@ internal enum TypedNodeKind
     MethodExpression,
     NamespaceExpression,
     NewExpression,
+    NullExpression,
     PropertyExpression,
     TypeExpression,
     UnaryExpression,
@@ -42,5 +43,5 @@ internal enum TypedNodeKind
     // Declarations
     ClassDeclaration,
     FunctionDeclaration,
-    ObjectDeclaration
+    ObjectDeclaration,
 }

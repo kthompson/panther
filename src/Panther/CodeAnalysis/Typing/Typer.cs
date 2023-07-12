@@ -951,6 +951,7 @@ internal sealed class Typer
                 => BindThisExpression(thisExpressionSyntax, scope),
             NewExpressionSyntax newExpressionSyntax
                 => BindNewExpression(newExpressionSyntax, scope),
+            NullExpressionSyntax nullExpressionSyntax => BindNullExpression(nullExpressionSyntax, scope),
             UnaryExpressionSyntax unaryExpressionSyntax
                 => BindUnaryExpression(unaryExpressionSyntax, scope),
             UnitExpressionSyntax unit => BindUnitExpression(unit),
@@ -1900,6 +1901,9 @@ internal sealed class Typer
 
         return symbol;
     }
+
+    private TypedExpression BindNullExpression(NullExpressionSyntax expr, TypedScope scope) =>
+        new TypedNullExpression(expr);
 
     private TypedExpression BindThisExpression(ThisExpressionSyntax syntax, TypedScope scope)
     {

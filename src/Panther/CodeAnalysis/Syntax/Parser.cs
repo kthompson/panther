@@ -66,6 +66,7 @@ internal class Parser
         _prefixParseFunctions[SyntaxKind.IfKeyword] = ParseIfExpression;
         _prefixParseFunctions[SyntaxKind.NumberToken] = ParseLiteralExpression;
         _prefixParseFunctions[SyntaxKind.NewKeyword] = ParseNewExpression;
+        _prefixParseFunctions[SyntaxKind.NullKeyword] = ParseNull;
         _prefixParseFunctions[SyntaxKind.OpenBraceToken] = ParseBlockExpression;
         _prefixParseFunctions[SyntaxKind.OpenParenToken] = ParseGroupOrUnitExpression;
         _prefixParseFunctions[SyntaxKind.StringToken] = ParseLiteralExpression;
@@ -735,6 +736,12 @@ internal class Parser
     {
         var ident = Accept();
         return new ThisExpressionSyntax(_sourceFile, ident);
+    }
+
+    private ExpressionSyntax ParseNull()
+    {
+        var token = Accept();
+        return new NullExpressionSyntax(_sourceFile, token);
     }
 
     private LiteralExpressionSyntax ParseBooleanLiteral()

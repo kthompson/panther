@@ -104,6 +104,9 @@ public partial class SyntaxVisitor
     public virtual void VisitNoOperandInstruction(NoOperandInstructionSyntax node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitNullExpression(NullExpressionSyntax node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitObjectDeclaration(ObjectDeclarationSyntax node) =>
         this.DefaultVisit(node);
 
@@ -242,6 +245,9 @@ public partial class SyntaxVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitNoOperandInstruction(NoOperandInstructionSyntax node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitNullExpression(NullExpressionSyntax node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitObjectDeclaration(ObjectDeclarationSyntax node) =>
