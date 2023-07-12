@@ -32,7 +32,7 @@ internal abstract class TypedTreeRewriter
                 => RewriteLiteralExpression(boundLiteralExpression),
             TypedNewExpression boundLiteralExpression
                 => RewriteNewExpression(boundLiteralExpression),
-
+            TypedNullExpression boundNullExpression => RewriteNullExpression(boundNullExpression),
             TypedPropertyExpression boundPropertyExpression
                 => RewritePropertyExpression(boundPropertyExpression),
             TypedTypeExpression boundTypeExpression => RewriteTypeExpression(boundTypeExpression),
@@ -43,7 +43,7 @@ internal abstract class TypedTreeRewriter
                 => RewriteVariableExpression(boundVariableExpression),
             TypedWhileExpression boundWhileExpression
                 => RewriteWhileExpression(boundWhileExpression),
-            _ => throw new ArgumentOutOfRangeException(nameof(node))
+            _ => throw new ArgumentOutOfRangeException(nameof(node), node.GetType().FullName)
         };
 
     protected virtual TypedExpression RewriteArrayCreationExpression(
@@ -85,6 +85,8 @@ internal abstract class TypedTreeRewriter
             newArguments?.ToImmutableArray() ?? node.Expressions
         );
     }
+
+    protected virtual TypedExpression RewriteNullExpression(TypedNullExpression node) => node;
 
     protected virtual TypedExpression RewriteFieldExpression(TypedFieldExpression node) => node;
 

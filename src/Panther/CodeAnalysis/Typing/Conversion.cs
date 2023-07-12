@@ -38,6 +38,9 @@ internal abstract record Conversion
         if (from == Type.Int && to == Type.Char)
             return Explicit;
 
+        if (from == Type.Null && !IsValueType(to))
+            return Implicit;
+
         if ((from == Type.Bool || from == Type.Int || from == Type.Char) && to == Type.String)
             return Explicit;
 
@@ -53,4 +56,6 @@ internal abstract record Conversion
 
         return None;
     }
+
+    private static bool IsValueType(Type type) => type == Type.Bool || type == Type.Int || type == Type.Char;
 }

@@ -143,6 +143,10 @@
         <Field Name="Variable" Type="Symbol" />
     </Node>
 
+    <Node Name="TypedNullExpression" Base="TypedExpression">
+        <Kind Name="NullExpression"/>
+    </Node>
+
 <!--    <AbstractNode Name="TypedName" Base="TypedExpression" />-->
 
 <!--    <Node Name="TypedIdentifierName" Base="TypedName">-->

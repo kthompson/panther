@@ -669,6 +669,10 @@ internal class Emitter
                 EmitNewExpression(ilProcessor, newExpression);
                 break;
 
+            case TypedNullExpression nullExpression:
+                EmitNullExpression(ilProcessor, nullExpression);
+                break;
+
             case TypedIndexExpression indexExpression:
                 EmitIndexExpression(ilProcessor, indexExpression);
                 break;
@@ -824,6 +828,11 @@ internal class Emitter
         {
             throw new NotImplementedException();
         }
+    }
+
+    private void EmitNullExpression(ILProcessor ilProcessor, TypedNullExpression nullExpression)
+    {
+        ilProcessor.Emit(OpCodes.Ldnull);
     }
 
     private void EmitBinaryExpression(
@@ -1052,6 +1061,10 @@ internal class Emitter
                 ilProcessor.Emit(OpCodes.Call, _convertObjectToString);
                 return;
             }
+
+            // no conversion needed
+            if (fromType == Type.Null)
+                return;
         }
         else if (toType == Type.Any)
         {
@@ -1073,7 +1086,7 @@ internal class Emitter
                 return;
             }
 
-            if (fromType == Type.String)
+            if (fromType == Type.String || fromType == Type.Null)
             {
                 // no conversion required
                 return;

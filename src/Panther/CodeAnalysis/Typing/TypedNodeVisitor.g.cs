@@ -83,6 +83,9 @@ internal partial class TypedNodeVisitor
     public virtual void VisitNopStatement(TypedNopStatement node) =>
         this.DefaultVisit(node);
 
+    public virtual void VisitNullExpression(TypedNullExpression node) =>
+        this.DefaultVisit(node);
+
     public virtual void VisitPropertyExpression(TypedPropertyExpression node) =>
         this.DefaultVisit(node);
 
@@ -176,6 +179,9 @@ internal partial class TypedNodeVisitor<TResult>
         this.DefaultVisit(node);
 
     public virtual TResult VisitNopStatement(TypedNopStatement node) =>
+        this.DefaultVisit(node);
+
+    public virtual TResult VisitNullExpression(TypedNullExpression node) =>
         this.DefaultVisit(node);
 
     public virtual TResult VisitPropertyExpression(TypedPropertyExpression node) =>

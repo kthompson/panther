@@ -184,6 +184,12 @@
         <Field Name="ThisToken" Type="SyntaxToken" />
     </Node>
 
+    <Node Name="NullExpressionSyntax" Base="ExpressionSyntax">
+        <Kind Name="NullExpression"/>
+
+        <Field Name="NullToken" Type="SyntaxToken" />
+    </Node>
+
     <Node Name="WhileExpressionSyntax" Base="ExpressionSyntax">
         <Kind Name="WhileExpression"/>
 

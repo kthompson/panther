@@ -321,6 +321,22 @@ internal sealed partial record TypedVariableExpression(SyntaxNode Syntax, Symbol
     public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitVariableExpression(this);
 }
 
+internal sealed partial record TypedNullExpression(SyntaxNode Syntax)
+    : TypedExpression(Syntax) {
+    public override TypedNodeKind Kind => TypedNodeKind.NullExpression;
+
+    public override string ToString()
+    {
+        using var writer = new StringWriter();
+        this.WriteTo(writer);
+        return writer.ToString();
+    }
+
+    public override void Accept(TypedNodeVisitor visitor) => visitor.VisitNullExpression(this);
+
+    public override TResult Accept<TResult>(TypedNodeVisitor<TResult> visitor) => visitor.VisitNullExpression(this);
+}
+
 internal sealed partial record TypedAssignmentStatement(SyntaxNode Syntax, TypedExpression Left, TypedExpression Right)
     : TypedStatement(Syntax) {
     public override TypedNodeKind Kind => TypedNodeKind.AssignmentStatement;

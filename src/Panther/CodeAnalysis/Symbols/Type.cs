@@ -17,6 +17,7 @@ public abstract record Type
     public static readonly Type Any = new TypeConstructor("any", TypeSymbol.Any);
 
     public static readonly Type Unit = new TypeConstructor("unit", TypeSymbol.Unit);
+    public static readonly Type Null = new TypeConstructor("null", TypeSymbol.Unit);
 
     public static readonly Type Bool = new TypeConstructor("bool", TypeSymbol.Bool);
     public static readonly Type Int = new TypeConstructor("int", TypeSymbol.Int);
