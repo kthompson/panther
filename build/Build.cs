@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.CI.GitHubActions;
@@ -9,16 +8,12 @@ using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
 
-using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
 
-[CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
 [GitHubActions(
     "default",
@@ -32,7 +27,6 @@ using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
         nameof(IPublish.Publish)
     },
     OnPushBranches = new[] { "main" },
-    EnableGitHubContext = true,
     ImportSecrets = new[] { nameof(IReportCoverage.CodecovToken), nameof(PublicNuGetApiKey), },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
 )]
@@ -48,7 +42,6 @@ using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
         nameof(IPublish.Publish)
     },
     OnPullRequestBranches = new[] { "main" },
-    EnableGitHubContext = true,
     ImportSecrets = new[] { nameof(IReportCoverage.CodecovToken) },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
 )]
@@ -94,23 +87,23 @@ class Build
             _.Before<IRestore>()
                 .Executes(() =>
                 {
-                    Serilog.Log.Information(
-                        "GitHub Context: {Context}",
-                        GitHubActions.GitHubContext.ToString(Formatting.Indented)
-                    );
-
-                    SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-                    TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-                    EnsureCleanDirectory(From<IHazArtifacts>().ArtifactsDirectory);
+                    SourceDirectory
+                        .GlobDirectories("**/bin", "**/obj")
+                        .ForEach(file => file.DeleteDirectory());
+                    TestsDirectory
+                        .GlobDirectories("**/bin", "**/obj")
+                        .ForEach(file => file.DeleteDirectory());
+                    From<IHazArtifacts>().ArtifactsDirectory.CreateOrCleanDirectory();
                 });
 
     IEnumerable<Project> ITest.TestProjects =>
-        Partition.GetCurrent(Solution.GetProjects("*.Tests"));
+        Partition.GetCurrent(Solution.GetAllProjects("*.Tests"));
 
     bool IReportCoverage.CreateCoverageHtmlReport => true;
 
-    // only the windows image on GitHub has the 3.0.0 dotnet runtime that the Codecov tool needs
-    bool IReportCoverage.ReportToCodecov => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    // the windows image on GitHub no longer the dotnet runtime 3.0.0 that the Codecov tool needs
+    // so disable for now
+    bool IReportCoverage.ReportToCodecov => false; // RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
     IEnumerable<(string PackageId, string Version)> IReportIssues.InspectCodePlugins =>
         new (string PackageId, string Version)[]
