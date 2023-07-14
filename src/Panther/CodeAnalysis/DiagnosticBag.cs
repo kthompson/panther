@@ -78,7 +78,7 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
         Report(location, $"Unexpected opcode {FriendlyKind(currentKind)}");
 
     public void ReportExpectedEndOfLineTrivia(TextLocation location) =>
-        Report(location, $"Expected end of line trivia but none found");
+        Report(location, "Expected end of line trivia but none found");
 
     public void ReportUndefinedUnaryOperator(
         TextLocation location,

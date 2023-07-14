@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Panther.CodeAnalysis.Text;
 
@@ -9,12 +10,17 @@ namespace Panther.Tests.CodeAnalysis;
 internal sealed class AnnotatedText
 {
     public string Text { get; }
+    public SourceFile File { get; }
+
+    public ImmutableArray<TextLocation> Locations { get; }
     public ImmutableArray<TextSpan> Spans { get; }
 
     private AnnotatedText(string text, ImmutableArray<TextSpan> spans)
     {
         Text = text;
+        File = new ScriptSourceFile(text, "annotated-text");
         Spans = spans;
+        Locations = Spans.Select(span => new TextLocation(File, span)).ToImmutableArray();
     }
 
     public static AnnotatedText Parse(string text)

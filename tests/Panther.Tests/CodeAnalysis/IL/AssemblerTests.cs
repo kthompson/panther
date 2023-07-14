@@ -14,16 +14,16 @@ public class AssemblerTests
             $@".class Program {{
                  .method main 0 (): void {{
                      ldloc
-                     [nop]
-                     ldstr [taco]
+                     [][nop]
+                     ldstr taco
                  }}
                }}
             ";
 
         var diagnostic =
             @"
+                Expected end of line trivia but none found
                 Unexpected token nop, expected number
-                Unexpected token identifier, expected string
             ";
 
         AssertHasDiagnostics(text, diagnostic);

@@ -90,13 +90,15 @@ internal static partial class TestHelpers
         );
 
         var expectedDiagnostics = expectedDiagnosticMessages
-            .Zip(annotatedText.Spans)
-            .Select(tuple => new { Span = tuple.Second, Message = tuple.First })
-            .OrderBy(diagnostic => diagnostic.Span.Start)
+            .Zip(annotatedText.Locations)
+            .Select(tuple => new { Location = tuple.Second, Message = tuple.First })
+            .OrderBy(diagnostic => diagnostic.Location.Span.Start)
+            .ThenBy(diagnostic => diagnostic.Location.Span.End)
             .ToArray();
 
         var actualDiagnostics = diagnostics
             .OrderBy(diagnostic => diagnostic.Location?.Span.Start ?? -1)
+            .ThenBy(diagnostic => diagnostic.Location?.Span.End ?? -1)
             .ToArray();
 
         for (var i = 0; i < expectedDiagnosticMessages.Length; i++)
@@ -114,9 +116,13 @@ internal static partial class TestHelpers
             var actualMessage = actualDiagnostics[i].Message;
             Assert.Equal(expectedMessage, actualMessage);
 
-            var expectedSpan = expectedDiagnostics[i].Span;
-            var actualSpan = actualDiagnostics[i].Span;
-            Assert.Equal(expectedSpan, actualSpan);
+            var expectedSpan = expectedDiagnostics[i].Location;
+            var actualSpan = actualDiagnostics[i].Location;
+            Assert.Equal(expectedSpan.ToString(), actualSpan?.ToString());
+            Assert.Equal(expectedSpan.StartLine, actualSpan?.StartLine);
+            Assert.Equal(expectedSpan.StartCharacter, actualSpan?.StartCharacter);
+            Assert.Equal(expectedSpan.EndLine, actualSpan?.EndLine);
+            Assert.Equal(expectedSpan.EndCharacter, actualSpan?.EndCharacter);
         }
 
         Assert.Equal(expectedDiagnosticMessages.Length, expectedDiagnostics.Length);
