@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.CI.GitHubActions;
@@ -9,30 +8,29 @@ using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
 
-using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
 
-[CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
 [GitHubActions(
     "default",
-    GitHubActionsImage.WindowsLatest,
     GitHubActionsImage.UbuntuLatest,
     GitHubActionsImage.MacOsLatest,
-    InvokedTargets = new[]
-    {
-        nameof(ITest.Test),
-        nameof(IReportCoverage.ReportCoverage),
-        nameof(IPublish.Publish)
-    },
+    FetchDepth = 0,
+    InvokedTargets = new[] { nameof(ITest.Test) },
     OnPushBranches = new[] { "main" },
-    EnableGitHubContext = true,
+    ImportSecrets = new[] { nameof(IReportCoverage.CodecovToken), nameof(PublicNuGetApiKey), },
+    CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
+)]
+[GitHubActions(
+    "publish",
+    GitHubActionsImage.WindowsLatest,
+    FetchDepth = 0,
+    InvokedTargets = new[] { nameof(IPublish.Publish) },
+    OnPushBranches = new[] { "main" },
     ImportSecrets = new[] { nameof(IReportCoverage.CodecovToken), nameof(PublicNuGetApiKey), },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
 )]
@@ -41,14 +39,9 @@ using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
     GitHubActionsImage.WindowsLatest,
     GitHubActionsImage.UbuntuLatest,
     GitHubActionsImage.MacOsLatest,
-    InvokedTargets = new[]
-    {
-        nameof(ITest.Test),
-        nameof(IReportCoverage.ReportCoverage),
-        nameof(IPublish.Publish)
-    },
+    FetchDepth = 0,
+    InvokedTargets = new[] { nameof(ITest.Test), nameof(IReportCoverage.ReportCoverage), },
     OnPullRequestBranches = new[] { "main" },
-    EnableGitHubContext = true,
     ImportSecrets = new[] { nameof(IReportCoverage.CodecovToken) },
     CacheKeyFiles = new[] { "global.json", "src/**/*.csproj" }
 )]
@@ -94,18 +87,17 @@ class Build
             _.Before<IRestore>()
                 .Executes(() =>
                 {
-                    Serilog.Log.Information(
-                        "GitHub Context: {Context}",
-                        GitHubActions.GitHubContext.ToString(Formatting.Indented)
-                    );
-
-                    SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-                    TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-                    EnsureCleanDirectory(From<IHazArtifacts>().ArtifactsDirectory);
+                    SourceDirectory
+                        .GlobDirectories("**/bin", "**/obj")
+                        .ForEach(file => file.DeleteDirectory());
+                    TestsDirectory
+                        .GlobDirectories("**/bin", "**/obj")
+                        .ForEach(file => file.DeleteDirectory());
+                    From<IHazArtifacts>().ArtifactsDirectory.CreateOrCleanDirectory();
                 });
 
     IEnumerable<Project> ITest.TestProjects =>
-        Partition.GetCurrent(Solution.GetProjects("*.Tests"));
+        Partition.GetCurrent(Solution.GetAllProjects("*.Tests"));
 
     bool IReportCoverage.CreateCoverageHtmlReport => true;
 
