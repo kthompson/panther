@@ -1,14 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "Build Schema",
   "$ref": "#/definitions/build",
+  "title": "Build Schema",
   "definitions": {
     "build": {
       "type": "object",
       "properties": {
         "CodecovToken": {
           "type": "string",
-          "default": "Secrets must be entered via 'nuke :secret [profile]'"
+          "default": "Secrets must be entered via 'nuke :secrets [profile]'"
         },
         "Configuration": {
           "type": "string",
@@ -32,6 +32,7 @@
             "AppVeyor",
             "AzurePipelines",
             "Bamboo",
+            "Bitbucket",
             "Bitrise",
             "GitHubActions",
             "GitLab",
@@ -70,7 +71,7 @@
         },
         "PublicNuGetApiKey": {
           "type": "string",
-          "default": "Secrets must be entered via 'nuke :secret [profile]'"
+          "default": "Secrets must be entered via 'nuke :secrets [profile]'"
         },
         "Root": {
           "type": "string",
@@ -84,13 +85,16 @@
             "enum": [
               "Clean",
               "Compile",
+              "InstallGlobalTool",
               "Pack",
+              "PackGlobalTool",
               "Publish",
               "ReportCoverage",
               "ReportDuplicates",
               "ReportIssues",
               "Restore",
-              "Test"
+              "Test",
+              "UninstallGlobalTool"
             ]
           }
         },
@@ -106,13 +110,16 @@
             "enum": [
               "Clean",
               "Compile",
+              "InstallGlobalTool",
               "Pack",
+              "PackGlobalTool",
               "Publish",
               "ReportCoverage",
               "ReportDuplicates",
               "ReportIssues",
               "Restore",
-              "Test"
+              "Test",
+              "UninstallGlobalTool"
             ]
           }
         },

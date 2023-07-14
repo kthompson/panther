@@ -26,29 +26,31 @@ jobs:
     name: windows-latest
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Cache .nuke/temp, ~/.nuget/packages
-        uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - name: 'Cache: .nuke/temp, ~/.nuget/packages'
+        uses: actions/cache@v3
         with:
           path: |
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
-      - name: Run './build.cmd Test ReportCoverage Publish'
+      - name: 'Run: Test, ReportCoverage, Publish'
         run: ./build.cmd Test ReportCoverage Publish
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: test-results'
+        uses: actions/upload-artifact@v3
         with:
           name: test-results
           path: artifacts/test-results
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: coverage-report.zip'
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-report.zip
           path: artifacts/reports/coverage-report.zip
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: packages'
+        uses: actions/upload-artifact@v3
         with:
           name: packages
           path: artifacts/packages
@@ -56,59 +58,63 @@ jobs:
     name: ubuntu-latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Cache .nuke/temp, ~/.nuget/packages
-        uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - name: 'Cache: .nuke/temp, ~/.nuget/packages'
+        uses: actions/cache@v3
         with:
           path: |
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
-      - name: Run './build.cmd Test ReportCoverage Publish'
+      - name: 'Run: Test, ReportCoverage, Publish'
         run: ./build.cmd Test ReportCoverage Publish
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: test-results'
+        uses: actions/upload-artifact@v3
         with:
           name: test-results
           path: artifacts/test-results
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: coverage-report.zip'
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-report.zip
           path: artifacts/reports/coverage-report.zip
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: packages'
+        uses: actions/upload-artifact@v3
         with:
           name: packages
           path: artifacts/packages
-  macOS-latest:
-    name: macOS-latest
-    runs-on: macOS-latest
+  macos-latest:
+    name: macos-latest
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Cache .nuke/temp, ~/.nuget/packages
-        uses: actions/cache@v2
+      - uses: actions/checkout@v3
+      - name: 'Cache: .nuke/temp, ~/.nuget/packages'
+        uses: actions/cache@v3
         with:
           path: |
             .nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('global.json', 'src/**/*.csproj') }}
-      - name: Run './build.cmd Test ReportCoverage Publish'
+      - name: 'Run: Test, ReportCoverage, Publish'
         run: ./build.cmd Test ReportCoverage Publish
         env:
           CodecovToken: ${{ secrets.CODECOV_TOKEN }}
           PublicNuGetApiKey: ${{ secrets.PUBLIC_NUGET_API_KEY }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: test-results'
+        uses: actions/upload-artifact@v3
         with:
           name: test-results
           path: artifacts/test-results
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: coverage-report.zip'
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-report.zip
           path: artifacts/reports/coverage-report.zip
-      - uses: actions/upload-artifact@v1
+      - name: 'Publish: packages'
+        uses: actions/upload-artifact@v3
         with:
           name: packages
           path: artifacts/packages
