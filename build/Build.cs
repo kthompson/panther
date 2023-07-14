@@ -109,8 +109,9 @@ class Build
 
     bool IReportCoverage.CreateCoverageHtmlReport => true;
 
-    // only the windows image on GitHub has the 3.0.0 dotnet runtime that the Codecov tool needs
-    bool IReportCoverage.ReportToCodecov => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    // the windows image on GitHub no longer the dotnet runtime 3.0.0 that the Codecov tool needs
+    // so disable for now
+    bool IReportCoverage.ReportToCodecov => false; // RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
     IEnumerable<(string PackageId, string Version)> IReportIssues.InspectCodePlugins =>
         new (string PackageId, string Version)[]
