@@ -6,6 +6,9 @@ namespace Panther.CodeAnalysis.Symbols;
 public abstract record Type
 {
     public virtual Symbol Symbol { get; }
+    public bool IsValueType => this == Type.Bool || this == Type.Int || this == Type.Char;
+    public bool IsReferenceType => !IsValueType;
+
 
     protected Type(Symbol symbol)
     {
