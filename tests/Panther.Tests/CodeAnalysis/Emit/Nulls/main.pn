@@ -1,4 +1,18 @@
+// null initializer
 val y : string = null
+
 var x : string = "test"
+
+// non null comparison
+println(x != null)
+println(null != x)
+println(x == null)
+println(null == x)
+
 x = null
-println(x)
+
+// null comparisons
+println(x != null)
+println(null != x)
+println(x == null)
+println(null == x)
