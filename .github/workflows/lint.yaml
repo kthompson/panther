@@ -1,11 +1,11 @@
-name: Validate PR
+name: lint
 on:
   pull_request:
     branches: [main]
 jobs:
-  check_formatting:
+  lint:
     runs-on: ubuntu-latest
-    name: Check Formatting
+    name: lint
     steps:
       - uses: actions/checkout@v2
       - run: |
