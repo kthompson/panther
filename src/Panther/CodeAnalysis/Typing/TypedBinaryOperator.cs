@@ -176,10 +176,20 @@ internal sealed class TypedBinaryOperator
 
     public static TypedBinaryOperator? Bind(SyntaxKind kind, Type leftType, Type rightType) =>
         _operators.FirstOrDefault(
-            op => op.SyntaxKind == kind && (
-                (op.LeftType == leftType || (op.LeftType.IsReferenceType && leftType == Type.Null)) && op.RightType == rightType ||
-                (op.RightType == rightType || (op.RightType.IsReferenceType && rightType == Type.Null)) && op.LeftType == leftType
-            )
+            op =>
+                op.SyntaxKind == kind
+                && (
+                    (
+                        op.LeftType == leftType
+                        || (op.LeftType.IsReferenceType && leftType == Type.Null)
+                    )
+                        && op.RightType == rightType
+                    || (
+                        op.RightType == rightType
+                        || (op.RightType.IsReferenceType && rightType == Type.Null)
+                    )
+                        && op.LeftType == leftType
+                )
         );
 
     public static TypedBinaryOperator BindOrThrow(SyntaxKind kind, Type leftType, Type rightType) =>

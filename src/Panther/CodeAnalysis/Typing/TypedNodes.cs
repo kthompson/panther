@@ -92,7 +92,6 @@ internal partial record TypedVariableExpression
     public override Type Type { get; init; } = Variable.Type;
 }
 
-
 internal partial record TypedNullExpression
 {
     public override Type Type { get; init; } = Type.Null;

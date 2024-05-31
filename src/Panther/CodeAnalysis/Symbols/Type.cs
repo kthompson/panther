@@ -9,7 +9,6 @@ public abstract record Type
     public bool IsValueType => this == Type.Bool || this == Type.Int || this == Type.Char;
     public bool IsReferenceType => !IsValueType;
 
-
     protected Type(Symbol symbol)
     {
         Symbol = symbol;
