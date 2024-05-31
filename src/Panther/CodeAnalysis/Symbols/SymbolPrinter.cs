@@ -63,6 +63,44 @@ internal static class SymbolPrinter
         }
     }
 
+    public static void WriteTo(this Binder.Symbol symbol, TextWriter writer)
+    {
+        if (symbol.Flags.HasFlag(Binder.SymbolFlags.Method))
+        {
+            writer.WriteKeyword("def ");
+            writer.WriteIdentifier(symbol.Name);
+            writer.WritePunctuation("(");
+            using var enumerator = symbol.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+                enumerator.Current.WriteTo(writer);
+
+                while (enumerator.MoveNext())
+                {
+                    writer.WritePunctuation(", ");
+                    enumerator.Current.WriteTo(writer);
+                }
+            }
+            writer.WritePunctuation(")");
+        }
+        else if (
+            symbol.Flags.HasFlag(Binder.SymbolFlags.Field)
+            || symbol.Flags.HasFlag(Binder.SymbolFlags.Local)
+        )
+        {
+            writer.WriteKeyword("val ");
+            writer.WriteIdentifier(symbol.Name);
+        }
+        else if (symbol.Flags.HasFlag(Binder.SymbolFlags.Parameter))
+        {
+            writer.WriteIdentifier(symbol.Name);
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public static void WriteTo(this Symbol symbol, TextWriter writer)
     {
         switch (symbol)

@@ -289,4 +289,14 @@ internal sealed class DiagnosticBag : IEnumerable<Diagnostic>
 
     public void ReportNoThisInScope(TextLocation location, string scopeName) =>
         Report(location, $"`this` keyword not valid in {scopeName} scope");
+
+    public void ReportDuplicateSymbol(
+        string name,
+        TextLocation existing,
+        TextLocation newIdentifier
+    )
+    {
+        Report(newIdentifier, $"A symbol with the name '{name}' already exists in this scope");
+        Report(existing, $"A symbol with the name '{name}' already exists in this scope");
+    }
 }
