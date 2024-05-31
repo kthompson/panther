@@ -98,23 +98,23 @@ public class Compilation
         params SyntaxTree[] syntaxTrees
     ) => new Compilation(references, isScript: true, previous, syntaxTrees);
 
-    public IEnumerable<Symbol> GetSymbols()
+    public IEnumerable<Binder.Symbol> GetSymbols()
     {
         var compilation = this;
         var symbolNames = new HashSet<string>();
 
         while (compilation != null)
         {
-            foreach (
-                var type in compilation.RootSymbol.Types.Where(type => symbolNames.Add(type.Name))
-            )
+            var (_, symbolTable) = Binder.Binder.Bind(compilation.SyntaxTrees);
+
+            foreach (var type in symbolTable.Where(type => symbolNames.Add(type.FullName)))
             {
                 yield return type;
-
-                foreach (var member in type.Members)
-                {
-                    yield return member;
-                }
+                //
+                // foreach (var member in type.Members)
+                // {
+                //     yield return member;
+                // }
             }
 
             compilation = compilation.Previous;

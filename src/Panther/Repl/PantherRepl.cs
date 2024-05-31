@@ -6,9 +6,11 @@ using System.Linq;
 using Mono.Cecil;
 using Panther.CodeAnalysis;
 using Panther.CodeAnalysis.Authoring;
+using Panther.CodeAnalysis.Symbols;
 using Panther.CodeAnalysis.Syntax;
 using Panther.CodeAnalysis.Text;
 using Panther.IO;
+using SymbolFlags = Panther.CodeAnalysis.Binder.SymbolFlags;
 
 namespace Panther.Repl;
 
@@ -150,7 +152,11 @@ internal class PantherRepl : Repl
         if (_previous == null)
             return;
 
-        foreach (var symbol in _previous.GetSymbols())
+        foreach (
+            var symbol in _previous
+                .GetSymbols()
+                .Where(sym => !sym.Flags.HasFlag(SymbolFlags.Parameter))
+        )
         {
             symbol.WriteTo(Console.Out);
             Console.WriteLine();
@@ -166,8 +172,8 @@ internal class PantherRepl : Repl
 
         var function = _previous
             .GetSymbols()
-            .Where(m => m.IsMethod)
-            .FirstOrDefault(func => func.Name == functionName);
+            .Where(m => m.Flags.HasFlag(SymbolFlags.Method))
+            .FirstOrDefault(func => func.FullName == functionName);
 
         if (function == null)
         {
@@ -175,7 +181,7 @@ internal class PantherRepl : Repl
             return;
         }
 
-        _previous.EmitTree(function, Console.Out);
+        // _previous.EmitTree(function, Console.Out);
     }
 
     protected override bool IsCompleteSubmission(string text)

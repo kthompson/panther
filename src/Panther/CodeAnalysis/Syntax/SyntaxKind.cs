@@ -116,6 +116,8 @@ public enum SyntaxKind
     CloseBracketToken,
 
     // Expressions
+    ExpressionMarker, // marker for SyntaxKinds that are more complicated than tokens and keywords
+
     ArrayCreationExpression,
     AssignmentExpression,
     BinaryExpression,
