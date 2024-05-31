@@ -114,4 +114,37 @@ public class LexerTests
             }
         );
     }
+
+    [Property]
+    public void CanLexBlockComment()
+    {
+        var text = AnnotatedText
+            .Parse(
+                $@"
+            /*
+            1
+            */
+            6"
+            )
+            .Text;
+        var tokens = SyntaxTree.ParseTokens(text);
+
+        Assert.Collection(
+            tokens,
+            token1 =>
+            {
+                Assert.NotNull(token1);
+                Assert.Collection(
+                    token1.LeadingTrivia,
+                    trivia =>
+                    {
+                        Assert.Equal(SyntaxKind.BlockCommentTrivia, trivia.Kind);
+                    },
+                    trivia => { }
+                );
+                Assert.Equal(SyntaxKind.NumberToken, token1.Kind);
+                Assert.Equal("6", token1.Text);
+            }
+        );
+    }
 }
