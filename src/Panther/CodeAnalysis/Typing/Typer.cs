@@ -951,7 +951,8 @@ internal sealed class Typer
                 => BindThisExpression(thisExpressionSyntax, scope),
             NewExpressionSyntax newExpressionSyntax
                 => BindNewExpression(newExpressionSyntax, scope),
-            NullExpressionSyntax nullExpressionSyntax => BindNullExpression(nullExpressionSyntax, scope),
+            NullExpressionSyntax nullExpressionSyntax
+                => BindNullExpression(nullExpressionSyntax, scope),
             UnaryExpressionSyntax unaryExpressionSyntax
                 => BindUnaryExpression(unaryExpressionSyntax, scope),
             UnitExpressionSyntax unit => BindUnitExpression(unit),
