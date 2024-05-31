@@ -6,9 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DE9991AB-E783-4C47-B224-BFE5493F2A9B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3A9F57E8-52F8-4A65-93B7-910383111244}"
-	ProjectSection(SolutionItems) = preProject
-		src\Directory.Build.props = src\Directory.Build.props
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Panther", "src\Panther\Panther.csproj", "{7122216E-DCED-4E69-87A6-7AD3388E6552}"
 EndProject
@@ -22,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		pnc.sh = pnc.sh
 		global.json = global.json
 		CHANGELOG.md = CHANGELOG.md
+		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{2C7EA852-0336-45D4-9AAA-D3A5D1F2F4AA}"

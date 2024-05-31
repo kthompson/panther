@@ -2,10 +2,6 @@
 
     <PropertyGroup>
         <RootNamespace>Panther</RootNamespace>
-        <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <LangVersion>default</LangVersion>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
