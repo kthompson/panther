@@ -140,8 +140,8 @@ internal sealed class Typer
         TypedScope scope
     )
     {
-        var (objectsAndClasses, rest) = members.Partition(
-            member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax
+        var (objectsAndClasses, rest) = members.Partition(member =>
+            member is ObjectDeclarationSyntax or ClassDeclarationSyntax
         );
         var (functions, statements) = rest.Partition(member => member is FunctionDeclarationSyntax);
 
@@ -338,8 +338,8 @@ internal sealed class Typer
 
         var main =
             mainFunction
-            ?? boundScope.Symbol
-                .NewMethod(TextLocation.None, "main")
+            ?? boundScope
+                .Symbol.NewMethod(TextLocation.None, "main")
                 .WithType(new MethodType(ImmutableArray<Symbol>.Empty, Type.Unit))
                 .WithFlags(SymbolFlags.Static);
 
@@ -362,8 +362,8 @@ internal sealed class Typer
         if (!globalStatements.Any())
             return null;
 
-        var eval = boundScope.Symbol
-            .NewMethod(TextLocation.None, "$eval")
+        var eval = boundScope
+            .Symbol.NewMethod(TextLocation.None, "$eval")
             .WithType(Type.Any)
             .WithFlags(SymbolFlags.Static);
 
@@ -426,8 +426,8 @@ internal sealed class Typer
 
             var thisScope = fileScope;
             var allTopLevel = compilationUnit.Members.All(IsTopLevelDeclaration);
-            var allGlobalStatements = compilationUnit.Members.All(
-                member => member is GlobalStatementSyntax
+            var allGlobalStatements = compilationUnit.Members.All(member =>
+                member is GlobalStatementSyntax
             );
 
             if (!allTopLevel || !allGlobalStatements)
@@ -450,8 +450,8 @@ internal sealed class Typer
                     fileScope.ImportMembers(namespaceOrTypeSymbol);
             }
 
-            var (objectsAndClasses, rest) = compilationUnit.Members.Partition(
-                member => member is ObjectDeclarationSyntax or ClassDeclarationSyntax
+            var (objectsAndClasses, rest) = compilationUnit.Members.Partition(member =>
+                member is ObjectDeclarationSyntax or ClassDeclarationSyntax
             );
             var (functions, rest2) = rest.Partition(member => member is FunctionDeclarationSyntax);
             var theseGlobalStatements = rest2.OfType<GlobalStatementSyntax>().ToImmutableArray();
@@ -478,9 +478,8 @@ internal sealed class Typer
         }
 
         var statements = globalStatements
-            .Select(
-                globalStatementSyntax =>
-                    binder.BindGlobalStatement(globalStatementSyntax.Statement, defaultTypeScope!)
+            .Select(globalStatementSyntax =>
+                binder.BindGlobalStatement(globalStatementSyntax.Statement, defaultTypeScope!)
             )
             .ToImmutableArray();
 
@@ -885,8 +884,8 @@ internal sealed class Typer
         Symbol variable;
         if (scope.Symbol.IsType)
         {
-            variable = scope.Symbol
-                .NewField(identifier.Location, name, isReadOnly)
+            variable = scope
+                .Symbol.NewField(identifier.Location, name, isReadOnly)
                 .WithType(expressionType);
 
             if (scope.Symbol.IsObject)
@@ -896,8 +895,8 @@ internal sealed class Typer
         }
         else
         {
-            variable = scope.Symbol
-                .NewLocal(identifier.Location, name, isReadOnly)
+            variable = scope
+                .Symbol.NewLocal(identifier.Location, name, isReadOnly)
                 .WithType(expressionType);
         }
 
@@ -997,9 +996,9 @@ internal sealed class Typer
             );
         }
 
-        var convertedArgs = syntax.Initializer.Arguments
-            .Select(
-                arg => BindConversion(arg.Location, BindExpression(arg, scope), typeSymbol.Type)
+        var convertedArgs = syntax
+            .Initializer.Arguments.Select(arg =>
+                BindConversion(arg.Location, BindExpression(arg, scope), typeSymbol.Type)
             )
             .ToImmutableArray();
 
@@ -1014,8 +1013,8 @@ internal sealed class Typer
 
     private TypedExpression BindNewExpression(NewExpressionSyntax syntax, TypedScope scope)
     {
-        var boundArguments = syntax.Arguments
-            .Select(argument => BindExpression(argument, scope))
+        var boundArguments = syntax
+            .Arguments.Select(argument => BindExpression(argument, scope))
             .ToImmutableArray();
 
         var type = BindTypeSymbol(syntax.Type, scope);
@@ -1026,8 +1025,10 @@ internal sealed class Typer
             return new TypedErrorExpression(syntax);
 
         // find constructor from type that matches the arguments:
-        var filteredSymbols = type.Constructors
-            .Where(sym => (sym.IsMethod && sym.Parameters.Length == boundArguments.Length))
+        var filteredSymbols = type
+            .Constructors.Where(sym =>
+                (sym.IsMethod && sym.Parameters.Length == boundArguments.Length)
+            )
             .ToImmutableArray();
 
         switch (filteredSymbols.Length)
@@ -1342,8 +1343,8 @@ internal sealed class Typer
     {
         // TODO: we should be able to refactor this a bit by extracting all of the IdentifierNameSyntax steps
 
-        var boundArguments = syntax.Arguments
-            .Select(argument => BindExpression(argument, scope))
+        var boundArguments = syntax
+            .Arguments.Select(argument => BindExpression(argument, scope))
             .ToImmutableArray();
 
         if (boundArguments.Any(arg => arg is TypedErrorExpression))
@@ -1367,8 +1368,8 @@ internal sealed class Typer
 
             if (expression is TypedMethodExpression boundMethodExpression)
             {
-                var methods = boundMethodExpression.Methods
-                    .Where(x => x.Parameters.Length == boundArguments.Length)
+                var methods = boundMethodExpression
+                    .Methods.Where(x => x.Parameters.Length == boundArguments.Length)
                     .ToImmutableArray();
 
                 if (methods.Length == 0)
@@ -1762,8 +1763,8 @@ internal sealed class Typer
     private TypedExpression BindBlockExpression(BlockExpressionSyntax syntax, TypedScope scope)
     {
         var blockScope = new TypedScope(scope);
-        var stmts = syntax.Statements
-            .Select(stmt => BindStatement(stmt, blockScope))
+        var stmts = syntax
+            .Statements.Select(stmt => BindStatement(stmt, blockScope))
             .ToImmutableArray();
 
         var expr = BindExpression(syntax.Expression, blockScope);
@@ -2017,11 +2018,11 @@ internal sealed class Typer
         // HACK: add find by `get_` prefix since string has a different name for the default index operator
         // TODO: once we support attributes we would need to look for the type with the DefaultMember attribute
         var getters = symbol.Members.Where(m => m.IsMethod && m.Name.StartsWith("get_"));
-        var getter = getters.FirstOrDefault(
-            m => m.Parameters.Length == 1 && m.Parameters[0].Type == index.Type
+        var getter = getters.FirstOrDefault(m =>
+            m.Parameters.Length == 1 && m.Parameters[0].Type == index.Type
         );
-        var setter = symbol.Members
-            .Where(m => m.IsMethod && m.Name.StartsWith("set_"))
+        var setter = symbol
+            .Members.Where(m => m.IsMethod && m.Name.StartsWith("set_"))
             .FirstOrDefault(m => m.Parameters.Length == 2 && m.Parameters[0].Type == index.Type);
 
         if (getter == null && setter == null)

@@ -11,7 +11,6 @@ using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
-
 using static Nuke.Common.Tools.ReSharper.ReSharperTasks;
 
 [UnsetVisualStudioEnvironmentVariables]
@@ -138,5 +137,6 @@ class Build
     string IPublish.NuGetSource =>
         GitRepository.IsOnMainBranch() ? PublicNuGetSource : GitHubRegistrySource;
 
-    T From<T>() where T : INukeBuild => (T)(object)this;
+    T From<T>()
+        where T : INukeBuild => (T)(object)this;
 }

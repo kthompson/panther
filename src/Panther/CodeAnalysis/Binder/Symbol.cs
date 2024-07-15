@@ -26,34 +26,38 @@ public class Symbol(string name, SymbolFlags flags, TextLocation location, Symbo
         }
     }
 
-
-    public (Symbol, bool existing) DeclareClass(string name, TextLocation location) => 
+    public (Symbol, bool existing) DeclareClass(string name, TextLocation location) =>
         DeclareSymbol(name, SymbolFlags.Class, location);
-    
-    public (Symbol, bool existing) DeclareField(string name, TextLocation location) => 
+
+    public (Symbol, bool existing) DeclareField(string name, TextLocation location) =>
         DeclareSymbol(name, SymbolFlags.Field, location);
-    
-    public (Symbol, bool existing) DeclareMethod(string name, TextLocation location) => 
+
+    public (Symbol, bool existing) DeclareMethod(string name, TextLocation location) =>
         DeclareSymbol(name, SymbolFlags.Method, location);
 
-    public (Symbol, bool existing) DeclareSymbol(string name, SymbolFlags flags, TextLocation location)
+    public (Symbol, bool existing) DeclareSymbol(
+        string name,
+        SymbolFlags flags,
+        TextLocation location
+    )
     {
         _symbols ??= new();
         _symbolList ??= new();
         var symbol = new Symbol(name, flags, location, this);
         var existing = !_symbols.TryAdd(name, symbol);
-        
-        if(!existing) _symbolList.Add(symbol);
-        
+
+        if (!existing)
+            _symbolList.Add(symbol);
+
         return (existing ? _symbols[name] : symbol, existing);
     }
 
-    public Symbol? Lookup(string name, bool includeParents = true) => 
+    public Symbol? Lookup(string name, bool includeParents = true) =>
         _symbols?.GetValueOrDefault(name) ?? this.Parent?.Lookup(name, includeParents);
 
     public IEnumerator<Symbol> GetEnumerator()
     {
-        if(_symbolList == null)
+        if (_symbolList == null)
             yield break;
 
         foreach (var symbol in _symbolList)
