@@ -7,7 +7,8 @@ public sealed class ScriptSourceFile : SourceFile
     public override int LineCount => Lines.Count;
     private IReadOnlyList<TextLine> Lines { get; }
 
-    internal ScriptSourceFile(string text, string fileName) : base(fileName, text)
+    internal ScriptSourceFile(string text, string fileName)
+        : base(fileName, text)
     {
         Lines = ParseLines(this, text);
     }
