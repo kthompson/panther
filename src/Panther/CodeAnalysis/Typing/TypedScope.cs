@@ -12,10 +12,11 @@ internal sealed class TypedScope : SymbolContainer
 
     public TypedScope Parent { get; }
 
-    public TypedScope(TypedScope parent, string? name = null) : this(parent.Symbol, parent, name)
-    { }
+    public TypedScope(TypedScope parent, string? name = null)
+        : this(parent.Symbol, parent, name) { }
 
-    public TypedScope(Symbol symbol, string? name = null) : this(symbol, null, name) { }
+    public TypedScope(Symbol symbol, string? name = null)
+        : this(symbol, null, name) { }
 
     public TypedScope(TypedScope parent, Symbol symbol, string? name = null)
         : this(symbol, parent, name) { }
