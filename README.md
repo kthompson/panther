@@ -12,11 +12,11 @@ Panther is a general-purpose, multi-paradigm programming language encompassing s
 def main() = {
     var guess = -1
     var guessCount = 0
-    var answer = rnd()
+    var answer = rnd(100)
 
     while (guess != answer) {
         println("Guess the answer:")
-        guess = int(read())
+        guess = int(readLine())
         guessCount = guessCount + 1
 
         if (guess > answer) {
@@ -30,6 +30,24 @@ def main() = {
     }
 }
 ```
+
+# Current language support
+
+- [x] Variables
+- [x] Functions
+- Control flow
+  - [x] if
+  - [x] while
+  - [x] for
+  - [ ] pattern matching
+- Builtin Data Types
+- [x] Int
+- [x] Char
+- [x] String
+- [x] Boolean
+- Algebraic Data Types
+  - [x] Product Types
+  - [ ] Sum Types
 
 # Road map
 
