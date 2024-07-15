@@ -105,6 +105,14 @@ class Dotnet
             if (File.Exists(exeFullPath))
                 return exeFullPath;
         }
+        
+        // Ok we cant find it on the path lets just take some guesses
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            var homebrew = "/usr/local/share/dotnet/dotnet";
+            if (File.Exists(homebrew))
+                return homebrew;
+        }
 
         throw new ArgumentException("Could not find `dotnet` executable");
     }
