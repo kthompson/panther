@@ -6,7 +6,8 @@ internal sealed record TypedNopStatement : TypedStatement
 {
     public override TypedNodeKind Kind => TypedNodeKind.NopStatement;
 
-    public TypedNopStatement(SyntaxNode syntax) : base(syntax) { }
+    public TypedNopStatement(SyntaxNode syntax)
+        : base(syntax) { }
 
     public override void Accept(TypedNodeVisitor visitor) => visitor.VisitNopStatement(this);
 

@@ -106,7 +106,8 @@ public class TokenGenerators
             return true;
 
         if (
-            (kind1Keyword || kind1 == SyntaxKind.IdentifierToken) && kind2 == SyntaxKind.NumberToken
+            (kind1Keyword || kind1 == SyntaxKind.IdentifierToken)
+            && kind2 == SyntaxKind.NumberToken
         )
             return true;
 

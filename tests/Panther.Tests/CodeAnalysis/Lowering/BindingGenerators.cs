@@ -196,14 +196,10 @@ class BindingGenerators
 
     public static Arbitrary<ImmutableArray<A>> ImmutableArray<A>()
     {
-        return Gen.Sized(
-                size =>
-                    from n in Gen.Choose(0, size)
-                    from array in Gen.ArrayOf(
-                        n,
-                        Gen.Resize(n == 0 ? 0 : size / n, Arb.Generate<A>())
-                    )
-                    select System.Collections.Immutable.ImmutableArray.Create(array)
+        return Gen.Sized(size =>
+                from n in Gen.Choose(0, size)
+                from array in Gen.ArrayOf(n, Gen.Resize(n == 0 ? 0 : size / n, Arb.Generate<A>()))
+                select System.Collections.Immutable.ImmutableArray.Create(array)
             )
             .ToArbitrary();
     }

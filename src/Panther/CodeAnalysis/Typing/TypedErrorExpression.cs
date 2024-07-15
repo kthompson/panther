@@ -5,7 +5,8 @@ namespace Panther.CodeAnalysis.Typing;
 
 internal sealed record TypedErrorExpression : TypedExpression
 {
-    public TypedErrorExpression(SyntaxNode syntax) : base(syntax) { }
+    public TypedErrorExpression(SyntaxNode syntax)
+        : base(syntax) { }
 
     public override TypedNodeKind Kind => TypedNodeKind.ErrorExpression;
 

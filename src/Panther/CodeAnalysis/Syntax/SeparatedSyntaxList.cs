@@ -9,7 +9,8 @@ public abstract class SeparatedSyntaxList
     public abstract ImmutableArray<SyntaxNode> GetWithSeparators();
 }
 
-public class SeparatedSyntaxList<T> : SeparatedSyntaxList, IReadOnlyList<T> where T : SyntaxNode
+public class SeparatedSyntaxList<T> : SeparatedSyntaxList, IReadOnlyList<T>
+    where T : SyntaxNode
 {
     private readonly ImmutableArray<SyntaxNode> _nodesAndSeparators;
 

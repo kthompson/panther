@@ -5,7 +5,8 @@ namespace Panther.CodeAnalysis.Typing;
 
 internal sealed record TypedLiteralExpression : TypedExpression
 {
-    public TypedLiteralExpression(SyntaxNode syntax, object value) : base(syntax)
+    public TypedLiteralExpression(SyntaxNode syntax, object value)
+        : base(syntax)
     {
         Value = value;
         Type = value switch

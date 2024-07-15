@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Linq;
-using Mono.Cecil;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Panther.CodeAnalysis.Symbols;
@@ -998,8 +998,8 @@ internal class Emitter
             return method;
         }
 
-        var parameterTypeNames = methodSymbol.Parameters
-            .Select(p => LookupType(p.Type.Symbol).FullName)
+        var parameterTypeNames = methodSymbol
+            .Parameters.Select(p => LookupType(p.Type.Symbol).FullName)
             .ToArray();
         var methodName = methodSymbol.Name;
 
@@ -1286,8 +1286,8 @@ internal class Emitter
             if (methodDefinition.Parameters.Count != parameterTypeNames.Length)
                 continue;
 
-            var matches = methodDefinition.Parameters
-                .Select(p => p.ParameterType.FullName)
+            var matches = methodDefinition
+                .Parameters.Select(p => p.ParameterType.FullName)
                 .Zip(
                     parameterTypeNames,
                     (methodParam, searchParamName) => methodParam == searchParamName
