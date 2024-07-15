@@ -71,7 +71,8 @@ public sealed record SyntaxToken : SyntaxNode
         bool isInsertedToken,
         ImmutableArray<SyntaxTrivia> leadingTrivia,
         ImmutableArray<SyntaxTrivia> trailingTrivia
-    ) : base(sourceFile)
+    )
+        : base(sourceFile)
     {
         Kind = kind;
         Position = position;

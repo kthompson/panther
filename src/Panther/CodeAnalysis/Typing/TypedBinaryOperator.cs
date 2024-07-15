@@ -33,7 +33,8 @@ internal sealed class TypedBinaryOperator
         SyntaxKind syntaxKind,
         Type type,
         Type resultType
-    ) : this(kind, syntaxKind, type, type, resultType) { }
+    )
+        : this(kind, syntaxKind, type, type, resultType) { }
 
     private TypedBinaryOperator(TypedBinaryOperatorKind kind, SyntaxKind syntaxKind, Type type)
         : this(kind, syntaxKind, type, type, type) { }
@@ -175,21 +176,17 @@ internal sealed class TypedBinaryOperator
     };
 
     public static TypedBinaryOperator? Bind(SyntaxKind kind, Type leftType, Type rightType) =>
-        _operators.FirstOrDefault(
-            op =>
-                op.SyntaxKind == kind
-                && (
-                    (
-                        op.LeftType == leftType
-                        || (op.LeftType.IsReferenceType && leftType == Type.Null)
-                    )
-                        && op.RightType == rightType
-                    || (
-                        op.RightType == rightType
-                        || (op.RightType.IsReferenceType && rightType == Type.Null)
-                    )
-                        && op.LeftType == leftType
+        _operators.FirstOrDefault(op =>
+            op.SyntaxKind == kind
+            && (
+                (op.LeftType == leftType || (op.LeftType.IsReferenceType && leftType == Type.Null))
+                    && op.RightType == rightType
+                || (
+                    op.RightType == rightType
+                    || (op.RightType.IsReferenceType && rightType == Type.Null)
                 )
+                    && op.LeftType == leftType
+            )
         );
 
     public static TypedBinaryOperator BindOrThrow(SyntaxKind kind, Type leftType, Type rightType) =>

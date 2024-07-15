@@ -9,7 +9,8 @@ public abstract partial class Symbol
         public override Symbol Owner => this;
         public override bool IsRoot => true;
 
-        public RootSymbol() : base(null, TextLocation.None, "global::")
+        public RootSymbol()
+            : base(null, TextLocation.None, "global::")
         {
             this.Type = Type.NoType;
         }

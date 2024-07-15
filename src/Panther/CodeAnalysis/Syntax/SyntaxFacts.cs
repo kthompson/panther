@@ -165,13 +165,12 @@ public static class SyntaxFacts
     public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds() =>
         Enum.GetValues(typeof(SyntaxKind))
             .Cast<SyntaxKind>()
-            .Where(
-                kind =>
-                    kind != SyntaxKind.EqualsToken
-                    && kind != SyntaxKind.OpenParenToken
-                    && kind != SyntaxKind.DotToken
-                    && kind != SyntaxKind.OpenBracketToken
-                    && GetBinaryOperatorPrecedence(kind) > 0
+            .Where(kind =>
+                kind != SyntaxKind.EqualsToken
+                && kind != SyntaxKind.OpenParenToken
+                && kind != SyntaxKind.DotToken
+                && kind != SyntaxKind.OpenBracketToken
+                && GetBinaryOperatorPrecedence(kind) > 0
             );
 
     public static bool IsTrivia(this SyntaxKind kind) =>

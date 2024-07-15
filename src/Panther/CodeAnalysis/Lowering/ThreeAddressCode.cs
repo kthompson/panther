@@ -49,8 +49,8 @@ sealed class ThreeAddressCode : TypedStatementListRewriter
         // can get out of order if there are side effects in any of the arguments. In order to prevent this we need
         // to break out the evaluation of each argument and assign to a temporary variable in the correct order.
         // we can then access this temp variable later when we call the function
-        var args = node.Arguments
-            .Select(RewriteExpression)
+        var args = node
+            .Arguments.Select(RewriteExpression)
             .Select(expr => CreateTemporary(expr, "ctemp"))
             .ToImmutableArray();
 

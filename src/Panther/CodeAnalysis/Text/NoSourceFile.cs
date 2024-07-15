@@ -12,5 +12,6 @@ public sealed class NoSourceFile : SourceFile
 
     public override string ToString() => "<no source file>";
 
-    internal NoSourceFile() : base("", "") { }
+    internal NoSourceFile()
+        : base("", "") { }
 }
