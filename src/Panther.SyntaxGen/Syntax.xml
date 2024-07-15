@@ -5,58 +5,6 @@
     <PredefinedNode Name="SyntaxToken" Base="SyntaxNode"/>
     <PredefinedNode Name="SyntaxTrivia" Base="SyntaxNode"/>
 
-    <AbstractNode Name="InstructionSyntax" />
-
-    <Node Name="IntOperandInstructionSyntax" Base="InstructionSyntax">
-        <Kind Name="IntOperandInstruction"/>
-
-        <Field Name="OpCode" Type="SyntaxToken" />
-        <Field Name="Operand" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="LoadStringInstructionSyntax" Base="InstructionSyntax">
-        <Kind Name="LoadStringInstruction"/>
-
-        <Field Name="OpCode" Type="SyntaxToken" />
-        <Field Name="Operand" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="LabelOperandInstructionSyntax" Base="InstructionSyntax">
-        <Kind Name="LabelOperandInstruction"/>
-
-        <Field Name="OpCode" Type="SyntaxToken" />
-        <Field Name="Label" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="CallInstructionSyntax" Base="InstructionSyntax">
-        <Kind Name="CallInstruction"/>
-
-        <Field Name="OpCode" Type="SyntaxToken" />
-        <Field Name="Label" Type="SyntaxToken" />
-        <Field Name="ArgumentCount" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="FunctionInstructionSyntax" Base="InstructionSyntax">
-        <Kind Name="FunctionInstruction"/>
-
-        <Field Name="OpCode" Type="SyntaxToken" />
-        <Field Name="Label" Type="SyntaxToken" />
-        <Field Name="LocalCount" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="NoOperandInstructionSyntax" Base="InstructionSyntax">
-        <Kind Name="NoOperandInstruction"/>
-
-        <Field Name="OpCode" Type="SyntaxToken" />
-    </Node>
-
-    <Node Name="AssemblyListing">
-        <Kind Name="AssemblyListing"/>
-
-        <Field Name="Instructions" Type="ImmutableArray&lt;InstructionSyntax&gt;" />
-        <Field Name="EndOfFileToken" Type="SyntaxToken" />
-    </Node>
-
     <AbstractNode Name="ExpressionSyntax" />
 
     <PredefinedNode Name="LiteralExpressionSyntax" Base="ExpressionSyntax"/>

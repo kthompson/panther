@@ -1,6 +1,5 @@
 ﻿using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,99 +9,6 @@ using System.Xml.Serialization;
 #nullable disable
 
 namespace Panther.SyntaxGen;
-
-[XmlRoot]
-public class Tree
-{
-    [XmlAttribute]
-    public string Root;
-
-    [XmlElement(ElementName = "Node", Type = typeof(Node))]
-    [XmlElement(ElementName = "AbstractNode", Type = typeof(AbstractNode))]
-    [XmlElement(ElementName = "PredefinedNode", Type = typeof(PredefinedNode))]
-    public List<TreeType> Types;
-
-    public IEnumerable<TreeType> ConcreteNodes =>
-        Types.Where(type => type is not AbstractNode).OrderBy(node => node.Name);
-}
-
-public class Node : TreeType
-{
-    [XmlAttribute]
-    public string Root;
-
-    [XmlAttribute]
-    public string Errors;
-
-    [XmlElement(ElementName = "Kind", Type = typeof(Kind))]
-    public List<Kind> Kinds = new List<Kind>();
-
-    public IEnumerable<Field> Fields => this.Children.OfType<Field>();
-}
-
-public class TreeType
-{
-    [XmlAttribute]
-    public string Name;
-
-    [XmlAttribute]
-    public string Base;
-
-    [XmlAttribute]
-    public string SkipConvenienceFactories;
-
-    [XmlElement(ElementName = "Field", Type = typeof(Field))]
-    public List<TreeTypeChild> Children = new List<TreeTypeChild>();
-}
-
-public class PredefinedNode : TreeType { }
-
-public class AbstractNode : TreeType
-{
-    public readonly List<Field> Fields = new List<Field>();
-}
-
-public class TreeTypeChild { }
-
-public class Field : TreeTypeChild
-{
-    [XmlAttribute]
-    public string Name;
-
-    [XmlAttribute]
-    public string Type;
-
-    [XmlAttribute]
-    public string Optional;
-
-    [XmlAttribute]
-    public string Override;
-
-    [XmlAttribute]
-    public string New;
-
-    [XmlAttribute]
-    public int MinCount;
-
-    [XmlAttribute]
-    public bool AllowTrailingSeparator;
-
-    [XmlElement(ElementName = "Kind", Type = typeof(Kind))]
-    public List<Kind> Kinds = new List<Kind>();
-
-    public bool IsToken => Type == "SyntaxToken";
-    public bool IsOptional => Optional == "true";
-}
-
-public class Kind
-{
-    [XmlAttribute]
-    public string Name;
-
-    public override bool Equals(object obj) => obj is Kind kind && Name == kind.Name;
-
-    public override int GetHashCode() => Name.GetHashCode();
-}
 
 class Program
 {
@@ -180,8 +86,6 @@ class Program
             indentedTextWriter.WriteLine("(Syntax) {");
 
             EmitTypedKind(node, indentedTextWriter);
-
-            // EmitGetHashCode(indentedTextWriter, node);
 
             EmitToString(indentedTextWriter);
 
@@ -398,9 +302,7 @@ class Program
         indentedTextWriter.WriteLine();
         indentedTextWriter.WriteLine("#nullable enable");
         indentedTextWriter.WriteLine();
-        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Syntax");
-        indentedTextWriter.WriteLine("{");
-        indentedTextWriter.Indent++;
+        indentedTextWriter.WriteLine("namespace Panther.CodeAnalysis.Syntax;");
 
         foreach (var node in _tree.Types.OfType<AbstractNode>())
         {
@@ -446,9 +348,7 @@ class Program
             indentedTextWriter.Write(node.Base ?? _tree.Root);
             indentedTextWriter.WriteLine("(SourceFile) {");
 
-            EmitSyntaxKind(node, indentedTextWriter);
-
-            // EmitEquals(indentedTextWriter, name, node);
+            EmitKind(node, indentedTextWriter);
 
             EmitGetHashCode(indentedTextWriter, node);
 
@@ -462,9 +362,6 @@ class Program
             indentedTextWriter.WriteLine("}");
             writer.WriteLine();
         }
-
-        indentedTextWriter.Indent--;
-        indentedTextWriter.WriteLine("}");
 
         var contents = writer.ToString();
 
@@ -520,18 +417,18 @@ class Program
         }
     }
 
-    private static void EmitSyntaxKind(Node node, IndentedTextWriter indentedTextWriter)
+    private static void EmitKind(Node node, IndentedTextWriter indentedTextWriter, string kindType = "Syntax")
     {
         var kind = node.Kinds.FirstOrDefault();
         if (kind != null)
         {
             indentedTextWriter.WriteLine(
-                $"public override SyntaxKind Kind => SyntaxKind.{kind.Name};"
+                $"public override {kindType}Kind Kind => {kindType}Kind.{kind.Name};"
             );
             indentedTextWriter.WriteLineNoTabs("");
         }
     }
-
+    
     private static void EmitToString(IndentedTextWriter indentedTextWriter)
     {
         indentedTextWriter.WriteLine("public override string ToString()");
