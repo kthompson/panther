@@ -8,7 +8,8 @@ sealed record TypedGotoStatement : TypedStatement
 
     public override TypedNodeKind Kind => TypedNodeKind.GotoStatement;
 
-    public TypedGotoStatement(SyntaxNode syntax, TypedLabel boundLabel) : base(syntax)
+    public TypedGotoStatement(SyntaxNode syntax, TypedLabel boundLabel)
+        : base(syntax)
     {
         TypedLabel = boundLabel;
     }

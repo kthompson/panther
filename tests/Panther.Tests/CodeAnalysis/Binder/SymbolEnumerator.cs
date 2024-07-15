@@ -7,7 +7,8 @@ namespace Panther.Tests.CodeAnalysis.Binder;
 
 class SymbolEnumerator(Symbol root) : IDisposable
 {
-    private readonly IEnumerator<Symbol> _enumerator = EnumerateSymbols(root, false).GetEnumerator();
+    private readonly IEnumerator<Symbol> _enumerator = EnumerateSymbols(root, false)
+        .GetEnumerator();
 
     private bool _hasErrors;
 
@@ -33,11 +34,14 @@ class SymbolEnumerator(Symbol root) : IDisposable
     {
         if (!_hasErrors)
         {
-            Assert.False(_enumerator.MoveNext(), $"Additional symbols remain: {_enumerator.Current.Name}");
+            Assert.False(
+                _enumerator.MoveNext(),
+                $"Additional symbols remain: {_enumerator.Current.Name}"
+            );
         }
         _enumerator.Dispose();
     }
-    
+
     private static IEnumerable<Symbol> EnumerateSymbols(Symbol symbol, bool includeRoot = true)
     {
         if (includeRoot)

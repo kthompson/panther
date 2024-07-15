@@ -8,5 +8,6 @@ sealed partial record TypedConditionalGotoStatement
         SyntaxNode syntax,
         TypedLabel TypedLabel,
         TypedExpression condition
-    ) : this(syntax, TypedLabel, condition, false) { }
+    )
+        : this(syntax, TypedLabel, condition, false) { }
 }

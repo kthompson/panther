@@ -39,8 +39,8 @@ public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
             "Panther.CodeAnalysis.Syntax.SeparatedSyntaxList`1"
         );
         var allTypes = GetAllTypes(compilation.Assembly);
-        var syntaxNodeTypes = allTypes.Where(
-            type => !type.IsAbstract && IsDerivedFrom(type, syntaxNodeType) && IsPartial(type)
+        var syntaxNodeTypes = allTypes.Where(type =>
+            !type.IsAbstract && IsDerivedFrom(type, syntaxNodeType) && IsPartial(type)
         );
 
         foreach (var syntaxNode in syntaxNodeTypes)
