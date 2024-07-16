@@ -1,0 +1,30 @@
+[book]
+authors = ["Kevin Thompson"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Panther Language Docs"
+
+# This is so that mdBook doesn't start regenerating 
+# deleted folders before autosummary can remove them from SUMMARY.md
+[build]
+create-missing = false
+
+[preprocessor.autosummary]
+
+[preprocessor.toc]
+after = ["autosummary"]
+
+[preprocessor.admonish]
+after = ["autosummary"]
+command = "mdbook-admonish"
+assets_version = "3.0.2"    # do not edit: managed by `mdbook-admonish install`
+
+[preprocessor.inline-highlighting]
+after = ["autosummary"]
+default-language = "rust"
+
+[output]
+
+[output.html]
+additional-css = ["./mdbook-admonish.css"]
